@@ -15,6 +15,8 @@ public partial class GraphPlaybackControls : IAsyncDisposable
     [Parameter, EditorRequired] public GraphSnapshot Snapshot { get; set; } = default!;
     [Parameter] public EventCallback<GraphParameterTelemetry?> TelemetryChanged { get; set; }
     [Parameter] public EventCallback<double> TempoChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    public bool CanReplaceWorkspace => !IsActive;
 
     private bool IsReady { get; set; }
     private bool IsActive { get; set; }
@@ -86,7 +88,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
 
     private async Task PlayAsync()
     {
-        if (!IsReady || IsActive || disposed) return;
+        if (!IsReady || IsActive || disposed || Disabled) return;
         var graph = Snapshot;
         activeGraph = graph.Id;
         activeRevision = graph.Revision;

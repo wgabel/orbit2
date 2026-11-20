@@ -42,6 +42,10 @@ public partial class GraphWorkspace : IDisposable
     private CanvasNavigationService Navigation { get; set; } = default!;
     private ICanvasStateService Canvas => Navigation.ActiveCanvas;
     private GraphCanvas? canvasView;
+    private GraphPlaybackControls? playbackControls;
+    private long workspaceGeneration;
+    private bool switchingWorkspace;
+    private static readonly GridNodePlacementPolicy Placement = new(columnSpacing: 320, rowSpacing: 360, columns: 4);
     private NodeRegistry catalog = default!;
     private IEnumerable<string> RegisteredTypes => catalog.RegisteredTypes.Where(type =>
         Canvas.Snapshot.GraphId == session.GraphId || type != MasterOutput.NodeType);
@@ -63,13 +67,12 @@ public partial class GraphWorkspace : IDisposable
         var registry = BuiltInNodes.CreateEditorRegistry();
         catalog = registry;
         SelectedType = OscillatorGenerator.NodeType;
-        var placement = new GridNodePlacementPolicy(columnSpacing: 320, rowSpacing: 360, columns: 4);
         try
         {
             if (await Persistence.LoadAsync() is { } document)
             {
                 session = Serializer.Restore(document, registry);
-                Navigation = new CanvasNavigationService(session, placement, document.CanvasLayouts, document.ActiveGraphId);
+                Navigation = new CanvasNavigationService(session, Placement, document.CanvasLayouts, document.ActiveGraphId);
                 await Transport.SetTempoAsync(document.BeatsPerMinute);
                 tempo = document.BeatsPerMinute;
             }
@@ -87,26 +90,89 @@ public partial class GraphWorkspace : IDisposable
         if (session is null)
         {
             session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings(), registry);
-            Navigation = new CanvasNavigationService(session, placement);
+            Navigation = new CanvasNavigationService(session, Placement);
         }
         RefreshRanges();
-        subscription = Navigation!.Subscribe(change => { _ = InvokeAsync(() =>
+        SubscribeToNavigation();
+        initialized = true;
+    }
+
+    private void SubscribeToNavigation()
+    {
+        subscription = Navigation.Subscribe(change => { _ = InvokeAsync(() =>
         {
             if (!RegisteredTypes.Contains(SelectedType)) SelectedType = OscillatorGenerator.NodeType;
             RefreshRanges();
             StateHasChanged();
             _ = SaveWorkspaceAsync();
         }); });
-        initialized = true;
+    }
+
+    private PatchDocument CaptureWorkspace() => Serializer.Capture(session, tempo,
+        Canvas.Snapshot.GraphId, Navigation.CaptureLayouts());
+
+    private async Task NewWorkspaceAsync()
+    {
+        using var fresh = new PatchSession(catalog);
+        fresh.Execute(new AddNodeCommand(fresh.GraphId, MasterOutput.NodeType));
+        await ReplaceWorkspaceAsync(Serializer.Capture(fresh, MusicalTransport.DefaultTempo, fresh.GraphId, []));
+    }
+
+    // Construct and validate the complete candidate before touching the current workspace.
+    // Playback must be stopped; a new generation recreates presentation and playback views.
+    private async Task ReplaceWorkspaceAsync(PatchDocument document)
+    {
+        if (switchingWorkspace || playbackControls?.CanReplaceWorkspace != true)
+            throw new InvalidOperationException("Stop playback before opening another patch.");
+        switchingWorkspace = true;
+        StateHasChanged();
+        IPatchSession? candidate = null;
+        CanvasNavigationService? candidateNavigation = null;
+        try
+        {
+            candidate = Serializer.Restore(document, catalog);
+            candidateNavigation = new CanvasNavigationService(candidate, Placement, document.CanvasLayouts, document.ActiveGraphId);
+            await Transport.SetTempoAsync(document.BeatsPerMinute);
+            await Transport.ResetAsync();
+            try { await Persistence.SaveNowAsync(document); }
+            catch
+            {
+                await Transport.SetTempoAsync(tempo);
+                throw;
+            }
+            subscription?.Dispose();
+            Navigation.Dispose();
+            session.Dispose();
+            session = candidate;
+            Navigation = candidateNavigation;
+            candidate = null;
+            candidateNavigation = null;
+            tempo = document.BeatsPerMinute;
+            rangeRevision = -1;
+            telemetry = null;
+            editingRack = null;
+            SelectedType = OscillatorGenerator.NodeType;
+            Error = PersistenceError = null;
+            autosaveEnabled = true;
+            workspaceGeneration++;
+            RefreshRanges();
+            SubscribeToNavigation();
+        }
+        finally
+        {
+            candidateNavigation?.Dispose();
+            candidate?.Dispose();
+            switchingWorkspace = false;
+            StateHasChanged();
+        }
     }
 
     private async Task SaveWorkspaceAsync()
     {
-        if (!autosaveEnabled || disposed) return;
+        if (!autosaveEnabled || disposed || switchingWorkspace) return;
         try
         {
-            await Persistence.ScheduleSaveAsync(() => Serializer.Capture(session, tempo,
-                Canvas.Snapshot.GraphId, Navigation.CaptureLayouts()));
+            await Persistence.ScheduleSaveAsync(CaptureWorkspace);
             if (!disposed && PersistenceError is not null) { PersistenceError = null; StateHasChanged(); }
         }
         catch (Exception exception)
@@ -216,6 +282,7 @@ public partial class GraphWorkspace : IDisposable
 
     private bool Execute(IGraphCommand command)
     {
+        if (switchingWorkspace) return false;
         Error = null;
         try
         {

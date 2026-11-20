@@ -3,7 +3,7 @@
 
 @* Reusable controls for a graph snapshot. Audio execution belongs to the service. *@
 <div class="workspace-toolbar toolbar-group playback-toolbar">
-    <button type="button" @onclick="PlayAsync" disabled="@(!IsReady || IsActive)">Play patch</button>
+    <button type="button" @onclick="PlayAsync" disabled="@(!IsReady || IsActive || Disabled)">Play patch</button>
     <button type="button" class="secondary" @onclick="StopAsync" disabled="@(!IsActive || IsStopping)">Stop</button>
     <span class="workspace-notice" role="status">@Status</span>
 </div>

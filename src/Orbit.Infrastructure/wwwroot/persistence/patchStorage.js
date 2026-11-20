@@ -29,3 +29,23 @@ async function transact(mode, action) {
 
 export function load() { return transact("readonly", store => store.get(key)); }
 export function save(json) { return transact("readwrite", store => store.put(json, key)); }
+
+// Named entries use a disjoint key namespace; existing recovery records need no migration.
+const namedPrefix = "named:";
+export async function listNames() {
+    const keys = await transact("readonly", store => store.getAllKeys());
+    return keys.filter(key => typeof key === "string" && key.startsWith(namedPrefix)).map(key => key.slice(namedPrefix.length));
+}
+export function readNamed(name) { return transact("readonly", store => store.get(namedPrefix + name)); }
+export function writeNamed(name, json, overwrite) {
+    return transact("readwrite", store => overwrite ? store.put(json, namedPrefix + name) : store.add(json, namedPrefix + name));
+}
+export function deleteNamed(name) { return transact("readwrite", store => store.delete(namedPrefix + name)); }
+export function download(name, json) {
+    const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = name;
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

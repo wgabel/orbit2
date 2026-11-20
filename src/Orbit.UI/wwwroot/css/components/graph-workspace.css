@@ -3,6 +3,30 @@
 .graph-workspace { display: flex; flex-direction: column; height: 100%; gap: var(--semantic-space-tight); }
 .workspace-header { display: flex; align-items: center; flex-wrap: wrap; gap: var(--semantic-space-normal); }
 .workspace-header h1 { margin: 0; font-size: var(--semantic-typography-section); }
+.patch-manager {
+    position: absolute;
+    inset-block-start: var(--semantic-space-normal);
+    inset-inline-end: var(--semantic-space-normal);
+    z-index: var(--component-workspace-overlay-layer);
+    display: grid;
+    gap: var(--semantic-space-compact);
+    max-width: calc(100% - var(--semantic-space-normal) * 2);
+    max-height: calc(var(--component-workspace-viewport-height) - var(--semantic-space-normal) * 2);
+    overflow: auto;
+    padding: var(--semantic-space-normal);
+    background: var(--semantic-color-surface);
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-surface);
+}
+.patch-manager input, .patch-manager select {
+    max-width: 100%;
+    background: var(--semantic-color-input);
+    color: var(--semantic-color-text);
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-input);
+    padding: var(--component-workspace-select-padding);
+    font: inherit;
+}
 .workspace-toolbar {
     display: flex;
     flex-wrap: wrap;

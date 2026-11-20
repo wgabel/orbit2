@@ -1,0 +1,40 @@
+@namespace Orbit.UI.Components.Canvas
+@using Microsoft.AspNetCore.Components.Forms
+
+<button type="button" class="secondary" aria-expanded="@IsOpen" @onclick="ToggleAsync">Patches</button>
+@if (IsOpen)
+{
+    <section class="patch-manager" aria-label="Patch manager">
+        <div class="workspace-toolbar">
+            <strong>Saved patches</strong>
+            <button type="button" class="secondary" @onclick="ToggleAsync">Close</button>
+        </div>
+        <p class="workspace-notice">Named saves are independent of autosave. Opening or importing replaces the current workspace; stop playback first.</p>
+        <label for="patch-name">Patch name</label>
+        <div class="workspace-toolbar">
+            <input id="patch-name" type="text" maxlength="80" @bind="Name" @bind:event="oninput" disabled="@Busy" />
+            <button type="button" @onclick="SaveAsync" disabled="@Busy">Save as</button>
+        </div>
+        <label for="saved-patch">Saved patch</label>
+        <select id="saved-patch" @bind="Selected" disabled="@Busy">
+            <option value="">Select a patch</option>
+            @foreach (var name in Names)
+            {
+                <option value="@name">@name</option>
+            }
+        </select>
+        <div class="workspace-toolbar">
+            <button type="button" @onclick="OpenAsync" disabled="@(Busy || Selected.Length == 0)">Open patch</button>
+            <button type="button" class="secondary" @onclick="OverwriteAsync" disabled="@(Busy || Selected.Length == 0)">Overwrite selected</button>
+            <button type="button" class="secondary" @onclick="DeleteAsync" disabled="@(Busy || Selected.Length == 0)">Delete saved patch</button>
+        </div>
+        <div class="workspace-toolbar">
+            <button type="button" class="secondary" @onclick="NewAsync" disabled="@Busy">New patch</button>
+            <button type="button" class="secondary" @onclick="ExportAsync" disabled="@Busy">Export JSON</button>
+        </div>
+        <label for="patch-import">Import JSON</label>
+        <InputFile id="patch-import" OnChange="ImportAsync" accept=".json,application/json" disabled="@Busy" />
+        @if (Message is not null) { <p class="workspace-notice">@Message</p> }
+        @if (Error is not null) { <p class="parameter-error" role="alert">@Error</p> }
+    </section>
+}

@@ -13,6 +13,16 @@ public sealed class PatchPersistenceService(IPatchStorage storage, PatchDocument
         return json is null ? null : serializer.Deserialize(json);
     }
 
+    /// <summary>Replace recovery immediately when opening a patch, after draining older writes.</summary>
+    public async Task SaveNowAsync(PatchDocument document)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        pending?.Cancel();
+        await writeGate.WaitAsync();
+        try { await storage.SaveAsync(serializer.Serialize(document)); }
+        finally { writeGate.Release(); }
+    }
+
     public async Task ScheduleSaveAsync(Func<PatchDocument> capture)
     {
         if (disposed) return;

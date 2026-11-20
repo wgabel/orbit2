@@ -28,7 +28,10 @@ var emitters = BuiltInFaustEmitters.Create();
 builder.Services.AddSingleton(new FaustGraphCompiler(emitters));
 builder.Services.AddSingleton<IGraphModulationRangeEstimator>(new GraphModulationRangeEstimator(emitters));
 builder.Services.AddSingleton<IGraphPlaybackService, FaustGraphPlaybackService>();
-builder.Services.AddSingleton<IPatchStorage, BrowserPatchStorage>();
+builder.Services.AddSingleton<BrowserPatchStorage>();
+builder.Services.AddSingleton<IPatchStorage>(services => services.GetRequiredService<BrowserPatchStorage>());
+builder.Services.AddSingleton<IPatchLibraryStorage>(services => services.GetRequiredService<BrowserPatchStorage>());
+builder.Services.AddSingleton<PatchLibraryService>();
 builder.Services.AddSingleton<PatchDocumentSerializer>();
 builder.Services.AddTransient<PatchPersistenceService>();
 

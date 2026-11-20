@@ -177,6 +177,7 @@
       "viewport-height": "100dvh",
       "page-padding": "{semantic.space.compact}",
       "tempo-width": "4.5rem",
+      "overlay-layer": "10",
       "toolbar-button-block": "{primitive.space.input-block}",
       "toolbar-button-inline": "{primitive.space.md}"
     },
