@@ -19,7 +19,7 @@ public sealed class ParameterTests
         {
             Assert.True(parameter.Definition.CanModulate);
             Assert.NotNull(parameter.ModulationPortId);
-            var port = Assert.Single(node.Inputs.Where(port => port.Id == parameter.ModulationPortId));
+            var port = Assert.Single(node.Inputs, port => port.Id == parameter.ModulationPortId);
             Assert.Equal(SignalType.Modulation, port.SignalType);
             Assert.Equal(FanInPolicy.Sum, port.FanIn);
         }
