@@ -5,6 +5,7 @@ using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Nodes.Processors;
 using Orbit.Domain.Parameters;
+using Orbit.Domain.Timing;
 using Xunit;
 
 namespace Orbit.Domain.Tests;
@@ -13,12 +14,13 @@ namespace Orbit.Domain.Tests;
 public sealed class NodeRegistryTests
 {
     [Fact]
-    public void CreatesThreeBuiltInNodeTypes()
+    public void CreatesFourBuiltInNodeTypes()
     {
         var registry = BuiltInNodes.CreateRegistry();
 
-        Assert.Equal(3, registry.RegisteredTypes.Count);
+        Assert.Equal(4, registry.RegisteredTypes.Count);
         Assert.IsAssignableFrom<IGenerator>(registry.Create(SineGenerator.NodeType));
+        Assert.IsAssignableFrom<IGenerator>(registry.Create(TempoSineGenerator.NodeType));
         Assert.IsAssignableFrom<IProcessor>(registry.Create(GainProcessor.NodeType));
         var output = Assert.IsType<MasterOutput>(registry.Create(MasterOutput.NodeType));
         Assert.Single(output.Inputs);
@@ -46,6 +48,24 @@ public sealed class NodeRegistryTests
 
         Assert.Equal(110d, firstFrequency.BaseValue);
         Assert.Equal(440d, secondFrequency.BaseValue);
+    }
+
+    [Fact]
+    public void TempoGeneratorHasDiscreteDivisionAndModulatablePhaseAndAmplitude()
+    {
+        var graph = new SignalGraph();
+        var node = new TempoSineGenerator(Guid.NewGuid());
+        graph.AddNode(node);
+        var division = node.Parameters.Single(p => p.Definition.Key == "division");
+        Assert.Equal((double)MusicalDivision.QuarterNote, division.BaseValue);
+        Assert.Equal(7, division.Definition.Choices!.Count);
+        Assert.Null(division.ModulationPortId);
+        Assert.Equal(2, node.Inputs.Count);
+        var address = new ParameterAddress(node.Id, division.Id);
+        Assert.Throws<ArgumentOutOfRangeException>(() => graph.SetParameterValue(address, 2.5));
+        Assert.Equal((double)MusicalDivision.QuarterNote, division.BaseValue);
+        graph.SetParameterValue(address, (int)MusicalDivision.HalfNote);
+        Assert.Equal((double)MusicalDivision.HalfNote, division.BaseValue);
     }
 
     [Fact]

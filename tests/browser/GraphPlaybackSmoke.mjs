@@ -12,6 +12,8 @@ assert.ok(directory && playwrightDirectory && process.env.ORBIT_CHROME);
 const { chromium } = await import(pathToFileURL(resolve(playwrightDirectory, "index.mjs")));
 const source = await readFile(resolve(directory, "program.dsp"), "utf8");
 const manifest = JSON.parse(await readFile(resolve(directory, "controls.json"), "utf8"));
+const tempoSource = await readFile(resolve(directory, "tempo.dsp"), "utf8");
+const tempoControls = JSON.parse(await readFile(resolve(directory, "tempo-controls.json"), "utf8"));
 const root = resolve("src/Orbit.Infrastructure/wwwroot/audio");
 const server = createServer(async (request, response) => {
     try {
@@ -122,6 +124,45 @@ try {
     assert.ok(result.beforeSwap > 0.035 && result.beforeSwap <= 0.151, "The initial voice was not audible");
     assert.ok(result.silentSwap < 0.001, "The silent replacement did not take over");
     assert.ok(result.restoredSwap > 0.035 && result.restoredSwap <= 0.151, "The restored worklet was not audible");
+
+    // Render two independent Faust worklets receiving the same transport.
+    // Each graph itself combines an outer and inner LFO. Compare every sample
+    // after the amplitude control settles, including a 12-beat wrap.
+    for (const sampleRate of [44100, 48000]) {
+        const synchronized = await page.evaluate(async ({ tempoSource, tempoControls, sampleRate }) => {
+            const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
+            const { FaustNodeFactory } = await import("/Faust/FaustNodeFactory.js");
+            const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
+            const { TransportSignalSource } = await import("/Components/TransportSignalSource.js");
+            const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
+            const transport = new TransportSignalSource();
+            const context = new OfflineAudioContext(1, sampleRate, sampleRate);
+            try {
+                const factory = new FaustNodeFactory(null, new Map(), () => new FaustMonoDspGenerator(), compiler);
+                transport.setSnapshot({ beatsPerMinute: 120, beatPosition: 11.25, isPlaying: true,
+                    clock: { currentSample: 0, sampleRate } });
+                const first = await factory.create(context, "OrbitTempo", tempoControls, tempoSource);
+                const second = await factory.create(context, "OrbitTempo", tempoControls, tempoSource);
+                await transport.connect(context, first);
+                await transport.connect(context, second);
+                const gain = context.createGain();
+                gain.gain.value = 0.5;
+                first.connect(gain); second.connect(gain); gain.connect(context.destination);
+                const rendered = (await context.startRendering()).getChannelData(0);
+                let error = 0, count = 0, peak = 0;
+                for (let frame = Math.floor(sampleRate * 0.2); frame < rendered.length; frame++) {
+                    const expected = Math.sin(2 * Math.PI * (11.25 + frame * 2 / sampleRate));
+                    error += (expected - rendered[frame]) ** 2;
+                    peak = Math.max(peak, Math.abs(rendered[frame]));
+                    count++;
+                }
+                return { rms: Math.sqrt(error / count), peak, inputs: first.numberOfInputs };
+            } finally { transport.dispose(); compiler.dispose(); }
+        }, { tempoSource, tempoControls, sampleRate });
+        console.log("Shared transport offline render", sampleRate, synchronized);
+        assert.equal(synchronized.inputs, 1);
+        assert.ok(synchronized.peak > 0.95 && synchronized.rms < 0.035, "Synchronized phase differs from sample-clock oracle");
+    }
 } finally {
     await browser?.close();
     server.close();

@@ -1,0 +1,16 @@
+@namespace Orbit.UI.Components.Parameters
+@using Microsoft.AspNetCore.Components.Web
+
+@* Reusable editor for exact, non-modulatable choices. No DSP knowledge. *@
+<div class="parameter-slider">
+    <div class="parameter-heading">
+        <label for="@InputId">@Definition.Name</label>
+        <select id="@InputId" value="@Format(Value)" @onchange="EditAsync" aria-invalid="@(Error is not null ? "true" : "false")" aria-describedby="@ErrorId">
+            @foreach (var choice in Definition.Choices ?? [])
+            {
+                <option value="@Format(choice.Value)">@choice.Label</option>
+            }
+        </select>
+    </div>
+    <ValidationMessage Message="@Error" MessageId="@ErrorId" />
+</div>

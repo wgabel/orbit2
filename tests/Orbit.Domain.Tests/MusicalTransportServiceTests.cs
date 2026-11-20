@@ -55,6 +55,41 @@ public sealed class MusicalTransportServiceTests
     }
 
     [Fact]
+    public async Task PublishesAnchorsOnlyWhenMusicalTimeChanges()
+    {
+        var clock = new TestClock();
+        var sink = new TestSink();
+        var service = new MusicalTransportService(clock, sink);
+        await service.SetTempoAsync(60);
+        Assert.Single(sink.Anchors);
+        clock.Set(0, 48000);
+        await service.SynchronizeAsync(true);
+        clock.Set(24000, 48000);
+        await service.SynchronizeAsync(true);
+        Assert.Equal(2, sink.Anchors.Count);
+        await service.SetTempoAsync(120);
+        Assert.Equal(0.5, sink.Anchors[^1].BeatPosition);
+        await service.ResetAsync();
+        Assert.True(sink.Anchors[^1].IsPlaying);
+        Assert.Equal(0, sink.Anchors[^1].BeatPosition);
+        clock.Set(48000, 48000);
+        await service.SynchronizeAsync(false);
+        Assert.False(sink.Anchors[^1].IsPlaying);
+        Assert.Equal(1, sink.Anchors[^1].BeatPosition);
+        Assert.Equal(5, sink.Anchors.Count);
+    }
+
+    private sealed class TestSink : ITransportSignalSink
+    {
+        public List<TransportSnapshot> Anchors { get; } = [];
+        public Task SetTransportAsync(TransportSnapshot snapshot)
+        {
+            Anchors.Add(snapshot);
+            return Task.CompletedTask;
+        }
+    }
+
+    [Fact]
     public async Task ContextSuspensionAndReplacementCannotJumpMusicalTime()
     {
         var clock = new TestClock();

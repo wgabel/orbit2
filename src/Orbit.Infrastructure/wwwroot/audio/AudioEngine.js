@@ -5,14 +5,16 @@ export class AudioEngine {
     #nodeFactory;
     #output;
     #createMonitor;
+    #transport;
     #active = new Map();
     #disposed = false;
 
-    constructor(contextManager, nodeFactory, output, createMonitor) {
+    constructor(contextManager, nodeFactory, output, createMonitor, transport = null) {
         this.#contextManager = contextManager;
         this.#nodeFactory = nodeFactory;
         this.#output = output;
         this.#createMonitor = createMonitor;
+        this.#transport = transport;
     }
 
     async play(request) {
@@ -153,14 +155,26 @@ export class AudioEngine {
         }
 
         this.#output.dispose();
+        this.#transport?.dispose();
         await this.#contextManager.dispose();
     }
 
-    #createNode(context, request) {
-        return this.#nodeFactory.create(context, request.processor, request.parameters ?? {}, request.source);
+    async #createNode(context, request) {
+        const node = await this.#nodeFactory.create(context, request.processor, request.parameters ?? {}, request.source);
+        try {
+            if (request.requiresTransport) {
+                if (!this.#transport) throw new Error("Transport signal source is unavailable.");
+                await this.#transport.connect(context, node);
+            }
+            return node;
+        } catch (error) {
+            this.#destroyNode(node);
+            throw error;
+        }
     }
 
     #destroyNode(node) {
+        this.#transport?.disconnect(node);
         try { node.disconnect(); } finally { node.destroy?.(); }
     }
 
@@ -173,6 +187,7 @@ export class AudioEngine {
             const lifetime = voice.play(request, transition);
             instance.finished = Promise.resolve(lifetime).finally(() => {
                 playback.voices.delete(instance);
+                this.#transport?.disconnect(node);
                 try { monitor.dispose(); } finally { voice.dispose(); }
             });
             // A retiring voice may finish before the main loop observes it.
@@ -181,7 +196,12 @@ export class AudioEngine {
             return instance;
         } catch (error) {
             try { monitor?.dispose(); }
-            finally { if (voice) voice.dispose(); else this.#destroyNode(node); }
+            finally {
+                if (voice) {
+                    this.#transport?.disconnect(node);
+                    voice.dispose();
+                } else this.#destroyNode(node);
+            }
             throw error;
         }
     }

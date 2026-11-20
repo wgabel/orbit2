@@ -9,12 +9,8 @@ public sealed class SineFaustEmitter : IFaustNodeEmitter
 {
     public string TypeKey => SineGenerator.NodeType;
 
-    public ParameterRange? EstimateOutputRange(SignalRangeContext context)
-    {
-        if (context.Parameter("amplitude") is not { } amplitude) return null;
-        var peak = Math.Max(Math.Abs(amplitude.Minimum), Math.Abs(amplitude.Maximum));
-        return new ParameterRange(-peak, peak);
-    }
+    public ParameterRange? EstimateOutputRange(SignalRangeContext context) =>
+        SignalRangeContext.Multiply(new ParameterRange(-1, 1), context.Parameter("amplitude"));
 
     public string Emit(FaustNodeContext context)
     {

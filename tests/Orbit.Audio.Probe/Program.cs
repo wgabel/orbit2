@@ -55,6 +55,36 @@ File.WriteAllText(Path.Combine(args[0], "controls.json"), JsonSerializer.Seriali
     amplitude = amplitude.Name
 }));
 
+// One root and one child tempo LFO share the same external beat signal. A
+// summed boundary lets the offline browser compare their phase to an oracle.
+var tempoRegistry = BuiltInNodes.CreateRegistry();
+tempoRegistry.Register(CompositeNode.NodeType, id => new CompositeNode(id, "Tempo probe",
+    [new ExposedPort(Guid.NewGuid(), "External", SignalType.Audio)],
+    [new ExposedPort(Guid.NewGuid(), "Mixed", SignalType.Audio, FanIn: FanInPolicy.Sum)]));
+using var tempoSession = new PatchSession(tempoRegistry);
+var tempoRoot = tempoSession.GraphId;
+var outerLfo = TempoAdd(tempoRoot, TempoSineGenerator.NodeType);
+var tempoDrone = TempoAdd(tempoRoot, CompositeNode.NodeType);
+var tempoMaster = TempoAdd(tempoRoot, MasterOutput.NodeType);
+var tempoChild = tempoDrone.Composite!.Graph.Id;
+var innerLfo = TempoAdd(tempoChild, TempoSineGenerator.NodeType);
+TempoConnect(tempoRoot, outerLfo.Id, outerLfo.Outputs[0].Id, tempoDrone.Id, tempoDrone.Inputs[0].Id);
+TempoConnect(tempoChild, tempoDrone.Composite.InputRackId, tempoDrone.Inputs[0].Id,
+    tempoDrone.Composite.OutputRackId, tempoDrone.Outputs[0].Id, 0.5);
+TempoConnect(tempoChild, innerLfo.Id, innerLfo.Outputs[0].Id,
+    tempoDrone.Composite.OutputRackId, tempoDrone.Outputs[0].Id, 0.5);
+TempoConnect(tempoRoot, tempoDrone.Id, tempoDrone.Outputs[0].Id, tempoMaster.Id, tempoMaster.Inputs[0].Id);
+var tempoProgram = FaustGraphCompiler.CreateBuiltIn().Compile(tempoSession.Snapshot);
+File.WriteAllText(Path.Combine(args[0], "tempo.dsp"), tempoProgram.Source);
+File.WriteAllText(Path.Combine(args[0], "tempo-controls.json"), JsonSerializer.Serialize(
+    tempoProgram.Controls.ToDictionary(control => control.Name, control => control.InitialValue)));
+
+GraphNodeSnapshot TempoAdd(Guid graph, string type) =>
+    tempoSession.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+
+void TempoConnect(Guid graph, Guid source, Guid output, Guid destination, Guid input, double amount = 1) =>
+    tempoSession.Execute(new ConnectNodesCommand(graph, new PortAddress(source, output), new PortAddress(destination, input), amount));
+
 GraphNodeSnapshot Add(Guid graph, string type) =>
     session.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
 

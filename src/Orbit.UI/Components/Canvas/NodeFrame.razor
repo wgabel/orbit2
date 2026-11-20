@@ -49,9 +49,17 @@
         <div class="node-parameters">
             @foreach (var parameter in Node.Parameters)
             {
-                <ParameterSlider @key="parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue" Step="0.01"
+                @if (parameter.Definition.Choices is not null)
+                {
+                    <ParameterChoiceEditor @key="parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue"
+                          ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))" />
+                }
+                else
+                {
+                    <ParameterSlider @key="parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue" Step="0.01"
                                  IsModulated="@IsModulated(parameter.Id)" ModulationRange="@GetRange(parameter.Id)" EffectiveValue="@GetEffective(parameter.Id)"
                                  ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))" />
+                }
             }
         </div>
     }

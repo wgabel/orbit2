@@ -30,13 +30,15 @@ public sealed class FaustGraphCompiler
         var signals = new Dictionary<PortAddress, string>();
         var controls = new List<FaustParameterControl>();
         var definitions = new List<string>();
+        var requiresTransport = false;
+        var outputExpression = "0.0";
 
         foreach (var node in ordered)
         {
             var context = new FaustNodeContext(node, incoming, signals, controls, definitions);
             if (node.Id == outputs[0].Id)
             {
-                definitions.Add($"process = {context.Input("audio-in")};");
+                outputExpression = context.Input("audio-in");
                 continue;
             }
 
@@ -47,14 +49,19 @@ public sealed class FaustGraphCompiler
                 throw new FaustCompilationException("Only mono, single-output nodes are supported.");
 
             var name = $"n_{node.Id:N}";
+            requiresTransport |= emitter.RequiresTransport;
             var expression = emitter.Emit(context);
             definitions.Add($"{name} = {expression};");
             signals.Add(new PortAddress(node.Id, node.Outputs[0].Id), name);
         }
 
         // Canonical order and invariant literals make source stable across base-only edits.
-        var source = "import(\"stdfaust.lib\");\ndeclare name \"OrbitGraph\";\n"
-            + string.Join("\n", definitions) + "\n";
+        // The formal parameter is shared by every nested definition; it is
+        // exactly one audio input, not a separate input per LFO reference.
+        var body = requiresTransport
+            ? $"process(orbit_beat) = {outputExpression} with {{\n{string.Join("\n", definitions)}\n}};\n"
+            : string.Join("\n", definitions.Append($"process = {outputExpression};")) + "\n";
+        var source = "import(\"stdfaust.lib\");\ndeclare name \"OrbitGraph\";\n" + body;
         // Faust uses qualified backend identities; the manifest points back to
         // the original graph and parameter, not to temporary routing nodes.
         var manifest = controls.Select(control =>
@@ -63,6 +70,7 @@ public sealed class FaustGraphCompiler
             return control with { GraphId = origin.GraphId,
                 Address = control.Address with { NodeId = origin.NodeId } };
         }).ToArray();
-        return new FaustGraphProgram(graph.Id, graph.Revision, source, Array.AsReadOnly(manifest));
+        return new FaustGraphProgram(graph.Id, graph.Revision, source, Array.AsReadOnly(manifest))
+            { RequiresTransport = requiresTransport };
     }
 }

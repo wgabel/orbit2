@@ -15,6 +15,17 @@
     text-align: right;
 }
 .parameter-heading input[aria-invalid="true"] { border-color: var(--semantic-color-error); }
+.parameter-heading select {
+    min-width: 0;
+    max-width: 100%;
+    color: inherit;
+    background: var(--semantic-color-input);
+    border: var(--semantic-border-width) solid var(--component-slider-track-color);
+    border-radius: var(--semantic-radius-input);
+    padding: var(--component-slider-input-padding-block) var(--component-slider-input-padding-inline);
+    font: inherit;
+}
+.parameter-heading select[aria-invalid="true"] { border-color: var(--semantic-color-error); }
 .parameter-track { position: relative; height: var(--component-slider-track-height); }
 .parameter-rail {
     position: absolute;

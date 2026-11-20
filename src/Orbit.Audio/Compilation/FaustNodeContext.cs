@@ -27,6 +27,9 @@ public sealed class FaustNodeContext
 
     public GraphNodeSnapshot Node { get; }
 
+    /// <summary>Shared formal input used by emitters declaring RequiresTransport.</summary>
+    public string TransportBeat => "orbit_beat";
+
     public string Input(string key)
     {
         var port = Node.Inputs.SingleOrDefault(port => port.Key == key)
@@ -55,7 +58,9 @@ public sealed class FaustNodeContext
         if (!controls.Any(control => control.Name == name))
         {
             controls.Add(new FaustParameterControl(new ParameterAddress(Node.Id, parameter.Id), name, parameter.BaseValue, meter));
-            definitions.Add($"{name} = hslider(\"{name}\", {initial}, {minimum}, {maximum}, 0.001) : si.smoo;");
+            var smoothing = definition.Choices is null ? " : si.smoo" : "";
+            var step = definition.Choices is null ? "0.001" : "1.0";
+            definitions.Add($"{name} = hslider(\"{name}\", {initial}, {minimum}, {maximum}, {step}){smoothing};");
         }
 
         var modulation = parameter.ModulationPortId is Guid portId ? InputSignal(portId) : "0.0";

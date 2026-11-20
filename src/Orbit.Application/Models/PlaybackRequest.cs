@@ -11,4 +11,5 @@ public sealed record PlaybackRequest(
     string Processor,
     double Volume,
     IReadOnlyDictionary<string, double> Parameters,
-    string? Source = null);
+    string? Source = null,
+    bool RequiresTransport = false);

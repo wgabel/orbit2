@@ -4,6 +4,7 @@ import { FaustMonoDspGenerator } from "./generated/modulated-sine/faustwasm/inde
 import { AudioEngine } from "./AudioEngine.js";
 import { AudioContextManager } from "./Components/AudioContextManager.js";
 import { AudioClock } from "./Components/AudioClock.js";
+import { TransportSignalSource } from "./Components/TransportSignalSource.js";
 import { AudioEnvelope } from "./Components/AudioEnvelope.js";
 import { AudioOutput } from "./Components/AudioOutput.js";
 import { FaustModuleLoader } from "./Faust/FaustModuleLoader.js";
@@ -30,11 +31,13 @@ const compiler = new FaustCompilerClient(() =>
 const nodeFactory = new FaustNodeFactory(
     moduleLoader, processors, () => new FaustMonoDspGenerator(), compiler);
 const output = new AudioOutput(new AudioEnvelope());
-const engine = new AudioEngine(contextManager, nodeFactory, output, node => new FaustOutputMonitor(node));
+const transportSignal = new TransportSignalSource();
+const engine = new AudioEngine(contextManager, nodeFactory, output, node => new FaustOutputMonitor(node), transportSignal);
 
 export const play = request => engine.play(request);
 export const stop = soundId => engine.stop(soundId);
 export const getClockSnapshot = () => audioClock.getSnapshot();
+export const setTransport = snapshot => transportSignal.setSnapshot(snapshot);
 export const getPlaybackState = soundId => engine.getPlaybackState(soundId);
 export const setParameters = (soundId, parameters) => engine.setParameters(soundId, parameters);
 export const markRevision = (soundId, revision) => engine.markRevision(soundId, revision);

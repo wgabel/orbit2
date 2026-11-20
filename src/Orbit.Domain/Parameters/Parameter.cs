@@ -26,6 +26,13 @@ public sealed class Parameter
             throw new ArgumentException("Invalid parameter definition.", nameof(definition));
         }
 
+        if (definition.Choices is { } choices &&
+            (definition.CanModulate || choices.Count == 0 ||
+             choices.Any(choice => !double.IsFinite(choice.Value) || choice.Value < definition.Minimum ||
+                 choice.Value > definition.Maximum || string.IsNullOrWhiteSpace(choice.Label)) ||
+             choices.Select(choice => choice.Value).Distinct().Count() != choices.Count))
+            throw new ArgumentException("Invalid discrete parameter choices.", nameof(definition));
+
         if (definition.CanModulate != modulationPortId.HasValue ||
             modulationPortId == Guid.Empty)
         {
@@ -50,7 +57,9 @@ public sealed class Parameter
     {
         if (!Definition.IsValidBaseValue(value))
             throw new ArgumentOutOfRangeException(nameof(value), value,
-                $"Value must be finite and between {Definition.Minimum} and {Definition.Maximum}.");
+                Definition.Choices is null
+                    ? $"Value must be finite and between {Definition.Minimum} and {Definition.Maximum}."
+                    : "Value must be one of the defined choices.");
 
         BaseValue = value;
     }

@@ -14,7 +14,11 @@ public sealed record ParameterDefinition(
     ParameterScale Scale,
     bool CanModulate)
 {
+    /// <summary>Optional discrete values. Choices are non-modulatable and not smoothed.</summary>
+    public IReadOnlyList<ParameterChoice>? Choices { get; init; }
+
     /// <summary>Checks the allowed finite range, including both endpoints.</summary>
     public bool IsValidBaseValue(double value) =>
-        double.IsFinite(value) && value >= Minimum && value <= Maximum;
+        double.IsFinite(value) && value >= Minimum && value <= Maximum &&
+        (Choices is null || Choices.Any(choice => choice.Value == value));
 }

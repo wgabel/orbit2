@@ -495,7 +495,9 @@ The audio clock can continue while musical transport is stopped, allowing effect
 
 **Implemented Phase 6.1:** `MusicalTransportService` owns one domain `MusicalTransport` and reads the existing `IAudioClock`. It serializes asynchronous observations and edits, publishes immutable `TransportSnapshot` results, and never creates an audio context. The composition root registers one service for the patch. Tempo defaults to 120 BPM and is constrained to 20–300 BPM. The shared `TransportControls` panel displays tempo, beat position, sample rate and derived note/bar rates. Start follows observed root playback, Stop freezes position, replay resumes, and reset anchors beat zero while preserving tempo and running state. Tempo changes preserve accumulated beats. Suspension or clock identity changes freeze and re-anchor the timeline. Canvas navigation and worklet crossfades do not reset transport; tempo edits do not mutate the signal graph.
 
-`MusicalDivision` and `MusicalTime` define reusable quarter-note-relative cycle lengths and the conversion to Hertz. The application timeline is calculated from actual sampled audio frames, not from UI timer ticks. It is not yet a sample-scheduled DSP transport: precise phase lock, transport-derived clock signals and tempo-synchronized oscillator modes require the next backend step.
+`MusicalDivision` and `MusicalTime` define reusable quarter-note-relative cycle lengths and the conversion to Hertz. The application timeline is calculated from actual sampled audio frames, not from UI timer ticks.
+
+**Implemented Phase 6.2:** `TempoSineGenerator` uses a discrete musical division and modulatable phase/amplitude parameters. A generic `ParameterChoiceEditor` renders discrete parameters without adding modulation ports. `ITransportSignalSink` publishes a new transport anchor on state changes through the existing browser adapter. A lazy `TransportSignalSource` owns one audio worklet per context, producing the shared beat position at the actual sample rate. `IFaustNodeEmitter.RequiresTransport` declares the dependency; the graph compiler adds one input only when needed, including for nested emitters. The same beat stream reaches old and new graphs during a crossfade. All supported cycle lengths divide a 12-beat wrap exactly in musical time, limiting floating-point drift. Audio-rate phase is shared; application commands still arrive at message boundaries rather than being scheduled at exact future samples.
 
 ## 7. Hierarchical signal graphs and canvases
 
@@ -1389,7 +1391,8 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 ### Phase 6 — Transport synchronization and drone presets
 
 - Implemented: shared patch-wide transport service, BPM editor, sample-frame-derived musical position, start/stop/resume/reset semantics, and musical divisions.
-- Next: sample-scheduled transport phase, tempo-synchronized oscillators and clock nodes.
+- Implemented: audio-rate shared transport phase, tempo-synchronized sine LFO, validated musical division parameter choices, root/nested and crossfade phase sharing.
+- Next: multi-generator drone preset, additional waveforms/effects; later add sample-scheduled transport commands and rhythmic clock/trigger nodes.
 - Add multi-generator drone graph preset, additional waveforms and effects.
 - Persist root/nested graphs, rack definitions and separate canvas layout.
 - Add copies/preset reuse with independent instances.

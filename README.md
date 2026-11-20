@@ -198,7 +198,24 @@ flowchart TD
 
 `MusicalTime` maps `MusicalDivision` to quarter-note beat lengths and converts them to Hz: for example at 120 BPM a quarter-note cycle is 2 Hz and a 4/4 bar is 0.5 Hz. Dotted and triplet divisions are defined too.
 
-The transport is a frame-derived application timeline, observed at UI rate. Start/stop/reset/tempo actions anchor to the observed audio frame, not a scheduled DSP sample. Exact phase-locked oscillators and audio-rate clock outputs are the next step; existing free-running generators still use their Hz parameter.
+### Tempo-synchronized sine LFO (Phase 6.2)
+
+Add a **Tempo sine LFO** to any canvas. Choose a musical division (for example, 1/4 note), connect Signal to a frequency, amplitude or other modulation socket, and adjust the connection amount in the receiving parameter's units. At 120 BPM, a quarter note gives two cycles per second; a bar gives one cycle every two seconds. Change BPM while playing or reset transport to hear the synchronized modulation respond. Phase offset (degrees) and amplitude remain independently modulatable. Division is a validated discrete choice, not a modulation socket. The same reusable choice editor can serve future enum-like parameters.
+
+~~~mermaid
+flowchart TD
+    T["MusicalTransportService"] --> A["Transport anchor"]
+    A --> W["Transport AudioWorklet"]
+    W --> F["Faust graph: shared beat input"]
+    F --> R["Root tempo LFO"]
+    F --> D["Nested tempo LFO"]
+    R --> P["Modulated parameters"]
+    D --> P
+~~~
+
+The application publishes transport anchors only when transport state changes. The browser owns one lazy `TransportSignalSource` per audio context; its worklet produces one beat sample per audio frame. When a reachable emitter requires transport, `FaustGraphCompiler` adds one beat input to the compiled graph. Every tempo sine calculates `sin(2π × (beat / beatsPerCycle + phaseDegrees / 360)) × amplitude` from that shared input. The 12-beat wrap keeps Float32 precision while preserving phase for all current divisions. Old and new graphs during a crossfade share the same source. Free-running sine generators still use Hertz and need no transport input.
+
+Steady-state phase is calculated at the actual audio sample rate (including 44.1 and 48 kHz). Start/stop/reset/tempo commands anchor to the observed audio frame and arrive at an audio-worklet message boundary; scheduled sample-exact command execution and rhythmic clock/trigger nodes remain future work.
 
 
 

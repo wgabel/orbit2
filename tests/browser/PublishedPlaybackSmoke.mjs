@@ -212,8 +212,26 @@ try {
     await transport.getByRole("button", { name: "Reset transport" }).click();
     await beat.filter({ hasText: /^0$/ }).waitFor();
     assert.equal(await tempo.inputValue(), "90");
+    // The tempo LFO is an ordinary registered generator and a live control source.
+    await page.locator("#node-type").selectOption("generator.tempo-sine");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    const tempoLfo = articles.filter({ hasText: "Tempo sine LFO" });
+    const division = tempoLfo.getByLabel("Musical division");
+    await division.waitFor();
+    assert.equal(await division.inputValue(), "2");
+    await division.selectOption("3");
+    await tempoLfo.getByRole("button", { name: "Output: Signal (Audio)" }).press("Enter");
+    await drone.getByRole("button", { name: "Input: Gain (Modulation)" }).press("Enter");
+    await play.click();
+    await status.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
+    await transportState.filter({ hasText: "Running" }).waitFor();
+    await division.selectOption("4");
+    assert.equal(await division.inputValue(), "4");
+    await page.getByRole("button", { name: "Stop", exact: true }).click();
+    await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 10000 });
     const prefix = `/_content/Orbit.Infrastructure/audio-${version}/`;
-    for (const file of ["audio.js", "AudioEngine.js", "Faust/FaustCompilerWorker.js", "generated/compiler/index.js"])
+    for (const file of ["audio.js", "AudioEngine.js", "Faust/FaustCompilerWorker.js", "generated/compiler/index.js",
+        "Components/TransportSignalProcessor.js"])
         assert.ok(requests.has(prefix + file), `Missing versioned asset: ${file}`);
     assert.ok([...requests].every(path => !path.startsWith("/_content/Orbit.Infrastructure/audio/")));
     console.log("Published editor played, navigated nested canvases, edited live frequency and mirrored rack port add/rename/reorder/remove during playback.");

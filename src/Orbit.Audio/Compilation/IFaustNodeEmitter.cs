@@ -8,6 +8,8 @@ namespace Orbit.Audio.Compilation;
 public interface IFaustNodeEmitter
 {
     string TypeKey { get; }
+    /// <summary>True when this emitter consumes the shared audio-rate musical beat input.</summary>
+    bool RequiresTransport => false;
     string Emit(FaustNodeContext context);
     /// <summary>Conservative output bounds; null when the node has no known bound.</summary>
     ParameterRange? EstimateOutputRange(SignalRangeContext context) => null;

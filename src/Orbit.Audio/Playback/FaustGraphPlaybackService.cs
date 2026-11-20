@@ -120,7 +120,7 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
     private static PlaybackRequest CreateRequest(FaustGraphProgram program, IReadOnlyDictionary<string, double>? values = null) =>
         new(SoundId(program.GraphId), "OrbitGraph", PlaybackVolume,
             values ?? program.Controls.ToDictionary(control => control.Name, control => control.InitialValue),
-            Source: program.Source);
+            Source: program.Source, RequiresTransport: program.RequiresTransport);
 
     private static Dictionary<string, double> GetControlValues(GraphSnapshot graph, FaustGraphProgram program)
     {
