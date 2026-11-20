@@ -26,9 +26,7 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
             throw new InvalidOperationException("Graph playback is already active.");
         try
         {
-            await engine.PlayAsync(new PlaybackRequest(
-                SoundId(graph.Id), "OrbitGraph", PlaybackVolume,
-                new Dictionary<string, double>(playback.Values), Source: program.Source));
+            await engine.PlayAsync(CreateRequest(program));
         }
         finally { active.TryRemove(graph.Id, out _); }
     }
@@ -44,7 +42,12 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
     public async Task<GraphPlaybackUpdate> UpdateAsync(GraphSnapshot graph)
     {
         if (!active.TryGetValue(graph.Id, out var playback))
-            return new(graph.Revision, false, false);
+            return new(graph.Revision, false);
+
+        if (!playback.Request(graph.Revision)) return playback.Result;
+        // Announce a newer revision immediately, even while the previous worker
+        // request is pending. The browser checks this before starting a new voice.
+        await engine.MarkRevisionAsync(SoundId(graph.Id), graph.Revision);
 
         await playback.UpdateLock.WaitAsync();
         try
@@ -52,36 +55,50 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
             if (playback.Stopping || !active.TryGetValue(graph.Id, out var current) ||
                 !ReferenceEquals(current, playback))
                 return playback.Result with { IsActive = false };
-            if (graph.Revision <= playback.ExaminedRevision) return playback.Result;
+            if (graph.Revision != playback.RequestedRevision) return playback.Result;
 
-            if (!GraphTopology.Matches(playback.Topology, graph))
+            // Compiling a different topology can still produce identical DSP,
+            // e.g. adding an unconnected node. Preserve the existing voice then.
+            var program = GraphTopology.Matches(playback.Topology, graph)
+                ? playback.Program : compiler.Compile(graph);
+            var values = GetControlValues(graph, program);
+            if (program.Source != playback.Program.Source)
             {
-                playback.ExaminedRevision = graph.Revision;
-                return playback.Result = playback.Result with { RequiresRestart = true };
+                var request = CreateRequest(program, values);
+                if (!await engine.ReplaceAsync(request, graph.Revision))
+                    return playback.Result with { IsActive = !playback.Stopping };
+                return playback.Accept(graph, program, values);
             }
 
             // Use the manifest captured at Play; do not compile source or touch
             // oscillator state when a validated base value changes.
-            var nodes = graph.Nodes.ToDictionary(node => node.Id);
-            var changes = new Dictionary<string, double>();
-            foreach (var control in playback.Controls)
-            {
-                var parameter = nodes[control.Address.NodeId].Parameters.Single(p => p.Id == control.Address.ParameterId);
-                if (!parameter.Definition.IsValidBaseValue(parameter.BaseValue))
-                    throw new InvalidOperationException("Invalid base parameter value.");
-                if (playback.Values[control.Name] != parameter.BaseValue)
-                    changes.Add(control.Name, parameter.BaseValue);
-            }
+            var changes = values.Where(value => !playback.Values.TryGetValue(value.Key, out var previous) || previous != value.Value)
+                .ToDictionary(value => value.Key, value => value.Value);
             if (changes.Count > 0 && !await engine.SetParametersAsync(SoundId(graph.Id), changes))
                 return playback.Result with { IsActive = false };
-            foreach (var change in changes) playback.Values[change.Key] = change.Value;
-            playback.ExaminedRevision = graph.Revision;
-            return playback.Result = new(graph.Revision, false, true);
+            return playback.Accept(graph, program, values);
         }
         finally { playback.UpdateLock.Release(); }
     }
 
     public Task<PlaybackState> GetStateAsync(Guid graphId) => engine.GetPlaybackStateAsync(SoundId(graphId));
+
+    private static PlaybackRequest CreateRequest(FaustGraphProgram program, IReadOnlyDictionary<string, double>? values = null) =>
+        new(SoundId(program.GraphId), "OrbitGraph", PlaybackVolume,
+            values ?? program.Controls.ToDictionary(control => control.Name, control => control.InitialValue),
+            Source: program.Source);
+
+    private static Dictionary<string, double> GetControlValues(GraphSnapshot graph, FaustGraphProgram program)
+    {
+        var nodes = graph.Nodes.ToDictionary(node => node.Id);
+        return program.Controls.ToDictionary(control => control.Name, control =>
+        {
+            var parameter = nodes[control.Address.NodeId].Parameters.Single(p => p.Id == control.Address.ParameterId);
+            if (!parameter.Definition.IsValidBaseValue(parameter.BaseValue))
+                throw new InvalidOperationException("Invalid base parameter value.");
+            return parameter.BaseValue;
+        });
+    }
 
     private static string SoundId(Guid graphId) => $"graph-{graphId:N}";
 }

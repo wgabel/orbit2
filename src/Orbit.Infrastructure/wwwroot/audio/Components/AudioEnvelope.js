@@ -1,10 +1,10 @@
 // Schedules gain on the audio clock, independently of UI timers.
 // Continuous voices fade in on start and fade out on explicit stop.
 export class AudioEnvelope {
-    scheduleAttack(gain, startTime, volume) {
+    scheduleAttack(gain, startTime, volume, durationSeconds = 0.02) {
         gain.cancelScheduledValues(startTime);
         gain.setValueAtTime(0, startTime);
-        gain.linearRampToValueAtTime(volume, startTime + 0.02);
+        gain.linearRampToValueAtTime(volume, startTime + durationSeconds);
     }
 
     release(gain, time, durationSeconds = 0.04) {

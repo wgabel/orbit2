@@ -37,6 +37,8 @@ export const stop = soundId => engine.stop(soundId);
 export const getClockSnapshot = () => audioClock.getSnapshot();
 export const getPlaybackState = soundId => engine.getPlaybackState(soundId);
 export const setParameters = (soundId, parameters) => engine.setParameters(soundId, parameters);
+export const markRevision = (soundId, revision) => engine.markRevision(soundId, revision);
+export const replace = (request, revision) => engine.replace(request, revision);
 export const getOutputValues = soundId => engine.getOutputValues(soundId);
 export async function dispose() {
     try { await engine.dispose(); }

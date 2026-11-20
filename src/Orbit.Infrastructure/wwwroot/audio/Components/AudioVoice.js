@@ -15,12 +15,15 @@ export class AudioVoice {
         this.#envelope = envelope;
     }
 
-    async play(request) {
-        const startTime = this.#context.currentTime + 0.01;
-        this.#envelope.scheduleAttack(this.#gainNode.gain, startTime, request.volume);
+    play(request, transition) {
+        const startTime = transition?.startTime ?? this.#context.currentTime + 0.01;
+        this.#envelope.scheduleAttack(this.#gainNode.gain, startTime, request.volume, transition?.duration);
         // Only stop establishes an end time for a sustained graph.
         this.#endTime = Infinity;
+        return this.#waitForEnd();
+    }
 
+    async #waitForEnd() {
         // This timer only observes the audio clock and handles cleanup.
         // All audible timing is scheduled by the AudioEnvelope.
         while (!this.#disposed && this.#context.state !== "closed" &&
@@ -30,7 +33,7 @@ export class AudioVoice {
         }
     }
 
-    stop() {
+    stop(transition) {
         if (this.#disposed || this.#endTime === undefined) {
             return;
         }
@@ -44,8 +47,9 @@ export class AudioVoice {
 
         if (this.#context.currentTime < this.#endTime) {
             const now = this.#context.currentTime;
-            const duration = Math.min(0.04, this.#endTime - now);
-            this.#endTime = this.#envelope.release(this.#gainNode.gain, now, duration);
+            const startTime = transition?.startTime ?? now;
+            const duration = Math.max(0, Math.min(transition?.duration ?? 0.04, this.#endTime - startTime));
+            this.#endTime = this.#envelope.release(this.#gainNode.gain, startTime, duration);
         }
     }
 

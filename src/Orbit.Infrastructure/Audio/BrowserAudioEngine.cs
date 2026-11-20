@@ -58,6 +58,12 @@ public sealed class BrowserAudioEngine(IJSRuntime javaScriptRuntime) : IAudioEng
     public async Task<bool> SetParametersAsync(string soundId, IReadOnlyDictionary<string, double> parameters) =>
         await GetAudioModule().InvokeAsync<bool>("setParameters", soundId, parameters);
 
+    public async Task MarkRevisionAsync(string soundId, long revision) =>
+        await GetAudioModule().InvokeVoidAsync("markRevision", soundId, revision);
+
+    public async Task<bool> ReplaceAsync(PlaybackRequest request, long revision) =>
+        await GetAudioModule().InvokeAsync<bool>("replace", request, revision);
+
     public async Task<AudioClockSnapshot?> GetSnapshotAsync() =>
         await GetAudioModule().InvokeAsync<AudioClockSnapshot?>("getClockSnapshot");
 

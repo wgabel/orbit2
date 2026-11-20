@@ -11,6 +11,6 @@ public interface IGraphPlaybackService
     Task PlayAsync(GraphSnapshot graph);
     Task StopAsync(Guid graphId);
     Task<PlaybackState> GetStateAsync(Guid graphId);
-    /// <summary>Apply base-only changes to the active voice. Structural edits remain staged.</summary>
+    /// <summary>Apply base edits in place or replace the running graph when routing changes.</summary>
     Task<GraphPlaybackUpdate> UpdateAsync(GraphSnapshot graph);
 }

@@ -14,6 +14,10 @@ public interface IAudioEngine
     Task<PlaybackState> GetPlaybackStateAsync(string soundId);
     /// <summary>Set existing controls on a starting or playing voice; false when inactive.</summary>
     Task<bool> SetParametersAsync(string soundId, IReadOnlyDictionary<string, double> parameters);
+    /// <summary>Invalidate any older pending replacement before it becomes audible.</summary>
+    Task MarkRevisionAsync(string soundId, long revision);
+    /// <summary>Prepare a new voice, then crossfade it into the existing playback.</summary>
+    Task<bool> ReplaceAsync(PlaybackRequest request, long revision);
 
     /// <summary>Latest read-only processor meter values, or null when inactive.</summary>
     Task<Dictionary<string, double>?> GetOutputValuesAsync(string soundId);

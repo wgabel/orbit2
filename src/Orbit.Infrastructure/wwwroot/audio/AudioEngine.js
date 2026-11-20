@@ -1,5 +1,5 @@
-// Coordinates infrastructure components and owns active playback lifetimes.
-// It neither loads WASM directly nor performs sample processing.
+// Coordinates logical playback lifetimes. A playback may have two voices
+// during a crossfade; DSP factories, voices and envelopes own their mechanics.
 export class AudioEngine {
     #contextManager;
     #nodeFactory;
@@ -24,8 +24,11 @@ export class AudioEngine {
             throw new Error("Playback already active: " + request.soundId);
         }
 
+        let signalReady;
+        const ready = new Promise(resolve => { signalReady = resolve; });
         const playback = {
-            cancelled: false, voice: undefined, node: undefined,
+            cancelled: false, current: undefined, voices: new Set(), ready,
+            latestRevision: -1, replacing: false,
             controlNames: new Set(Object.keys(request.parameters ?? {})),
             pendingParameters: Object.create(null)
         };
@@ -34,14 +37,13 @@ export class AudioEngine {
         try {
             // Resume before any DSP download to preserve user activation.
             const context = await this.#contextManager.getRunningContext();
+            playback.context = context;
             if (playback.cancelled) return;
 
-            const node = await this.#nodeFactory.create(
-                context, request.processor, request.parameters ?? {}, request.source);
+            const node = await this.#createNode(context, request);
 
             if (playback.cancelled) {
-                node.disconnect();
-                node.destroy?.();
+                this.#destroyNode(node);
                 return;
             }
 
@@ -50,36 +52,69 @@ export class AudioEngine {
                 // voice attacks, with the last value winning for each control.
                 if (Object.keys(playback.pendingParameters).length > 0)
                     this.#nodeFactory.setParameters(node, playback.pendingParameters);
-                playback.node = node;
-                playback.voice = this.#output.createVoice(context, node);
             } catch (error) {
-                node.disconnect();
-                node.destroy?.();
+                this.#destroyNode(node);
                 throw error;
             }
 
-            playback.monitor = this.#createMonitor(node);
-            if (!playback.cancelled) {
-                await playback.voice.play(request);
+            playback.current = this.#startVoice(playback, node, request);
+            signalReady(true);
+            // A retiring voice ending is not the end of the logical playback.
+            while (playback.current) {
+                const voice = playback.current;
+                await voice.finished;
+                if (voice === playback.current) break;
             }
         } finally {
-            try {
-                try {
-                    playback.monitor?.dispose();
-                } finally {
-                    playback.voice?.dispose();
-                }
-            } finally {
-                this.#active.delete(request.soundId);
-            }
+            playback.cancelled = true;
+            signalReady(false);
+            for (const instance of playback.voices) instance.voice.stop();
+            await Promise.allSettled([...playback.voices].map(instance => instance.finished));
+            this.#active.delete(request.soundId);
         }
+    }
+
+    // A newer revision makes an in-flight compilation stale.
+    markRevision(soundId, revision) {
+        const playback = this.#active.get(soundId);
+        if (playback) playback.latestRevision = Math.max(playback.latestRevision, revision);
+    }
+
+    async replace(request, revision) {
+        this.#validate(request);
+        const playback = this.#active.get(request.soundId);
+        if (!playback || playback.cancelled || revision < playback.latestRevision) return false;
+        this.markRevision(request.soundId, revision);
+        if (playback.replacing) throw new Error("A replacement is already pending.");
+        playback.replacing = true;
+        const isCurrent = () => this.#active.get(request.soundId) === playback &&
+            !playback.cancelled && revision === playback.latestRevision;
+        try {
+            if (!await playback.ready || !isCurrent()) return false;
+            let node;
+            try { node = await this.#createNode(playback.context, request); }
+            catch (error) { if (!isCurrent()) return false; throw error; }
+            if (!isCurrent()) { this.#destroyNode(node); return false; }
+
+            // Two complementary linear gain ramps share one audio-clock time.
+            // Prepare and connect the new voice before touching the last good one.
+            const old = playback.current;
+            const transition = { startTime: playback.context.currentTime + 0.01, duration: 0.05 };
+            playback.current = this.#startVoice(playback, node, request, transition);
+            playback.controlNames = new Set(Object.keys(request.parameters ?? {}));
+            old.voice.stop(transition);
+            await old.finished;
+            // Once scheduled the crossfade is committed. Subsequent revisions
+            // must use this voice as their starting point.
+            return !playback.cancelled;
+        } finally { playback.replacing = false; }
     }
 
     getPlaybackState(soundId) {
         const playback = this.#active.get(soundId);
         if (!playback) return "idle";
         if (playback.cancelled) return "stopping";
-        return playback.voice ? "playing" : "starting";
+        return playback.current ? "playing" : "starting";
     }
 
     // Only values of existing controls may change; this never recreates a node.
@@ -92,7 +127,7 @@ export class AudioEngine {
             if (!playback.controlNames.has(name) || !Number.isFinite(value))
                 throw new Error("Invalid audio parameter: " + name);
         }
-        if (playback.node) this.#nodeFactory.setParameters(playback.node, parameters);
+        if (playback.current) this.#nodeFactory.setParameters(playback.current.node, parameters);
         else Object.assign(playback.pendingParameters, parameters);
         return true;
     }
@@ -100,14 +135,14 @@ export class AudioEngine {
     // A snapshot is read at display rate, independently of the sample clock.
     getOutputValues(soundId) {
         const playback = this.#active.get(soundId);
-        return !playback || playback.cancelled ? null : playback.monitor?.getSnapshot() ?? null;
+        return !playback || playback.cancelled ? null : playback.current?.monitor.getSnapshot() ?? null;
     }
 
     stop(soundId) {
         const playback = this.#active.get(soundId);
         if (playback) {
             playback.cancelled = true;
-            playback.voice?.stop();
+            for (const instance of playback.voices) instance.voice.stop();
         }
     }
 
@@ -119,6 +154,36 @@ export class AudioEngine {
 
         this.#output.dispose();
         await this.#contextManager.dispose();
+    }
+
+    #createNode(context, request) {
+        return this.#nodeFactory.create(context, request.processor, request.parameters ?? {}, request.source);
+    }
+
+    #destroyNode(node) {
+        try { node.disconnect(); } finally { node.destroy?.(); }
+    }
+
+    #startVoice(playback, node, request, transition) {
+        let voice, monitor;
+        try {
+            voice = this.#output.createVoice(playback.context, node);
+            monitor = this.#createMonitor(node);
+            const instance = { node, voice, monitor };
+            const lifetime = voice.play(request, transition);
+            instance.finished = Promise.resolve(lifetime).finally(() => {
+                playback.voices.delete(instance);
+                try { monitor.dispose(); } finally { voice.dispose(); }
+            });
+            // A retiring voice may finish before the main loop observes it.
+            instance.finished.catch(() => {});
+            playback.voices.add(instance);
+            return instance;
+        } catch (error) {
+            try { monitor?.dispose(); }
+            finally { if (voice) voice.dispose(); else this.#destroyNode(node); }
+            throw error;
+        }
     }
 
     #validate(request) {

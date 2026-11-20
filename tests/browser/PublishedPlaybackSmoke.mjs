@@ -41,9 +41,22 @@ try {
     await page.getByRole("spinbutton", { name: "Frequency (Hz)" }).nth(1).fill("330");
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 1}$`) }).waitFor({ timeout: 10000 });
     assert.equal(await play.isEnabled(), false);
-    // Structural changes remain staged; the existing voice is still audible.
+    // Unconnected nodes do not require a new worklet.
     await page.getByRole("button", { name: "Add", exact: true }).click();
-    await status.filter({ hasText: /restart to apply edits/ }).waitFor({ timeout: 10000 });
+    await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 2}$`) }).waitFor({ timeout: 10000 });
+    // Remove the original LFO-to-frequency connection, then connect to amplitude.
+    const wire = page.locator(".connection-modulation .connection-hit");
+    const midpoint = await wire.evaluate(path => {
+        const point = path.getPointAtLength(path.getTotalLength() / 2).matrixTransform(path.getScreenCTM());
+        return { x: point.x, y: point.y };
+    });
+    await page.mouse.click(midpoint.x, midpoint.y);
+    await page.getByRole("button", { name: "Delete selected" }).click();
+    await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 3}$`) }).waitFor({ timeout: 15000 });
+    const articles = page.locator("article");
+    await articles.nth(0).getByRole("button", { name: "Output: Signal (Audio)" }).press("Enter");
+    await articles.nth(1).getByRole("button", { name: "Input: Amplitude (Modulation)" }).press("Enter");
+    await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 4}$`) }).waitFor({ timeout: 15000 });
     assert.equal(await play.isEnabled(), false);
     await page.getByRole("button", { name: "Stop", exact: true }).click();
     await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 10000 });
@@ -51,7 +64,7 @@ try {
     for (const file of ["audio.js", "AudioEngine.js", "Faust/FaustCompilerWorker.js", "generated/compiler/index.js"])
         assert.ok(requests.has(prefix + file), `Missing versioned asset: ${file}`);
     assert.ok([...requests].every(path => !path.startsWith("/_content/Orbit.Infrastructure/audio/")));
-    console.log("Published editor played, applied a live parameter edit, staged a structural change and stopped.");
+    console.log("Published editor played, applied live parameter edits, rewired frequency to amplitude and stopped.");
 } finally {
     await browser?.close();
     server.close();

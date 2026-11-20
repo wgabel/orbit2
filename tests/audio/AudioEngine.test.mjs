@@ -146,3 +146,105 @@ test("edits during compilation are coalesced and applied before the voice starts
     engine.stop(request.soundId);
     await playback;
 });
+
+function replacementSetup() {
+    const events = [];
+    const nodes = [];
+    const voices = [];
+    const context = { currentTime: 3, state: "running" };
+    const makeNode = name => {
+        const node = { name, disconnect() { events.push(["disconnect", name]); },
+            destroy() { events.push(["destroy", name]); } };
+        nodes.push(node);
+        return node;
+    };
+    const nodeFactory = {
+        create: async (_context, processor) => makeNode(processor),
+        setParameters: (node, values) => events.push(["parameters", node.name, values])
+    };
+    const output = {
+        createVoice: (_context, node) => {
+            let finish;
+            const voice = {
+                play: (request, transition) => {
+                    events.push(["play", node.name, transition]);
+                    return new Promise(resolve => { finish = resolve; });
+                },
+                stop: transition => { events.push(["stop", node.name, transition]); finish(); },
+                dispose: () => { events.push(["dispose", node.name]); node.destroy(); }
+            };
+            voices.push(voice);
+            return voice;
+        }
+    };
+    const engine = new AudioEngine({ getRunningContext: async () => context }, nodeFactory, output,
+        node => ({ getSnapshot: () => ({ name: node.name }), dispose: () => events.push(["monitor", node.name]) }));
+    return { engine, events, nodes, voices, nodeFactory, makeNode };
+}
+
+test("replacement crossfades on one clock and does not end the logical playback", async () => {
+    const { engine, events } = replacementSetup();
+    const playing = engine.play(request);
+    await new Promise(resolve => setImmediate(resolve));
+    const replacement = { ...request, processor: "new-program", parameters: { gain: 0.2 } };
+    assert.equal(await engine.replace(replacement, 10), true);
+    const transition = { startTime: 3.01, duration: 0.05 };
+    assert.deepEqual(events.find(event => event[0] === "play" && event[1] === "new-program")[2], transition);
+    assert.deepEqual(events.find(event => event[0] === "stop" && event[1] === request.processor)[2], transition);
+    assert.ok(events.some(event => event[0] === "dispose" && event[1] === request.processor));
+    assert.equal(engine.getPlaybackState(request.soundId), "playing");
+    assert.deepEqual(engine.getOutputValues(request.soundId), { name: "new-program" });
+    assert.equal(engine.setParameters(request.soundId, { gain: 0.4 }), true);
+    assert.deepEqual(events.at(-1), ["parameters", "new-program", { gain: 0.4 }]);
+    engine.stop(request.soundId);
+    await playing;
+    assert.equal(engine.getPlaybackState(request.soundId), "idle");
+});
+
+test("failed replacement keeps the old voice alive", async () => {
+    const { engine, nodeFactory, events } = replacementSetup();
+    const playing = engine.play(request);
+    await new Promise(resolve => setImmediate(resolve));
+    nodeFactory.create = async () => { throw new Error("Faust compilation failed"); };
+    await assert.rejects(engine.replace({ ...request, processor: "invalid" }, 10), /compilation failed/);
+    assert.equal(engine.getPlaybackState(request.soundId), "playing");
+    assert.ok(!events.some(event => event[0] === "stop"));
+    engine.stop(request.soundId);
+    await playing;
+});
+
+test("superseded replacement destroys its late node without interrupting playback", async () => {
+    const { engine, nodeFactory, makeNode, events } = replacementSetup();
+    const playing = engine.play(request);
+    await new Promise(resolve => setImmediate(resolve));
+    let complete;
+    nodeFactory.create = () => new Promise(resolve => { complete = resolve; });
+    const replacement = engine.replace({ ...request, processor: "stale" }, 10);
+    await new Promise(resolve => setImmediate(resolve));
+    engine.markRevision(request.soundId, 11);
+    complete(makeNode("stale"));
+    assert.equal(await replacement, false);
+    assert.ok(events.some(event => event[0] === "destroy" && event[1] === "stale"));
+    assert.ok(!events.some(event => event[0] === "stop"));
+    nodeFactory.create = async (_context, processor) => makeNode(processor);
+    assert.equal(await engine.replace({ ...request, processor: "latest" }, 11), true);
+    engine.stop(request.soundId);
+    await playing;
+});
+
+test("stop while replacement compiles cannot resurrect the playback", async () => {
+    const { engine, nodeFactory, makeNode, events } = replacementSetup();
+    const playing = engine.play(request);
+    await new Promise(resolve => setImmediate(resolve));
+    let complete;
+    nodeFactory.create = () => new Promise(resolve => { complete = resolve; });
+    const replacement = engine.replace({ ...request, processor: "late" }, 10);
+    await new Promise(resolve => setImmediate(resolve));
+    engine.stop(request.soundId);
+    await playing;
+    complete(makeNode("late"));
+    assert.equal(await replacement, false);
+    assert.ok(events.some(event => event[0] === "destroy" && event[1] === "late"));
+    assert.ok(!events.some(event => event[0] === "play" && event[1] === "late"));
+    assert.equal(engine.getPlaybackState(request.soundId), "idle");
+});

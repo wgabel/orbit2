@@ -5,6 +5,7 @@ using Orbit.Application.Models;
 using Orbit.Audio.Compilation;
 using Orbit.Audio.Playback;
 using Orbit.Domain.Parameters;
+using Orbit.Domain.Ports;
 using Xunit;
 
 namespace Orbit.Domain.Tests;
@@ -51,7 +52,7 @@ public sealed class FaustGraphPlaybackServiceTests
         session.Execute(new SetParameterValueCommand(session.GraphId, address, 330));
         var edited = session.Snapshot;
         var result = await service.UpdateAsync(edited);
-        Assert.Equal(new GraphPlaybackUpdate(edited.Revision, false, true), result);
+        Assert.Equal(new GraphPlaybackUpdate(edited.Revision, true), result);
         Assert.Equal(330, Assert.Single(Assert.Single(engine.Updates)).Value);
         Assert.Equal(name, Assert.Single(Assert.Single(engine.Updates)).Key);
         Assert.Equal(1, engine.PlayCount);
@@ -64,22 +65,64 @@ public sealed class FaustGraphPlaybackServiceTests
     }
 
     [Fact]
-    public async Task StructuralEditsAreStagedAndDoNotWriteToTheOldVoice()
+    public async Task RewiringChangesTheProgramAndThenLiveControlsUseTheNewVoice()
     {
         using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings(220, 1, 50));
         var engine = new RecordingEngine();
         var service = new FaustGraphPlaybackService(FaustGraphCompiler.CreateBuiltIn(), engine);
         var original = session.Snapshot;
         var playing = service.PlayAsync(original);
-        session.Execute(new AddNodeCommand(session.GraphId, original.Nodes[0].TypeKey));
+        var lfo = original.Nodes[0];
+        var carrier = original.Nodes[1];
+        var frequency = carrier.Parameters.Single(p => p.Definition.Key == "frequency");
+        var amplitude = carrier.Parameters.Single(p => p.Definition.Key == "amplitude");
+        var connection = original.Connections.Single(c => c.Destination == new PortAddress(carrier.Id, frequency.ModulationPortId!.Value));
+        session.Execute(new RemoveConnectionCommand(session.GraphId, connection.Id));
+        session.Execute(new ConnectNodesCommand(session.GraphId, connection.Source,
+            new PortAddress(carrier.Id, amplitude.ModulationPortId!.Value), 0.5));
         var structural = session.Snapshot;
         var result = await service.UpdateAsync(structural);
-        Assert.Equal(new GraphPlaybackUpdate(original.Revision, true, true), result);
-        var oscillator = original.Nodes[1];
-        var address = new ParameterAddress(oscillator.Id, oscillator.Parameters.Single(p => p.Definition.Key == "frequency").Id);
+        Assert.Equal(new GraphPlaybackUpdate(structural.Revision, true), result);
+        Assert.NotEqual(engine.Request!.Source, Assert.Single(engine.Replacements).Source);
+        Assert.Equal(1, engine.PlayCount);
+        var address = new ParameterAddress(carrier.Id, frequency.Id);
         session.Execute(new SetParameterValueCommand(session.GraphId, address, 330));
-        Assert.Equal(result, await service.UpdateAsync(session.Snapshot));
-        Assert.Empty(engine.Updates);
+        Assert.Equal(new GraphPlaybackUpdate(session.Snapshot.Revision, true), await service.UpdateAsync(session.Snapshot));
+        Assert.Single(engine.Replacements);
+        Assert.Single(engine.Updates);
+        await service.StopAsync(session.GraphId);
+        await playing;
+    }
+
+    [Fact]
+    public async Task DisconnectedNodeDoesNotReplaceIdenticalProgram()
+    {
+        using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings());
+        var engine = new RecordingEngine();
+        var service = new FaustGraphPlaybackService(FaustGraphCompiler.CreateBuiltIn(), engine);
+        var playing = service.PlayAsync(session.Snapshot);
+        session.Execute(new AddNodeCommand(session.GraphId, session.Snapshot.Nodes[0].TypeKey));
+        Assert.Equal(new GraphPlaybackUpdate(session.Snapshot.Revision, true), await service.UpdateAsync(session.Snapshot));
+        Assert.Empty(engine.Replacements);
+        await service.StopAsync(session.GraphId);
+        await playing;
+    }
+
+    [Fact]
+    public async Task InvalidTopologyKeepsLastGoodProgramAndCanRecover()
+    {
+        using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings());
+        var engine = new RecordingEngine();
+        var service = new FaustGraphPlaybackService(FaustGraphCompiler.CreateBuiltIn(), engine);
+        var original = session.Snapshot;
+        var playing = service.PlayAsync(original);
+        session.Execute(new AddNodeCommand(session.GraphId, original.Nodes[^1].TypeKey));
+        await Assert.ThrowsAsync<FaustCompilationException>(() => service.UpdateAsync(session.Snapshot));
+        Assert.Empty(engine.Replacements);
+        var extra = session.Snapshot.Nodes[^1];
+        session.Execute(new RemoveNodeCommand(session.GraphId, extra.Id));
+        Assert.Equal(new GraphPlaybackUpdate(session.Snapshot.Revision, true), await service.UpdateAsync(session.Snapshot));
+        Assert.Empty(engine.Replacements);
         await service.StopAsync(session.GraphId);
         await playing;
     }
@@ -91,6 +134,7 @@ public sealed class FaustGraphPlaybackServiceTests
         public string? StoppedSound { get; private set; }
         public int PlayCount { get; private set; }
         public List<IReadOnlyDictionary<string, double>> Updates { get; } = [];
+        public List<PlaybackRequest> Replacements { get; } = [];
         private readonly TaskCompletionSource completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public Task InitializeAsync() { Initialized = true; return Task.CompletedTask; }
@@ -100,6 +144,12 @@ public sealed class FaustGraphPlaybackServiceTests
         {
             Assert.Equal(Request?.SoundId, soundId);
             Updates.Add(parameters);
+            return Task.FromResult(true);
+        }
+        public Task MarkRevisionAsync(string soundId, long revision) => Task.CompletedTask;
+        public Task<bool> ReplaceAsync(PlaybackRequest request, long revision)
+        {
+            Replacements.Add(request);
             return Task.FromResult(true);
         }
         public Task<PlaybackState> GetPlaybackStateAsync(string soundId) =>

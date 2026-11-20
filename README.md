@@ -20,7 +20,7 @@ node src/Orbit.UI/DesignSystem/generate-tokens.mjs
 dotnet run --project src/Orbit.UI --urls http://localhost:5000
 ```
 
-Open http://localhost:5000. Use **Play patch** to compile and play the current graph, and **Stop** to release it with a short fade. The initial patch is a sine LFO modulating a sine carrier through a gain node. The status reports the playing graph revision. Edit frequency, amplitude or gain while audio runs to hear the change immediately; stop and play again after structural edits.
+Open http://localhost:5000. Use **Play patch** to compile and play the current graph, and **Stop** to release it with a short fade. The initial patch is a sine LFO modulating a sine carrier through a gain node. The status reports the playing graph revision. Edit frequency, amplitude, gain or routing while audio runs: base values update in place, and changed DSP programs crossfade automatically.
 
 ## Project boundaries
 
@@ -83,7 +83,7 @@ flowchart TD
 3. `FaustNodeFactory` requests a compiled factory from the lazy compiler worker. The worker loads the pinned packaged Faust bundle, compiles the source outside the main and audio threads, and returns the WebAssembly module and DSP metadata.
 4. The node factory instantiates a mono AudioWorklet with a source-specific processor identity and applies the host values; the graph supplies gain, with additional output headroom.
 5. `AudioOutput` connects the node through an independent initially silent voice. `AudioEnvelope` schedules the attack and release against the audio clock. Stop cancels pending startup or releases an active voice and frees its resources.
-6. `GraphPlaybackControls` observes startup status at display rate and passes newly committed snapshots to the playback service. Base-only edits update the existing worklet; structural changes remain staged until restart. Runtime graph replacement and telemetry will follow.
+6. `GraphPlaybackControls` observes startup status and passes newly committed snapshots to the playback service. Base-only edits update the existing worklet; changed DSP programs are prepared and crossfaded automatically. Effective parameter telemetry will follow.
 
 ### Live parameter update flow
 
@@ -95,10 +95,12 @@ flowchart TD
     Service --> Compare{"Same topology?"}
     Compare -->|Yes| Controls["Changed stable control IDs"]
     Controls --> Worklet["Existing AudioWorklet"]
-    Compare -->|No| Staged["Restart required"]
+    Compare -->|No| Compile["Prepare replacement DSP"]
+    Compile --> Fade["50 ms crossfade"]
+    Fade --> Worklet2["New AudioWorklet"]
 ```
 
-The service compares the new snapshot to the original playback topology, including edge amounts, port definitions and parameter definitions. It uses the compiler's original address-to-control manifest and sends only changed base values through `IAudioEngine.SetParametersAsync`. It does not call the compiler again. Edits during startup are queued until the worklet exists; the Faust controls smooth changes at sample rate. The active revision advances only when the engine accepts the update. A structural change (including adding an unconnected node) is staged conservatively: subsequent edits are also staged while the topology differs from the playing graph. If the original topology is restored, live edits can resume. Stop releases the voice and ignores further updates.
+The service compares the new snapshot to the last accepted playback topology, including edge amounts, ports and parameter definitions. Base-only changes use the compiler's existing control manifest and send only changed base values through `IAudioEngine.SetParametersAsync`. Structural edits regenerate source; if the source is identical (for example an unconnected node), the voice is reused. Otherwise `ReplaceAsync` prepares a new worklet while the old stays audible, then schedules a 50 ms complementary linear crossfade on the audio clock. The application serializes updates, announces new revisions immediately and skips superseded compilations before they become audible. A compilation failure leaves the last good graph playing and displays an error; correcting the graph retries automatically. Stop cancels pending replacements and releases every active voice. A replacement may reset oscillator/effect state; the crossfade reduces discontinuities, not a guarantee of phase preservation.
 
 ## Browser infrastructure components
 
@@ -341,7 +343,7 @@ npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts "$ORBIT_GRAPH_
 node --test tests/compiler/*.test.mjs
 ~~~
 
-The browser compiler is now connected through the graph playback service. Next: live base-value updates, topology preparation and safe audio runtime replacement with revision tracking.
+The browser compiler supports live base-value updates and automatic runtime replacement with revision tracking. Next: effective parameter telemetry and animated modulation indicators.
 
 ## Shared UI components
 

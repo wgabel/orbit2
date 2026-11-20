@@ -6,7 +6,7 @@ using Orbit.Application.Services;
 namespace Orbit.UI.Components.Canvas;
 
 /// <summary>Owns only display state and a playback lifetime for the supplied snapshot.
-/// Base-only edits are forwarded through the service; structural edits remain staged.</summary>
+/// The service handles base edits and prepares replacement graphs while playback continues.</summary>
 public partial class GraphPlaybackControls : IAsyncDisposable
 {
     [Inject] private IGraphPlaybackService Playback { get; set; } = default!;
@@ -20,15 +20,15 @@ public partial class GraphPlaybackControls : IAsyncDisposable
     private long activeRevision;
     private long lastRequestedRevision;
     private long playbackGeneration;
-    private bool requiresRestart;
+    private bool updateFailed;
     private PlaybackState state;
     private string? Error { get; set; }
     private string Status => !IsReady ? "Audio engine not ready."
         : !IsActive ? "Ready · plays the current graph"
         : IsStopping ? "Stopping…"
         : state != PlaybackState.Playing ? $"Compiling revision {activeRevision}…"
-        : requiresRestart ? $"Playing revision {activeRevision} · restart to apply edits"
-        : Snapshot.Revision != activeRevision ? $"Playing revision {activeRevision} · applying edits…"
+        : updateFailed ? $"Playing revision {activeRevision} · update failed"
+        : Snapshot.Revision != activeRevision ? $"Playing revision {activeRevision} · updating patch…"
         : $"Playing revision {activeRevision}";
 
     protected override async Task OnParametersSetAsync()
@@ -39,6 +39,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
         if (!IsActive || IsStopping || disposed || snapshot.Id != activeGraph ||
             snapshot.Revision <= lastRequestedRevision) return;
         lastRequestedRevision = snapshot.Revision;
+        updateFailed = false;
         var generation = playbackGeneration;
         try
         {
@@ -47,7 +48,6 @@ public partial class GraphPlaybackControls : IAsyncDisposable
             activeRevision = Math.Max(activeRevision, update.AppliedRevision);
             if (snapshot.Revision == lastRequestedRevision)
             {
-                requiresRestart = update.RequiresRestart;
                 Error = null;
             }
         }
@@ -55,8 +55,8 @@ public partial class GraphPlaybackControls : IAsyncDisposable
         {
             if (!disposed && IsActive && generation == playbackGeneration && snapshot.Revision == lastRequestedRevision)
             {
-                requiresRestart = true;
-                Error = $"Live parameter update failed: {exception.Message}";
+                updateFailed = true;
+                Error = $"Patch update failed; keeping the last good graph: {exception.Message}";
             }
         }
     }
@@ -84,7 +84,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
         activeRevision = graph.Revision;
         lastRequestedRevision = graph.Revision;
         playbackGeneration++;
-        requiresRestart = false;
+        updateFailed = false;
         state = PlaybackState.Starting;
         Error = null;
         IsActive = true;

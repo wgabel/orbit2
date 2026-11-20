@@ -4,16 +4,38 @@ using Orbit.Audio.Compilation;
 
 namespace Orbit.Audio.Playback;
 
-/// <summary>One playback lifetime: immutable topology and compiler control manifest,
-/// plus the last successfully applied base values. Serializes concurrent edits.</summary>
+/// <summary>One logical playback lifetime: the last accepted topology, program
+/// and control values. Serializes updates and keeps only the latest requested revision.</summary>
 internal sealed class ActiveGraphPlayback(GraphSnapshot snapshot, FaustGraphProgram program)
 {
-    public GraphSnapshot Topology { get; } = snapshot;
-    public IReadOnlyList<FaustParameterControl> Controls { get; } = program.Controls;
+    public GraphSnapshot Topology { get; private set; } = snapshot;
+    public FaustGraphProgram Program { get; private set; } = program;
+    public IReadOnlyList<FaustParameterControl> Controls => Program.Controls;
     public Dictionary<string, double> Values { get; } =
         program.Controls.ToDictionary(control => control.Name, control => control.InitialValue);
     public SemaphoreSlim UpdateLock { get; } = new(1);
-    public long ExaminedRevision { get; set; } = snapshot.Revision;
-    public GraphPlaybackUpdate Result { get; set; } = new(snapshot.Revision, false, true);
+    private long requestedRevision = snapshot.Revision;
+    public long RequestedRevision => Interlocked.Read(ref requestedRevision);
+    public GraphPlaybackUpdate Result { get; private set; } = new(snapshot.Revision, true);
     public bool Stopping { get; set; }
+
+    public bool Request(long revision)
+    {
+        long previous;
+        do
+        {
+            previous = RequestedRevision;
+            if (revision <= previous) return false;
+        } while (Interlocked.CompareExchange(ref requestedRevision, revision, previous) != previous);
+        return true;
+    }
+
+    public GraphPlaybackUpdate Accept(GraphSnapshot graph, FaustGraphProgram compiled, IReadOnlyDictionary<string, double> values)
+    {
+        Topology = graph;
+        Program = compiled;
+        Values.Clear();
+        foreach (var value in values) Values.Add(value.Key, value.Value);
+        return Result = new(graph.Revision, true);
+    }
 }

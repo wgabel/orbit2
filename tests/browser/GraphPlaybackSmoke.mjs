@@ -41,6 +41,9 @@ try {
         const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
         const { FaustNodeFactory } = await import("/Faust/FaustNodeFactory.js");
         const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
+        const { AudioEngine } = await import("/AudioEngine.js");
+        const { AudioVoice } = await import("/Components/AudioVoice.js");
+        const { AudioEnvelope } = await import("/Components/AudioEnvelope.js");
         const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
         const context = new AudioContext();
         try {
@@ -72,17 +75,41 @@ try {
             const restoredPeak = await waitForPeak(value => value > 0.035);
             node.disconnect();
             node.destroy();
-            // Distinct topology must use a distinct worklet processor name.
-            const second = await factory.create(context, "OrbitGraph", {}, "process = 0.0;");
-            second.disconnect();
-            second.destroy();
-            return { peak, mutedPeak, restoredPeak, sampleRate: context.sampleRate };
+            // Use the production engine, real Faust worklets and voice envelopes,
+            // with the analyser as a test output rather than the speaker.
+            const envelope = new AudioEnvelope();
+            const output = { createVoice: (context, source) => {
+                const gain = context.createGain();
+                gain.gain.value = 0;
+                source.connect(gain);
+                gain.connect(analyser);
+                return new AudioVoice(context, source, gain, envelope);
+            }};
+            const engine = new AudioEngine({ getRunningContext: async () => context },
+                factory, output, () => ({ dispose() {}, getSnapshot: () => ({}) }));
+            const request = { soundId: "swap-probe", processor: "OrbitGraph",
+                volume: 1, parameters: manifest.values, source };
+            const playing = engine.play(request);
+            let beforeSwap, silentSwap, restoredSwap;
+            try {
+                beforeSwap = await waitForPeak(value => value > 0.035);
+                const silent = { ...request, parameters: {}, source: "process = 0.0;" };
+                if (!await engine.replace(silent, 2)) throw new Error("Replacement was not accepted");
+                silentSwap = await waitForPeak(value => value < 0.001);
+                if (!await engine.replace(request, 3)) throw new Error("Restoration was not accepted");
+                restoredSwap = await waitForPeak(value => value > 0.035);
+                if (engine.getPlaybackState(request.soundId) !== "playing") throw new Error("Playback ended during swap");
+            } finally { engine.stop(request.soundId); await playing; }
+            return { peak, mutedPeak, restoredPeak, beforeSwap, silentSwap, restoredSwap, sampleRate: context.sampleRate };
         } finally { compiler.dispose(); await context.close(); }
     }, { source, manifest });
     console.log("Generated graph produced real worklet audio:", result);
     assert.ok(result.peak > 0.035 && result.peak <= 0.151);
     assert.ok(result.mutedPeak < 0.001, "Live values did not mute the existing worklet");
     assert.ok(result.restoredPeak > 0.035 && result.restoredPeak <= 0.151, "Live values did not restore audio");
+    assert.ok(result.beforeSwap > 0.035 && result.beforeSwap <= 0.151, "The initial voice was not audible");
+    assert.ok(result.silentSwap < 0.001, "The silent replacement did not take over");
+    assert.ok(result.restoredSwap > 0.035 && result.restoredSwap <= 0.151, "The restored worklet was not audible");
 } finally {
     await browser?.close();
     server.close();
