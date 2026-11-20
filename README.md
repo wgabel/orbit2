@@ -186,7 +186,7 @@ There is no per-sample C# or JavaScript event loop. The audio engine controls wa
 
 ## Graph commands and committed events (Phase 3 foundation)
 
-The application layer now owns graph edits through `IPatchSession`. Each session owns one root graph and its own notification dispatcher. Neither views nor processing components mutate the graph directly. Domain validation still occurs inside `SignalGraph`; no second set of graph rules is introduced.
+The application layer owns graph edits through `IPatchSession`. Each session owns one root graph, its descendants, and one notification dispatcher. Neither views nor processing components mutate the graph directly. Domain validation still occurs inside `SignalGraph`; no second set of graph rules is introduced.
 
 ~~~mermaid
 sequenceDiagram
@@ -228,9 +228,9 @@ using var nodeListener = session.Subscribe<NodeAdded>(change =>
 var result = session.Execute(new AddNodeCommand(session.GraphId, SineGenerator.NodeType));
 ~~~
 
-- The result includes the immutable committed graph snapshot and ordered events. A revision identifies exactly which state a listener received, even after future edits.
+- The result includes the immutable committed root snapshot and ordered events. `GraphChangeSet.GraphId` identifies the command target; `ChangedGraph` returns its local snapshot. One revision identifies the entire patch, even after future edits.
 - Rejected commands and unchanged base-value edits do not increment the revision or publish anything. Validation exceptions are returned to the caller through the existing exception contract.
-- Subscriptions are disposable, session-scoped and optionally filtered by graph ID. Delivery is synchronous and serialized; listeners should schedule asynchronous work and return quickly. A failed listener is reported in `GraphCommandResult.SubscriberErrors`, without rolling back the change or blocking other subscribers.
+- Subscriptions are disposable, session-scoped and optionally filtered by the command or fact's graph ID. Unfiltered subscribers see every root or child commit exactly once. Delivery is synchronous and serialized; listeners should schedule asynchronous work and return quickly. A failed listener is reported in `GraphCommandResult.SubscriberErrors`, without rolling back the change or blocking other subscribers.
 - Layout events and DSP telemetry are separate from graph commands. Audio and canvas projections will subscribe to committed changes when the dynamic editor/compiler are introduced.
 - The existing fixed demo now constructs its graph with these commands and derives its playback request from the final snapshot. Its precompiled regression DSP remains independent of the live graph.
 
@@ -385,7 +385,16 @@ flowchart TD
 
 The domain rejects recursive ownership, shared concrete node instances, cross-graph connections, standalone rack insertion/removal and child master outputs. `GraphNodeSnapshot.Composite` captures the child graph and rack IDs without referencing mutable objects. `GraphSnapshot.GetGraph` resolves nested graph IDs within the captured patch revision.
 
-The initial boundary is immutable. Composite nodes are intentionally not in the editor's built-in catalog yet: child commands, transactional port edits, DSP flattening and canvas navigation are subsequent steps.
+The existing commands now address the root or any owned child by its graph ID, with one serialized session commit and one patch revision. For example, after creating a composite (using a registered factory), add a generator to its child:
+
+```csharp
+var childGraphId = compositeSnapshot.Graph.Id;
+session.Execute(new AddNodeCommand(childGraphId, SineGenerator.NodeType));
+```
+
+`CanvasStateService(session, childGraphId)` projects that child and maintains its own layout, selection and viewport. It observes root commits to stay synchronized with the patch. If its owning composite is removed, the canvas becomes unavailable and emits `GraphRemoved`; stale commands are rejected by the session.
+
+The initial boundary is immutable. Composite nodes are intentionally not in the editor's built-in catalog yet: transactional port edits, DSP flattening and canvas navigation are subsequent steps.
 
 ## Design system
 

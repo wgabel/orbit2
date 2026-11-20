@@ -6,7 +6,7 @@ using Orbit.Domain.Graphs;
 namespace Orbit.Application.Graphs.Sessions;
 
 /// <summary>
-/// Owns one editable root graph and its event channel. Consumers see only
+/// Owns the editable root and its child graphs, with a single event channel. Consumers see only
 /// immutable committed snapshots, never the mutable SignalGraph instance.
 /// Commands and notifications are serialized so revision order is deterministic.
 /// </summary>
@@ -48,8 +48,9 @@ public sealed class PatchSession : IPatchSession
             ObjectDisposedException.ThrowIf(disposed, this);
             if (executing)
                 throw new InvalidOperationException("A graph edit cannot run from inside a change callback.");
-            if (command.GraphId != GraphId)
-                throw new GraphValidationException("This command targets a graph outside the session.");
+            // Resolve from the owned graph tree under the same session lock.
+            // Foreign or removed child graph IDs cannot receive commands.
+            var targetGraph = graph.GetGraph(command.GraphId);
 
             executing = true;
             try
@@ -57,12 +58,12 @@ public sealed class PatchSession : IPatchSession
                 var nextRevision = checked(snapshot.Revision + 1);
                 // Validation happens in the domain before each mutation. A
                 // rejected command leaves the revision and snapshots untouched.
-                var events = commands.Execute(graph, command, nextRevision);
+                var events = commands.Execute(targetGraph, command, nextRevision);
                 if (events.Count == 0)
                     return new GraphCommandResult(null, Array.Empty<Exception>());
 
                 snapshot = GraphSnapshot.Capture(graph, nextRevision);
-                var changeSet = new GraphChangeSet(PatchId, snapshot, Array.AsReadOnly(events.ToArray()));
+                var changeSet = new GraphChangeSet(PatchId, targetGraph.Id, snapshot, Array.AsReadOnly(events.ToArray()));
                 // Commit precedes delivery. Subscribers should return quickly and
                 // schedule asynchronous projection or compilation independently.
                 var errors = dispatcher.Publish(changeSet);

@@ -532,7 +532,7 @@ public interface ICompositeNode : ISignalNode
 
 Actual mutation methods should protect graph invariants. The above represents an illustrative read model; the application command handler or domain operations own controlled mutation, rather than exposing freely modifiable Lists.
 
-The initial domain implementation now creates an owned child graph via `CompositeNode`, with mandatory `InputRack` and `OutputRack` instances. A composite cannot be inserted into itself, an ancestor, or two graphs simultaneously. Concrete node instances cannot be shared across graphs, so mutable parameters remain independent. Child graphs reject master outputs. Snapshots recursively capture child graphs, revision and rack IDs; `GraphSnapshot.GetGraph` resolves a graph within that immutable patch. The editor still targets the root until child command routing is implemented.
+The initial domain implementation now creates an owned child graph via `CompositeNode`, with mandatory `InputRack` and `OutputRack` instances. A composite cannot be inserted into itself, an ancestor, or two graphs simultaneously. Concrete node instances cannot be shared across graphs, so mutable parameters remain independent. Child graphs reject master outputs. Snapshots recursively capture child graphs, revision and rack IDs; `GraphSnapshot.GetGraph` resolves a graph within that immutable patch. The session now routes commands to owned descendants; the interactive editor still targets the root until navigation is implemented.
 
 ### The canvases
 
@@ -579,7 +579,7 @@ The UI can show a breadcrumb such as Patch / Drone A / Effect rack. Use stable g
 
 ### Implemented canvas state foundation
 
-The first presentation-state library is `Orbit.Presentation` (a plain .NET class library). It references Application and has no dependency on Blazor, browser APIs or processing. The UI project references it for the future canvas components. Each canvas/subcanvas will own one `ICanvasStateService` for its graph. Phase 3 supports one root graph per patch; independent service instances already preserve independent layouts and viewports.
+The presentation-state library is `Orbit.Presentation` (a plain .NET class library). It references Application and has no dependency on Blazor, browser APIs or processing. Each canvas/subcanvas can own one `ICanvasStateService` for its graph. Phase 5 adds graph-ID-targeted projections in a shared session with independent layouts and viewports.
 
 | State | Owner | Change notification |
 | --- | --- | --- |
@@ -587,7 +587,7 @@ The first presentation-state library is `Orbit.Presentation` (a plain .NET class
 | World-coordinate node positions, selection and viewport | CanvasStateService | Local canvas state change |
 | Effective audio parameter values | DSP runtime | Throttled meter snapshot |
 
-`CanvasStateService` subscribes to whole `GraphChangeSet` notifications and reconciles the final immutable `GraphSnapshot`. A configurable `INodePlacementPolicy` supplies initial positions (default: a three-column grid). Existing positions are preserved, removed nodes and their incident connections are cleared from selection, and the canvas emits one update per graph commit. New placements and selection cleanup increment the layout revision; a parameter-only graph change does not.
+`CanvasStateService` subscribes to unfiltered patch `GraphChangeSet` notifications and resolves its own graph from the final immutable root snapshot. A configurable `INodePlacementPolicy` supplies initial positions (default: a three-column grid). Existing positions are preserved, removed nodes and their incident connections are cleared from selection, and each active canvas emits one update per patch commit. New placements and selection cleanup increment the layout revision; a parameter-only graph change does not. Removing an ancestor composite invalidates descendant canvases, which emit `GraphRemoved` and reject local edits while retaining their last read-only snapshot for navigation.
 
 ~~~mermaid
 flowchart TD
@@ -846,7 +846,7 @@ Commands may fail validation. Events communicate committed state, not an instruc
 
 ### Implemented contracts (Phase 3 foundation)
 
-The application layer provides a concrete single-root-graph `IPatchSession`. It owns the mutable `SignalGraph`, a command handler and a private event dispatcher. The domain remains independent of observers and the UI. All edits use typed commands; the five initial commands in the preceding table are implemented with the `Command` suffix. Exposed-port and layout commands are planned.
+The application layer provides `IPatchSession` for one root graph and its owned descendants. It owns the mutable graph tree, a command handler and a private event dispatcher. The domain remains independent of observers and the UI. All edits use typed commands; the five initial commands in the preceding table are implemented with the `Command` suffix. Exposed-port and layout commands are planned.
 
 ~~~csharp
 using IPatchSession session = new PatchSession(BuiltInNodes.CreateRegistry());
@@ -860,7 +860,7 @@ GraphCommandResult result = session.Execute(
     new AddNodeCommand(session.GraphId, SineGenerator.NodeType));
 ~~~
 
-The read contract is an immutable `GraphSnapshot` with graph ID, revision, node/parameter snapshots and immutable connections. The published change set contains the patch ID, final snapshot, all ordered facts from the operation, and a derived `TopologyChanged` flag. It never exposes the mutable graph or mutable domain parameter instances. A snapshot taken at revision 3 does not change at revision 4.
+The read contract is an immutable `GraphSnapshot` with graph ID, revision, node/parameter snapshots and immutable connections. The published change set contains the patch ID, command target graph ID, final root snapshot, all ordered facts from the operation, and a derived `TopologyChanged` flag. `ChangedGraph` resolves the edited graph within that root snapshot. It never exposes the mutable graph or mutable domain parameter instances. A snapshot taken at revision 3 does not change at revision 4.
 
 | Class / interface | Responsibility |
 | --- | --- |
@@ -877,7 +877,7 @@ A rejected command throws the existing domain validation exception (or registry/
 
 Subscribe to a whole `GraphChangeSet` for graph projection and audio graph compilation; subscribe to typed events for a specific fact (for example, `ConnectionRemoved`). Subscription filters can target one graph. Registration order and fact order are deterministic within each changeset; registration changes during notification apply to the next revision. Subscribers are independently disposable, and closing the session clears them. Listener callbacks are synchronous and must return quickly; they should schedule independent asynchronous work rather than perform reentrant graph mutations. A listener exception is recorded in the command result, not treated as a failed edit or rollback. Other listeners still receive the facts.
 
-This initial transaction boundary is **one validated command on one root graph**. Cross-graph rack edits and general multi-command transactions are not implemented yet; later composite support must commit parent and child changes atomically and publish one consistent patch revision.
+The current transaction boundary is **one validated command on one owned graph** (root or descendant). The patch session resolves the target under its lock, applies the same domain validation, captures the entire root graph and publishes a single shared patch revision. Unfiltered listeners see every commit; graph-filtered listeners match the exact command or fact's graph ID. Foreign and removed child graphs are rejected. Cross-graph rack edits and general multi-command transactions are not implemented yet; later composite support must commit parent and child changes atomically and publish one consistent patch revision.
 
 The first application consumer is `ModulationDemoPatch`: it uses the session to construct the existing fixed graph and maps the final snapshot to a playback request. The canvas and dynamic playback consume immutable snapshots; live playback subscriptions will follow when runtime replacement is implemented.
 
@@ -1352,7 +1352,8 @@ Deliverable: construct and edit a graph of two generators, a filter, mixer/outpu
 ### Phase 5 — Composite nodes and rack interfaces
 
 - Implemented: ICompositeNode, graph-owned Input Rack and Output Rack, immutable shared boundary identities, recursion checks and nested snapshots.
-- Next: session command routing to child graphs and graph navigation.
+- Implemented: child graph command routing, patch-wide committed snapshots, exact graph event filters and independent graph-ID-targeted canvas projections.
+- Next: graph navigation and composite catalog integration once DSP boundary flattening is ready.
 - Add editable Input Rack and Output Rack ports, projected automatically onto composite node sockets.
 - Add transactional add/rename/reorder/remove-port commands crossing parent/child boundaries.
 - Flatten graph boundaries while preserving identity and modulation dependencies.

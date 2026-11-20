@@ -18,8 +18,14 @@ internal static class GraphTopology
             node.Inputs.OrderBy(port => port.Id).SequenceEqual(candidate.Inputs.OrderBy(port => port.Id)) &&
             node.Outputs.OrderBy(port => port.Id).SequenceEqual(candidate.Outputs.OrderBy(port => port.Id)) &&
             node.Parameters.OrderBy(parameter => parameter.Id).Select(Structure)
-                .SequenceEqual(candidate.Parameters.OrderBy(parameter => parameter.Id).Select(Structure)));
+                .SequenceEqual(candidate.Parameters.OrderBy(parameter => parameter.Id).Select(Structure)) &&
+            CompositeMatches(node.Composite, candidate.Composite));
     }
+
+    private static bool CompositeMatches(CompositeSnapshot? original, CompositeSnapshot? current) =>
+        original is null ? current is null :
+        current is not null && original.InputRackId == current.InputRackId &&
+        original.OutputRackId == current.OutputRackId && Matches(original.Graph, current.Graph);
 
     private static ParameterSnapshot Structure(ParameterSnapshot parameter) => parameter with { BaseValue = 0 };
 }

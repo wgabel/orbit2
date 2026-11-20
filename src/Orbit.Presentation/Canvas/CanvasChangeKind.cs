@@ -6,5 +6,6 @@ public enum CanvasChangeKind
     GraphCommitted,
     NodeMoved,
     SelectionChanged,
-    ViewportChanged
+    ViewportChanged,
+    GraphRemoved
 }

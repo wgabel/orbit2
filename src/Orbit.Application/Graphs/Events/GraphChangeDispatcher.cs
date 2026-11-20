@@ -3,7 +3,8 @@ using Orbit.Application.Notifications;
 namespace Orbit.Application.Graphs.Events;
 
 /// <summary>Adapts the shared notification channel to committed graph change sets
-/// and individual typed graph facts, scoped to one patch session.</summary>
+/// and individual typed graph facts, scoped to one patch session. Graph filters
+/// match the command target or fact's graph, not the root snapshot identity.</summary>
 internal sealed class GraphChangeDispatcher
 {
     private readonly NotificationChannel<GraphChangeSet> channel = new();

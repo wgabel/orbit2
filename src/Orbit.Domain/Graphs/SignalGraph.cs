@@ -40,6 +40,19 @@ public sealed class SignalGraph
     public IReadOnlyList<ISignalNode> Nodes { get; }
     public IReadOnlyList<SignalConnection> Connections { get; }
 
+    /// <summary>Find an owned graph relative to this root. Detached children are not reachable.</summary>
+    public SignalGraph GetGraph(Guid graphId) =>
+        FindGraph(graphId) ?? throw new GraphValidationException($"Graph {graphId} does not exist in this patch.");
+
+    private SignalGraph? FindGraph(Guid graphId)
+    {
+        if (Id == graphId) return this;
+        foreach (var composite in nodes.OfType<ICompositeNode>())
+            if (composite.InternalGraph.FindGraph(graphId) is { } found)
+                return found;
+        return null;
+    }
+
     public ISignalNode GetNode(Guid nodeId) =>
         nodes.Find(node => node.Id == nodeId)
         ?? throw new GraphValidationException($"Node {nodeId} does not exist in this graph.");

@@ -22,17 +22,24 @@ public sealed class CanvasStateService : ICanvasStateService
     private bool disposed;
 
     public CanvasStateService(IPatchSession session, INodePlacementPolicy? placement = null)
+        : this(session, session?.GraphId ?? throw new ArgumentNullException(nameof(session)), placement)
+    {
+    }
+
+    public CanvasStateService(IPatchSession session, Guid graphId, INodePlacementPolicy? placement = null)
     {
         ArgumentNullException.ThrowIfNull(session);
         this.placement = placement ?? new GridNodePlacementPolicy();
-        var graph = session.Snapshot;
+        var graph = session.Snapshot.GetGraph(graphId);
         var positions = new Dictionary<Guid, CanvasPoint>();
         foreach (var node in graph.Nodes)
             positions.Add(node.Id, PlaceNode(positions));
 
         snapshot = new CanvasStateSnapshot(graph, 0, CanvasViewport.Initial,
             Freeze(positions), Array.Empty<Guid>(), Array.Empty<Guid>());
-        graphSubscription = session.Subscribe(OnGraphChanged, graph.Id);
+        // Observe patch commits, including edits of descendants and deletion of
+        // the composite that owns this canvas. Each local projection has its own layout.
+        graphSubscription = session.Subscribe(OnGraphChanged);
     }
 
     public CanvasStateSnapshot Snapshot => snapshot;
@@ -107,12 +114,21 @@ public sealed class CanvasStateService : ICanvasStateService
 
     private void OnGraphChanged(GraphChangeSet change)
     {
-        if (disposed || change.GraphId != snapshot.GraphId || change.Revision <= snapshot.GraphRevision)
+        if (disposed || !snapshot.IsAvailable || change.Revision <= snapshot.GraphRevision)
             return;
+
+        var graph = change.Snapshot.FindGraph(snapshot.GraphId);
+        if (graph is null)
+        {
+            // A removed child canvas is no longer editable. Keep its final
+            // projection for observers to navigate away without stale commands.
+            snapshot = snapshot with { IsAvailable = false };
+            ReportSubscriberErrors(Publish(new CanvasStateChange(CanvasChangeKind.GraphRemoved, snapshot)));
+            return;
+        }
 
         // Reconcile from the final graph, not individual edge/node events. Retain
         // every surviving layout and selection and publish just one canvas update.
-        var graph = change.Snapshot;
         var nodeIds = graph.Nodes.Select(node => node.Id).ToHashSet();
         var connectionIds = graph.Connections.Select(connection => connection.Id).ToHashSet();
         var positions = snapshot.NodePositions
@@ -136,7 +152,11 @@ public sealed class CanvasStateService : ICanvasStateService
             SelectedConnectionIds = Array.AsReadOnly(selectedConnections)
         };
 
-        var errors = Publish(new CanvasStateChange(CanvasChangeKind.GraphCommitted, snapshot));
+        ReportSubscriberErrors(Publish(new CanvasStateChange(CanvasChangeKind.GraphCommitted, snapshot)));
+    }
+
+    private static void ReportSubscriberErrors(IReadOnlyList<Exception> errors)
+    {
         if (errors.Count > 0)
             throw new AggregateException("Canvas subscriber failures after graph commit.", errors);
     }
@@ -210,6 +230,8 @@ public sealed class CanvasStateService : ICanvasStateService
     private void EnsureEditable()
     {
         ObjectDisposedException.ThrowIf(disposed, this);
+        if (!snapshot.IsAvailable)
+            throw new InvalidOperationException("The canvas graph no longer exists in the patch.");
         if (publishing)
             throw new InvalidOperationException("Canvas layout cannot be edited during a canvas notification.");
     }

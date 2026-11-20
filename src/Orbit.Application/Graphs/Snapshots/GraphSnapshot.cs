@@ -17,7 +17,8 @@ public sealed record GraphSnapshot(
     public GraphSnapshot GetGraph(Guid graphId) =>
         FindGraph(graphId) ?? throw new GraphValidationException($"Graph {graphId} does not exist in this snapshot.");
 
-    private GraphSnapshot? FindGraph(Guid graphId)
+    /// <summary>Returns null for a removed or foreign graph without throwing.</summary>
+    public GraphSnapshot? FindGraph(Guid graphId)
     {
         if (Id == graphId) return this;
         foreach (var node in Nodes)

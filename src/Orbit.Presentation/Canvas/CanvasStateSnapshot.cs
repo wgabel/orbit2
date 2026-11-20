@@ -14,4 +14,6 @@ public sealed record CanvasStateSnapshot(
 {
     public Guid GraphId => Graph.Id;
     public long GraphRevision => Graph.Revision;
+    /// <summary>False once the owning composite disappears. The last graph is retained read-only.</summary>
+    public bool IsAvailable { get; init; } = true;
 }
