@@ -34,7 +34,7 @@ public sealed class FaustNodeContext
         return InputSignal(port.Id);
     }
 
-    public string Parameter(string key)
+    public string Parameter(string key, string? signalMaximum = null)
     {
         var parameter = Node.Parameters.SingleOrDefault(parameter => parameter.Definition.Key == key)
             ?? throw new FaustCompilationException($"Node {Node.TypeKey} has no parameter '{key}'.");
@@ -49,14 +49,22 @@ public sealed class FaustNodeContext
         var minimum = FaustNumber.Format(definition.Minimum);
         var maximum = FaustNumber.Format(definition.Maximum);
         var initial = FaustNumber.Format(definition.DefaultValue);
+        var meter = parameter.ModulationPortId is Guid modulationPort &&
+            incoming[new PortAddress(Node.Id, modulationPort)].Any()
+            ? $"m_{Node.Id:N}_{parameter.Id:N}" : null;
         if (!controls.Any(control => control.Name == name))
         {
-            controls.Add(new FaustParameterControl(new ParameterAddress(Node.Id, parameter.Id), name, parameter.BaseValue));
+            controls.Add(new FaustParameterControl(new ParameterAddress(Node.Id, parameter.Id), name, parameter.BaseValue, meter));
             definitions.Add($"{name} = hslider(\"{name}\", {initial}, {minimum}, {maximum}, 0.001) : si.smoo;");
         }
 
         var modulation = parameter.ModulationPortId is Guid portId ? InputSignal(portId) : "0.0";
-        return $"max({minimum}, min({maximum}, {name} + {modulation}))";
+        var effective = $"max({minimum}, min({maximum}, {name} + {modulation}))";
+        if (signalMaximum is not null)
+            effective = $"min({signalMaximum}, {effective})";
+        // A passive bargraph passes its input unchanged and reports the actual
+        // clamped sample value. Only connected modulation needs a live meter.
+        return meter is null ? effective : $"({effective} : hbargraph(\"{meter}\", {minimum}, {maximum}))";
     }
 
     private string InputSignal(Guid portId)

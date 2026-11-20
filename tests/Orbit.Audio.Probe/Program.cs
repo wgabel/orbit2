@@ -28,5 +28,6 @@ File.WriteAllText(Path.Combine(args[0], "controls.json"), JsonSerializer.Seriali
 {
     values = program.Controls.ToDictionary(control => control.Name, control => control.InitialValue),
     frequency = frequency.Name,
+    frequencyMeter = frequency.MeterName,
     amplitude = amplitude.Name
 }));

@@ -95,6 +95,30 @@ public sealed class FaustGraphPlaybackServiceTests
     }
 
     [Fact]
+    public async Task TelemetryMapsPassiveMetersToParameterAddressesAndCurrentRevision()
+    {
+        using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings());
+        var compiler = FaustGraphCompiler.CreateBuiltIn();
+        var engine = new RecordingEngine();
+        var service = new FaustGraphPlaybackService(compiler, engine);
+        Assert.Null(await service.GetTelemetryAsync(session.GraphId));
+        var playing = service.PlayAsync(session.Snapshot);
+        var meter = compiler.Compile(session.Snapshot).Controls.Single(control => control.MeterName is not null);
+        engine.Outputs = new() { [$"/OrbitGraph/{meter.MeterName}"] = 465.5, ["other"] = 99 };
+        var frame = await service.GetTelemetryAsync(session.GraphId);
+        Assert.NotNull(frame);
+        Assert.Equal(session.Snapshot.Revision, frame.Revision);
+        Assert.Equal(465.5, Assert.Single(frame.Values).Value);
+        Assert.Equal(meter.Address, Assert.Single(frame.Values).Key);
+        session.Execute(new AddNodeCommand(session.GraphId, session.Snapshot.Nodes[^1].TypeKey));
+        await Assert.ThrowsAsync<FaustCompilationException>(() => service.UpdateAsync(session.Snapshot));
+        Assert.Null(await service.GetTelemetryAsync(session.GraphId));
+        await service.StopAsync(session.GraphId);
+        await playing;
+        Assert.Null(await service.GetTelemetryAsync(session.GraphId));
+    }
+
+    [Fact]
     public async Task DisconnectedNodeDoesNotReplaceIdenticalProgram()
     {
         using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings());
@@ -135,6 +159,7 @@ public sealed class FaustGraphPlaybackServiceTests
         public int PlayCount { get; private set; }
         public List<IReadOnlyDictionary<string, double>> Updates { get; } = [];
         public List<PlaybackRequest> Replacements { get; } = [];
+        public Dictionary<string, double>? Outputs { get; set; }
         private readonly TaskCompletionSource completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public Task InitializeAsync() { Initialized = true; return Task.CompletedTask; }
@@ -155,6 +180,6 @@ public sealed class FaustGraphPlaybackServiceTests
         public Task<PlaybackState> GetPlaybackStateAsync(string soundId) =>
             Task.FromResult(Request?.SoundId == soundId && StoppedSound != soundId ? PlaybackState.Playing : PlaybackState.Idle);
         public Task<Dictionary<string, double>?> GetOutputValuesAsync(string soundId) =>
-            Task.FromResult<Dictionary<string, double>?>(null);
+            Task.FromResult(Outputs);
     }
 }

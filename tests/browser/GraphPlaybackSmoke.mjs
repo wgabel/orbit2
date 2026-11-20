@@ -40,6 +40,7 @@ try {
     const result = await page.evaluate(async ({ source, manifest }) => {
         const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
         const { FaustNodeFactory } = await import("/Faust/FaustNodeFactory.js");
+        const { FaustOutputMonitor } = await import("/Faust/FaustOutputMonitor.js");
         const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
         const { AudioEngine } = await import("/AudioEngine.js");
         const { AudioVoice } = await import("/Components/AudioVoice.js");
@@ -50,6 +51,7 @@ try {
             await context.resume();
             const factory = new FaustNodeFactory(null, new Map(), () => new FaustMonoDspGenerator(), compiler);
             const node = await factory.create(context, "OrbitGraph", manifest.values, source);
+            const monitor = new FaustOutputMonitor(node);
             const analyser = context.createAnalyser();
             analyser.fftSize = 2048;
             node.connect(analyser);
@@ -67,12 +69,20 @@ try {
                 return peak;
             }
             const peak = await waitForPeak(value => value > 0.035);
+            const readings = [];
+            for (let i = 0; i < 24; i++) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                const entry = Object.entries(monitor.getSnapshot()).find(([path]) => path.endsWith("/" + manifest.frequencyMeter));
+                if (entry) readings.push(entry[1]);
+            }
+            const meterMinimum = Math.min(...readings), meterMaximum = Math.max(...readings);
             // The same connected worklet must respond to live base edits.
             // Mute the carrier amplitude and then restore it on the same node.
             factory.setParameters(node, { [manifest.amplitude]: 0 });
             const mutedPeak = await waitForPeak(value => value < 0.001);
             factory.setParameters(node, { [manifest.amplitude]: manifest.values[manifest.amplitude] });
             const restoredPeak = await waitForPeak(value => value > 0.035);
+            monitor.dispose();
             node.disconnect();
             node.destroy();
             // Use the production engine, real Faust worklets and voice envelopes,
@@ -100,11 +110,13 @@ try {
                 restoredSwap = await waitForPeak(value => value > 0.035);
                 if (engine.getPlaybackState(request.soundId) !== "playing") throw new Error("Playback ended during swap");
             } finally { engine.stop(request.soundId); await playing; }
-            return { peak, mutedPeak, restoredPeak, beforeSwap, silentSwap, restoredSwap, sampleRate: context.sampleRate };
+            return { peak, mutedPeak, restoredPeak, beforeSwap, silentSwap, restoredSwap, meterMinimum, meterMaximum, sampleRate: context.sampleRate };
         } finally { compiler.dispose(); await context.close(); }
     }, { source, manifest });
     console.log("Generated graph produced real worklet audio:", result);
     assert.ok(result.peak > 0.035 && result.peak <= 0.151);
+    assert.ok(result.meterMinimum >= 339 && result.meterMinimum < 360, "Incorrect live frequency minimum");
+    assert.ok(result.meterMaximum > 520 && result.meterMaximum <= 541, "Incorrect live frequency maximum");
     assert.ok(result.mutedPeak < 0.001, "Live values did not mute the existing worklet");
     assert.ok(result.restoredPeak > 0.035 && result.restoredPeak <= 0.151, "Live values did not restore audio");
     assert.ok(result.beforeSwap > 0.035 && result.beforeSwap <= 0.151, "The initial voice was not audible");

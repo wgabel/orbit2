@@ -13,4 +13,6 @@ public interface IGraphPlaybackService
     Task<PlaybackState> GetStateAsync(Guid graphId);
     /// <summary>Apply base edits in place or replace the running graph when routing changes.</summary>
     Task<GraphPlaybackUpdate> UpdateAsync(GraphSnapshot graph);
+    /// <summary>Read one passive display snapshot; null when stopped, swapping or unavailable.</summary>
+    Task<GraphParameterTelemetry?> GetTelemetryAsync(Guid graphId);
 }

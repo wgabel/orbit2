@@ -3,6 +3,8 @@ using Orbit.Application.Graphs;
 using Orbit.Application.Graphs.Commands;
 using Orbit.Application.Graphs.Sessions;
 using Orbit.Application.Models;
+using Orbit.Application.Services;
+using Orbit.Domain.Parameters;
 using Orbit.Presentation.Canvas;
 
 namespace Orbit.UI.Components.Canvas;
@@ -10,6 +12,14 @@ namespace Orbit.UI.Components.Canvas;
 /// <summary>Composition and graph command boundary for the root editor.</summary>
 public partial class GraphWorkspace : IDisposable
 {
+    [Inject] private IGraphModulationRangeEstimator ModulationEstimator { get; set; } = default!;
+    private IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
+    private static readonly IReadOnlyDictionary<ParameterAddress, double> EmptyValues = new Dictionary<ParameterAddress, double>();
+    private long rangeRevision = -1;
+    private GraphParameterTelemetry? telemetry;
+    private IReadOnlyDictionary<ParameterAddress, double> EffectiveValues =>
+        telemetry is { } frame && frame.GraphId == Canvas.Snapshot.Graph.Id && frame.Revision == Canvas.Snapshot.Graph.Revision
+            ? frame.Values : EmptyValues;
     private IPatchSession session = default!;
     private IDisposable? subscription;
     private ICanvasStateService Canvas { get; set; } = default!;
@@ -26,8 +36,26 @@ public partial class GraphWorkspace : IDisposable
         SelectedType = RegisteredTypes.First();
         session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings(), registry);
         Canvas = new CanvasStateService(session, new GridNodePlacementPolicy(columnSpacing: 320, rowSpacing: 360, columns: 4));
-        subscription = Canvas.Subscribe(change => { _ = InvokeAsync(StateHasChanged); });
+        RefreshRanges();
+        subscription = Canvas.Subscribe(change => { _ = InvokeAsync(() =>
+        {
+            RefreshRanges();
+            StateHasChanged();
+        }); });
     }
+
+    // Analyze only committed graph revisions, not viewport changes or meter frames.
+    private void RefreshRanges()
+    {
+        var graph = Canvas.Snapshot.Graph;
+        if (rangeRevision == graph.Revision) return;
+        ModulationRanges = ModulationEstimator.Estimate(graph);
+        rangeRevision = graph.Revision;
+        telemetry = null;
+    }
+
+    private void OnTelemetryChanged(GraphParameterTelemetry? frame) =>
+        telemetry = frame;
 
     private void AddNode() => Execute(new AddNodeCommand(session.GraphId, SelectedType));
 

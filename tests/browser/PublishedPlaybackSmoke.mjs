@@ -34,9 +34,23 @@ try {
     await page.goto("http://127.0.0.1:" + server.address().port);
     const status = page.getByRole("status");
     const play = page.getByRole("button", { name: "Play patch" });
+    const articles = page.locator("article");
+    const frequency = articles.nth(1).locator(".parameter-slider").nth(0);
+    const amplitude = articles.nth(1).locator(".parameter-slider").nth(1);
+    const marker = frequency.locator(".parameter-effective-marker");
+    await frequency.getByText("Modulation: 340–540 Hz").waitFor({ timeout: 30000 });
+    assert.equal(await marker.count(), 0);
     await play.click({ timeout: 30000 });
     await status.filter({ hasText: /Playing revision/ }).waitFor({ timeout: 30000 });
     const initialRevision = Number((await status.innerText()).match(/Playing revision (\d+)/)[1]);
+    await marker.waitFor({ timeout: 10000 });
+    const firstPosition = await marker.getAttribute("style");
+    let moved = false;
+    for (let i = 0; i < 20 && !moved; i++) {
+        await page.waitForTimeout(100);
+        moved = (await marker.getAttribute("style")) !== firstPosition;
+    }
+    assert.ok(moved, "Live frequency marker did not move");
     // Changing an existing control advances the audible revision without stopping.
     await page.getByRole("spinbutton", { name: "Frequency (Hz)" }).nth(1).fill("330");
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 1}$`) }).waitFor({ timeout: 10000 });
@@ -53,18 +67,22 @@ try {
     await page.mouse.click(midpoint.x, midpoint.y);
     await page.getByRole("button", { name: "Delete selected" }).click();
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 3}$`) }).waitFor({ timeout: 15000 });
-    const articles = page.locator("article");
+    assert.equal(await marker.count(), 0);
+    assert.equal(await frequency.locator(".parameter-band").count(), 0);
     await articles.nth(0).getByRole("button", { name: "Output: Signal (Audio)" }).press("Enter");
     await articles.nth(1).getByRole("button", { name: "Input: Amplitude (Modulation)" }).press("Enter");
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 4}$`) }).waitFor({ timeout: 15000 });
     assert.equal(await play.isEnabled(), false);
+    await amplitude.locator(".parameter-effective-marker").waitFor({ timeout: 10000 });
     await page.getByRole("button", { name: "Stop", exact: true }).click();
     await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 10000 });
+    assert.equal(await amplitude.locator(".parameter-effective-marker").count(), 0);
+    assert.equal(await amplitude.locator(".parameter-band").count(), 1);
     const prefix = `/_content/Orbit.Infrastructure/audio-${version}/`;
     for (const file of ["audio.js", "AudioEngine.js", "Faust/FaustCompilerWorker.js", "generated/compiler/index.js"])
         assert.ok(requests.has(prefix + file), `Missing versioned asset: ${file}`);
     assert.ok([...requests].every(path => !path.startsWith("/_content/Orbit.Infrastructure/audio/")));
-    console.log("Published editor played, applied live parameter edits, rewired frequency to amplitude and stopped.");
+    console.log("Published editor played, animated real modulation, applied live parameter edits, rewired frequency to amplitude and stopped.");
 } finally {
     await browser?.close();
     server.close();

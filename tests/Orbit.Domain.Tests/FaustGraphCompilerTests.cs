@@ -38,6 +38,10 @@ public sealed class FaustGraphCompilerTests
         Assert.Contains("process = ", program.Source);
         Assert.Equal(0.5, Control(program, lfo, "frequency").InitialValue);
         Assert.Equal(440, Control(program, oscillator, "frequency").InitialValue);
+        var meter = Control(program, oscillator, "frequency").MeterName;
+        Assert.NotNull(meter);
+        Assert.Contains($"hbargraph(\"{meter}\"", program.Source);
+        Assert.Null(Control(program, lfo, "frequency").MeterName);
     }
 
     [Fact]
@@ -51,6 +55,7 @@ public sealed class FaustGraphCompilerTests
         var next = compiler.Compile(session.Snapshot);
         Assert.Equal(first.Source, next.Source);
         Assert.Equal(control.Name, Control(next, oscillator, "frequency").Name);
+        Assert.Equal(control.MeterName, Control(next, oscillator, "frequency").MeterName);
         Assert.Equal(220, Control(next, oscillator, "frequency").InitialValue);
         Assert.Equal(440, control.InitialValue);
         Assert.True(next.Revision > first.Revision);

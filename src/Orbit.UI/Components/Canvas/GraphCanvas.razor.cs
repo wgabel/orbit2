@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Orbit.Domain.Ports;
+using Orbit.Domain.Parameters;
 using Orbit.Presentation.Canvas;
 
 namespace Orbit.UI.Components.Canvas;
@@ -16,6 +17,8 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter, EditorRequired] public ICanvasStateService State { get; set; } = default!;
     [Parameter] public EventCallback<PortConnectionRequest> OnConnect { get; set; }
     [Parameter] public EventCallback<ParameterEditRequest> OnParameterEdit { get; set; }
+    [Parameter] public IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
+    [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();
 
     private ElementReference viewportElement;
     private IJSObjectReference? module;

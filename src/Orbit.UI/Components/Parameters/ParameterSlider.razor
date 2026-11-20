@@ -31,13 +31,24 @@
         <span>@Format(Definition.Minimum) @UnitLabel</span>
         <span>@Format(Definition.Maximum) @UnitLabel</span>
     </div>
-    @if (ModulationRange is { } bounds)
+    @if (IsModulated || ModulationRange.HasValue)
     {
         <div class="parameter-modulation">
-            <span>Modulation: @Format(bounds.Minimum)–@Format(bounds.Maximum) @UnitLabel</span>
+            @if (ModulationRange is { } bounds)
+            {
+                <span>Modulation: @FormatLive(bounds.Minimum)–@FormatLive(bounds.Maximum) @UnitLabel</span>
+            }
+            else
+            {
+                <span>Modulation: unknown</span>
+            }
             @if (EffectiveValue is double current && double.IsFinite(current))
             {
                 <span>Live: @FormatLive(current) @UnitLabel</span>
+            }
+            else
+            {
+                <span>Live: —</span>
             }
         </div>
     }

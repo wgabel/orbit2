@@ -19,6 +19,7 @@
     {
         <p class="parameter-error workspace-error" role="alert">@Error</p>
     }
-    <GraphPlaybackControls Snapshot="@Canvas.Snapshot.Graph" />
-    <GraphCanvas State="@Canvas" OnConnect="Connect" OnParameterEdit="EditParameter" />
+    <GraphPlaybackControls Snapshot="@Canvas.Snapshot.Graph" TelemetryChanged="OnTelemetryChanged" />
+    <GraphCanvas State="@Canvas" OnConnect="Connect" OnParameterEdit="EditParameter"
+                 ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" />
 </section>

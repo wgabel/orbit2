@@ -11,6 +11,7 @@ public partial class ParameterSlider
     [Parameter] public double Value { get; set; }
     [Parameter] public EventCallback<double> ValueChanged { get; set; }
     [Parameter] public double Step { get; set; } = 1;
+    [Parameter] public bool IsModulated { get; set; }
     [Parameter] public ParameterRange? ModulationRange { get; set; }
     [Parameter] public double? EffectiveValue { get; set; }
     [Parameter] public EventCallback<ParameterValidation> ValidationChanged { get; set; }

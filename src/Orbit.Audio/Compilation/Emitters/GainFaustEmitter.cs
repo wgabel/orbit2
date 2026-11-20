@@ -1,4 +1,6 @@
 using Orbit.Domain.Nodes.Processors;
+using Orbit.Audio.Analysis;
+using Orbit.Domain.Parameters;
 
 namespace Orbit.Audio.Compilation.Emitters;
 
@@ -6,6 +8,9 @@ namespace Orbit.Audio.Compilation.Emitters;
 public sealed class GainFaustEmitter : IFaustNodeEmitter
 {
     public string TypeKey => GainProcessor.NodeType;
+
+    public ParameterRange? EstimateOutputRange(SignalRangeContext context) =>
+        SignalRangeContext.Multiply(context.Input("audio-in"), context.Parameter("gain"));
 
     public string Emit(FaustNodeContext context) =>
         $"{context.Input("audio-in")} * {context.Parameter("gain")}";

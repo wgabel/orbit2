@@ -23,7 +23,7 @@
                            Selected="@Snapshot.SelectedNodeIds.Contains(node.Id)" PendingSource="@pendingSource"
                            OnHeaderPointerDown="@(args => BeginNode(node.Id, args))"
                            OnOutputPointerDown="BeginOutput" OnPortActivate="ActivatePortAsync"
-                           OnParameterEdit="OnParameterEdit" />
+                           OnParameterEdit="OnParameterEdit" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" />
             }
         </div>
         @if (Snapshot.Graph.Nodes.Count == 0)

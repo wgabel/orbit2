@@ -706,7 +706,9 @@ For example, a frequency base of 440 Hz with a sine LFO at ±100 Hz displays a 3
 
 Live telemetry is a passive, display-rate snapshot (around 20–30 Hz initially, batched per graph when scaled up), not an application event for every sample. Audio processing never waits for the UI. Do not persist telemetry or write it back to editable parameter values. A stopped or unavailable processor has no live marker.
 
-The shared ParameterSlider is implemented in the editable node frames. The graph editor supports live base-value edits during playback; effective modulation meters in arbitrary node graphs remain a subsequent step. Phase 4 implements the shared canvas, node frames, typed ports and connection renderer; Phase 5 reuses them for nested canvases.
+The shared ParameterSlider is implemented in the editable node frames. The graph editor supports live base-value edits and effective modulation meters for reachable connected parameters. `GraphModulationRangeEstimator` calculates conservative parameter intervals from the committed snapshot using optional signal-bound rules on the registered DSP emitters. The weighted inputs are summed and clamped to parameter limits; unknown bounds propagate rather than inventing a range. `FaustNodeContext` inserts a passive meter after the effective value clamp, and the playback service maps its stable name to a parameter address. `GraphPlaybackControls` polls the service at 25 Hz; the workspace accepts only the matching graph revision and passes display data to the shared node frames. The base thumb is independent of the marker. Disconnected nodes can show predicted bounds but have no live sample.
+
+Phase 4 implements the shared canvas, node frames, typed ports and connection renderer; Phase 5 reuses them for nested canvases.
 
 ### First visible editor implementation
 
@@ -1333,7 +1335,8 @@ Deliverable: a graph edit reaches independent subscribers once, with valid model
 - Implemented: on-demand graph playback from the editor, with a lazy Faust compiler worker, revision status and safe start/stop. The original fixed UI is retired.
 - Implemented: live base-value updates on the running worklet, including startup queuing, revision ordering, smoothed controls and structural-change detection.
 - Implemented: automatic structural replacement, stale-revision invalidation, same-source reuse, 50 ms audio-clock crossfade and last-good-graph recovery.
-- Next: effective parameter telemetry and animated modulation indicators.
+- Implemented: effective parameter telemetry and animated modulation indicators; conservative ranges are estimated from the graph and live values come directly from Faust passive meters.
+- Next: composite nodes and nested canvases (Phase 5).
 - Compile asynchronously, track graph revision and safely swap runtime.
 - Test fan-out and multiple modulation sources.
 - Add low-pass effect and mixer.

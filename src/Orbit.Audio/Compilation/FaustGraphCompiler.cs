@@ -1,5 +1,4 @@
 using Orbit.Application.Graphs.Snapshots;
-using Orbit.Audio.Compilation.Emitters;
 using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Ports;
 
@@ -15,7 +14,7 @@ public sealed class FaustGraphCompiler
         this.emitters = emitters.ToDictionary(emitter => emitter.TypeKey, StringComparer.Ordinal);
 
     public static FaustGraphCompiler CreateBuiltIn() =>
-        new([new SineFaustEmitter(), new GainFaustEmitter()]);
+        new(BuiltInFaustEmitters.Create());
 
     public FaustGraphProgram Compile(GraphSnapshot graph)
     {

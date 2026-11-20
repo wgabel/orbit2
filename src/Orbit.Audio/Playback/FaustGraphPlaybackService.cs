@@ -4,6 +4,7 @@ using Orbit.Application.Models;
 using Orbit.Application.Services;
 using Orbit.Audio.Compilation;
 using System.Collections.Concurrent;
+using Orbit.Domain.Parameters;
 
 namespace Orbit.Audio.Playback;
 
@@ -82,6 +83,30 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
     }
 
     public Task<PlaybackState> GetStateAsync(Guid graphId) => engine.GetPlaybackStateAsync(SoundId(graphId));
+
+    public async Task<GraphParameterTelemetry?> GetTelemetryAsync(Guid graphId)
+    {
+        if (!active.TryGetValue(graphId, out var playback) || playback.Stopping ||
+            playback.RequestedRevision != playback.Result.AppliedRevision) return null;
+        var revision = playback.Result.AppliedRevision;
+        var controls = playback.Controls;
+        if (!controls.Any(control => control.MeterName is not null)) return null;
+        var outputs = await engine.GetOutputValuesAsync(SoundId(graphId));
+        // Do not attach values from an old or crossfading worklet to a new graph.
+        if (outputs is null || playback.Stopping || !active.TryGetValue(graphId, out var current) ||
+            !ReferenceEquals(current, playback) || playback.RequestedRevision != revision ||
+            playback.Result.AppliedRevision != revision) return null;
+        var addresses = controls.Where(control => control.MeterName is not null)
+            .ToDictionary(control => control.MeterName!, control => control.Address, StringComparer.Ordinal);
+        var values = new Dictionary<ParameterAddress, double>();
+        foreach (var (path, value) in outputs)
+        {
+            var name = path[(path.LastIndexOf('/') + 1)..];
+            if (double.IsFinite(value) && addresses.TryGetValue(name, out var address))
+                values[address] = value;
+        }
+        return values.Count == 0 ? null : new(graphId, revision, values);
+    }
 
     private static PlaybackRequest CreateRequest(FaustGraphProgram program, IReadOnlyDictionary<string, double>? values = null) =>
         new(SoundId(program.GraphId), "OrbitGraph", PlaybackVolume,

@@ -11,6 +11,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
 {
     [Inject] private IGraphPlaybackService Playback { get; set; } = default!;
     [Parameter, EditorRequired] public GraphSnapshot Snapshot { get; set; } = default!;
+    [Parameter] public EventCallback<GraphParameterTelemetry?> TelemetryChanged { get; set; }
 
     private bool IsReady { get; set; }
     private bool IsActive { get; set; }
@@ -21,6 +22,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
     private long lastRequestedRevision;
     private long playbackGeneration;
     private bool updateFailed;
+    private bool hasTelemetry;
     private PlaybackState state;
     private string? Error { get; set; }
     private string Status => !IsReady ? "Audio engine not ready."
@@ -90,7 +92,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
         IsActive = true;
 
         using var cancellation = new CancellationTokenSource();
-        var startup = ObserveStartupAsync(graph.Id, cancellation.Token);
+        var observer = ObservePlaybackAsync(graph.Id, cancellation.Token);
         try
         {
             await Playback.PlayAsync(graph);
@@ -102,27 +104,35 @@ public partial class GraphPlaybackControls : IAsyncDisposable
         finally
         {
             cancellation.Cancel();
-            await startup;
+            await observer;
             IsActive = false;
             IsStopping = false;
             state = PlaybackState.Idle;
+            await PublishTelemetryAsync(null);
         }
     }
 
-    private async Task ObserveStartupAsync(Guid graphId, CancellationToken cancellation)
+    // UI-rate sampling only. Faust continues generating values at audio rate.
+    private async Task ObservePlaybackAsync(Guid graphId, CancellationToken cancellation)
     {
-        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(40));
         try
         {
             while (await timer.WaitForNextTickAsync(cancellation))
             {
                 if (disposed || cancellation.IsCancellationRequested) return;
-                var current = await Playback.GetStateAsync(graphId);
-                if (current != PlaybackState.Playing) continue;
+                if (state != PlaybackState.Playing)
+                {
+                    var current = await Playback.GetStateAsync(graphId);
+                    if (current != PlaybackState.Playing) continue;
+                    if (disposed || cancellation.IsCancellationRequested) return;
+                    state = current;
+                    await InvokeAsync(StateHasChanged);
+                }
+                var frame = !IsStopping && Snapshot.Revision == activeRevision
+                    ? await Playback.GetTelemetryAsync(graphId) : null;
                 if (disposed || cancellation.IsCancellationRequested) return;
-                state = current;
-                await InvokeAsync(StateHasChanged);
-                return;
+                await PublishTelemetryAsync(!IsStopping && frame?.Revision == Snapshot.Revision ? frame : null);
             }
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
@@ -130,14 +140,23 @@ public partial class GraphPlaybackControls : IAsyncDisposable
         catch (Exception exception)
         {
             Error = $"Audio status unavailable: {exception.Message}";
+            await PublishTelemetryAsync(null);
             if (!disposed) await InvokeAsync(StateHasChanged);
         }
+    }
+
+    private async Task PublishTelemetryAsync(GraphParameterTelemetry? frame)
+    {
+        if (disposed || (frame is null && !hasTelemetry)) return;
+        hasTelemetry = frame is not null;
+        await InvokeAsync(() => TelemetryChanged.InvokeAsync(frame));
     }
 
     private async Task StopAsync()
     {
         if (!IsActive || IsStopping) return;
         IsStopping = true;
+        await PublishTelemetryAsync(null);
         try { await Playback.StopAsync(activeGraph); }
         catch (Exception exception)
         {
