@@ -1,4 +1,4 @@
-# CI builds the Blazor UI and its referenced application library, then
+# CI tests the graph model and builds the Blazor UI with its referenced libraries, then
 # publishes the generated static browser assets to GitHub Pages on main.
 name: Build and deploy
 
@@ -21,6 +21,9 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      # The graph tests need neither a browser nor generated Faust assets.
+      - name: Test signal graph and domain
+        run: dotnet test tests/Orbit.Domain.Tests/Orbit.Domain.Tests.csproj --configuration Release
       # Node is a build-time tool only: Faust produces browser-ready WASM assets.
       - uses: actions/setup-node@v4
         with:
@@ -35,7 +38,7 @@ jobs:
           test -s src/Orbit.Infrastructure/wwwroot/audio/generated/sine/faustwasm/index.js
       - name: Test audio infrastructure components
         run: node --test tests/audio/*.test.mjs
-      # Compiles all three projects and produces the static site in publish/wwwroot.
+      # Compiles the referenced projects and produces the static site in publish/wwwroot.
       - name: Build and publish
         run: dotnet publish src/Orbit.UI/Orbit.UI.csproj --configuration Release --output publish
       # Ensure the class library's browser assets actually made it to the static site.

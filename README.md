@@ -2,6 +2,8 @@
 
 A browser-based experiment for rebuilding Orbit with independent C# application logic, Blazor WebAssembly UI and Faust DSP. The existing counter demonstrates state ownership; the Faust button demonstrates real-time audio processing. No React or TypeScript is used.
 
+The long-term modular synthesizer design is documented in [ORBIT2-ARCHITECTURE.md](ORBIT2-ARCHITECTURE.md). Phase 1 adds the independent signal graph model; the original tone demo remains the running audio example.
+
 ## Requirements and local execution
 
 - .NET 10 SDK
@@ -24,13 +26,15 @@ flowchart TD
     UI["Orbit.UI"] --> Application["Orbit.Application"]
     UI --> Infrastructure["Orbit.Infrastructure"]
     Infrastructure --> Application
+    Application --> Domain["Orbit.Domain"]
     Infrastructure --> DSP["Orbit.Audio / compiled Faust"]
 ```
 
 | Layer | Project | Responsibility |
 | --- | --- | --- |
 | UI/presentation | Orbit.UI | Razor components, code-behind, view state and styles. |
-| Application | Orbit.Application | Framework-neutral contracts, request models, counter state and audio use cases. |
+| Application | Orbit.Application | Framework-neutral contracts, request models, node registry, counter state and audio use cases. |
+| Domain | Orbit.Domain | Signal graphs, nodes, parameters, ports, connections and graph validation. |
 | Infrastructure | Orbit.Infrastructure | C# adapter and modular browser audio runtime. No UI or use-case policy. |
 | Processing/DSP | Orbit.Audio | Faust programs that generate samples. Compiled into WASM during build. |
 
@@ -120,15 +124,66 @@ process = os.osc(frequency);
 | AudioVoice.js | Own one playback's source/gain lifecycle; stop and release resources. |
 | AudioEnvelope.js | Schedule gain changes on the audio clock, including click-reducing ramps. |
 
+## Signal graph foundation (Phase 1)
+
+The independent domain model describes topology without generating samples. It has no browser or Faust dependency. Signal nodes expose read-only port and parameter collections; SignalGraph owns validated connection and parameter edits.
+
+- A sine generator has a frequency and amplitude parameter, each with its own modulation input. The same sine node can serve as an audible oscillator or an LFO.
+- A gain processor has a mono audio input, gain modulation input and audio output; master output is a terminal mono input.
+- Typed ports allow one output to feed several inputs, and modulatable parameters accept multiple sources. Connection amounts represent audio gain or target-specific modulation depth.
+- Graph validation rejects missing or reversed endpoints, incompatible types/channels, duplicate edges, single-input conflicts and cycles (including modulation cycles).
+- Removing a node removes its incident edges in the same operation. Parameter settings remain base values and never receive audio-rate samples.
+- The application registry creates independently identified node instances. The tone demo is deliberately unchanged: the graph is not yet compiled into executable Faust DSP.
+
+A small graph can be built and validated without a UI or audio device:
+
+```csharp
+using Orbit.Application.Graphs;
+using Orbit.Domain.Graphs;
+using Orbit.Domain.Nodes.Generators;
+using Orbit.Domain.Nodes.Outputs;
+using Orbit.Domain.Parameters;
+using Orbit.Domain.Ports;
+
+var registry = BuiltInNodes.CreateRegistry();
+var graph = new SignalGraph();
+var lfo = registry.Create(SineGenerator.NodeType);
+var oscillator = registry.Create(SineGenerator.NodeType);
+var output = registry.Create(MasterOutput.NodeType);
+
+graph.AddNode(lfo);
+graph.AddNode(oscillator);
+graph.AddNode(output);
+
+var lfoFrequency = lfo.Parameters.Single(p => p.Definition.Key == "frequency");
+graph.SetParameterValue(new ParameterAddress(lfo.Id, lfoFrequency.Id), 0.5);
+
+var frequencyInput = oscillator.Inputs.Single(p => p.Key == "frequency-modulation-in");
+graph.Connect(new PortAddress(lfo.Id, lfo.Outputs.Single().Id),
+    new PortAddress(oscillator.Id, frequencyInput.Id), amount: 100);
+graph.Connect(new PortAddress(oscillator.Id, oscillator.Outputs.Single().Id),
+    new PortAddress(output.Id, output.Inputs.Single().Id));
+```
+
+This describes a 0.5 Hz LFO modulating the second oscillator's 440 Hz base frequency by ±100 Hz. The actual sample-rate calculation and playback of this graph are planned in Phase 2.
+
 ## Repository layout
 
 ```text
 Orbit.slnx
 src/
+  Orbit.Domain/
+    Orbit.Domain.csproj
+    Graphs/
+    Nodes/
+    Parameters/
+    Ports/
   Orbit.Application/
     Orbit.Application.csproj
     Interfaces/IAudioEngine.cs
     Models/PlaybackRequest.cs
+    Graphs/NodeRegistry.cs
+    Graphs/BuiltInNodes.cs
     Services/
       IAudioService.cs
       AudioService.cs
@@ -161,8 +216,10 @@ src/
     wwwroot/index.html
     wwwroot/styles.css
 tests/audio/                         # isolated browser infrastructure tests
+tests/Orbit.Domain.Tests/            # framework-neutral graph and registry tests
 .github/workflows/build-and-deploy.yml
 README.md
+ORBIT2-ARCHITECTURE.md
 .gitignore
 ```
 
@@ -181,11 +238,12 @@ README.md
 Run the Faust compile command shown above before building. The official pinned FaustWasm compiler generates the browser-only runtime and WASM output; the compiler is not shipped or executed in the browser.
 
 ```sh
+dotnet test tests/Orbit.Domain.Tests/Orbit.Domain.Tests.csproj -c Release
 node --test tests/audio/*.test.mjs
 dotnet build Orbit.slnx
 dotnet publish src/Orbit.UI -c Release -o publish
 ```
 
-GitHub Actions compiles Faust, tests the infrastructure modules, builds the three .NET projects, checks the published static assets and deploys `publish/wwwroot` to GitHub Pages. For main deployments it rewrites the HTML base path to `/orbit2/`. Blazor's build-time fingerprinting and generated import map version the runtime assets, reducing mixed-version caching when a deployment replaces browser modules.
+GitHub Actions tests the domain and registry, compiles Faust, tests the infrastructure modules, builds the referenced .NET projects, checks the published static assets and deploys `publish/wwwroot` to GitHub Pages. For main deployments it rewrites the HTML base path to `/orbit2/`. Blazor's build-time fingerprinting and generated import map version the runtime assets, reducing mixed-version caching when a deployment replaces browser modules.
 
 Open https://wgabel.github.io/orbit2/ after deployment.

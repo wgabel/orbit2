@@ -1,7 +1,9 @@
-<!-- Groups the three .NET projects for solution-level builds; the UI's project
-     reference, not this file, defines the dependency direction. -->
+<!-- Groups the .NET projects and domain tests for solution-level builds.
+     Project references, not this file, define dependency direction. -->
 <Solution>
+  <Project Path="src/Orbit.Domain/Orbit.Domain.csproj" />
   <Project Path="src/Orbit.Application/Orbit.Application.csproj" />
   <Project Path="src/Orbit.Infrastructure/Orbit.Infrastructure.csproj" />
   <Project Path="src/Orbit.UI/Orbit.UI.csproj" />
+  <Project Path="tests/Orbit.Domain.Tests/Orbit.Domain.Tests.csproj" />
 </Solution>

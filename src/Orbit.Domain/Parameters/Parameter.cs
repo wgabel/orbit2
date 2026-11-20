@@ -1,0 +1,57 @@
+namespace Orbit.Domain.Parameters;
+
+/// <summary>
+/// Stores a node's editable base value and optional modulation socket.
+/// Effective, sample-varying values are never stored here or sent as UI events.
+/// </summary>
+public sealed class Parameter
+{
+    public Parameter(Guid id, ParameterDefinition definition, Guid? modulationPortId = null,
+        double? baseValue = null)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+
+        if (id == Guid.Empty)
+            throw new ArgumentException("Parameter ID cannot be empty.", nameof(id));
+
+        if (string.IsNullOrWhiteSpace(definition.Key) ||
+            string.IsNullOrWhiteSpace(definition.Name) ||
+            !double.IsFinite(definition.Minimum) ||
+            !double.IsFinite(definition.Maximum) ||
+            definition.Minimum > definition.Maximum ||
+            !definition.IsValidBaseValue(definition.DefaultValue) ||
+            !Enum.IsDefined(definition.Unit) ||
+            !Enum.IsDefined(definition.Scale))
+        {
+            throw new ArgumentException("Invalid parameter definition.", nameof(definition));
+        }
+
+        if (definition.CanModulate != modulationPortId.HasValue ||
+            modulationPortId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "A modulatable parameter needs a non-empty modulation port ID.",
+                nameof(modulationPortId));
+        }
+
+        Id = id;
+        Definition = definition;
+        ModulationPortId = modulationPortId;
+        SetBaseValue(baseValue ?? definition.DefaultValue);
+    }
+
+    public Guid Id { get; }
+    public ParameterDefinition Definition { get; }
+    public double BaseValue { get; private set; }
+    public Guid? ModulationPortId { get; }
+
+    // Graph operations own all parameter edits; callers cannot bypass validation.
+    internal void SetBaseValue(double value)
+    {
+        if (!Definition.IsValidBaseValue(value))
+            throw new ArgumentOutOfRangeException(nameof(value), value,
+                $"Value must be finite and between {Definition.Minimum} and {Definition.Maximum}.");
+
+        BaseValue = value;
+    }
+}
