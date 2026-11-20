@@ -2,7 +2,7 @@
 
 A browser-based modular synthesizer built with independent C# application logic, Blazor WebAssembly UI and Faust DSP. No React or TypeScript is used.
 
-The long-term modular synthesizer design is documented in [ORBIT2-ARCHITECTURE.md](ORBIT2-ARCHITECTURE.md). Phase 1 adds the independent signal graph model. Phase 2 executes a fixed modulation graph using Faust and exposes the shared audio clock. Phase 3 begins with a session-owned command and committed event system.
+The long-term modular synthesizer design is documented in [ORBIT2-ARCHITECTURE.md](ORBIT2-ARCHITECTURE.md). Phase 1 adds the independent signal graph model. Phase 2 executes a fixed modulation graph using Faust and exposes the shared audio clock. Phase 3 adds a session-owned command and committed event system plus the framework-neutral canvas presentation state.
 
 ## Requirements and local execution
 
@@ -24,7 +24,9 @@ Open http://localhost:5000. **Start modulation** plays a continuous, modulated s
 
 ```mermaid
 flowchart TD
-    UI["Orbit.UI"] --> Application["Orbit.Application"]
+    UI["Orbit.UI"] --> Presentation["Orbit.Presentation"]
+    Presentation --> Application["Orbit.Application"]
+    UI --> Application
     UI --> Infrastructure["Orbit.Infrastructure"]
     Infrastructure --> Application
     Application --> Domain["Orbit.Domain"]
@@ -33,7 +35,8 @@ flowchart TD
 
 | Layer | Project | Responsibility |
 | --- | --- | --- |
-| UI/presentation | Orbit.UI | Razor components, code-behind, view state and styles. |
+| UI | Orbit.UI | Razor components, code-behind and styles. |
+| Presentation state | Orbit.Presentation | Testable canvas layout, viewport transforms and selection; no Blazor or audio dependency. |
 | Application | Orbit.Application | Framework-neutral contracts, request models, node registry, timing contracts and audio use cases. |
 | Domain | Orbit.Domain | Signal graphs, nodes, parameters, ports, connections and graph validation. |
 | Infrastructure | Orbit.Infrastructure | C# adapter and modular browser audio runtime. No UI or use-case policy. |
@@ -222,6 +225,54 @@ var result = session.Execute(new AddNodeCommand(session.GraphId, SineGenerator.N
 
 See [the architecture document](ORBIT2-ARCHITECTURE.md#9-commands-events-and-transaction-boundaries) for the transaction boundary, event flow, and future nested-graph requirements.
 
+## Canvas presentation state (Phase 3 foundation)
+
+`Orbit.Presentation` is a plain .NET project for UI state and geometry. It references Application, not Blazor or infrastructure. Each future root or nested canvas owns a `CanvasStateService` instance observing the graph's committed revisions.
+
+~~~mermaid
+flowchart TD
+    Session["PatchSession"] --> Snapshot["Committed graph snapshot"]
+    Snapshot --> State["CanvasStateService"]
+    Gesture["Layout gesture"] --> State
+    State --> View["Immutable canvas snapshot"]
+    View --> Renderer["Future graph canvas"]
+    State --> Event["Canvas state notification"]
+~~~
+
+| Type | Responsibility |
+| --- | --- |
+| `CanvasPoint` | Finite world/screen coordinate at the service boundary |
+| `CanvasViewport` | Pan, zoom, pointer-anchored coordinate conversion |
+| `INodePlacementPolicy` / `GridNodePlacementPolicy` | Initial nonoverlapping grid positions for new nodes |
+| `ICanvasStateService` / `CanvasStateService` | Reconcile committed graph edits; manage layout and selection |
+| `CanvasStateSnapshot` | Immutable graph snapshot plus layout revision, positions, viewport and selection |
+| `CanvasStateChange` | Local notification with the consistent final presentation snapshot |
+
+A node movement, selection, pan or zoom increments only the layout revision. A graph commit updates the graph revision and reconciles deleted nodes/edges and newly added positions. Existing positions and viewport remain stable; a parameter change does not alter the layout revision. Graph and layout notification channels reuse the same generic `NotificationChannel<T>` implementation, but are separate instances with independent subscribers.
+
+~~~csharp
+using Orbit.Application.Graphs;
+using Orbit.Application.Graphs.Commands;
+using Orbit.Application.Graphs.Sessions;
+using Orbit.Domain.Nodes.Generators;
+using Orbit.Presentation.Canvas;
+
+using IPatchSession session = new PatchSession(BuiltInNodes.CreateRegistry());
+using ICanvasStateService canvas = new CanvasStateService(session);
+using var listener = canvas.Subscribe(change =>
+    Console.WriteLine($"{change.Kind}, layout revision {change.Snapshot.LayoutRevision}"));
+
+session.Execute(new AddNodeCommand(session.GraphId, SineGenerator.NodeType));
+var nodeId = canvas.Snapshot.Graph.Nodes.Single().Id;
+canvas.MoveNode(nodeId, new CanvasPoint(200, 100));
+canvas.PanBy(new CanvasPoint(-40, 80));
+canvas.ZoomAt(2, new CanvasPoint(200, 100)); // 200%, anchored to pointer
+~~~
+
+The coordinate transform is `screen = world * zoom + pan`, so moving a node by a screen delta at 200% zoom changes its world position by half that delta. Zoom is clamped to 25–400%. Canvas instances have independent state. Use the presentation dispatcher thread for layout and graph edits observed by the canvas; previously captured immutable snapshots can be read by asynchronous work. Dispose each canvas to unsubscribe from the session.
+
+This foundation is tested independently of Blazor. No graph visualization has been added yet; the next phase will render the node frames and connections using these snapshots and transforms. Fit-to-content will use measured node bounds in the renderer.
+
 ## Shared UI components
 
 `ParameterSlider` is the first reusable presentation building block. It takes a domain parameter definition, editable base value and optional read-only modulation range and effective value. The same component renders all three settings, validates draft input without committing invalid values and reports errors to its parent.
@@ -294,11 +345,15 @@ src/
     Graphs/Events/                    # committed facts and session-local dispatcher
     Graphs/Sessions/                  # IPatchSession, PatchSession, result
     Graphs/Snapshots/                 # immutable graph/node/parameter read models
+    Notifications/NotificationChannel.cs # reusable instance-local notification channel
     Interfaces/IAudioClock.cs
     Models/ModulationDemoSettings.cs
     Services/
       IModulationDemoService.cs
       ModulationDemoService.cs
+  Orbit.Presentation/
+    Orbit.Presentation.csproj
+    Canvas/                           # state, viewport, geometry and layout events
   Orbit.Audio/
     Dsp/Oscillators/ModulatedSine.dsp
   Orbit.Infrastructure/
@@ -342,6 +397,7 @@ src/
 tests/ui/                            # design token and stylesheet contract tests
 tests/audio/                         # isolated browser infrastructure tests
 tests/Orbit.Domain.Tests/            # graph, registry, transport and command/event tests
+tests/Orbit.Presentation.Tests/      # layout projection and viewport tests
 .github/workflows/build-and-deploy.yml
 README.md
 ORBIT2-ARCHITECTURE.md
@@ -365,6 +421,7 @@ Run the Faust compile command shown above before building or running the complet
 
 ```sh
 dotnet test tests/Orbit.Domain.Tests/Orbit.Domain.Tests.csproj -c Release
+dotnet test tests/Orbit.Presentation.Tests/Orbit.Presentation.Tests.csproj -c Release
 node src/Orbit.UI/DesignSystem/generate-tokens.mjs --check
 node --test tests/ui/*.test.mjs
 node --test tests/audio/*.test.mjs
@@ -372,6 +429,6 @@ dotnet build Orbit.slnx
 dotnet publish src/Orbit.UI -c Release -o publish
 ```
 
-GitHub Actions tests the domain, registry and transport, regenerates and tests the design system, compiles the active Faust program, tests infrastructure and renders the actual compiled modulation DSP at 44.1 and 48 kHz, builds the referenced .NET projects, checks the published static assets and deploys `publish/wwwroot` to GitHub Pages. For main deployments it rewrites the HTML base path to `/orbit2/`. Blazor's build-time fingerprinting and generated import map version the runtime assets, reducing mixed-version caching when a deployment replaces browser modules.
+GitHub Actions tests the domain, registry, transport, and presentation state, regenerates and tests the design system, compiles the active Faust program, tests infrastructure and renders the actual compiled modulation DSP at 44.1 and 48 kHz, builds the referenced .NET projects, checks the published static assets and deploys `publish/wwwroot` to GitHub Pages. For main deployments it rewrites the HTML base path to `/orbit2/`. Blazor's build-time fingerprinting and generated import map version the runtime assets, reducing mixed-version caching when a deployment replaces browser modules.
 
 Open https://wgabel.github.io/orbit2/ after deployment.

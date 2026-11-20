@@ -575,6 +575,35 @@ Moving a node or changing zoom/selection must not recompile DSP. Opening or clos
 
 The UI can show a breadcrumb such as Patch / Drone A / Effect rack. Use stable graph IDs to resolve the currently edited graph.
 
+### Implemented canvas state foundation
+
+The first presentation-state library is `Orbit.Presentation` (a plain .NET class library). It references Application and has no dependency on Blazor, browser APIs or processing. The UI project references it for the future canvas components. Each canvas/subcanvas will own one `ICanvasStateService` for its graph. Phase 3 supports one root graph per patch; independent service instances already preserve independent layouts and viewports.
+
+| State | Owner | Change notification |
+| --- | --- | --- |
+| Nodes, ports, base parameters and routing | PatchSession / SignalGraph | Committed graph revision |
+| World-coordinate node positions, selection and viewport | CanvasStateService | Local canvas state change |
+| Effective audio parameter values | DSP runtime | Throttled meter snapshot |
+
+`CanvasStateService` subscribes to whole `GraphChangeSet` notifications and reconciles the final immutable `GraphSnapshot`. A configurable `INodePlacementPolicy` supplies initial positions (default: a three-column grid). Existing positions are preserved, removed nodes and their incident connections are cleared from selection, and the canvas emits one update per graph commit. New placements and selection cleanup increment the layout revision; a parameter-only graph change does not.
+
+~~~mermaid
+flowchart TD
+    Command["Graph command"] --> Commit["PatchSession commit"]
+    Commit --> Graph["Graph snapshot"]
+    Graph --> Canvas["CanvasStateService"]
+    Layout["Pan / zoom / move / select"] --> Canvas
+    Canvas --> Read["CanvasStateSnapshot"]
+    Read --> View["GraphCanvas renderer"]
+    Commit --> Audio["Future audio graph subscriber"]
+~~~
+
+`CanvasViewport` is an immutable transform with a finite pan and zoom between 0.25 and 4. It is independent of browser input and CSS. It provides world-to-screen, screen-to-world, screen-delta-to-world and pointer-anchored zoom operations. Pointer positions are viewport-relative. A drag delta is divided by zoom before changing a node's world position, while panning is measured in screen pixels. Reset returns to zero pan and 100% zoom. Fit-to-content is a renderer concern once measured node bounds are available.
+
+Each view consumes an immutable `CanvasStateSnapshot` with separate graph and layout revision numbers, world positions, selected node/connection IDs and viewport. Layout changes never call `IPatchSession.Execute` or publish graph events. Graph and canvas dispatchers share the generic disposable `NotificationChannel<T>` implementation but remain separate notification instances. Listeners are notified after state commits; their failures do not undo state. Use the presentation dispatcher thread for interactive canvas operations and graph commands observed by the canvas; immutable snapshots may be handed to asynchronous processing. Consumers must dispose canvas subscriptions and the service when closing the corresponding canvas.
+
+The geometry and projection are implemented and independently tested. Actual canvas rendering, mouse/pointer gestures, measured node bounds, Bézier paths and navigation controls arrive in Phase 4/5.
+
 ### Shared canvas and component standards
 
 Every root canvas and nested canvas uses the same editor and viewport behavior. A canvas is a view over a signal graph, not a separate audio engine.
@@ -1001,7 +1030,7 @@ When swapping graphs, use an appropriate short fade/crossfade and preserve state
 
 ## 11. Project organization and dependencies
 
-The current solution includes Domain, Application, Infrastructure, UI and Audio components. Orbit.Domain isolates the graph model from application services and browser-specific infrastructure.
+The current solution includes Domain, Application, Presentation, Infrastructure, UI and Audio components. Orbit.Domain isolates the graph model from application services and browser-specific infrastructure.
 
 ~~~
 Orbit.Domain/
@@ -1038,6 +1067,8 @@ Orbit.Application/
     Events/                    # graph facts, change set, internal dispatcher
     Sessions/                  # IPatchSession, PatchSession and result
     Snapshots/                 # immutable graph/node/parameter records
+  Notifications/
+    NotificationChannel.cs
   Services/
     AudioGraphService.cs
     UndoRedoService.cs
@@ -1045,6 +1076,17 @@ Orbit.Application/
   Interfaces/
     IAudioEngine.cs
     IGraphCompiler.cs
+
+Orbit.Presentation/
+  Canvas/
+    CanvasPoint.cs
+    CanvasViewport.cs
+    CanvasStateService.cs
+    ICanvasStateService.cs
+    CanvasStateSnapshot.cs
+    GridNodePlacementPolicy.cs
+    INodePlacementPolicy.cs
+    CanvasStateChange.cs
 
 Orbit.Audio/
   Dsp/
@@ -1081,10 +1123,7 @@ Orbit.UI/
     Parameters/
     Navigation/
   Layout/
-  State/
-    CanvasStateService.cs
-    CanvasNavigation.cs
-    CanvasLayout.cs
+  State/                       # future navigation and Blazor view state
   Program.cs
 
 Orbit.Tests/
@@ -1258,7 +1297,8 @@ Deliverable: audible two-sine modulation proof, no per-sample C#/JS message loop
 - Implemented: validated single-command commits, immutable snapshots and revisioned change sets.
 - Implemented: patch-session dispatcher with disposable typed and whole-change-set subscriptions, isolation and failure reporting.
 - Implemented: the fixed modulation patch is constructed through the session commands.
-- Next: canvas state projection and layout-only events; connect the dynamic audio graph service when compilation is available. Multi-graph transactions await composite support.
+- Implemented: independently tested canvas state projection, layout-only events, node placement, selection, pan and pointer-anchored zoom in Orbit.Presentation.
+- Next: the actual canvas renderer and dynamic audio graph subscriber in Phase 4. Multi-graph transactions await composite support.
 
 Deliverable: a graph edit reaches independent subscribers once, with valid model state.
 

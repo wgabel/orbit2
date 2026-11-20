@@ -24,6 +24,8 @@ jobs:
       # The graph tests need neither a browser nor generated Faust assets.
       - name: Test signal graph and domain
         run: dotnet test tests/Orbit.Domain.Tests/Orbit.Domain.Tests.csproj --configuration Release
+      - name: Test canvas presentation state
+        run: dotnet test tests/Orbit.Presentation.Tests/Orbit.Presentation.Tests.csproj --configuration Release
       # Node is a build-time tool only: Faust produces browser-ready WASM assets.
       - uses: actions/setup-node@v4
         with:
