@@ -13,8 +13,21 @@ public sealed record GraphSnapshot(
         Nodes.SingleOrDefault(node => node.Id == nodeId)
         ?? throw new GraphValidationException($"Node {nodeId} does not exist in this snapshot.");
 
+    /// <summary>Resolve a canvas by graph ID without exposing a mutable domain graph.</summary>
+    public GraphSnapshot GetGraph(Guid graphId) =>
+        FindGraph(graphId) ?? throw new GraphValidationException($"Graph {graphId} does not exist in this snapshot.");
+
+    private GraphSnapshot? FindGraph(Guid graphId)
+    {
+        if (Id == graphId) return this;
+        foreach (var node in Nodes)
+            if (node.Composite?.Graph.FindGraph(graphId) is { } found)
+                return found;
+        return null;
+    }
+
     internal static GraphSnapshot Capture(SignalGraph graph, long revision) => new(
         graph.Id, revision,
-        Array.AsReadOnly(graph.Nodes.Select(GraphNodeSnapshot.Capture).ToArray()),
+        Array.AsReadOnly(graph.Nodes.Select(node => GraphNodeSnapshot.Capture(node, revision)).ToArray()),
         Array.AsReadOnly(graph.Connections.ToArray()));
 }

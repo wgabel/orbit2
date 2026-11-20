@@ -1,4 +1,6 @@
 using Orbit.Domain.Nodes;
+using Orbit.Domain.Nodes.Composites;
+using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Ports;
 
 namespace Orbit.Domain.Graphs;
@@ -20,6 +22,24 @@ public sealed class SignalGraphValidator
 
         if (graph.Nodes.Any(existing => existing.Id == node.Id))
             throw new GraphValidationException($"Node {node.Id} already exists.");
+
+        if (node is SignalNode { OwningGraph: not null })
+            throw new GraphValidationException("This node instance already belongs to a graph.");
+        if (node is InputRack inputRack && !ReferenceEquals(graph.Owner?.InputRack, inputRack) ||
+            node is OutputRack outputRack && !ReferenceEquals(graph.Owner?.OutputRack, outputRack))
+            throw new GraphValidationException("A boundary rack belongs only to its own composite graph.");
+        if (graph.Owner is not null && node is MasterOutput)
+            throw new GraphValidationException("A child graph uses its Output Rack, not a master output.");
+        if (node is ICompositeNode composite)
+        {
+            if (!ReferenceEquals(composite.InternalGraph.Owner, composite))
+                throw new GraphValidationException("A composite must own its child graph.");
+            // Walk ancestors, including the immediate owner. A composite cannot
+            // be placed in its own graph, even indirectly through another child.
+            for (SignalGraph? ancestor = graph; ancestor is not null; ancestor = ancestor.Owner?.OwningGraph)
+                if (ReferenceEquals(ancestor.Owner, composite))
+                    throw new GraphValidationException("A composite cannot contain itself or an ancestor.");
+        }
 
         var ports = node.Inputs.Concat(node.Outputs).ToArray();
 

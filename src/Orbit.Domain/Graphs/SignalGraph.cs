@@ -1,4 +1,5 @@
 using Orbit.Domain.Nodes;
+using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Parameters;
 using Orbit.Domain.Ports;
 
@@ -28,6 +29,13 @@ public sealed class SignalGraph
         Connections = connections.AsReadOnly();
     }
 
+    internal SignalGraph(CompositeNode owner) : this(Guid.NewGuid())
+    {
+        Owner = owner;
+    }
+
+    internal CompositeNode? Owner { get; }
+
     public Guid Id { get; }
     public IReadOnlyList<ISignalNode> Nodes { get; }
     public IReadOnlyList<SignalConnection> Connections { get; }
@@ -49,16 +57,22 @@ public sealed class SignalGraph
     {
         validator.ValidateNode(this, node);
         nodes.Add(node);
+        if (node is SignalNode ownedNode)
+            ownedNode.OwningGraph = this;
     }
 
     public void RemoveNode(Guid nodeId)
     {
         var node = GetNode(nodeId);
+        if (node is InputRack or OutputRack)
+            throw new GraphValidationException("Boundary racks cannot be removed independently of their composite.");
 
         // Remove every incident edge in the same domain operation.
         connections.RemoveAll(connection =>
             connection.Source.NodeId == nodeId || connection.Destination.NodeId == nodeId);
         nodes.Remove(node);
+        if (node is SignalNode ownedNode)
+            ownedNode.OwningGraph = null;
     }
 
     public SignalConnection Connect(PortAddress source, PortAddress destination, double amount = 1)

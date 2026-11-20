@@ -1,3 +1,4 @@
+using Orbit.Domain.Graphs;
 using Orbit.Domain.Parameters;
 using Orbit.Domain.Ports;
 
@@ -34,4 +35,8 @@ public abstract class SignalNode : ISignalNode
     public IReadOnlyList<Parameter> Parameters { get; }
     public IReadOnlyList<PortDefinition> Inputs { get; }
     public IReadOnlyList<PortDefinition> Outputs { get; }
+
+    // A concrete node instance belongs to one graph. This prevents sharing
+    // mutable parameter state between otherwise independent composite instances.
+    internal SignalGraph? OwningGraph { get; set; }
 }

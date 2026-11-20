@@ -11,28 +11,28 @@ namespace Orbit.Application.Graphs.Commands;
 /// </summary>
 internal sealed class GraphCommandHandler(NodeRegistry registry)
 {
-    public IReadOnlyList<IGraphEvent> Execute(SignalGraph graph, IGraphCommand command) =>
+    public IReadOnlyList<IGraphEvent> Execute(SignalGraph graph, IGraphCommand command, long revision) =>
         command switch
         {
-            AddNodeCommand add => AddNode(graph, add),
-            RemoveNodeCommand remove => RemoveNode(graph, remove),
+            AddNodeCommand add => AddNode(graph, add, revision),
+            RemoveNodeCommand remove => RemoveNode(graph, remove, revision),
             ConnectNodesCommand connect => Connect(graph, connect),
             RemoveConnectionCommand disconnect => RemoveConnection(graph, disconnect),
             SetParameterValueCommand set => SetParameterValue(graph, set),
             _ => throw new NotSupportedException($"Unknown graph command: {command.GetType().Name}.")
         };
 
-    private IReadOnlyList<IGraphEvent> AddNode(SignalGraph graph, AddNodeCommand command)
+    private IReadOnlyList<IGraphEvent> AddNode(SignalGraph graph, AddNodeCommand command, long revision)
     {
         var node = registry.Create(command.NodeType);
-        var snapshot = GraphNodeSnapshot.Capture(node);
+        var snapshot = GraphNodeSnapshot.Capture(node, revision);
         graph.AddNode(node);
         return [new NodeAdded(graph.Id, snapshot)];
     }
 
-    private static IReadOnlyList<IGraphEvent> RemoveNode(SignalGraph graph, RemoveNodeCommand command)
+    private static IReadOnlyList<IGraphEvent> RemoveNode(SignalGraph graph, RemoveNodeCommand command, long revision)
     {
-        var node = GraphNodeSnapshot.Capture(graph.GetNode(command.NodeId));
+        var node = GraphNodeSnapshot.Capture(graph.GetNode(command.NodeId), revision);
         var events = graph.Connections
             .Where(connection => connection.Source.NodeId == node.Id || connection.Destination.NodeId == node.Id)
             .Select(connection => (IGraphEvent)new ConnectionRemoved(graph.Id, connection))

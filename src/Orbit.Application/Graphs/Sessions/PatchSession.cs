@@ -57,7 +57,7 @@ public sealed class PatchSession : IPatchSession
                 var nextRevision = checked(snapshot.Revision + 1);
                 // Validation happens in the domain before each mutation. A
                 // rejected command leaves the revision and snapshots untouched.
-                var events = commands.Execute(graph, command);
+                var events = commands.Execute(graph, command, nextRevision);
                 if (events.Count == 0)
                     return new GraphCommandResult(null, Array.Empty<Exception>());
 

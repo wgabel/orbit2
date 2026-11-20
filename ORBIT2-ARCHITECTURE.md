@@ -532,6 +532,8 @@ public interface ICompositeNode : ISignalNode
 
 Actual mutation methods should protect graph invariants. The above represents an illustrative read model; the application command handler or domain operations own controlled mutation, rather than exposing freely modifiable Lists.
 
+The initial domain implementation now creates an owned child graph via `CompositeNode`, with mandatory `InputRack` and `OutputRack` instances. A composite cannot be inserted into itself, an ancestor, or two graphs simultaneously. Concrete node instances cannot be shared across graphs, so mutable parameters remain independent. Child graphs reject master outputs. Snapshots recursively capture child graphs, revision and rack IDs; `GraphSnapshot.GetGraph` resolves a graph within that immutable patch. The editor still targets the root until child command routing is implemented.
+
 ### The canvases
 
 A main patch might contain:
@@ -706,6 +708,8 @@ For example, a frequency base of 440 Hz with a sine LFO at ±100 Hz displays a 3
 
 Live telemetry is a passive, display-rate snapshot (around 20–30 Hz initially, batched per graph when scaled up), not an application event for every sample. Audio processing never waits for the UI. Do not persist telemetry or write it back to editable parameter values. A stopped or unavailable processor has no live marker.
 
+**Frequency UX requirement:** the 0.01–20,000 Hz linear sine control is difficult to use for slow modulation. Preserve the generator's full audio-frequency capability, but provide an LFO-oriented 0.01–100 Hz editing range, potentially with logarithmic positioning or coarse/fine adjustment. Higher frequency means a shorter cycle (`T = 1 / f`); modulation faster than the display sampling rate may not visibly track every cycle. The display range is not a DSP limit.
+
 The shared ParameterSlider is implemented in the editable node frames. The graph editor supports live base-value edits and effective modulation meters for reachable connected parameters. `GraphModulationRangeEstimator` calculates conservative parameter intervals from the committed snapshot using optional signal-bound rules on the registered DSP emitters. The weighted inputs are summed and clamped to parameter limits; unknown bounds propagate rather than inventing a range. `FaustNodeContext` inserts a passive meter after the effective value clamp, and the playback service maps its stable name to a parameter address. `GraphPlaybackControls` polls the service at 25 Hz; the workspace accepts only the matching graph revision and passes display data to the shared node frames. The base thumb is independent of the marker. Disconnected nodes can show predicted bounds but have no live sample.
 
 Phase 4 implements the shared canvas, node frames, typed ports and connection renderer; Phase 5 reuses them for nested canvases.
@@ -786,6 +790,8 @@ public interface IOutputRack : ISignalNode
 ~~~
 
 A shared boundary definition is projected into two socket views with opposite directions. The stable port identity is preserved within the composite instance; the node/address distinguishes parent socket from internal rack socket. This is not two separately mutable collections.
+
+The first implementation uses immutable `ExposedPort` definitions (ID, name, signal type, channel count and receiver fan-in). Both socket views are created from that same definition. Port IDs are unique across the composite and names are unique per direction. Racks are graph-owned and cannot be added or removed separately. Default values and mutable boundary definitions await transactional rack edits.
 
 Possible metadata includes units, ranges, unconnected default values, reorder position, labels and channel layout. For audio inputs, an unconnected default is normally silence; for a modulation input, zero is a useful default when the signal is additive. Defaults must be meaningful for the signal's declared type.
 
@@ -1345,8 +1351,9 @@ Deliverable: construct and edit a graph of two generators, a filter, mixer/outpu
 
 ### Phase 5 — Composite nodes and rack interfaces
 
-- Implement ICompositeNode and graph navigation.
-- Add Input Rack and Output Rack, projected automatically onto composite node sockets.
+- Implemented: ICompositeNode, graph-owned Input Rack and Output Rack, immutable shared boundary identities, recursion checks and nested snapshots.
+- Next: session command routing to child graphs and graph navigation.
+- Add editable Input Rack and Output Rack ports, projected automatically onto composite node sockets.
 - Add transactional add/rename/reorder/remove-port commands crossing parent/child boundaries.
 - Flatten graph boundaries while preserving identity and modulation dependencies.
 - Reuse the same canvas UI for all levels.

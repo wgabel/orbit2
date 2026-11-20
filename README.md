@@ -2,7 +2,7 @@
 
 A browser-based modular synthesizer built with independent C# application logic, Blazor WebAssembly UI and Faust DSP. No React or TypeScript is used.
 
-The long-term modular synthesizer design is documented in [ORBIT2-ARCHITECTURE.md](ORBIT2-ARCHITECTURE.md). Phase 1 adds the independent signal graph model. Phase 2 executes a fixed modulation graph using Faust and exposes the shared audio clock. Phase 3 adds a session-owned command and committed event system plus the framework-neutral canvas presentation state. Phase 4 connects the editable graph to a runtime Faust compiler and AudioWorklet playback.
+The long-term modular synthesizer design is documented in [ORBIT2-ARCHITECTURE.md](ORBIT2-ARCHITECTURE.md). Phase 1 adds the independent signal graph model. Phase 2 executes a fixed modulation graph using Faust and exposes the shared audio clock. Phase 3 adds a session-owned command and committed event system plus the framework-neutral canvas presentation state. Phase 4 connects the editable graph to a runtime Faust compiler and AudioWorklet playback. Phase 5 begins with composite nodes and immutable nested graph snapshots.
 
 ## Requirements and local execution
 
@@ -364,6 +364,28 @@ The editable thumb and numeric input stay at the base value. A colored band show
 The separate moving marker and Live label reflect actual Faust bargraph readings at 25 Hz, not a simulated LFO. Meter names map to stable node/parameter addresses. Frames are accepted only for the applied graph revision, and markers disappear while stopped or while a new graph is pending. The estimated band remains visible when stopped. Telemetry never changes the base parameter or emits graph commands.
 
 Future root and nested canvases share the same viewport, node frame, port connector and Bézier connection components. Their interaction and visual contracts are defined in [the architecture document](ORBIT2-ARCHITECTURE.md#shared-canvas-and-component-standards).
+
+### Frequency control design note
+
+The current sine frequency control spans 0.01–20,000 Hz linearly. For LFO use this makes useful slow rates occupy almost none of the slider travel. A future rate-oriented control should provide a convenient 0.01–100 Hz modulation range (possibly logarithmic or with coarse/fine editing) without changing the generator's underlying audio-rate frequency capability. The period is `1 / frequency`: higher rates produce shorter cycles, but can become too fast to observe or use as slow modulation.
+
+## Composite graph foundation (Phase 5)
+
+`CompositeNode` implements `ICompositeNode` and creates a distinct `SignalGraph`, one `InputRack` and one `OutputRack`. Each named `ExposedPort` is projected as a parent socket and an opposite-direction child rack socket with the same ID. Connections remain local to their graph; the boundary is the only permitted route between them.
+
+```mermaid
+flowchart TD
+    L[Parent LFO] --> I[Composite input]
+    I --> R[Input Rack output]
+    R --> G[Child oscillator]
+    G --> S[Output Rack input]
+    S --> O[Composite output]
+    O --> M[Parent master output]
+```
+
+The domain rejects recursive ownership, shared concrete node instances, cross-graph connections, standalone rack insertion/removal and child master outputs. `GraphNodeSnapshot.Composite` captures the child graph and rack IDs without referencing mutable objects. `GraphSnapshot.GetGraph` resolves nested graph IDs within the captured patch revision.
+
+The initial boundary is immutable. Composite nodes are intentionally not in the editor's built-in catalog yet: child commands, transactional port edits, DSP flattening and canvas navigation are subsequent steps.
 
 ## Design system
 
