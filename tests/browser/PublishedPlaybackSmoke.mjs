@@ -36,13 +36,22 @@ try {
     const play = page.getByRole("button", { name: "Play patch" });
     await play.click({ timeout: 30000 });
     await status.filter({ hasText: /Playing revision/ }).waitFor({ timeout: 30000 });
+    const initialRevision = Number((await status.innerText()).match(/Playing revision (\d+)/)[1]);
+    // Changing an existing control advances the audible revision without stopping.
+    await page.getByRole("spinbutton", { name: "Frequency (Hz)" }).nth(1).fill("330");
+    await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 1}$`) }).waitFor({ timeout: 10000 });
+    assert.equal(await play.isEnabled(), false);
+    // Structural changes remain staged; the existing voice is still audible.
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await status.filter({ hasText: /restart to apply edits/ }).waitFor({ timeout: 10000 });
+    assert.equal(await play.isEnabled(), false);
     await page.getByRole("button", { name: "Stop", exact: true }).click();
     await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 10000 });
     const prefix = `/_content/Orbit.Infrastructure/audio-${version}/`;
     for (const file of ["audio.js", "AudioEngine.js", "Faust/FaustCompilerWorker.js", "generated/compiler/index.js"])
         assert.ok(requests.has(prefix + file), `Missing versioned asset: ${file}`);
     assert.ok([...requests].every(path => !path.startsWith("/_content/Orbit.Infrastructure/audio/")));
-    console.log("Published editor played and stopped using the versioned audio module tree.");
+    console.log("Published editor played, applied a live parameter edit, staged a structural change and stopped.");
 } finally {
     await browser?.close();
     server.close();

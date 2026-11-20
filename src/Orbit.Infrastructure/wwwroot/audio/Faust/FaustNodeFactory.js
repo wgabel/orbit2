@@ -36,26 +36,25 @@ export class FaustNodeFactory {
         }
 
         try {
-            for (const [parameter, value] of Object.entries(parameters)) {
-                if (!Number.isFinite(value)) {
-                    throw new Error("Invalid parameter value: " + parameter);
-                }
-
-                const path = node.getParams().find(
-                    candidate => candidate.endsWith("/" + parameter));
-
-                if (!path) {
-                    throw new Error("Unknown Faust parameter: " + parameter);
-                }
-
-                node.setParamValue(path, value);
-            }
-
+            this.setParameters(node, parameters);
             return node;
         } catch (error) {
             node.disconnect();
             node.destroy?.();
             throw error;
         }
+    }
+
+    // Shared by initialization and live edits. Resolve and validate the entire
+    // batch before writing, so an unknown control cannot partially apply it.
+    setParameters(node, parameters) {
+        const paths = node.getParams();
+        const writes = Object.entries(parameters).map(([parameter, value]) => {
+            if (!Number.isFinite(value)) throw new Error("Invalid parameter value: " + parameter);
+            const matches = paths.filter(candidate => candidate.endsWith("/" + parameter));
+            if (matches.length !== 1) throw new Error("Unknown or ambiguous Faust parameter: " + parameter);
+            return [matches[0], value];
+        });
+        for (const [path, value] of writes) node.setParamValue(path, value);
     }
 }

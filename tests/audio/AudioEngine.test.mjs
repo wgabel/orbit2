@@ -31,7 +31,8 @@ function setup() {
             assert.equal(actualContext, context);
             calls.push(["create", processor, parameters]);
             return node;
-        }
+        },
+        setParameters: (actualNode, parameters) => calls.push(["parameters", { ...parameters }])
     };
     const output = { createVoice: () => voice, dispose: () => calls.push("output-dispose") };
     const monitor = { getSnapshot: () => ({ "/ModulatedSine/effectiveFrequency": 430 }),
@@ -113,4 +114,35 @@ test("dynamic playback passes source after resume and exposes lifecycle state", 
     assert.equal(engine.getPlaybackState(dynamic.soundId), "stopping");
     await task;
     assert.equal(engine.getPlaybackState(dynamic.soundId), "idle");
+});
+
+test("live changes update the existing worklet, reject unknown controls, and stop accepting edits on release", async () => {
+    const { engine, calls } = setup();
+    assert.equal(engine.setParameters(request.soundId, { baseFrequency: 330 }), false);
+    const playback = engine.play(request);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(engine.setParameters(request.soundId, { baseFrequency: 330 }), true);
+    assert.deepEqual(calls.at(-1), ["parameters", { baseFrequency: 330 }]);
+    assert.throws(() => engine.setParameters(request.soundId, { baseFrequency: 220, invalid: 1 }), /Invalid audio parameter/);
+    assert.throws(() => engine.setParameters(request.soundId, { baseFrequency: NaN }), /Invalid audio parameter/);
+    assert.equal(calls.filter(call => Array.isArray(call) && call[0] === "create").length, 1);
+    assert.equal(calls.filter(call => Array.isArray(call) && call[0] === "parameters").length, 1);
+    engine.stop(request.soundId);
+    assert.equal(engine.setParameters(request.soundId, { baseFrequency: 220 }), false);
+    await playback;
+});
+
+test("edits during compilation are coalesced and applied before the voice starts", async () => {
+    const { engine, calls, nodeFactory } = setup();
+    let complete;
+    nodeFactory.create = () => new Promise(resolve => { complete = resolve; });
+    const playback = engine.play(request);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(engine.setParameters(request.soundId, { baseFrequency: 330, lfoRate: 2 }), true);
+    assert.equal(engine.setParameters(request.soundId, { baseFrequency: 550 }), true);
+    complete({});
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(calls, ["resume", ["parameters", { baseFrequency: 550, lfoRate: 2 }], ["play", request]]);
+    engine.stop(request.soundId);
+    await playback;
 });

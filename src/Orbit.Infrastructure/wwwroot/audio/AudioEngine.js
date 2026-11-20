@@ -24,7 +24,11 @@ export class AudioEngine {
             throw new Error("Playback already active: " + request.soundId);
         }
 
-        const playback = { cancelled: false, voice: undefined };
+        const playback = {
+            cancelled: false, voice: undefined, node: undefined,
+            controlNames: new Set(Object.keys(request.parameters ?? {})),
+            pendingParameters: Object.create(null)
+        };
         this.#active.set(request.soundId, playback);
 
         try {
@@ -42,6 +46,11 @@ export class AudioEngine {
             }
 
             try {
+                // Edits made during worker compilation are applied before the
+                // voice attacks, with the last value winning for each control.
+                if (Object.keys(playback.pendingParameters).length > 0)
+                    this.#nodeFactory.setParameters(node, playback.pendingParameters);
+                playback.node = node;
                 playback.voice = this.#output.createVoice(context, node);
             } catch (error) {
                 node.disconnect();
@@ -71,6 +80,21 @@ export class AudioEngine {
         if (!playback) return "idle";
         if (playback.cancelled) return "stopping";
         return playback.voice ? "playing" : "starting";
+    }
+
+    // Only values of existing controls may change; this never recreates a node.
+    setParameters(soundId, parameters) {
+        const playback = this.#active.get(soundId);
+        if (!playback || playback.cancelled) return false;
+        if (!parameters || typeof parameters !== "object" || Array.isArray(parameters))
+            throw new Error("Invalid audio parameter update.");
+        for (const [name, value] of Object.entries(parameters)) {
+            if (!playback.controlNames.has(name) || !Number.isFinite(value))
+                throw new Error("Invalid audio parameter: " + name);
+        }
+        if (playback.node) this.#nodeFactory.setParameters(playback.node, parameters);
+        else Object.assign(playback.pendingParameters, parameters);
+        return true;
     }
 
     // A snapshot is read at display rate, independently of the sample clock.

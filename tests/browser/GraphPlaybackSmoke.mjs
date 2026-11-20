@@ -53,24 +53,36 @@ try {
             analyser.connect(context.destination);
             const samples = new Float32Array(analyser.fftSize);
             // Wait for the worklet to produce audible samples, not a fixed startup delay.
-            const end = performance.now() + 5000;
-            let peak = 0;
-            while (performance.now() < end && peak < 0.035) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                analyser.getFloatTimeDomainData(samples);
-                peak = Math.max(...samples.map(Math.abs));
+            async function waitForPeak(predicate) {
+                const end = performance.now() + 5000;
+                let peak = 0;
+                do {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    analyser.getFloatTimeDomainData(samples);
+                    peak = Math.max(...samples.map(Math.abs));
+                } while (!predicate(peak) && performance.now() < end);
+                return peak;
             }
+            const peak = await waitForPeak(value => value > 0.035);
+            // The same connected worklet must respond to live base edits.
+            // Mute the carrier amplitude and then restore it on the same node.
+            factory.setParameters(node, { [manifest.amplitude]: 0 });
+            const mutedPeak = await waitForPeak(value => value < 0.001);
+            factory.setParameters(node, { [manifest.amplitude]: manifest.values[manifest.amplitude] });
+            const restoredPeak = await waitForPeak(value => value > 0.035);
             node.disconnect();
             node.destroy();
             // Distinct topology must use a distinct worklet processor name.
             const second = await factory.create(context, "OrbitGraph", {}, "process = 0.0;");
             second.disconnect();
             second.destroy();
-            return { peak, sampleRate: context.sampleRate };
+            return { peak, mutedPeak, restoredPeak, sampleRate: context.sampleRate };
         } finally { compiler.dispose(); await context.close(); }
     }, { source, manifest });
     console.log("Generated graph produced real worklet audio:", result);
     assert.ok(result.peak > 0.035 && result.peak <= 0.151);
+    assert.ok(result.mutedPeak < 0.001, "Live values did not mute the existing worklet");
+    assert.ok(result.restoredPeak > 0.035 && result.restoredPeak <= 0.151, "Live values did not restore audio");
 } finally {
     await browser?.close();
     server.close();

@@ -88,4 +88,8 @@ test("dynamic factory creates a worklet from a compiler result and applies graph
         }}), compiler);
     assert.equal(await factory.create({}, "OrbitGraph", { p_frequency: 440 }, "process=0;"), node);
     assert.deepEqual(calls, [["/OrbitGraph/p_frequency", 440]]);
+    factory.setParameters(node, { p_frequency: 330 });
+    assert.deepEqual(calls.at(-1), ["/OrbitGraph/p_frequency", 330]);
+    assert.throws(() => factory.setParameters(node, { p_frequency: 220, unknown: 1 }), /Unknown or ambiguous/);
+    assert.equal(calls.length, 2);
 });

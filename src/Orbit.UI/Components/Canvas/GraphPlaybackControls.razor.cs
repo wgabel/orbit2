@@ -6,7 +6,7 @@ using Orbit.Application.Services;
 namespace Orbit.UI.Components.Canvas;
 
 /// <summary>Owns only display state and a playback lifetime for the supplied snapshot.
-/// Graph edits during playback are staged for the next start, never silently swapped.</summary>
+/// Base-only edits are forwarded through the service; structural edits remain staged.</summary>
 public partial class GraphPlaybackControls : IAsyncDisposable
 {
     [Inject] private IGraphPlaybackService Playback { get; set; } = default!;
@@ -18,14 +18,48 @@ public partial class GraphPlaybackControls : IAsyncDisposable
     private bool disposed;
     private Guid activeGraph;
     private long activeRevision;
+    private long lastRequestedRevision;
+    private long playbackGeneration;
+    private bool requiresRestart;
     private PlaybackState state;
     private string? Error { get; set; }
     private string Status => !IsReady ? "Audio engine not ready."
         : !IsActive ? "Ready · plays the current graph"
         : IsStopping ? "Stopping…"
         : state != PlaybackState.Playing ? $"Compiling revision {activeRevision}…"
-        : Snapshot.Revision != activeRevision ? $"Playing revision {activeRevision} · restart to apply edits"
+        : requiresRestart ? $"Playing revision {activeRevision} · restart to apply edits"
+        : Snapshot.Revision != activeRevision ? $"Playing revision {activeRevision} · applying edits…"
         : $"Playing revision {activeRevision}";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // The canvas already observes committed graph events. Viewport and
+        // selection changes can re-render it but do not advance its revision.
+        var snapshot = Snapshot;
+        if (!IsActive || IsStopping || disposed || snapshot.Id != activeGraph ||
+            snapshot.Revision <= lastRequestedRevision) return;
+        lastRequestedRevision = snapshot.Revision;
+        var generation = playbackGeneration;
+        try
+        {
+            var update = await Playback.UpdateAsync(snapshot);
+            if (disposed || !IsActive || IsStopping || generation != playbackGeneration || !update.IsActive) return;
+            activeRevision = Math.Max(activeRevision, update.AppliedRevision);
+            if (snapshot.Revision == lastRequestedRevision)
+            {
+                requiresRestart = update.RequiresRestart;
+                Error = null;
+            }
+        }
+        catch (Exception exception)
+        {
+            if (!disposed && IsActive && generation == playbackGeneration && snapshot.Revision == lastRequestedRevision)
+            {
+                requiresRestart = true;
+                Error = $"Live parameter update failed: {exception.Message}";
+            }
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -48,6 +82,9 @@ public partial class GraphPlaybackControls : IAsyncDisposable
         var graph = Snapshot;
         activeGraph = graph.Id;
         activeRevision = graph.Revision;
+        lastRequestedRevision = graph.Revision;
+        playbackGeneration++;
+        requiresRestart = false;
         state = PlaybackState.Starting;
         Error = null;
         IsActive = true;

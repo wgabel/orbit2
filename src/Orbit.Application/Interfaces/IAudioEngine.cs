@@ -12,6 +12,8 @@ public interface IAudioEngine
     Task PlayAsync(PlaybackRequest request);
     Task StopAsync(string soundId);
     Task<PlaybackState> GetPlaybackStateAsync(string soundId);
+    /// <summary>Set existing controls on a starting or playing voice; false when inactive.</summary>
+    Task<bool> SetParametersAsync(string soundId, IReadOnlyDictionary<string, double> parameters);
 
     /// <summary>Latest read-only processor meter values, or null when inactive.</summary>
     Task<Dictionary<string, double>?> GetOutputValuesAsync(string soundId);

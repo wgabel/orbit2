@@ -706,7 +706,7 @@ For example, a frequency base of 440 Hz with a sine LFO at ±100 Hz displays a 3
 
 Live telemetry is a passive, display-rate snapshot (around 20–30 Hz initially, batched per graph when scaled up), not an application event for every sample. Audio processing never waits for the UI. Do not persist telemetry or write it back to editable parameter values. A stopped or unavailable processor has no live marker.
 
-The shared ParameterSlider is implemented in both the fixed modulation proof and the editable node frames. The graph editor currently edits base values only; live modulation meters in arbitrary node graphs await the dynamic compiler. Phase 4 implements the shared canvas, node frames, typed ports and connection renderer; Phase 5 reuses them for nested canvases.
+The shared ParameterSlider is implemented in the editable node frames. The graph editor supports live base-value edits during playback; effective modulation meters in arbitrary node graphs remain a subsequent step. Phase 4 implements the shared canvas, node frames, typed ports and connection renderer; Phase 5 reuses them for nested canvases.
 
 ### First visible editor implementation
 
@@ -1028,7 +1028,9 @@ The graph compiler produces stable parameter addresses and metadata so the brows
 | Change effect order | Update routing/compile |
 | Rename a rack port | Update model/projection, typically no audio compile if stable addresses are unchanged |
 
-The browser integration now captures one committed snapshot per Play request and maps it to Faust source and initial values via `FaustGraphPlaybackService`. The pinned complete compiler bundle loads lazily inside `FaustCompilerWorker.js`, coordinated by `FaustCompilerClient`. It compiles outside both the UI and audio threads, and returns a WebAssembly module and metadata to the existing AudioWorklet node factory. The node uses the source-specific factory hash for its processor identity. The shared audio envelope handles start and stop. During this first runtime stage, edits are staged until restart, and the UI reports the active revision. Live graph swaps are not yet implemented.
+The browser integration captures one committed snapshot per Play request and maps it to Faust source and initial values via `FaustGraphPlaybackService`. The pinned complete compiler bundle loads lazily inside `FaustCompilerWorker.js`, coordinated by `FaustCompilerClient`. It compiles outside both the UI and audio threads, and returns a WebAssembly module and metadata to the existing AudioWorklet node factory. The node uses the source-specific factory hash for its processor identity. The shared audio envelope handles start and stop.
+
+Live base-only changes use the active compiler control manifest instead of recompiling. `GraphTopology` compares node/port/parameter definitions and connections (including weights), but ignores base values. `ActiveGraphPlayback` serializes revisions, stores the last applied base values, and maps changed `ParameterAddress` instances to stable control names. The browser engine writes the existing worklet's parameters; Faust's `si.smoo` smooths the change without resetting oscillator phase. While compilation is in progress, the browser coalesces updates by control name before the initial attack. Structural changes remain staged while topology differs. Live graph swaps are not yet implemented.
 
 Compile outside the audio rendering thread, preferably in an appropriate worker or build pipeline. A new graph should be prepared before swapping it in. Use revision numbers to discard stale compilation results and coalesce rapid structural edits. Keep the last good runtime active if compilation fails; report the error in the UI.
 
@@ -1327,7 +1329,8 @@ Deliverable: a graph edit reaches independent subscribers once, with valid model
 - Implemented: drag-to-connect, click-to-connect, delete selected connections/nodes, node placement and shared base parameter editor.
 - Implemented: dependency ordering and extensible C# graph-to-Faust source compiler with stable parameter controls (sine, gain, master output), plus offline WASM probe tests.
 - Implemented: on-demand graph playback from the editor, with a lazy Faust compiler worker, revision status and safe start/stop. The original fixed UI is retired.
-- Next: live parameter updates and safe runtime graph replacement.
+- Implemented: live base-value updates on the running worklet, including startup queuing, revision ordering, smoothed controls and structural-change detection.
+- Next: effective parameter telemetry and safe runtime graph replacement.
 - Compile asynchronously, track graph revision and safely swap runtime.
 - Test fan-out and multiple modulation sources.
 - Add low-pass effect and mixer.

@@ -21,9 +21,12 @@ session.Execute(new ConnectNodesCommand(session.GraphId,
 var program = FaustGraphCompiler.CreateBuiltIn().Compile(session.Snapshot);
 var frequency = program.Controls.Single(control => control.Address == new ParameterAddress(oscillator.Id,
     oscillator.Parameters.Single(parameter => parameter.Definition.Key == "frequency").Id));
+var amplitude = program.Controls.Single(control => control.Address == new ParameterAddress(oscillator.Id,
+    oscillator.Parameters.Single(parameter => parameter.Definition.Key == "amplitude").Id));
 File.WriteAllText(Path.Combine(args[0], "program.dsp"), program.Source);
 File.WriteAllText(Path.Combine(args[0], "controls.json"), JsonSerializer.Serialize(new
 {
     values = program.Controls.ToDictionary(control => control.Name, control => control.InitialValue),
-    frequency = frequency.Name
+    frequency = frequency.Name,
+    amplitude = amplitude.Name
 }));

@@ -20,7 +20,7 @@ node src/Orbit.UI/DesignSystem/generate-tokens.mjs
 dotnet run --project src/Orbit.UI --urls http://localhost:5000
 ```
 
-Open http://localhost:5000. Use **Play patch** to compile and play the current graph, and **Stop** to release it with a short fade. The initial patch is a sine LFO modulating a sine carrier through a gain node. The status reports the playing graph revision. Edit the graph while audio runs, then stop and play to apply the latest revision.
+Open http://localhost:5000. Use **Play patch** to compile and play the current graph, and **Stop** to release it with a short fade. The initial patch is a sine LFO modulating a sine carrier through a gain node. The status reports the playing graph revision. Edit frequency, amplitude or gain while audio runs to hear the change immediately; stop and play again after structural edits.
 
 ## Project boundaries
 
@@ -83,7 +83,22 @@ flowchart TD
 3. `FaustNodeFactory` requests a compiled factory from the lazy compiler worker. The worker loads the pinned packaged Faust bundle, compiles the source outside the main and audio threads, and returns the WebAssembly module and DSP metadata.
 4. The node factory instantiates a mono AudioWorklet with a source-specific processor identity and applies the host values; the graph supplies gain, with additional output headroom.
 5. `AudioOutput` connects the node through an independent initially silent voice. `AudioEnvelope` schedules the attack and release against the audio clock. Stop cancels pending startup or releases an active voice and frees its resources.
-6. `GraphPlaybackControls` observes startup status at display rate. Edits commit normally but play the new revision only after restarting. Live parameter updates, runtime graph replacement and telemetry will follow.
+6. `GraphPlaybackControls` observes startup status at display rate and passes newly committed snapshots to the playback service. Base-only edits update the existing worklet; structural changes remain staged until restart. Runtime graph replacement and telemetry will follow.
+
+### Live parameter update flow
+
+```mermaid
+flowchart TD
+    Slider["ParameterSlider"] --> Command["SetParameterValueCommand"]
+    Command --> Snapshot["Committed graph snapshot"]
+    Snapshot --> Service["FaustGraphPlaybackService"]
+    Service --> Compare{"Same topology?"}
+    Compare -->|Yes| Controls["Changed stable control IDs"]
+    Controls --> Worklet["Existing AudioWorklet"]
+    Compare -->|No| Staged["Restart required"]
+```
+
+The service compares the new snapshot to the original playback topology, including edge amounts, port definitions and parameter definitions. It uses the compiler's original address-to-control manifest and sends only changed base values through `IAudioEngine.SetParametersAsync`. It does not call the compiler again. Edits during startup are queued until the worklet exists; the Faust controls smooth changes at sample rate. The active revision advances only when the engine accepts the update. A structural change (including adding an unconnected node) is staged conservatively: subsequent edits are also staged while the topology differs from the playing graph. If the original topology is restored, live edits can resume. Stop releases the voice and ignores further updates.
 
 ## Browser infrastructure components
 

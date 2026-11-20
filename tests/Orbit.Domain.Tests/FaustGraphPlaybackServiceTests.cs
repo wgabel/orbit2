@@ -1,8 +1,10 @@
 using Orbit.Application.Graphs;
+using Orbit.Application.Graphs.Commands;
 using Orbit.Application.Interfaces;
 using Orbit.Application.Models;
 using Orbit.Audio.Compilation;
 using Orbit.Audio.Playback;
+using Orbit.Domain.Parameters;
 using Xunit;
 
 namespace Orbit.Domain.Tests;
@@ -18,7 +20,7 @@ public sealed class FaustGraphPlaybackServiceTests
         var engine = new RecordingEngine();
         var service = new FaustGraphPlaybackService(compiler, engine);
         await service.InitializeAsync();
-        await service.PlayAsync(session.Snapshot);
+        var playing = service.PlayAsync(session.Snapshot);
         var expected = compiler.Compile(session.Snapshot);
         Assert.True(engine.Initialized);
         Assert.NotNull(engine.Request);
@@ -29,8 +31,57 @@ public sealed class FaustGraphPlaybackServiceTests
             Assert.Equal(control.InitialValue, engine.Request.Parameters[control.Name]);
         Assert.Equal(PlaybackState.Playing, await service.GetStateAsync(session.GraphId));
         await service.StopAsync(session.GraphId);
+        await playing;
         Assert.Equal(engine.Request.SoundId, engine.StoppedSound);
         Assert.Equal(PlaybackState.Idle, await service.GetStateAsync(session.GraphId));
+    }
+
+    [Fact]
+    public async Task BaseEditsUpdateOnlyChangedControlsAndNeverRecreateVoice()
+    {
+        using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings(220, 1, 50));
+        var compiler = FaustGraphCompiler.CreateBuiltIn();
+        var engine = new RecordingEngine();
+        var service = new FaustGraphPlaybackService(compiler, engine);
+        var playing = service.PlayAsync(session.Snapshot);
+        var original = session.Snapshot;
+        var oscillator = original.Nodes[1];
+        var address = new ParameterAddress(oscillator.Id, oscillator.Parameters.Single(p => p.Definition.Key == "frequency").Id);
+        var name = compiler.Compile(original).Controls.Single(control => control.Address == address).Name;
+        session.Execute(new SetParameterValueCommand(session.GraphId, address, 330));
+        var edited = session.Snapshot;
+        var result = await service.UpdateAsync(edited);
+        Assert.Equal(new GraphPlaybackUpdate(edited.Revision, false, true), result);
+        Assert.Equal(330, Assert.Single(Assert.Single(engine.Updates)).Value);
+        Assert.Equal(name, Assert.Single(Assert.Single(engine.Updates)).Key);
+        Assert.Equal(1, engine.PlayCount);
+        // Older callbacks cannot roll the worklet controls backwards.
+        Assert.Equal(result, await service.UpdateAsync(original));
+        Assert.Single(engine.Updates);
+        await service.StopAsync(session.GraphId);
+        await playing;
+        Assert.False((await service.UpdateAsync(edited)).IsActive);
+    }
+
+    [Fact]
+    public async Task StructuralEditsAreStagedAndDoNotWriteToTheOldVoice()
+    {
+        using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings(220, 1, 50));
+        var engine = new RecordingEngine();
+        var service = new FaustGraphPlaybackService(FaustGraphCompiler.CreateBuiltIn(), engine);
+        var original = session.Snapshot;
+        var playing = service.PlayAsync(original);
+        session.Execute(new AddNodeCommand(session.GraphId, original.Nodes[0].TypeKey));
+        var structural = session.Snapshot;
+        var result = await service.UpdateAsync(structural);
+        Assert.Equal(new GraphPlaybackUpdate(original.Revision, true, true), result);
+        var oscillator = original.Nodes[1];
+        var address = new ParameterAddress(oscillator.Id, oscillator.Parameters.Single(p => p.Definition.Key == "frequency").Id);
+        session.Execute(new SetParameterValueCommand(session.GraphId, address, 330));
+        Assert.Equal(result, await service.UpdateAsync(session.Snapshot));
+        Assert.Empty(engine.Updates);
+        await service.StopAsync(session.GraphId);
+        await playing;
     }
 
     private sealed class RecordingEngine : IAudioEngine
@@ -38,10 +89,19 @@ public sealed class FaustGraphPlaybackServiceTests
         public bool Initialized { get; private set; }
         public PlaybackRequest? Request { get; private set; }
         public string? StoppedSound { get; private set; }
+        public int PlayCount { get; private set; }
+        public List<IReadOnlyDictionary<string, double>> Updates { get; } = [];
+        private readonly TaskCompletionSource completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public Task InitializeAsync() { Initialized = true; return Task.CompletedTask; }
-        public Task PlayAsync(PlaybackRequest request) { Request = request; return Task.CompletedTask; }
-        public Task StopAsync(string soundId) { StoppedSound = soundId; return Task.CompletedTask; }
+        public Task PlayAsync(PlaybackRequest request) { Request = request; PlayCount++; return completion.Task; }
+        public Task StopAsync(string soundId) { StoppedSound = soundId; completion.TrySetResult(); return Task.CompletedTask; }
+        public Task<bool> SetParametersAsync(string soundId, IReadOnlyDictionary<string, double> parameters)
+        {
+            Assert.Equal(Request?.SoundId, soundId);
+            Updates.Add(parameters);
+            return Task.FromResult(true);
+        }
         public Task<PlaybackState> GetPlaybackStateAsync(string soundId) =>
             Task.FromResult(Request?.SoundId == soundId && StoppedSound != soundId ? PlaybackState.Playing : PlaybackState.Idle);
         public Task<Dictionary<string, double>?> GetOutputValuesAsync(string soundId) =>
