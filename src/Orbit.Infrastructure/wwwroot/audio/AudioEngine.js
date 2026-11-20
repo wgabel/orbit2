@@ -33,7 +33,7 @@ export class AudioEngine {
             if (playback.cancelled) return;
 
             const node = await this.#nodeFactory.create(
-                context, request.processor, request.parameters ?? {}, request.source);
+                context, request.processor, request.parameters ?? {});
 
             if (playback.cancelled) {
                 node.disconnect();
@@ -66,13 +66,6 @@ export class AudioEngine {
         }
     }
 
-    getPlaybackState(soundId) {
-        const playback = this.#active.get(soundId);
-        if (!playback) return "idle";
-        if (playback.cancelled) return "stopping";
-        return playback.voice ? "playing" : "starting";
-    }
-
     // A snapshot is read at display rate, independently of the sample clock.
     getOutputValues(soundId) {
         const playback = this.#active.get(soundId);
@@ -101,7 +94,6 @@ export class AudioEngine {
         if (!request || typeof request.soundId !== "string" || !request.soundId ||
             typeof request.processor !== "string" || !request.processor ||
             !Number.isFinite(request.volume) || request.volume < 0 || request.volume > 1 ||
-            (request.source != null && (typeof request.source !== "string" || !request.source.trim())) ||
             (request.parameters != null &&
                 (typeof request.parameters !== "object" || Array.isArray(request.parameters)))) {
             throw new Error("Invalid audio playback request.");

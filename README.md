@@ -48,7 +48,7 @@ flowchart TD
 
 The infrastructure implements contracts declared by Application. The UI composition root registers concrete implementations; UI components consume application-facing interfaces only. There is no database or persistence layer yet.
 
-The infrastructure uses the .NET Razor class library SDK solely to package browser-side static assets. It exposes them under `_content/Orbit.Infrastructure/audio/` in the published app and contains no Razor views.
+The infrastructure uses the .NET Razor class library SDK solely to package browser-side static assets. Local builds expose them under `_content/Orbit.Infrastructure/audio/`; deployed builds also use a commit-versioned `audio-<commit>/` directory for the complete relative-import tree, including the worker and generated Faust assets. This prevents mixed-version browser caches. The library contains no Razor views.
 
 ## Startup sequence
 
@@ -477,7 +477,7 @@ ORBIT2-ARCHITECTURE.md
 
 ## Build, tests and deployment
 
-Run the Faust compile command shown above before building or running the complete audio test suite. The generated directory is ignored by Git. If upgrading an existing checkout, remove the obsolete locally generated sine folder before publishing. The official pinned FaustWasm compiler generates the browser-only runtime and WASM output; the compiler is not shipped or executed in the browser.
+Run the Faust compile and compiler-bundle preparation commands shown above before building or running the complete audio test suite. The generated directory is ignored by Git. If upgrading an existing checkout, remove the obsolete locally generated sine folder before publishing. The pinned FaustWasm compiler generates the precompiled regression fixture; its separate bundled compiler is loaded lazily by the browser worker for editable patches.
 
 ```sh
 dotnet test tests/Orbit.Domain.Tests/Orbit.Domain.Tests.csproj -c Release

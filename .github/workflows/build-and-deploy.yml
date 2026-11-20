@@ -74,7 +74,7 @@ jobs:
           node tests/browser/GraphPlaybackSmoke.mjs
       # Compiles the referenced projects and produces the static site in publish/wwwroot.
       - name: Build and publish
-        run: dotnet publish src/Orbit.UI/Orbit.UI.csproj --configuration Release --output publish
+        run: dotnet publish src/Orbit.UI/Orbit.UI.csproj --configuration Release --output publish -p:OrbitAudioAssetVersion="$GITHUB_SHA"
       # Ensure the generated token CSS and every imported stylesheet are published.
       - name: Verify published design system
         run: |
@@ -96,6 +96,22 @@ jobs:
           test -s publish/wwwroot/_content/Orbit.Infrastructure/audio/generated/modulated-sine/dsp-module.wasm
           test -s publish/wwwroot/_content/Orbit.Infrastructure/audio/generated/modulated-sine/dsp-meta.json
           test -s publish/wwwroot/_content/Orbit.Infrastructure/audio/generated/modulated-sine/faustwasm/index.js
+      # Namespace the entire module tree, including worker and generated assets,
+      # so new .NET code can never import JavaScript cached from an older commit.
+      - name: Version published audio module tree
+        run: |
+          cd publish/wwwroot/_content/Orbit.Infrastructure
+          cp -a audio "audio-$GITHUB_SHA"
+          test -s "audio-$GITHUB_SHA/audio.js"
+          test -s "audio-$GITHUB_SHA/Faust/FaustCompilerWorker.js"
+          test -s "audio-$GITHUB_SHA/generated/compiler/index.js"
+      - name: Test published editor playback
+        timeout-minutes: 5
+        env:
+          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
+        run: |
+          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
+          node tests/browser/PublishedPlaybackSmoke.mjs
       # The browser entry document must resolve runtime files under /orbit2/.
       - name: Set GitHub Pages base path
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'

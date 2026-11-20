@@ -1,0 +1,49 @@
+// Exercise the published Blazor app, not just its JavaScript components.
+// Reject the unversioned audio path to model a browser holding stale assets.
+import assert from "node:assert/strict";
+import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
+import { extname, resolve, sep } from "node:path";
+import { pathToFileURL } from "node:url";
+
+const { chromium } = await import(pathToFileURL(resolve(process.env.ORBIT_PLAYWRIGHT_DIR, "index.mjs")));
+const root = resolve("publish/wwwroot");
+const version = process.env.GITHUB_SHA;
+assert.ok(version && process.env.ORBIT_CHROME);
+const requests = new Set();
+const types = { ".js": "text/javascript", ".mjs": "text/javascript", ".html": "text/html", ".css": "text/css", ".json": "application/json", ".wasm": "application/wasm", ".svg": "image/svg+xml" };
+const server = createServer(async (request, response) => {
+    const path = new URL(request.url, "http://localhost").pathname;
+    requests.add(path);
+    try {
+        if (path.startsWith("/_content/Orbit.Infrastructure/audio/")) throw new Error("Unversioned audio assets are stale");
+        const file = resolve(root, "." + (path === "/" ? "/index.html" : path));
+        if (!file.startsWith(root + sep)) throw new Error("Outside static assets");
+        const bytes = await readFile(file);
+        response.writeHead(200, { "Content-Type": types[extname(file)] ?? "application/octet-stream" });
+        response.end(bytes);
+    } catch (error) { response.writeHead(404); response.end(String(error)); }
+});
+await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+let browser;
+try {
+    browser = await chromium.launch({ executablePath: process.env.ORBIT_CHROME, headless: true,
+        args: ["--no-sandbox", "--mute-audio"] });
+    const page = await browser.newPage();
+    page.on("pageerror", error => console.error(error.message));
+    await page.goto("http://127.0.0.1:" + server.address().port);
+    const status = page.getByRole("status");
+    const play = page.getByRole("button", { name: "Play patch" });
+    await play.click({ timeout: 30000 });
+    await status.filter({ hasText: /Playing revision/ }).waitFor({ timeout: 30000 });
+    await page.getByRole("button", { name: "Stop", exact: true }).click();
+    await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 10000 });
+    const prefix = `/_content/Orbit.Infrastructure/audio-${version}/`;
+    for (const file of ["audio.js", "AudioEngine.js", "Faust/FaustCompilerWorker.js", "generated/compiler/index.js"])
+        assert.ok(requests.has(prefix + file), `Missing versioned asset: ${file}`);
+    assert.ok([...requests].every(path => !path.startsWith("/_content/Orbit.Infrastructure/audio/")));
+    console.log("Published editor played and stopped using the versioned audio module tree.");
+} finally {
+    await browser?.close();
+    server.close();
+}

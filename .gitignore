@@ -10,6 +10,3 @@ publish/
 
 # Faust compiler output: regenerate from tracked DSP sources.
 src/Orbit.Infrastructure/wwwroot/audio/generated/
-
-# Local build tooling packages.
-node_modules/

@@ -1032,6 +1032,8 @@ The browser integration now captures one committed snapshot per Play request and
 
 Compile outside the audio rendering thread, preferably in an appropriate worker or build pipeline. A new graph should be prepared before swapping it in. Use revision numbers to discard stale compilation results and coalesce rapid structural edits. Keep the last good runtime active if compilation fails; report the error in the UI.
 
+Deployment must version the complete audio JavaScript module tree, not just its entry point: the adapter imports a commit-specific directory containing the worker, sibling modules and generated runtime. Local builds use the default unversioned directory. This avoids mixing cached modules with a newer Blazor assembly.
+
 When swapping graphs, use an appropriate short fade/crossfade and preserve state where possible. A newly compiled oscillator may restart phase and filters/effects may lose state; maintaining continuity across topology changes is a distinct engineering problem. Do not promise seamless arbitrary graph edits until tested. Consider the cost of running old and new graphs during a crossfade.
 
 ### Real-time requirements
