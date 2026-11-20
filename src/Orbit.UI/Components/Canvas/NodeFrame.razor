@@ -29,6 +29,13 @@
             }
         </div>
     </div>
+    @if (Node.Composite is not null)
+    {
+        <div class="node-actions">
+            <button type="button" class="secondary" @onpointerdown:stopPropagation="true"
+                    @onclick="() => OnOpenComposite.InvokeAsync(Node.Id)">Open @Node.Name</button>
+        </div>
+    }
     @if (Node.Parameters.Count > 0)
     {
         <div class="node-parameters">

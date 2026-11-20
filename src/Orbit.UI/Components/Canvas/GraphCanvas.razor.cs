@@ -17,6 +17,8 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter, EditorRequired] public ICanvasStateService State { get; set; } = default!;
     [Parameter] public EventCallback<PortConnectionRequest> OnConnect { get; set; }
     [Parameter] public EventCallback<ParameterEditRequest> OnParameterEdit { get; set; }
+    [Parameter] public EventCallback<Guid> OnOpenComposite { get; set; }
+    [Parameter] public bool AutoFitOnFirstRender { get; set; } = true;
     [Parameter] public IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
     [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();
 
@@ -51,8 +53,9 @@ public partial class GraphCanvas : IAsyncDisposable
         measurement = null;
         portOffsets.Clear();
         measuredRevision = -1;
-        initialFit = false;
+        initialFit = !AutoFitOnFirstRender;
         pendingSource = null;
+        EndGesture();
         subscription = State.Subscribe(change =>
         {
             if (pendingSource is PortAddress source &&

@@ -20,6 +20,7 @@ public partial class NodeFrame
     [Parameter] public EventCallback<PortAddress> OnPortActivate { get; set; }
     [Parameter] public EventCallback<PortPointerStart> OnOutputPointerDown { get; set; }
     [Parameter] public EventCallback<ParameterEditRequest> OnParameterEdit { get; set; }
+    [Parameter] public EventCallback<Guid> OnOpenComposite { get; set; }
     [Parameter] public IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
     [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();
 

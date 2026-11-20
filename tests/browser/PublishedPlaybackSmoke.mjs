@@ -78,11 +78,60 @@ try {
     await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 10000 });
     assert.equal(await amplitude.locator(".parameter-effective-marker").count(), 0);
     assert.equal(await amplitude.locator(".parameter-band").count(), 1);
+
+    // Create an editable drone and connect its public sockets using the same
+    // graph editor. Only the root has a master output.
+    await page.locator("#node-type").selectOption("composite.graph");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    const drone = page.locator(".node-role-composite");
+    await drone.waitFor();
+    await page.getByRole("button", { name: "Fit", exact: true }).click();
+    const masterWire = page.locator(".connection-audio .connection-hit").nth(1);
+    const masterMidpoint = await masterWire.evaluate(path => {
+        const point = path.getPointAtLength(path.getTotalLength() / 2).matrixTransform(path.getScreenCTM());
+        return { x: point.x, y: point.y };
+    });
+    await page.mouse.click(masterMidpoint.x, masterMidpoint.y);
+    await page.getByRole("button", { name: "Delete selected" }).click();
+    await articles.nth(0).getByRole("button", { name: "Output: Signal (Audio)" }).press("Enter");
+    await drone.getByRole("button", { name: "Input: Pitch (Modulation)" }).press("Enter");
+    await drone.getByRole("button", { name: "Output: Audio (Audio)" }).press("Enter");
+    await articles.nth(3).getByRole("button", { name: "Input: Audio (Audio)" }).press("Enter");
+    assert.equal(await page.getByRole("alert").count(), 0);
+    const rootTransform = await page.locator(".canvas-world").getAttribute("style");
+    await play.click();
+    await status.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
+    const droneRevision = Number((await status.innerText()).match(/Playing revision (\d+)/)[1]);
+    await drone.getByRole("button", { name: "Open Drone" }).click();
+    const breadcrumbs = page.getByRole("navigation", { name: "Canvas path" });
+    await breadcrumbs.getByText("Drone", { exact: true }).waitFor();
+    assert.equal(await page.locator("#node-type option[value='output.master']").count(), 0);
+    assert.equal(await articles.count(), 4);
+    const rack = articles.filter({ hasText: "Input Parameters Rack" });
+    await rack.getByRole("button", { name: "Output: Pitch (Modulation)" }).waitFor();
+    const childFrequency = page.getByRole("spinbutton", { name: "Frequency (Hz)" });
+    await page.getByText("Modulation: 439–441 Hz").waitFor({ timeout: 10000 });
+    await childFrequency.locator("xpath=../..").locator(".parameter-effective-marker").waitFor({ timeout: 10000 });
+    await childFrequency.fill("330");
+    await status.filter({ hasText: new RegExp(`^Playing revision ${droneRevision + 1}$`) }).waitFor({ timeout: 15000 });
+    assert.equal(await play.isEnabled(), false);
+    await page.getByRole("button", { name: "Zoom out" }).click();
+    const childTransform = await page.locator(".canvas-world").getAttribute("style");
+    await breadcrumbs.getByRole("button", { name: "Patch" }).click();
+    await page.locator(".node-role-composite").getByRole("button", { name: "Open Drone" }).waitFor();
+    assert.equal(await page.locator(".canvas-world").getAttribute("style"), rootTransform);
+    await page.locator(".node-role-composite").getByRole("button", { name: "Open Drone" }).click();
+    await childFrequency.waitFor();
+    assert.equal(await page.locator(".canvas-world").getAttribute("style"), childTransform);
+    assert.equal(await childFrequency.inputValue(), "330");
+    assert.equal(await play.isEnabled(), false);
+    await page.getByRole("button", { name: "Stop", exact: true }).click();
+    await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 10000 });
     const prefix = `/_content/Orbit.Infrastructure/audio-${version}/`;
     for (const file of ["audio.js", "AudioEngine.js", "Faust/FaustCompilerWorker.js", "generated/compiler/index.js"])
         assert.ok(requests.has(prefix + file), `Missing versioned asset: ${file}`);
     assert.ok([...requests].every(path => !path.startsWith("/_content/Orbit.Infrastructure/audio/")));
-    console.log("Published editor played, animated real modulation, applied live parameter edits, rewired frequency to amplitude and stopped.");
+    console.log("Published editor played, rewired, opened a connected drone during playback, edited its frequency and preserved both canvas viewports.");
 } finally {
     await browser?.close();
     server.close();

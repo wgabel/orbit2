@@ -20,3 +20,12 @@
 .workspace-count { margin-inline-start: auto; }
 .workspace-notice { margin: 0; color: var(--semantic-color-muted); font-size: var(--component-workspace-notice-size); }
 .workspace-error { margin: 0; }
+.canvas-breadcrumbs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--component-workspace-toolbar-gap);
+    color: var(--semantic-color-muted);
+    font-size: var(--semantic-typography-label);
+}
+.canvas-breadcrumbs [aria-current="page"] { color: var(--semantic-color-text); font-weight: var(--semantic-typography-emphasis); }

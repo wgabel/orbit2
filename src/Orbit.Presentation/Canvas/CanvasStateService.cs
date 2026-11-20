@@ -3,6 +3,7 @@ using Orbit.Application.Graphs.Events;
 using Orbit.Application.Graphs.Sessions;
 using Orbit.Application.Graphs.Snapshots;
 using Orbit.Application.Notifications;
+using Orbit.Domain.Nodes.Composites;
 
 namespace Orbit.Presentation.Canvas;
 
@@ -32,7 +33,9 @@ public sealed class CanvasStateService : ICanvasStateService
         this.placement = placement ?? new GridNodePlacementPolicy();
         var graph = session.Snapshot.GetGraph(graphId);
         var positions = new Dictionary<Guid, CanvasPoint>();
-        foreach (var node in graph.Nodes)
+        // Place the receiving rack at the end of a new child layout, so the
+        // default signal flow reads left to right. Existing positions never move.
+        foreach (var node in graph.Nodes.OrderBy(node => node.TypeKey == OutputRack.NodeType ? 1 : 0))
             positions.Add(node.Id, PlaceNode(positions));
 
         snapshot = new CanvasStateSnapshot(graph, 0, CanvasViewport.Initial,

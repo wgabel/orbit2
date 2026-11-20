@@ -532,7 +532,7 @@ public interface ICompositeNode : ISignalNode
 
 Actual mutation methods should protect graph invariants. The above represents an illustrative read model; the application command handler or domain operations own controlled mutation, rather than exposing freely modifiable Lists.
 
-The initial domain implementation now creates an owned child graph via `CompositeNode`, with mandatory `InputRack` and `OutputRack` instances. A composite cannot be inserted into itself, an ancestor, or two graphs simultaneously. Concrete node instances cannot be shared across graphs, so mutable parameters remain independent. Child graphs reject master outputs. Snapshots recursively capture child graphs, revision and rack IDs; `GraphSnapshot.GetGraph` resolves a graph within that immutable patch. The session now routes commands to owned descendants; the interactive editor still targets the root until navigation is implemented.
+The initial domain implementation now creates an owned child graph via `CompositeNode`, with mandatory `InputRack` and `OutputRack` instances. A composite cannot be inserted into itself, an ancestor, or two graphs simultaneously. Concrete node instances cannot be shared across graphs, so mutable parameters remain independent. Child graphs reject master outputs. Snapshots recursively capture child graphs, revision and rack IDs; `GraphSnapshot.GetGraph` resolves a graph within that immutable patch. The session routes commands to owned descendants, and the editor uses the active canvas graph ID.
 
 ### The canvases
 
@@ -575,7 +575,22 @@ The same canvas UI, interaction rules, connection rendering and node registry sh
 
 Moving a node or changing zoom/selection must not recompile DSP. Opening or closing a subcanvas must not reset any oscillator or interrupt audio. A graph edit can affect audio; a purely visual edit must not.
 
-The UI can show a breadcrumb such as Patch / Drone A / Effect rack. Use stable graph IDs to resolve the currently edited graph.
+The UI shows a breadcrumb such as Patch / Drone / Drone. `CanvasNavigationService` uses stable graph IDs to resolve the currently edited graph, caches each visited canvas projection and exposes an immutable breadcrumb entry per level. It releases removed subtree projections and returns to the closest surviving ancestor. `GraphCanvas` is keyed by graph ID to reset transient gestures on navigation; it fits only on first visit, preserving the stored viewport on return.
+
+The editor catalog includes `DroneTemplate`, a composite factory with independent Pitch and Gain modulation inputs and Audio output, an internal sine and gain stage, and all rack connections. It is an ordinary editable graph, not an opaque DSP processor. Racks cannot be deleted independently; the master output is available only in the root catalog.
+
+~~~mermaid
+flowchart TD
+    Workspace["GraphWorkspace"] --> Nav["CanvasNavigationService"]
+    Nav --> Canvas["Active CanvasStateService"]
+    Workspace --> Root["Root PatchSession snapshot"]
+    Root --> Playback["GraphPlaybackControls"]
+    Canvas --> Editor["Reusable GraphCanvas"]
+    Root --> Ranges["Graph modulation ranges"]
+    Ranges --> Editor
+~~~
+
+UI gestures dispatch commands using the active graph ID. `GraphPlaybackControls` stays attached to the root snapshot across navigation, so the same audio voice and revision remain active. The range and telemetry projections select the active graph using its ID while retaining the root revision for correctness.
 
 ### Implemented canvas state foundation
 
@@ -604,7 +619,7 @@ flowchart TD
 
 Each view consumes an immutable `CanvasStateSnapshot` with separate graph and layout revision numbers, world positions, selected node/connection IDs and viewport. Layout changes never call `IPatchSession.Execute` or publish graph events. Graph and canvas dispatchers share the generic disposable `NotificationChannel<T>` implementation but remain separate notification instances. Listeners are notified after state commits; their failures do not undo state. Use the presentation dispatcher thread for interactive canvas operations and graph commands observed by the canvas; immutable snapshots may be handed to asynchronous processing. Consumers must dispose canvas subscriptions and the service when closing the corresponding canvas.
 
-The geometry and projection are implemented and independently tested. The first Phase 4 renderer now consumes this state, including measured node bounds, pointer gestures and Bézier paths. Nested navigation arrives in Phase 5.
+The geometry and projection are implemented and independently tested. The renderer consumes this state, including measured node bounds, pointer gestures and Bézier paths. Phase 5 implements nested navigation using the same renderer and a cached state per graph.
 
 ### Shared canvas and component standards
 
@@ -720,7 +735,7 @@ Phase 4 implements the shared canvas, node frames, typed ports and connection re
 
 The canvas world is one transformed coordinate space shared by HTML node frames and SVG Bézier paths. The browser adapter (`wwwroot/js/canvasDom.js`) only measures actual DOM bounds/port centers, captures a pointer, and identifies the input under a dropped wire. The renderer converts measured offsets back into world coordinates, so zoom and panning do not change the topology or require new measurements. Nodes move using the state service and connections follow their positions. Fit uses measured frame bounds; `BezierConnection.Between` supplies horizontal tangents even for backwards edges.
 
-The first editor supports node addition/removal, base parameter edits, drag-to-connect or keyboard/click port activation, selection, background panning, middle-button panning from node headers, pointer zoom and fit. Space-drag and nested navigation are future enhancements. The fixed modulation proof is preserved separately until the dynamic Faust compiler can render the editor's graph.
+The editor supports node addition/removal, base parameter edits, drag-to-connect or keyboard/click port activation, selection, background panning, middle-button panning from node headers, pointer zoom and fit, and nested canvas navigation. Space-drag remains a future enhancement. The fixed modulation proof is preserved separately from the dynamic Faust compiler.
 
 ### Reusable modules and presets
 
@@ -1356,10 +1371,10 @@ Deliverable: construct and edit a graph of two generators, a filter, mixer/outpu
 - Implemented: ICompositeNode, graph-owned Input Rack and Output Rack, immutable shared boundary identities, recursion checks and nested snapshots.
 - Implemented: child graph command routing, patch-wide committed snapshots, exact graph event filters and independent graph-ID-targeted canvas projections.
 - Implemented: recursive DSP boundary flattening, stable graph-qualified control/meter mappings, child modulation range estimation and live child parameter edits.
-- Next: graph navigation and composite catalog integration.
+- Implemented: graph navigation, breadcrumb component, cached independent canvas layouts, starter drone catalog and root playback across canvas changes.
 - Add editable Input Rack and Output Rack ports, projected automatically onto composite node sockets.
 - Add transactional add/rename/reorder/remove-port commands crossing parent/child boundaries.
-- Reuse the same canvas UI for all levels.
+- Implemented: reuse the same canvas UI for all levels.
 
 Deliverable: open a drone node's internal canvas, connect external LFO to a named input, route it internally and hear the modulation.
 

@@ -1,14 +1,16 @@
 @namespace Orbit.UI.Components.Canvas
 @using Microsoft.AspNetCore.Components.Web
 
-@* Owns this root graph's session; GraphCanvas is reusable for future subgraphs. *@
+@* One patch session and playback controller, with a reusable active canvas. *@
+@{ var graphId = Canvas.Snapshot.GraphId; }
 <section class="graph-workspace">
+    <CanvasBreadcrumbs Path="@Navigation.Path" OnNavigate="NavigateTo" />
     <div class="workspace-toolbar">
         <label for="node-type">Add node</label>
         <select id="node-type" @bind="SelectedType">
             @foreach (var type in RegisteredTypes)
             {
-                <option value="@type">@type</option>
+                <option value="@type">@DescribeType(type)</option>
             }
         </select>
         <button type="button" @onclick="AddNode">Add</button>
@@ -19,7 +21,9 @@
     {
         <p class="parameter-error workspace-error" role="alert">@Error</p>
     }
-    <GraphPlaybackControls Snapshot="@Canvas.Snapshot.Graph" TelemetryChanged="OnTelemetryChanged" />
-    <GraphCanvas State="@Canvas" OnConnect="Connect" OnParameterEdit="EditParameter"
+    <GraphPlaybackControls Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" />
+    <GraphCanvas @key="graphId" State="@Canvas" AutoFitOnFirstRender="@Navigation.IsFirstVisit"
+                 OnConnect="@(request => Connect(graphId, request))" OnParameterEdit="@(request => EditParameter(graphId, request))"
+                 OnOpenComposite="@(nodeId => OpenComposite(graphId, nodeId))"
                  ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" />
 </section>

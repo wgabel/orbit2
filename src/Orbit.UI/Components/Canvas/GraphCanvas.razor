@@ -23,6 +23,7 @@
                            Selected="@Snapshot.SelectedNodeIds.Contains(node.Id)" PendingSource="@pendingSource"
                            OnHeaderPointerDown="@(args => BeginNode(node.Id, args))"
                            OnOutputPointerDown="BeginOutput" OnPortActivate="ActivatePortAsync"
+                           OnOpenComposite="OnOpenComposite"
                            OnParameterEdit="OnParameterEdit" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" />
             }
         </div>

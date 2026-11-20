@@ -5,75 +5,117 @@ using Orbit.Application.Graphs.Sessions;
 using Orbit.Application.Models;
 using Orbit.Application.Services;
 using Orbit.Domain.Parameters;
+using Orbit.Domain.Nodes.Composites;
+using Orbit.Domain.Nodes.Generators;
+using Orbit.Domain.Nodes.Outputs;
+using Orbit.Domain.Nodes.Processors;
 using Orbit.Presentation.Canvas;
 
 namespace Orbit.UI.Components.Canvas;
 
-/// <summary>Composition and graph command boundary for the root editor.</summary>
+/// <summary>Composition and command boundary for the complete patch editor.</summary>
 public partial class GraphWorkspace : IDisposable
 {
     [Inject] private IGraphModulationRangeEstimator ModulationEstimator { get; set; } = default!;
     private IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
     private static readonly IReadOnlyDictionary<ParameterAddress, double> EmptyValues = new Dictionary<ParameterAddress, double>();
     private long rangeRevision = -1;
+    private Guid rangeGraphId;
     private GraphParameterTelemetry? telemetry;
     private IReadOnlyDictionary<ParameterAddress, double> EffectiveValues =>
-        telemetry is { } frame && frame.GraphId == Canvas.Snapshot.Graph.Id && frame.Revision == Canvas.Snapshot.Graph.Revision
-            ? frame.Values : EmptyValues;
+        telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision
+            ? frame.GetValues(Canvas.Snapshot.GraphId) : EmptyValues;
     private IPatchSession session = default!;
     private IDisposable? subscription;
-    private ICanvasStateService Canvas { get; set; } = default!;
-    private IReadOnlyList<string> RegisteredTypes { get; set; } = [];
+    private CanvasNavigationService Navigation { get; set; } = default!;
+    private ICanvasStateService Canvas => Navigation.ActiveCanvas;
+    private IReadOnlyList<string> catalog = [];
+    private IEnumerable<string> RegisteredTypes => catalog.Where(type =>
+        Canvas.Snapshot.GraphId == session.GraphId || type != MasterOutput.NodeType);
     private string SelectedType { get; set; } = "";
     private string? Error { get; set; }
-    private bool HasSelection => Canvas.Snapshot.SelectedNodeIds.Count > 0 ||
+    private bool HasSelection => DeletableNodes.Any() ||
         Canvas.Snapshot.SelectedConnectionIds.Count > 0;
+    private IEnumerable<Guid> DeletableNodes => Canvas.Snapshot.SelectedNodeIds.Where(id =>
+        Canvas.Snapshot.Graph.GetNode(id).TypeKey is not (InputRack.NodeType or OutputRack.NodeType));
 
     protected override void OnInitialized()
     {
-        var registry = BuiltInNodes.CreateRegistry();
-        RegisteredTypes = registry.RegisteredTypes;
-        SelectedType = RegisteredTypes.First();
+        var registry = BuiltInNodes.CreateEditorRegistry();
+        catalog = registry.RegisteredTypes;
+        SelectedType = SineGenerator.NodeType;
         session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings(), registry);
-        Canvas = new CanvasStateService(session, new GridNodePlacementPolicy(columnSpacing: 320, rowSpacing: 360, columns: 4));
+        Navigation = new CanvasNavigationService(session, new GridNodePlacementPolicy(columnSpacing: 320, rowSpacing: 360, columns: 4));
         RefreshRanges();
-        subscription = Canvas.Subscribe(change => { _ = InvokeAsync(() =>
+        subscription = Navigation.Subscribe(change => { _ = InvokeAsync(() =>
         {
+            if (!RegisteredTypes.Contains(SelectedType)) SelectedType = SineGenerator.NodeType;
             RefreshRanges();
             StateHasChanged();
         }); });
     }
 
-    // Analyze only committed graph revisions, not viewport changes or meter frames.
+    // Analyze only graph/revision changes, not viewport changes or meter frames.
     private void RefreshRanges()
     {
-        var graph = Canvas.Snapshot.Graph;
-        if (rangeRevision == graph.Revision) return;
-        ModulationRanges = ModulationEstimator.Estimate(graph);
-        rangeRevision = graph.Revision;
-        telemetry = null;
+        var root = session.Snapshot;
+        var graphId = Canvas.Snapshot.GraphId;
+        if (rangeRevision == root.Revision && rangeGraphId == graphId) return;
+        ModulationRanges = ModulationEstimator.Estimate(root, graphId);
+        if (rangeRevision != root.Revision) telemetry = null;
+        rangeRevision = root.Revision;
+        rangeGraphId = graphId;
     }
 
     private void OnTelemetryChanged(GraphParameterTelemetry? frame) =>
         telemetry = frame;
 
-    private void AddNode() => Execute(new AddNodeCommand(session.GraphId, SelectedType));
+    private static string DescribeType(string type) => type switch
+    {
+        CompositeNode.NodeType => "Drone (composite)",
+        SineGenerator.NodeType => "Sine generator",
+        GainProcessor.NodeType => "Gain",
+        MasterOutput.NodeType => "Master output",
+        _ => type
+    };
 
-    private void Connect(PortConnectionRequest request) =>
-        Execute(new ConnectNodesCommand(session.GraphId, request.Source, request.Destination));
+    private void OpenComposite(Guid graphId, Guid nodeId)
+    {
+        if (graphId != Canvas.Snapshot.GraphId) return;
+        Error = null;
+        Navigation.OpenChild(nodeId);
+    }
 
-    private void EditParameter(ParameterEditRequest request) =>
-        Execute(new SetParameterValueCommand(session.GraphId, request.Address, request.Value));
+    private void NavigateTo(Guid graphId)
+    {
+        Error = null;
+        Navigation.NavigateTo(graphId);
+    }
+
+    private void AddNode() => Execute(new AddNodeCommand(Canvas.Snapshot.GraphId, SelectedType));
+
+    private void Connect(Guid graphId, PortConnectionRequest request)
+    {
+        if (graphId == Canvas.Snapshot.GraphId)
+            Execute(new ConnectNodesCommand(graphId, request.Source, request.Destination));
+    }
+
+    private void EditParameter(Guid graphId, ParameterEditRequest request)
+    {
+        if (graphId == Canvas.Snapshot.GraphId)
+            Execute(new SetParameterValueCommand(graphId, request.Address, request.Value));
+    }
 
     private void DeleteSelection()
     {
         // Snapshot selection before commands reconcile the view. Each node is
         // removed atomically with all its incident edges by SignalGraph.
         var selected = Canvas.Snapshot;
+        var nodes = DeletableNodes.ToArray();
         foreach (var id in selected.SelectedConnectionIds)
-            if (!Execute(new RemoveConnectionCommand(session.GraphId, id))) return;
-        foreach (var id in selected.SelectedNodeIds)
-            if (!Execute(new RemoveNodeCommand(session.GraphId, id))) return;
+            if (!Execute(new RemoveConnectionCommand(selected.GraphId, id))) return;
+        foreach (var id in nodes)
+            if (!Execute(new RemoveNodeCommand(selected.GraphId, id))) return;
     }
 
     private bool Execute(IGraphCommand command)
@@ -96,7 +138,7 @@ public partial class GraphWorkspace : IDisposable
     public void Dispose()
     {
         subscription?.Dispose();
-        Canvas?.Dispose();
+        Navigation?.Dispose();
         session?.Dispose();
     }
 }

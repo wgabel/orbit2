@@ -1,4 +1,5 @@
 using Orbit.Domain.Nodes.Generators;
+using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Nodes.Processors;
 
@@ -16,6 +17,15 @@ public static class BuiltInNodes
         registry.Register(SineGenerator.NodeType, id => new SineGenerator(id));
         registry.Register(GainProcessor.NodeType, id => new GainProcessor(id));
         registry.Register(MasterOutput.NodeType, id => new MasterOutput(id));
+        return registry;
+    }
+
+    /// <summary>Editable patch catalog, including the starter composite template.
+    /// The leaf registry remains available for callers providing their own composite factories.</summary>
+    public static NodeRegistry CreateEditorRegistry()
+    {
+        var registry = CreateRegistry();
+        registry.Register(CompositeNode.NodeType, DroneTemplate.Create);
         return registry;
     }
 }

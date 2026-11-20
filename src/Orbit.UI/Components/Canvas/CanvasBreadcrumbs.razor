@@ -1,0 +1,25 @@
+@namespace Orbit.UI.Components.Canvas
+@using Orbit.Presentation.Canvas
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+
+@* Reusable navigation trail; navigation operates by stable graph ID. *@
+<nav class="canvas-breadcrumbs" aria-label="Canvas path">
+    @foreach (var crumb in Path)
+    {
+        @if (crumb.GraphId == Path[^1].GraphId)
+        {
+            <span aria-current="page">@crumb.Name</span>
+        }
+        else
+        {
+            <button type="button" class="secondary" @onclick="() => OnNavigate.InvokeAsync(crumb.GraphId)">@crumb.Name</button>
+            <span aria-hidden="true">/</span>
+        }
+    }
+</nav>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<CanvasBreadcrumb> Path { get; set; } = [];
+    [Parameter] public EventCallback<Guid> OnNavigate { get; set; }
+}

@@ -36,3 +36,4 @@
 .node-parameters { display: grid; gap: var(--component-node-parameter-gap); padding: var(--component-node-padding); border-top: var(--semantic-border-width) solid var(--semantic-color-border); }
 .node-parameters .parameter-heading input { min-width: 0; max-width: 45%; }
 .node-parameters .parameter-heading label { min-width: 0; overflow-wrap: anywhere; }
+.node-actions { display: grid; padding: var(--component-node-padding); border-top: var(--semantic-border-width) solid var(--semantic-color-border); }
