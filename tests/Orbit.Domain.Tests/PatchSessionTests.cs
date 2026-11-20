@@ -29,7 +29,7 @@ public sealed class PatchSessionTests
         });
         using var second = session.Subscribe<NodeAdded>(typedEvents.Add);
 
-        var result = session.Execute(new AddNodeCommand(session.GraphId, SineGenerator.NodeType));
+        var result = session.Execute(new AddNodeCommand(session.GraphId, OscillatorGenerator.NodeType));
 
         Assert.True(result.Changed);
         Assert.Empty(result.SubscriberErrors);
@@ -48,7 +48,7 @@ public sealed class PatchSessionTests
     public void ConnectsAndDisconnectsWithCompleteEdgeFacts()
     {
         using var session = NewSession();
-        var source = AddNode(session, SineGenerator.NodeType);
+        var source = AddNode(session, OscillatorGenerator.NodeType);
         var destination = AddNode(session, MasterOutput.NodeType);
         var created = new List<ConnectionCreated>();
         var removed = new List<ConnectionRemoved>();
@@ -73,7 +73,7 @@ public sealed class PatchSessionTests
     public void RemovingNodeCommitsAllIncidentEdgesInOneChangeSet()
     {
         using var session = NewSession();
-        var source = AddNode(session, SineGenerator.NodeType);
+        var source = AddNode(session, OscillatorGenerator.NodeType);
         var processor = AddNode(session, GainProcessor.NodeType);
         var destination = AddNode(session, MasterOutput.NodeType);
         session.Execute(new ConnectNodesCommand(session.GraphId, Output(source), Input(processor, "audio-in")));
@@ -103,7 +103,7 @@ public sealed class PatchSessionTests
     public void ParameterEditLeavesEarlierSnapshotsUnchangedAndIsNotTopologyChange()
     {
         using var session = NewSession();
-        var node = AddNode(session, SineGenerator.NodeType);
+        var node = AddNode(session, OscillatorGenerator.NodeType);
         var address = FrequencyAddress(node);
         var before = session.Snapshot;
         var parameters = new List<ParameterChanged>();
@@ -127,7 +127,7 @@ public sealed class PatchSessionTests
     public void RejectedAndUnchangedCommandsPublishNothing()
     {
         using var session = NewSession();
-        var source = AddNode(session, SineGenerator.NodeType);
+        var source = AddNode(session, OscillatorGenerator.NodeType);
         var destination = AddNode(session, MasterOutput.NodeType);
         var before = session.Snapshot;
         var notifications = 0;
@@ -138,7 +138,7 @@ public sealed class PatchSessionTests
         Assert.Throws<GraphValidationException>(() => session.Execute(
             new ConnectNodesCommand(session.GraphId, Output(source), new PortAddress(destination.Id, Guid.NewGuid()))));
         Assert.Throws<GraphValidationException>(() => session.Execute(
-            new AddNodeCommand(Guid.NewGuid(), SineGenerator.NodeType)));
+            new AddNodeCommand(Guid.NewGuid(), OscillatorGenerator.NodeType)));
         Assert.Throws<ArgumentOutOfRangeException>(() => session.Execute(
             new SetParameterValueCommand(session.GraphId, FrequencyAddress(source), double.NaN)));
         Assert.Throws<KeyNotFoundException>(() => session.Execute(
@@ -158,7 +158,7 @@ public sealed class PatchSessionTests
         using var session = NewSession();
         var successful = new List<GraphChangeSet>();
         using var failure = session.Subscribe(_ => throw new InvalidOperationException("listener failure"));
-        using var reentrant = session.Subscribe(_ => session.Execute(new AddNodeCommand(session.GraphId, SineGenerator.NodeType)));
+        using var reentrant = session.Subscribe(_ => session.Execute(new AddNodeCommand(session.GraphId, OscillatorGenerator.NodeType)));
         using var observer = session.Subscribe(successful.Add);
 
         var result = session.Execute(new AddNodeCommand(session.GraphId, GainProcessor.NodeType));
@@ -181,7 +181,7 @@ public sealed class PatchSessionTests
     public void AFailingTypedListenerStillReceivesEveryMatchingFactAndOtherListenersRun()
     {
         using var session = NewSession();
-        var source = AddNode(session, SineGenerator.NodeType);
+        var source = AddNode(session, OscillatorGenerator.NodeType);
         var gain = AddNode(session, GainProcessor.NodeType);
         var output = AddNode(session, MasterOutput.NodeType);
         session.Execute(new ConnectNodesCommand(session.GraphId, Output(source), Input(gain, "audio-in")));
@@ -215,9 +215,9 @@ public sealed class PatchSessionTests
         using var subscriptionTwo = first.Subscribe(listener);
         using var filter = first.Subscribe(_ => filtered++, second.GraphId);
 
-        AddNode(second, SineGenerator.NodeType);
+        AddNode(second, OscillatorGenerator.NodeType);
         Assert.Equal(0, received);
-        AddNode(first, SineGenerator.NodeType);
+        AddNode(first, OscillatorGenerator.NodeType);
         Assert.Equal(2, received);
         subscriptionOne.Dispose();
         subscriptionOne.Dispose();
@@ -234,7 +234,7 @@ public sealed class PatchSessionTests
         session.Dispose();
         session.Dispose();
         Assert.Throws<ObjectDisposedException>(() =>
-            session.Execute(new AddNodeCommand(session.GraphId, SineGenerator.NodeType)));
+            session.Execute(new AddNodeCommand(session.GraphId, OscillatorGenerator.NodeType)));
         Assert.Throws<ObjectDisposedException>(() => session.Subscribe(_ => { }));
     }
 

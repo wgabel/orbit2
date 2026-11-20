@@ -123,7 +123,7 @@ The service compares the new snapshot to the last accepted playback topology, in
 
 The independent domain model describes topology without generating samples. It has no browser or Faust dependency. Signal nodes expose read-only port and parameter collections; SignalGraph owns validated connection and parameter edits.
 
-- A sine generator has a frequency and amplitude parameter, each with its own modulation input. The same sine node can serve as an audible oscillator or an LFO.
+- One Oscillator generator supports sine, triangle, square and sawtooth. Frequency, amplitude and phase offset have modulation inputs; waveform is a discrete choice. The node can be an audible oscillator or an LFO.
 - A gain processor has a mono audio input, gain modulation input and audio output; master output is a terminal mono input.
 - Typed ports allow one output to feed several inputs, and modulatable parameters accept multiple sources. Connection amounts represent audio gain or target-specific modulation depth.
 - Graph validation rejects missing or reversed endpoints, incompatible types/channels, duplicate edges, single-input conflicts and cycles (including modulation cycles).
@@ -142,8 +142,8 @@ using Orbit.Domain.Ports;
 
 var registry = BuiltInNodes.CreateRegistry();
 var graph = new SignalGraph();
-var lfo = registry.Create(SineGenerator.NodeType);
-var oscillator = registry.Create(SineGenerator.NodeType);
+var lfo = registry.Create(OscillatorGenerator.NodeType);
+var oscillator = registry.Create(OscillatorGenerator.NodeType);
 var output = registry.Create(MasterOutput.NodeType);
 
 graph.AddNode(lfo);
@@ -217,6 +217,25 @@ The application publishes transport anchors only when transport state changes. T
 
 Steady-state phase is calculated at the actual audio sample rate (including 44.1 and 48 kHz). Start/stop/reset/tempo commands anchor to the observed audio frame and arrive at an audio-worklet message boundary; scheduled sample-exact command execution and rhythmic clock/trigger nodes remain future work.
 
+### Reusable oscillator (Phase 6.3)
+
+Select **Oscillator** from Add node (the default waveform is sine), then choose Sine, Triangle, Square or Sawtooth in the node itself. The starter patch and drone still default to sine. Every shape has the same output port and independently modulatable frequency (0.01–20,000 Hz), amplitude (0–1) and phase offset (0–360°); changing waveform leaves all node, parameter, port and connection identities untouched. The choice editor is the same reusable component used for musical division.
+
+~~~mermaid
+flowchart TD
+    N["OscillatorGenerator"] --> P["Parameter definitions"]
+    P --> U["Shared parameter editors"]
+    U --> C["SetParameterValueCommand"]
+    C --> G["Committed graph"]
+    G --> F["OscillatorFaustEmitter"]
+    F --> W["Selected waveform DSP"]
+    W --> S["Signal output"]
+~~~
+
+`OscillatorWaveform` defines stable discrete choices; `ParameterDefinition.RequiresRecompile` distinguishes DSP-shaping choices from live controls. `GraphTopology` includes structural values, so selecting a different waveform recompiles the program and crossfades the replacement; ordinary frequency/amplitude/phase changes update the existing worklet. The compiler emits only the selected shape—not four parallel oscillators. A free-running oscillator integrates frequency into one phase signal at the actual sample rate, wraps phase plus the offset, evaluates the chosen waveform and clamps its normalized result before amplitude scaling. Saw and square use polynomial step corrections (PolyBLEP), and triangle uses a slope correction (PolyBLAMP) to reduce aliasing. This avoids a fixed audio-rate frequency floor for slow modulation. Equal peak amplitude is not equal perceived loudness; loudness matching is a separate feature.
+
+Tempo sine LFO remains transport-locked for now. A later timing-mode change can unify its beat-derived phase with the same waveform calculation. Noise remains a separate generator family.
+
 
 
 There is no per-sample C# or JavaScript event loop. The audio engine controls waveform generation; browser timers observe playback for resource cleanup, and the UI reads passive meter snapshots at display rate. Graph playback currently stages graph edits until the next start.
@@ -263,7 +282,7 @@ using var graphListener = session.Subscribe(change =>
 using var nodeListener = session.Subscribe<NodeAdded>(change =>
     Console.WriteLine($"Added {change.Node.Name}"));
 
-var result = session.Execute(new AddNodeCommand(session.GraphId, SineGenerator.NodeType));
+var result = session.Execute(new AddNodeCommand(session.GraphId, OscillatorGenerator.NodeType));
 ~~~
 
 - The result includes the immutable committed root snapshot and ordered events. `GraphChangeSet.GraphId` identifies the command target; `ChangedGraph` returns its local snapshot. One revision identifies the entire patch, even after future edits.
@@ -311,7 +330,7 @@ using ICanvasStateService canvas = new CanvasStateService(session);
 using var listener = canvas.Subscribe(change =>
     Console.WriteLine($"{change.Kind}, layout revision {change.Snapshot.LayoutRevision}"));
 
-session.Execute(new AddNodeCommand(session.GraphId, SineGenerator.NodeType));
+session.Execute(new AddNodeCommand(session.GraphId, OscillatorGenerator.NodeType));
 var nodeId = canvas.Snapshot.Graph.Nodes.Single().Id;
 canvas.MoveNode(nodeId, new CanvasPoint(200, 100));
 canvas.PanBy(new CanvasPoint(-40, 80));
@@ -377,11 +396,11 @@ flowchart TD
 ~~~
 
 - The compiler walks backward from the sole master output and orders all reachable audio and modulation dependencies. Disconnected nodes are excluded; a disconnected master produces silence.
-- `IFaustNodeEmitter` is the backend extension point. Sine and gain have independent implementations. `FaustNodeContext` handles routing, weighted input summation, parameter slider generation, smoothing and clamping.
+- `IFaustNodeEmitter` is the backend extension point. Oscillator, tempo sine and gain have independent implementations. `FaustNodeContext` handles routing, weighted input summation, parameter slider generation, smoothing, clamping and validated structural constants.
 - Each parameter control uses its node and parameter IDs, never user labels. The program source is stable across base-value edits; the latest values travel separately in the control map and must be applied before playback.
 - For linear parameters, effective value = clamped (smoothed base + sum of incoming signals × connection amounts). Frequency also stays below the sample-rate-dependent Nyquist limit. Modulation signals themselves run at audio rate.
 - Connection amounts are baked into this first source representation. Changing connection amounts or topology requires recompilation; a future runtime can expose depth controls without recompiling.
-- The current backend supports mono sine, gain, nested composite boundaries and exactly one root master output. Cycles and unsupported reachable node types are rejected.
+- The current backend supports mono periodic oscillators, tempo sine LFO, gain, nested composite boundaries and exactly one root master output. Cycles and unsupported reachable node types are rejected.
 
 CI exports an actual nested graph using `tests/Orbit.Audio.Probe`, compiles the generated source using the pinned Faust CLI, then renders it offline at 44.1 and 48 kHz. Tests verify that an external LFO can fan out through two rack inputs to internal pitch and gain, that audio returns through the output rack, and that a host can change an internal frequency control without recompiling.
 
@@ -418,7 +437,7 @@ Future root and nested canvases share the same viewport, node frame, port connec
 
 ### Frequency control design note
 
-The current sine frequency control spans 0.01–20,000 Hz linearly. For LFO use this makes useful slow rates occupy almost none of the slider travel. A future rate-oriented control should provide a convenient 0.01–100 Hz modulation range (possibly logarithmic or with coarse/fine editing) without changing the generator's underlying audio-rate frequency capability. The period is `1 / frequency`: higher rates produce shorter cycles, but can become too fast to observe or use as slow modulation.
+The current oscillator frequency control spans 0.01–20,000 Hz linearly. For LFO use this makes useful slow rates occupy almost none of the slider travel. A future rate-oriented control should provide a convenient 0.01–100 Hz modulation range (possibly logarithmic or with coarse/fine editing) without changing the generator's underlying audio-rate frequency capability. The period is `1 / frequency`: higher rates produce shorter cycles, but can become too fast to observe or use as slow modulation.
 
 ## Composite graph foundation (Phase 5)
 
@@ -440,7 +459,7 @@ The existing commands now address the root or any owned child by its graph ID, w
 
 ```csharp
 var childGraphId = compositeSnapshot.Graph.Id;
-session.Execute(new AddNodeCommand(childGraphId, SineGenerator.NodeType));
+session.Execute(new AddNodeCommand(childGraphId, OscillatorGenerator.NodeType));
 ```
 
 `CanvasStateService(session, childGraphId)` projects that child and maintains its own layout, selection and viewport. It observes root commits to stay synchronized with the patch. If its owning composite is removed, the canvas becomes unavailable and emits `GraphRemoved`; stale commands are rejected by the session.

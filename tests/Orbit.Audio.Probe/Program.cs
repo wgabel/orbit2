@@ -25,12 +25,12 @@ registry.Register(CompositeNode.NodeType, id => new CompositeNode(id, "Drone",
     [new ExposedPort(Guid.NewGuid(), "Audio", SignalType.Audio)]));
 using var session = new PatchSession(registry);
 var root = session.GraphId;
-var lfo = Add(root, SineGenerator.NodeType);
+var lfo = Add(root, OscillatorGenerator.NodeType);
 var drone = Add(root, CompositeNode.NodeType);
 var master = Add(root, MasterOutput.NodeType);
 var composite = drone.Composite!;
 var child = composite.Graph.Id;
-var oscillator = Add(child, SineGenerator.NodeType);
+var oscillator = Add(child, OscillatorGenerator.NodeType);
 var gain = Add(child, GainProcessor.NodeType);
 session.Execute(new SetParameterValueCommand(root, new ParameterAddress(lfo.Id, lfo.Parameters[0].Id), 0.5));
 session.Execute(new SetParameterValueCommand(child, new ParameterAddress(gain.Id, gain.Parameters[0].Id), 0.1));
@@ -78,6 +78,35 @@ var tempoProgram = FaustGraphCompiler.CreateBuiltIn().Compile(tempoSession.Snaps
 File.WriteAllText(Path.Combine(args[0], "tempo.dsp"), tempoProgram.Source);
 File.WriteAllText(Path.Combine(args[0], "tempo-controls.json"), JsonSerializer.Serialize(
     tempoProgram.Controls.ToDictionary(control => control.Name, control => control.InitialValue)));
+
+// Export every waveform using the same real domain node and compiler. These
+// programs are rendered by the browser's pinned Faust compiler at LFO/audio rates.
+using var waveformSession = new PatchSession(BuiltInNodes.CreateRegistry());
+var waveformGraph = waveformSession.GraphId;
+var waveNode = waveformSession.Execute(new AddNodeCommand(waveformGraph, OscillatorGenerator.NodeType))
+    .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+var waveMaster = waveformSession.Execute(new AddNodeCommand(waveformGraph, MasterOutput.NodeType))
+    .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+waveformSession.Execute(new ConnectNodesCommand(waveformGraph, new PortAddress(waveNode.Id, waveNode.Outputs[0].Id),
+    new PortAddress(waveMaster.Id, waveMaster.Inputs[0].Id)));
+var waveformAddress = new ParameterAddress(waveNode.Id,
+    waveNode.Parameters.Single(parameter => parameter.Definition.Key == "waveform").Id);
+var waveformProbes = Enum.GetValues<OscillatorWaveform>().Select(waveform =>
+{
+    waveformSession.Execute(new SetParameterValueCommand(waveformGraph, waveformAddress, (int)waveform));
+    var compiled = FaustGraphCompiler.CreateBuiltIn().Compile(waveformSession.Snapshot);
+    string ControlName(string key) => compiled.Controls.Single(control => control.Address.ParameterId ==
+        waveNode.Parameters.Single(parameter => parameter.Definition.Key == key).Id).Name;
+    return new
+    {
+        waveform = waveform.ToString(),
+        source = compiled.Source,
+        values = compiled.Controls.ToDictionary(control => control.Name, control => control.InitialValue),
+        frequency = ControlName("frequency"),
+        phase = ControlName("phase")
+    };
+}).ToArray();
+File.WriteAllText(Path.Combine(args[0], "waveforms.json"), JsonSerializer.Serialize(waveformProbes));
 
 GraphNodeSnapshot TempoAdd(Guid graph, string type) =>
     tempoSession.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;

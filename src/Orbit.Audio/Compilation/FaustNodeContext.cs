@@ -42,6 +42,8 @@ public sealed class FaustNodeContext
         var parameter = Node.Parameters.SingleOrDefault(parameter => parameter.Definition.Key == key)
             ?? throw new FaustCompilationException($"Node {Node.TypeKey} has no parameter '{key}'.");
         var definition = parameter.Definition;
+        if (definition.RequiresRecompile)
+            throw new FaustCompilationException($"Parameter '{key}' must be read as a compiled constant.");
         if (definition.Scale != ParameterScale.Linear)
             throw new FaustCompilationException($"Parameter '{key}' has an unsupported modulation scale.");
         if (!definition.IsValidBaseValue(parameter.BaseValue))
@@ -70,6 +72,16 @@ public sealed class FaustNodeContext
         // A passive bargraph passes its input unchanged and reports the actual
         // clamped sample value. Only connected modulation needs a live meter.
         return meter is null ? effective : $"({effective} : hbargraph(\"{meter}\", {minimum}, {maximum}))";
+    }
+
+    /// <summary>Read a validated structural choice without allocating a Faust control.</summary>
+    public double ConstantParameter(string key)
+    {
+        var parameter = Node.Parameters.SingleOrDefault(parameter => parameter.Definition.Key == key)
+            ?? throw new FaustCompilationException($"Node {Node.TypeKey} has no parameter '{key}'.");
+        if (!parameter.Definition.RequiresRecompile || !parameter.Definition.IsValidBaseValue(parameter.BaseValue))
+            throw new FaustCompilationException($"Parameter '{key}' is not a valid compiled constant.");
+        return parameter.BaseValue;
     }
 
     private string InputSignal(Guid portId)

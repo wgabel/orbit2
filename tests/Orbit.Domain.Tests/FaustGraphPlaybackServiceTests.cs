@@ -5,6 +5,7 @@ using Orbit.Application.Models;
 using Orbit.Audio.Compilation;
 using Orbit.Audio.Playback;
 using Orbit.Domain.Parameters;
+using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Ports;
 using Xunit;
 
@@ -13,6 +14,36 @@ namespace Orbit.Domain.Tests;
 /// <summary>The playback use case translates the exact immutable snapshot to engine input.</summary>
 public sealed class FaustGraphPlaybackServiceTests
 {
+    [Fact]
+    public async Task WaveformChoiceReplacesOnlyTheProgramAndKeepsLiveControls()
+    {
+        using var patch = new NestedFaustPatch();
+        var engine = new RecordingEngine();
+        var compiler = FaustGraphCompiler.CreateBuiltIn();
+        var service = new FaustGraphPlaybackService(compiler, engine);
+        var original = patch.Session.Snapshot;
+        var playing = service.PlayAsync(original);
+        var oscillator = original.GetGraph(patch.ChildId).GetNode(patch.Frequency.NodeId);
+        var waveform = oscillator.Parameters.Single(parameter => parameter.Definition.Key == "waveform");
+        var address = new ParameterAddress(oscillator.Id, waveform.Id);
+        patch.Session.Execute(new SetParameterValueCommand(patch.ChildId, address, (int)OscillatorWaveform.Square));
+        Assert.Equal(new GraphPlaybackUpdate(patch.Session.Snapshot.Revision, true),
+            await service.UpdateAsync(patch.Session.Snapshot));
+        var replacement = Assert.Single(engine.Replacements);
+        Assert.NotEqual(engine.Request!.Source, replacement.Source);
+        Assert.Contains("float(p < 0.5)", replacement.Source);
+        Assert.Empty(engine.Updates);
+        Assert.Equal(engine.Request.Parameters.Keys.Order(), replacement.Parameters.Keys.Order());
+        Assert.Equal(original.GetGraph(patch.ChildId).Connections.ToArray(),
+            patch.Session.Snapshot.GetGraph(patch.ChildId).Connections.ToArray());
+        patch.Session.Execute(new SetParameterValueCommand(patch.ChildId, patch.Frequency, 330));
+        await service.UpdateAsync(patch.Session.Snapshot);
+        Assert.Single(engine.Replacements);
+        Assert.Single(engine.Updates);
+        await service.StopAsync(patch.Session.GraphId);
+        await playing;
+    }
+
     [Fact]
     public async Task NestedControlEditsAndMetersUseTheOwningCanvasWithoutReplacingVoice()
     {

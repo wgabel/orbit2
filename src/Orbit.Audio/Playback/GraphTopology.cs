@@ -3,7 +3,7 @@ using Orbit.Application.Graphs.Snapshots;
 namespace Orbit.Audio.Playback;
 
 /// <summary>Compares the patch structure independently of editable base values.
-/// Connections include their amounts because these are compiled DSP constants.</summary>
+/// Connections and structural parameter choices are compiled DSP constants.</summary>
 internal static class GraphTopology
 {
     public static bool Matches(GraphSnapshot original, GraphSnapshot current)
@@ -27,5 +27,6 @@ internal static class GraphTopology
         current is not null && original.InputRackId == current.InputRackId &&
         original.OutputRackId == current.OutputRackId && Matches(original.Graph, current.Graph);
 
-    private static ParameterSnapshot Structure(ParameterSnapshot parameter) => parameter with { BaseValue = 0 };
+    private static ParameterSnapshot Structure(ParameterSnapshot parameter) =>
+        parameter.Definition.RequiresRecompile ? parameter : parameter with { BaseValue = 0 };
 }

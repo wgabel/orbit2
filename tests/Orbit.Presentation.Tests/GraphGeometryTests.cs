@@ -41,7 +41,7 @@ public sealed class GraphGeometryTests
     {
         using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings());
         var graph = session.Snapshot;
-        var generators = graph.Nodes.Where(node => node.TypeKey == SineGenerator.NodeType).ToArray();
+        var generators = graph.Nodes.Where(node => node.TypeKey == OscillatorGenerator.NodeType).ToArray();
         Assert.Equal(NodeVisualRole.Modulator, NodeRoleClassifier.Classify(graph, generators[0]));
         Assert.Equal(NodeVisualRole.Generator, NodeRoleClassifier.Classify(graph, generators[1]));
         Assert.Equal(NodeVisualRole.Processor, NodeRoleClassifier.Classify(graph, graph.Nodes[2]));

@@ -51,13 +51,13 @@ public partial class GraphWorkspace : IDisposable
     {
         var registry = BuiltInNodes.CreateEditorRegistry();
         catalog = registry.RegisteredTypes;
-        SelectedType = SineGenerator.NodeType;
+        SelectedType = OscillatorGenerator.NodeType;
         session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings(), registry);
         Navigation = new CanvasNavigationService(session, new GridNodePlacementPolicy(columnSpacing: 320, rowSpacing: 360, columns: 4));
         RefreshRanges();
         subscription = Navigation.Subscribe(change => { _ = InvokeAsync(() =>
         {
-            if (!RegisteredTypes.Contains(SelectedType)) SelectedType = SineGenerator.NodeType;
+            if (!RegisteredTypes.Contains(SelectedType)) SelectedType = OscillatorGenerator.NodeType;
             RefreshRanges();
             StateHasChanged();
         }); });
@@ -81,7 +81,7 @@ public partial class GraphWorkspace : IDisposable
     private static string DescribeType(string type) => type switch
     {
         CompositeNode.NodeType => "Drone (composite)",
-        SineGenerator.NodeType => "Sine generator",
+        OscillatorGenerator.NodeType => "Oscillator",
         TempoSineGenerator.NodeType => "Tempo sine LFO",
         GainProcessor.NodeType => "Gain",
         MasterOutput.NodeType => "Master output",

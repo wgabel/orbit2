@@ -33,7 +33,7 @@ public sealed class NestedPatchSessionTests
         using var rootListener = session.Subscribe(root.Add, session.GraphId);
         using var siblingListener = session.Subscribe(other.Add, sibling);
         using var typed = session.Subscribe<ParameterChanged>(parameterEvents.Add, child);
-        var oscillator = Add(session, child, SineGenerator.NodeType);
+        var oscillator = Add(session, child, OscillatorGenerator.NodeType);
         var before = session.Snapshot;
         var address = new ParameterAddress(oscillator.Id, oscillator.Parameters[0].Id);
         var result = session.Execute(new SetParameterValueCommand(child, address, 330));
@@ -63,7 +63,7 @@ public sealed class NestedPatchSessionTests
         var outer = Add(session, session.GraphId, CompositeNode.NodeType).Composite!;
         var inner = Add(session, outer.Graph.Id, CompositeNode.NodeType).Composite!;
         var graphId = inner.Graph.Id;
-        var oscillator = Add(session, graphId, SineGenerator.NodeType);
+        var oscillator = Add(session, graphId, OscillatorGenerator.NodeType);
         var rack = session.Snapshot.GetGraph(graphId).GetNode(inner.OutputRackId);
         var source = new PortAddress(oscillator.Id, oscillator.Outputs[0].Id);
         var destination = new PortAddress(rack.Id, rack.Inputs[0].Id);
@@ -85,8 +85,8 @@ public sealed class NestedPatchSessionTests
         using var session = CreateSession();
         var drone = Add(session, session.GraphId, CompositeNode.NodeType).Composite!;
         var child = drone.Graph.Id;
-        var oscillator = Add(session, child, SineGenerator.NodeType);
-        var parent = Add(session, session.GraphId, SineGenerator.NodeType);
+        var oscillator = Add(session, child, OscillatorGenerator.NodeType);
+        var parent = Add(session, session.GraphId, OscillatorGenerator.NodeType);
         var address = new ParameterAddress(oscillator.Id, oscillator.Parameters[0].Id);
         var before = session.Snapshot;
         var notifications = 0;
@@ -114,7 +114,7 @@ public sealed class NestedPatchSessionTests
         session.Execute(new RemoveNodeCommand(session.GraphId, parent.Id));
         var before = session.Snapshot;
         foreach (var graphId in new[] { child, nested, foreignChild })
-            Assert.Throws<GraphValidationException>(() => session.Execute(new AddNodeCommand(graphId, SineGenerator.NodeType)));
+            Assert.Throws<GraphValidationException>(() => session.Execute(new AddNodeCommand(graphId, OscillatorGenerator.NodeType)));
         Assert.Same(before, session.Snapshot);
     }
 

@@ -87,8 +87,8 @@ public sealed class CanvasNavigationTests
         Assert.Equal(4, firstGraph.Connections.Count);
         Assert.DoesNotContain(firstGraph.Nodes, node => node.TypeKey == MasterOutput.NodeType);
         Assert.NotEqual(firstGraph.Id, secondGraph.Id);
-        var oscillator = firstGraph.Nodes.Single(node => node.TypeKey == SineGenerator.NodeType);
-        var other = secondGraph.Nodes.Single(node => node.TypeKey == SineGenerator.NodeType);
+        var oscillator = firstGraph.Nodes.Single(node => node.TypeKey == OscillatorGenerator.NodeType);
+        var other = secondGraph.Nodes.Single(node => node.TypeKey == OscillatorGenerator.NodeType);
         var address = new ParameterAddress(oscillator.Id, oscillator.Parameters[0].Id);
         Assert.NotEqual(oscillator.Id, other.Id);
         using var navigation = new CanvasNavigationService(session);

@@ -30,10 +30,10 @@ public sealed class FaustGraphCompilerTests
         var oscillator = session.Snapshot.Nodes[1];
         Assert.Equal(session.GraphId, program.GraphId);
         Assert.Equal(session.Snapshot.Revision, program.Revision);
-        Assert.Equal(5, program.Controls.Count);
+        Assert.Equal(7, program.Controls.Count);
         Assert.Contains($"n_{lfo.Id:N} * 100.0", program.Source);
         Assert.Contains($"n_{oscillator.Id:N} * 1.0", program.Source);
-        Assert.Contains("os.osc(min(0.49 * ma.SR", program.Source);
+        Assert.Contains("f = min(0.49 * ma.SR", program.Source);
         Assert.Contains(" : si.smoo;", program.Source);
         Assert.Contains("process = ", program.Source);
         Assert.Equal(0.5, Control(program, lfo, "frequency").InitialValue);
@@ -68,16 +68,16 @@ public sealed class FaustGraphCompilerTests
         var lfo = session.Snapshot.Nodes[0];
         var oscillator = session.Snapshot.Nodes[1];
         var gain = session.Snapshot.Nodes[2];
-        var secondLfo = Add(session, SineGenerator.NodeType);
+        var secondLfo = Add(session, OscillatorGenerator.NodeType);
         var gainPort = gain.Parameters.Single().ModulationPortId!.Value;
         var frequencyPort = oscillator.Parameters.Single(p => p.Definition.Key == "frequency").ModulationPortId!.Value;
         Connect(session, lfo, gain, gainPort, 0.05);
         Connect(session, secondLfo, oscillator, frequencyPort, -12.5);
         var program = compiler.Compile(session.Snapshot);
-        Assert.Single(program.Source.Split('\n').Where(line => line.StartsWith($"n_{lfo.Id:N} = ")));
+        Assert.Single(program.Source.Split('\n'), line => line.StartsWith($"n_{lfo.Id:N} = "));
         Assert.Contains($"n_{lfo.Id:N} * 0.05", program.Source);
         Assert.Contains($"n_{secondLfo.Id:N} * -12.5", program.Source);
-        Assert.Equal(7, program.Controls.Count);
+        Assert.Equal(10, program.Controls.Count);
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public sealed class FaustGraphCompilerTests
     {
         using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings());
         var before = compiler.Compile(session.Snapshot);
-        Add(session, SineGenerator.NodeType);
+        Add(session, OscillatorGenerator.NodeType);
         var after = compiler.Compile(session.Snapshot);
         Assert.Equal(before.Source, after.Source);
         Assert.Equal(before.Controls.ToArray(), after.Controls.ToArray());
@@ -96,7 +96,7 @@ public sealed class FaustGraphCompilerTests
     {
         using var session = new PatchSession(BuiltInNodes.CreateRegistry());
         Add(session, MasterOutput.NodeType);
-        Add(session, SineGenerator.NodeType);
+        Add(session, OscillatorGenerator.NodeType);
         var program = compiler.Compile(session.Snapshot);
         Assert.Contains("process = 0.0;", program.Source);
         Assert.Empty(program.Controls);

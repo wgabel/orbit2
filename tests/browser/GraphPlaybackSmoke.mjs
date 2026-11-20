@@ -14,6 +14,7 @@ const source = await readFile(resolve(directory, "program.dsp"), "utf8");
 const manifest = JSON.parse(await readFile(resolve(directory, "controls.json"), "utf8"));
 const tempoSource = await readFile(resolve(directory, "tempo.dsp"), "utf8");
 const tempoControls = JSON.parse(await readFile(resolve(directory, "tempo-controls.json"), "utf8"));
+const waveforms = JSON.parse(await readFile(resolve(directory, "waveforms.json"), "utf8"));
 const root = resolve("src/Orbit.Infrastructure/wwwroot/audio");
 const server = createServer(async (request, response) => {
     try {
@@ -124,6 +125,93 @@ try {
     assert.ok(result.beforeSwap > 0.035 && result.beforeSwap <= 0.151, "The initial voice was not audible");
     assert.ok(result.silentSwap < 0.001, "The silent replacement did not take over");
     assert.ok(result.restoredSwap > 0.035 && result.restoredSwap <= 0.151, "The restored worklet was not audible");
+
+    // Exercise each generated shape at both audio and LFO rates. In particular,
+    // a slow triangle must really cycle at 2 Hz rather than an audio-rate minimum.
+    const renderedWaveforms = await page.evaluate(async waveforms => {
+        const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
+        const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
+        const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
+        const results = [];
+        try {
+            for (const wave of waveforms) {
+                const compiled = await compiler.compile(wave.source);
+                for (const rate of [44100, 48000]) {
+                    const render = async (frequency, phase = 0) => {
+                        const processor = await new FaustMonoDspGenerator().createOfflineProcessor(
+                            rate, 128, { ...compiled, soundfiles: {} });
+                        const values = { ...wave.values, [wave.frequency]: frequency, [wave.phase]: phase };
+                        for (const [name, value] of Object.entries(values)) {
+                            const path = processor.getParams().find(path => path.endsWith("/" + name));
+                            if (!path) throw new Error("Missing waveform control " + name);
+                            processor.setParamValue(path, value);
+                        }
+                        return processor.render([], rate * 3)[0].subarray(rate);
+                    };
+                    for (const frequency of [2, 440]) {
+                        const samples = await render(frequency);
+                        let peak = 0, squares = 0, sum = 0, previousCrossing, cycleSum = 0, cycles = 0;
+                        for (let i = 0; i < samples.length; i++) {
+                            const sample = samples[i];
+                            if (!Number.isFinite(sample)) throw new Error("Non-finite oscillator sample");
+                            peak = Math.max(peak, Math.abs(sample));
+                            squares += sample * sample;
+                            sum += sample;
+                            if (i && samples[i - 1] <= 0 && sample > 0) {
+                                if (previousCrossing !== undefined) {
+                                    cycleSum += i - previousCrossing;
+                                    cycles++;
+                                }
+                                previousCrossing = i;
+                            }
+                        }
+                        results.push({ waveform: wave.waveform, rate, frequency, peak,
+                            mean: sum / samples.length, rms: Math.sqrt(squares / samples.length),
+                            measured: rate * cycles / cycleSum });
+                    }
+                    // 90-degree phase shift must be a quarter-cycle shift of the same shape.
+                    const unshifted = await render(100);
+                    const shifted = await render(100, 90);
+                    const quarter = Math.round(rate / 400);
+                    let error = 0;
+                    for (let i = 0; i < shifted.length - quarter; i++)
+                        error += (shifted[i] - unshifted[i + quarter]) ** 2;
+                    results.push({ waveform: wave.waveform, rate, phaseError: Math.sqrt(error / (shifted.length - quarter)) });
+                    if (wave.waveform === "Square" || wave.waveform === "Sawtooth") {
+                        // The fifth harmonic of 7 kHz folds back below Nyquist.
+                        // Measure that alias against an ideal discontinuous waveform.
+                        const samples = (await render(7000)).subarray(0, rate);
+                        const alias = rate - 35000;
+                        let cosine = 0, sine = 0;
+                        for (let i = 0; i < samples.length; i++) {
+                            const angle = 2 * Math.PI * alias * i / rate;
+                            cosine += samples[i] * Math.cos(angle);
+                            sine += samples[i] * Math.sin(angle);
+                        }
+                        results.push({ waveform: wave.waveform, rate, aliasLevel: 2 * Math.hypot(cosine, sine) / samples.length });
+                    }
+                }
+            }
+            return results;
+        } finally { compiler.dispose(); }
+    }, waveforms);
+    for (const result of renderedWaveforms) {
+        console.log("Oscillator waveform", result);
+        if ("phaseError" in result) {
+            // At 44.1k, a quarter period is not an integer sample. Permit the
+            // resulting sub-sample error, especially for square/saw edges.
+            assert.ok(result.phaseError < 0.09, "Incorrect phase offset");
+        } else if ("aliasLevel" in result) {
+            const ideal = (result.waveform === "Square" ? 4 : 2) / (5 * Math.PI);
+            assert.ok(result.aliasLevel < ideal * 0.6, "Fifth harmonic alias was not attenuated");
+        } else {
+            assert.ok(result.peak > 0.85 && result.peak <= 1.001, "Incorrect amplitude");
+            assert.ok(Math.abs(result.mean) < 0.03, "Unexpected DC offset");
+            assert.ok(Math.abs(result.measured - result.frequency) / result.frequency < 0.015, "Wrong cycle frequency");
+            const expectedRms = { Sine: Math.SQRT1_2, Triangle: Math.sqrt(1 / 3), Square: 1, Sawtooth: Math.sqrt(1 / 3) }[result.waveform];
+            assert.ok(Math.abs(result.rms - expectedRms) < 0.07, "Incorrect waveform shape");
+        }
+    }
 
     // Render two independent Faust worklets receiving the same transport.
     // Each graph itself combines an outer and inner LFO. Compare every sample

@@ -172,7 +172,7 @@ public sealed class BoundaryPortCommandTests
         public ConnectedDrone()
         {
             var root = Session.GraphId;
-            var lfo = Add(Session, root, SineGenerator.NodeType);
+            var lfo = Add(Session, root, OscillatorGenerator.NodeType);
             Drone = Add(Session, root, CompositeNode.NodeType);
             var master = Add(Session, root, MasterOutput.NodeType);
             Session.Execute(new ConnectNodesCommand(root, new PortAddress(lfo.Id, lfo.Outputs[0].Id),

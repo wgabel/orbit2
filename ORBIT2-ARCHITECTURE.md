@@ -97,7 +97,7 @@ classDiagram
     ISignalNode <|-- IGenerator
     ISignalNode <|-- IProcessor
     ISignalNode <|-- ICompositeNode
-    IGenerator <|-- SineGenerator
+    IGenerator <|-- OscillatorGenerator
     IGenerator <|-- NoiseGenerator
     IProcessor <|-- Filter
     IProcessor <|-- Reverb
@@ -169,13 +169,13 @@ public interface ICompositeNode : ISignalNode
 
 The interface describes a node's graph-facing contract. It intentionally contains no ProcessSample method: the C# object describes DSP, while Faust performs DSP. Avoid exposing UI component references, JavaScript objects or AudioWorklet instances in the domain model.
 
-Generators and processors are registered by stable node type keys, e.g. "generator.sine" or "processor.lowpass". A NodeRegistry holds the definitions, factory and metadata required to create new instances. DSP bindings are supplied separately by the compiler adapter.
+Generators and processors are registered by stable node type keys, e.g. "generator.oscillator" or "processor.lowpass". A NodeRegistry holds the definitions, factory and metadata required to create new instances. DSP bindings are supplied separately by the compiler adapter.
 
 ### Graph ownership and fan-out
 
 ~~~mermaid
 flowchart TD
-    G[Sine generator] --> F[Low-pass filter]
+    G[Oscillator] --> F[Low-pass filter]
     G --> D[Delay]
     F --> R[Reverb]
     D --> M[Mixer]
@@ -240,7 +240,7 @@ Examples:
 
 | Component | Parameters |
 |---|---|
-| Sine generator | Frequency, amplitude, phase |
+| Oscillator | Frequency, amplitude, phase |
 | Pulse generator | Frequency, pulse width, amplitude |
 | Filter | Cutoff, resonance |
 | Reverb | Mix, decay, size |
@@ -498,6 +498,8 @@ The audio clock can continue while musical transport is stopped, allowing effect
 `MusicalDivision` and `MusicalTime` define reusable quarter-note-relative cycle lengths and the conversion to Hertz. The application timeline is calculated from actual sampled audio frames, not from UI timer ticks.
 
 **Implemented Phase 6.2:** `TempoSineGenerator` uses a discrete musical division and modulatable phase/amplitude parameters. A generic `ParameterChoiceEditor` renders discrete parameters without adding modulation ports. `ITransportSignalSink` publishes a new transport anchor on state changes through the existing browser adapter. A lazy `TransportSignalSource` owns one audio worklet per context, producing the shared beat position at the actual sample rate. `IFaustNodeEmitter.RequiresTransport` declares the dependency; the graph compiler adds one input only when needed, including for nested emitters. The same beat stream reaches old and new graphs during a crossfade. All supported cycle lengths divide a 12-beat wrap exactly in musical time, limiting floating-point drift. Audio-rate phase is shared; application commands still arrive at message boundaries rather than being scheduled at exact future samples.
+
+**Implemented Phase 6.3:** A single `OscillatorGenerator` (type key `generator.oscillator`) replaces the sine-only domain model. Its `OscillatorWaveform` enumeration defines sine, triangle, square and sawtooth, with shared continuous frequency, amplitude and phase parameters and stable sockets. `RequiresRecompile` marks a structural parameter; choices are validated by the same graph command system, included in topology comparison, and compiled as constants instead of live sliders. The UI uses `ParameterChoiceEditor` with no waveform-specific Razor code. `OscillatorFaustEmitter` selects the DSP expression through `FaustOscillatorWaveforms`; phase is accumulated only once and evaluated at the actual sample rate, with polynomial anti-alias corrections for steps/slopes and a normalized output bound. A waveform change crossfades the compiled graph; continuous edits still retain oscillator state. A free-running waveform may restart its phase on replacement. Transport-based timing is still a separate node; unify timing modes after the waveform system is established. Noise is a separate generator family.
 
 ## 7. Hierarchical signal graphs and canvases
 
@@ -881,7 +883,7 @@ using var nodeSubscription = session.Subscribe<NodeAdded>(change =>
     Console.WriteLine($"Added {change.Node.Id}"));
 
 GraphCommandResult result = session.Execute(
-    new AddNodeCommand(session.GraphId, SineGenerator.NodeType));
+    new AddNodeCommand(session.GraphId, OscillatorGenerator.NodeType));
 ~~~
 
 The read contract is an immutable `GraphSnapshot` with graph ID, revision, node/parameter snapshots and immutable connections. The published change set contains the patch ID, command target graph ID, final root snapshot, all ordered facts from the operation, and a derived `TopologyChanged` flag. `ChangedGraph` resolves the edited graph within that root snapshot. It never exposes the mutable graph or mutable domain parameter instances. A snapshot taken at revision 3 does not change at revision 4.
@@ -1042,7 +1044,7 @@ The implemented `GraphFlattener` resolves Input/Output Rack mappings before depe
 
 Child leaf and edge IDs are deterministically qualified by owning graph ID; each synthetic route has a distinct identity derived from the composite and port IDs. The manifest reverses this mapping to the original graph ID and local parameter address. The model's snapshots, rack definitions and canvas state remain unchanged. The graph dependency order includes audio dependencies AND parameter modulation dependencies. A topological sort suffices for acyclic graphs. Any explicit feedback mechanism requires additional state/scheduling and compiler support.
 
-The first implementation lives in the plain .NET `Orbit.Audio` library. `FaustGraphCompiler.Compile(GraphSnapshot)` returns a `FaustGraphProgram` containing the source, graph ID and revision, and a list of `FaustParameterControl` mappings. `GraphDependencyOrder` topologically sorts reachable audio and modulation dependencies. `IFaustNodeEmitter` is the strategy interface for one mono output; `SineFaustEmitter` and `GainFaustEmitter` delegate shared routing, control creation and modulation to `FaustNodeContext`. The master output is the terminal expression. No UI or browser runtime is involved.
+The first implementation lives in the plain .NET `Orbit.Audio` library. `FaustGraphCompiler.Compile(GraphSnapshot)` returns a `FaustGraphProgram` containing the source, graph ID and revision, and a list of `FaustParameterControl` mappings. `GraphDependencyOrder` topologically sorts reachable audio and modulation dependencies. `IFaustNodeEmitter` is the strategy interface for one mono output; `OscillatorFaustEmitter` and `GainFaustEmitter` delegate shared routing, control creation and modulation to `FaustNodeContext`. The master output is the terminal expression. No UI or browser runtime is involved.
 
 The first backend supports linear parameters, applying weighted incoming modulation to the smoothed base value and clamping to its definition. Oscillator frequencies also respect the actual sample rate. Disconnected components do not affect the source; master output without an incoming edge produces silence. Exactly one master output is required. Unsupported reachable node types and cycles are rejected.
 
@@ -1279,12 +1281,12 @@ The following JSON is a compact illustrative schema only; a production schema us
     "nodes": [
       {
         "id": "lfo",
-        "type": "generator.sine",
+        "type": "generator.oscillator",
         "parameters": { "frequency": 0.5 }
       },
       {
         "id": "oscillator",
-        "type": "generator.sine",
+        "type": "generator.oscillator",
         "parameters": { "frequency": 440, "amplitude": 0.1 }
       },
       {
@@ -1392,7 +1394,8 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 
 - Implemented: shared patch-wide transport service, BPM editor, sample-frame-derived musical position, start/stop/resume/reset semantics, and musical divisions.
 - Implemented: audio-rate shared transport phase, tempo-synchronized sine LFO, validated musical division parameter choices, root/nested and crossfade phase sharing.
-- Next: multi-generator drone preset, additional waveforms/effects; later add sample-scheduled transport commands and rhythmic clock/trigger nodes.
+- Implemented: one reusable oscillator with waveform selector (sine, triangle, square, sawtooth), phase, normalized output and structural change crossfade.
+- Next: separate noise generator, multi-generator drone preset, effects; later unify free/synchronized timing modes and add sample-scheduled transport commands and rhythmic clock/trigger nodes.
 - Add multi-generator drone graph preset, additional waveforms and effects.
 - Persist root/nested graphs, rack definitions and separate canvas layout.
 - Add copies/preset reuse with independent instances.

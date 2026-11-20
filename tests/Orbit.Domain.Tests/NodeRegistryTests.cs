@@ -19,7 +19,7 @@ public sealed class NodeRegistryTests
         var registry = BuiltInNodes.CreateRegistry();
 
         Assert.Equal(4, registry.RegisteredTypes.Count);
-        Assert.IsAssignableFrom<IGenerator>(registry.Create(SineGenerator.NodeType));
+        Assert.IsAssignableFrom<IGenerator>(registry.Create(OscillatorGenerator.NodeType));
         Assert.IsAssignableFrom<IGenerator>(registry.Create(TempoSineGenerator.NodeType));
         Assert.IsAssignableFrom<IProcessor>(registry.Create(GainProcessor.NodeType));
         var output = Assert.IsType<MasterOutput>(registry.Create(MasterOutput.NodeType));
@@ -31,8 +31,8 @@ public sealed class NodeRegistryTests
     public void InstancesHaveIndependentIdentitiesAndParameterValues()
     {
         var registry = BuiltInNodes.CreateRegistry();
-        var first = registry.Create(SineGenerator.NodeType);
-        var second = registry.Create(SineGenerator.NodeType);
+        var first = registry.Create(OscillatorGenerator.NodeType);
+        var second = registry.Create(OscillatorGenerator.NodeType);
         var firstFrequency = first.Parameters.Single(parameter => parameter.Definition.Key == "frequency");
         var secondFrequency = second.Parameters.Single(parameter => parameter.Definition.Key == "frequency");
 
@@ -74,7 +74,7 @@ public sealed class NodeRegistryTests
         var registry = BuiltInNodes.CreateRegistry();
 
         Assert.Throws<InvalidOperationException>(() =>
-            registry.Register(SineGenerator.NodeType, id => new SineGenerator(id)));
+            registry.Register(OscillatorGenerator.NodeType, id => new OscillatorGenerator(id)));
         Assert.Throws<KeyNotFoundException>(() => registry.Create("generator.unknown"));
     }
 
@@ -82,10 +82,10 @@ public sealed class NodeRegistryTests
     public void RejectsFactoryReturningWrongTypeOrIdentity()
     {
         var registry = new NodeRegistry();
-        registry.Register("incorrect", id => new SineGenerator(id));
-        registry.Register(SineGenerator.NodeType, _ => new SineGenerator(Guid.NewGuid()));
+        registry.Register("incorrect", id => new OscillatorGenerator(id));
+        registry.Register(OscillatorGenerator.NodeType, _ => new OscillatorGenerator(Guid.NewGuid()));
 
         Assert.Throws<InvalidOperationException>(() => registry.Create("incorrect"));
-        Assert.Throws<InvalidOperationException>(() => registry.Create(SineGenerator.NodeType));
+        Assert.Throws<InvalidOperationException>(() => registry.Create(OscillatorGenerator.NodeType));
     }
 }

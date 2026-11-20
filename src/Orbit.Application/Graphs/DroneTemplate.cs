@@ -17,7 +17,7 @@ public static class DroneTemplate
         var audio = new ExposedPort(Guid.NewGuid(), "Audio", SignalType.Audio);
         var drone = new CompositeNode(id, "Drone", [pitch, level], [audio]);
         var graph = drone.InternalGraph;
-        var oscillator = new SineGenerator(Guid.NewGuid());
+        var oscillator = new OscillatorGenerator(Guid.NewGuid());
         var gain = new GainProcessor(Guid.NewGuid());
         graph.AddNode(oscillator);
         graph.AddNode(gain);

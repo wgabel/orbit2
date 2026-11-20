@@ -35,7 +35,7 @@ public sealed class ModulationDemoPatch
         using var session = OpenSession(settings);
         // This mapping is intentionally specific to the seed topology.
         var graph = session.Snapshot;
-        var generators = graph.Nodes.Where(node => node.TypeKey == SineGenerator.NodeType).ToArray();
+        var generators = graph.Nodes.Where(node => node.TypeKey == OscillatorGenerator.NodeType).ToArray();
         var lfo = generators[0];
         var oscillator = generators[1];
         var gain = graph.Nodes.Single(node => node.TypeKey == GainProcessor.NodeType);
@@ -62,8 +62,8 @@ public sealed class ModulationDemoPatch
         try
         {
             var graphId = session.GraphId;
-            var lfo = AddNode(session, SineGenerator.NodeType);
-            var oscillator = AddNode(session, SineGenerator.NodeType);
+            var lfo = AddNode(session, OscillatorGenerator.NodeType);
+            var oscillator = AddNode(session, OscillatorGenerator.NodeType);
             var gain = AddNode(session, GainProcessor.NodeType);
             var output = AddNode(session, MasterOutput.NodeType);
 

@@ -31,7 +31,7 @@ public sealed class NestedCanvasStateTests
         var changes = new List<CanvasStateChange>();
         using var subscription = child.Subscribe(changes.Add);
 
-        var oscillator = Add(session, child.Snapshot.GraphId, SineGenerator.NodeType);
+        var oscillator = Add(session, child.Snapshot.GraphId, OscillatorGenerator.NodeType);
 
         Assert.Equal(CanvasChangeKind.GraphCommitted, Assert.Single(changes).Kind);
         Assert.Same(session.Snapshot, root.Snapshot.Graph);
@@ -64,7 +64,7 @@ public sealed class NestedCanvasStateTests
         Assert.Same(old.Graph, canvas.Snapshot.Graph);
         Assert.Equal(CanvasChangeKind.GraphRemoved, Assert.Single(changes).Kind);
         Assert.Throws<InvalidOperationException>(() => canvas.PanBy(new CanvasPoint(1, 1)));
-        Add(session, session.GraphId, SineGenerator.NodeType);
+        Add(session, session.GraphId, OscillatorGenerator.NodeType);
         Assert.Single(changes);
     }
 

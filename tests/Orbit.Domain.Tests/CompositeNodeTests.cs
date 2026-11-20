@@ -22,12 +22,12 @@ public sealed class CompositeNodeTests
         var audio = new ExposedPort(Guid.NewGuid(), "Audio", SignalType.Audio);
         var drone = new CompositeNode(Guid.NewGuid(), "Drone", [pitch], [audio]);
         var root = new SignalGraph();
-        var lfo = new SineGenerator(Guid.NewGuid());
+        var lfo = new OscillatorGenerator(Guid.NewGuid());
         var master = new MasterOutput(Guid.NewGuid());
         root.AddNode(drone);
         root.AddNode(lfo);
         root.AddNode(master);
-        var carrier = new SineGenerator(Guid.NewGuid());
+        var carrier = new OscillatorGenerator(Guid.NewGuid());
         drone.InternalGraph.AddNode(carrier);
 
         Assert.Equal(pitch.Id, Assert.Single(drone.Inputs).Id);
@@ -88,8 +88,8 @@ public sealed class CompositeNodeTests
     {
         var first = EmptyComposite();
         var second = EmptyComposite();
-        var oscillator = new SineGenerator(Guid.NewGuid());
-        var other = new SineGenerator(Guid.NewGuid());
+        var oscillator = new OscillatorGenerator(Guid.NewGuid());
+        var other = new OscillatorGenerator(Guid.NewGuid());
         first.InternalGraph.AddNode(oscillator);
         second.InternalGraph.AddNode(other);
         Assert.NotEqual(first.InternalGraph.Id, second.InternalGraph.Id);

@@ -20,7 +20,7 @@ public sealed class CanvasStateServiceTests
     public void ProjectsInitialNodesAndKeepsPositionsAcrossParameterEdits()
     {
         using var session = NewSession();
-        var first = AddNode(session, SineGenerator.NodeType);
+        var first = AddNode(session, OscillatorGenerator.NodeType);
         var second = AddNode(session, GainProcessor.NodeType);
         using var canvas = new CanvasStateService(session);
         var initial = canvas.Snapshot;
@@ -49,7 +49,7 @@ public sealed class CanvasStateServiceTests
     public void LayoutOnlyEditsNeverPublishGraphEventsOrChangeGraphRevision()
     {
         using var session = NewSession();
-        var node = AddNode(session, SineGenerator.NodeType);
+        var node = AddNode(session, OscillatorGenerator.NodeType);
         using var canvas = new CanvasStateService(session);
         var originalGraph = session.Snapshot;
         var layoutEvents = new List<CanvasStateChange>();
@@ -79,7 +79,7 @@ public sealed class CanvasStateServiceTests
     public void NodeRemovalReconcilesAllIncidentConnectionsAndSelectionsOnce()
     {
         using var session = NewSession();
-        var source = AddNode(session, SineGenerator.NodeType);
+        var source = AddNode(session, OscillatorGenerator.NodeType);
         var gain = AddNode(session, GainProcessor.NodeType);
         var destination = AddNode(session, MasterOutput.NodeType);
         var first = Connect(session, source, gain);
@@ -116,7 +116,7 @@ public sealed class CanvasStateServiceTests
         using var canvas = new CanvasStateService(session);
         var changes = new List<CanvasStateChange>();
         using var observer = canvas.Subscribe(changes.Add);
-        var first = AddNode(session, SineGenerator.NodeType);
+        var first = AddNode(session, OscillatorGenerator.NodeType);
         var second = AddNode(session, MasterOutput.NodeType);
         var before = canvas.Snapshot;
 
@@ -132,8 +132,8 @@ public sealed class CanvasStateServiceTests
     {
         using var firstSession = NewSession();
         using var secondSession = NewSession();
-        var firstNode = AddNode(firstSession, SineGenerator.NodeType);
-        var secondNode = AddNode(secondSession, SineGenerator.NodeType);
+        var firstNode = AddNode(firstSession, OscillatorGenerator.NodeType);
+        var secondNode = AddNode(secondSession, OscillatorGenerator.NodeType);
         using var first = new CanvasStateService(firstSession);
         using var second = new CanvasStateService(secondSession);
 
@@ -151,7 +151,7 @@ public sealed class CanvasStateServiceTests
     public void NoOpAndInvalidLayoutChangesDoNotPublish()
     {
         using var session = NewSession();
-        var node = AddNode(session, SineGenerator.NodeType);
+        var node = AddNode(session, OscillatorGenerator.NodeType);
         using var canvas = new CanvasStateService(session);
         var changes = new List<CanvasStateChange>();
         using var observer = canvas.Subscribe(changes.Add);
@@ -172,7 +172,7 @@ public sealed class CanvasStateServiceTests
     public void SelectionSupportsReplacementAdditiveToggleAndCleanup()
     {
         using var session = NewSession();
-        var source = AddNode(session, SineGenerator.NodeType);
+        var source = AddNode(session, OscillatorGenerator.NodeType);
         var destination = AddNode(session, MasterOutput.NodeType);
         var connection = Connect(session, source, destination);
         using var canvas = new CanvasStateService(session);
@@ -205,7 +205,7 @@ public sealed class CanvasStateServiceTests
         Assert.Equal("listener", Assert.Single(result.SubscriberErrors).Message);
         Assert.Equal(1, notifications);
         Assert.Equal(new CanvasPoint(-100, 45), canvas.Snapshot.Viewport.Pan);
-        var committed = session.Execute(new AddNodeCommand(session.GraphId, SineGenerator.NodeType));
+        var committed = session.Execute(new AddNodeCommand(session.GraphId, OscillatorGenerator.NodeType));
         Assert.Single(committed.SubscriberErrors);
         Assert.Equal(2, notifications);
         Assert.Single(canvas.Snapshot.NodePositions);
@@ -227,7 +227,7 @@ public sealed class CanvasStateServiceTests
         using var edit = canvas.Subscribe(change =>
         {
             if (change.Kind == CanvasChangeKind.ViewportChanged)
-                AddNode(session, SineGenerator.NodeType);
+                AddNode(session, OscillatorGenerator.NodeType);
         });
         using var observer = canvas.Subscribe(received.Add);
 

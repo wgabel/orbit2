@@ -13,7 +13,7 @@ public sealed class ModulationDemoPatchTests
     {
         var patch = ModulationDemoPatch.Create(new ModulationDemoSettings(440, 0.5, 100));
         var graph = patch.Graph;
-        var generators = graph.Nodes.Where(node => node.TypeKey == SineGenerator.NodeType).ToArray();
+        var generators = graph.Nodes.Where(node => node.TypeKey == OscillatorGenerator.NodeType).ToArray();
         Assert.Equal(2, generators.Length);
         Assert.Equal(4, graph.Nodes.Count);
         Assert.Equal(3, graph.Connections.Count);

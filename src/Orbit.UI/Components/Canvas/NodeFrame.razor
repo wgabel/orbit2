@@ -47,7 +47,7 @@
     @if (Node.Parameters.Count > 0)
     {
         <div class="node-parameters">
-            @foreach (var parameter in Node.Parameters)
+            @foreach (var parameter in Node.Parameters.OrderByDescending(parameter => parameter.Definition.Choices is not null))
             {
                 @if (parameter.Definition.Choices is not null)
                 {

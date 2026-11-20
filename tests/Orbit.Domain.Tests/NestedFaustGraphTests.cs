@@ -23,7 +23,7 @@ public sealed class NestedFaustGraphTests
         using var patch = new NestedFaustPatch();
         var compiler = FaustGraphCompiler.CreateBuiltIn();
         var first = compiler.Compile(patch.Session.Snapshot);
-        Assert.Equal(6, first.Controls.Count);
+        Assert.Equal(9, first.Controls.Count);
         var control = first.Controls.Single(c => c.GraphId == patch.ChildId && c.Address == patch.Frequency);
         Assert.NotNull(control.MeterName);
         Assert.Contains(" * 20.0", first.Source);
@@ -89,8 +89,8 @@ internal sealed class NestedFaustPatch : IDisposable
             [new ExposedPort(Guid.NewGuid(), "Audio", SignalType.Audio)]));
         Session = new PatchSession(registry);
         var rootId = Session.GraphId;
-        var first = Add(Session, rootId, SineGenerator.NodeType);
-        var second = Add(Session, rootId, SineGenerator.NodeType);
+        var first = Add(Session, rootId, OscillatorGenerator.NodeType);
+        var second = Add(Session, rootId, OscillatorGenerator.NodeType);
         var outer = Add(Session, rootId, CompositeNode.NodeType);
         var master = Add(Session, rootId, MasterOutput.NodeType);
         var outerGraph = outer.Composite!;
@@ -98,7 +98,7 @@ internal sealed class NestedFaustPatch : IDisposable
         var inner = Add(Session, OuterId, CompositeNode.NodeType);
         var child = inner.Composite!;
         ChildId = child.Graph.Id;
-        var carrier = Add(Session, ChildId, SineGenerator.NodeType);
+        var carrier = Add(Session, ChildId, OscillatorGenerator.NodeType);
         Frequency = new ParameterAddress(carrier.Id, carrier.Parameters[0].Id);
 
         Connect(rootId, first.Id, first.Outputs[0].Id, outer.Id, outer.Inputs[0].Id, 20);

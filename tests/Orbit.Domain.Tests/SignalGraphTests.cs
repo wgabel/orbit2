@@ -16,8 +16,8 @@ public sealed class SignalGraphTests
     public void ConnectsOscillatorModulationAndAudioProcessing()
     {
         var graph = new SignalGraph();
-        var lfo = AddNode(graph, new SineGenerator(Guid.NewGuid()));
-        var oscillator = AddNode(graph, new SineGenerator(Guid.NewGuid()));
+        var lfo = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
+        var oscillator = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
         var gain = AddNode(graph, new GainProcessor(Guid.NewGuid()));
         var output = AddNode(graph, new MasterOutput(Guid.NewGuid()));
 
@@ -38,9 +38,9 @@ public sealed class SignalGraphTests
     public void SupportsFanOutAndMultipleModulatorsOnOneParameter()
     {
         var graph = new SignalGraph();
-        var first = AddNode(graph, new SineGenerator(Guid.NewGuid()));
-        var second = AddNode(graph, new SineGenerator(Guid.NewGuid()));
-        var target = AddNode(graph, new SineGenerator(Guid.NewGuid()));
+        var first = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
+        var second = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
+        var target = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
 
         graph.Connect(Output(first), Input(target, "frequency-modulation-in"), 20);
         graph.Connect(Output(second), Input(target, "frequency-modulation-in"), -10);
@@ -56,8 +56,8 @@ public sealed class SignalGraphTests
     public void RejectsSecondConnectionToSingleInput()
     {
         var graph = new SignalGraph();
-        var first = AddNode(graph, new SineGenerator(Guid.NewGuid()));
-        var second = AddNode(graph, new SineGenerator(Guid.NewGuid()));
+        var first = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
+        var second = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
         var gain = AddNode(graph, new GainProcessor(Guid.NewGuid()));
 
         graph.Connect(Output(first), Input(gain, "audio-in"));
@@ -71,8 +71,8 @@ public sealed class SignalGraphTests
     public void RejectsDuplicateConnectionAddressAndIdentity()
     {
         var graph = new SignalGraph();
-        var first = AddNode(graph, new SineGenerator(Guid.NewGuid()));
-        var target = AddNode(graph, new SineGenerator(Guid.NewGuid()));
+        var first = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
+        var target = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
         var original = graph.Connect(Output(first), Input(target, "frequency-modulation-in"), 20);
 
         Assert.Throws<GraphValidationException>(() =>
@@ -86,7 +86,7 @@ public sealed class SignalGraphTests
     public void RejectsMissingEndpointsAndReversedPortDirection()
     {
         var graph = new SignalGraph();
-        var first = AddNode(graph, new SineGenerator(Guid.NewGuid()));
+        var first = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
         var gain = AddNode(graph, new GainProcessor(Guid.NewGuid()));
 
         Assert.Throws<GraphValidationException>(() =>
@@ -121,7 +121,7 @@ public sealed class SignalGraphTests
     public void RejectsCyclesAcrossAudioAndModulationEdges()
     {
         var graph = new SignalGraph();
-        var oscillator = AddNode(graph, new SineGenerator(Guid.NewGuid()));
+        var oscillator = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
         var gain = AddNode(graph, new GainProcessor(Guid.NewGuid()));
         var secondGain = AddNode(graph, new GainProcessor(Guid.NewGuid()));
 
@@ -139,8 +139,8 @@ public sealed class SignalGraphTests
     public void RejectsPureModulationCycles()
     {
         var graph = new SignalGraph();
-        var first = AddNode(graph, new SineGenerator(Guid.NewGuid()));
-        var second = AddNode(graph, new SineGenerator(Guid.NewGuid()));
+        var first = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
+        var second = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
         graph.Connect(Output(first), Input(second, "frequency-modulation-in"), 20);
 
         Assert.Throws<GraphValidationException>(() =>
@@ -152,10 +152,10 @@ public sealed class SignalGraphTests
     public void RemovingNodeRemovesOnlyIncidentEdges()
     {
         var graph = new SignalGraph();
-        var oscillator = AddNode(graph, new SineGenerator(Guid.NewGuid()));
+        var oscillator = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
         var gain = AddNode(graph, new GainProcessor(Guid.NewGuid()));
         var output = AddNode(graph, new MasterOutput(Guid.NewGuid()));
-        var independent = AddNode(graph, new SineGenerator(Guid.NewGuid()));
+        var independent = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
         var secondOutput = AddNode(graph, new MasterOutput(Guid.NewGuid()));
 
         graph.Connect(Output(oscillator), Input(gain, "audio-in"));
@@ -173,8 +173,8 @@ public sealed class SignalGraphTests
     public void RemovingConnectionMakesSingleInputAvailableAgain()
     {
         var graph = new SignalGraph();
-        var first = AddNode(graph, new SineGenerator(Guid.NewGuid()));
-        var second = AddNode(graph, new SineGenerator(Guid.NewGuid()));
+        var first = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
+        var second = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
         var output = AddNode(graph, new MasterOutput(Guid.NewGuid()));
         var connection = graph.Connect(Output(first), Input(output, "audio-in"));
 
@@ -192,7 +192,7 @@ public sealed class SignalGraphTests
     public void RejectsNonFiniteConnectionAmount(double amount)
     {
         var graph = new SignalGraph();
-        var oscillator = AddNode(graph, new SineGenerator(Guid.NewGuid()));
+        var oscillator = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
         var gain = AddNode(graph, new GainProcessor(Guid.NewGuid()));
 
         Assert.Throws<GraphValidationException>(() =>
@@ -204,10 +204,10 @@ public sealed class SignalGraphTests
     public void RejectsDuplicateNodeIds()
     {
         var graph = new SignalGraph();
-        var node = new SineGenerator(Guid.NewGuid());
+        var node = new OscillatorGenerator(Guid.NewGuid());
         graph.AddNode(node);
 
-        Assert.Throws<GraphValidationException>(() => graph.AddNode(new SineGenerator(node.Id)));
+        Assert.Throws<GraphValidationException>(() => graph.AddNode(new OscillatorGenerator(node.Id)));
         Assert.Same(node, Assert.Single(graph.Nodes));
     }
 
@@ -226,7 +226,7 @@ public sealed class SignalGraphTests
     public void GraphCollectionsDoNotExposeWritableLists()
     {
         var graph = new SignalGraph();
-        var node = AddNode(graph, new SineGenerator(Guid.NewGuid()));
+        var node = AddNode(graph, new OscillatorGenerator(Guid.NewGuid()));
 
         Assert.True(Assert.IsAssignableFrom<IList<ISignalNode>>(graph.Nodes).IsReadOnly);
         Assert.True(Assert.IsAssignableFrom<IList<SignalConnection>>(graph.Connections).IsReadOnly);

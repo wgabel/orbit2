@@ -10,12 +10,13 @@ namespace Orbit.Domain.Tests;
 public sealed class ParameterTests
 {
     [Fact]
-    public void SineParametersExposeTheirOwnModulationSockets()
+    public void OscillatorContinuousParametersExposeTheirOwnModulationSockets()
     {
-        var node = new SineGenerator(Guid.NewGuid());
+        var node = new OscillatorGenerator(Guid.NewGuid());
 
-        Assert.Equal(2, node.Parameters.Count);
-        foreach (var parameter in node.Parameters)
+        Assert.Equal(4, node.Parameters.Count);
+        Assert.Equal(3, node.Inputs.Count);
+        foreach (var parameter in node.Parameters.Where(parameter => parameter.Definition.CanModulate))
         {
             Assert.True(parameter.Definition.CanModulate);
             Assert.NotNull(parameter.ModulationPortId);
@@ -25,6 +26,27 @@ public sealed class ParameterTests
         }
 
         Assert.NotEqual(node.Parameters[0].ModulationPortId, node.Parameters[1].ModulationPortId);
+        var waveform = node.Parameters.Single(parameter => parameter.Definition.Key == "waveform");
+        Assert.False(waveform.Definition.CanModulate);
+        Assert.True(waveform.Definition.RequiresRecompile);
+        Assert.Equal(4, waveform.Definition.Choices!.Count);
+        Assert.Null(waveform.ModulationPortId);
+    }
+
+    [Fact]
+    public void WaveformEditsKeepNodePortsAndOtherParametersUnchanged()
+    {
+        var (graph, node, frequency) = CreateSine();
+        var waveform = node.Parameters.Single(parameter => parameter.Definition.Key == "waveform");
+        var address = new ParameterAddress(node.Id, waveform.Id);
+        var output = node.Outputs.Single().Id;
+        graph.SetParameterValue(address, (int)OscillatorWaveform.Square);
+        Assert.Equal((double)OscillatorWaveform.Square, waveform.BaseValue);
+        Assert.Throws<ArgumentOutOfRangeException>(() => graph.SetParameterValue(address, 1.5));
+        Assert.Throws<ArgumentOutOfRangeException>(() => graph.SetParameterValue(address, 4));
+        Assert.Equal((double)OscillatorWaveform.Square, waveform.BaseValue);
+        Assert.Equal(output, node.Outputs.Single().Id);
+        Assert.Equal(440, frequency.BaseValue);
     }
 
     [Theory]
@@ -77,10 +99,10 @@ public sealed class ParameterTests
             new Parameter(Guid.NewGuid(), definition with { DefaultValue = 0.5 }));
     }
 
-    private static (SignalGraph Graph, SineGenerator Node, Parameter Frequency) CreateSine()
+    private static (SignalGraph Graph, OscillatorGenerator Node, Parameter Frequency) CreateSine()
     {
         var graph = new SignalGraph();
-        var node = new SineGenerator(Guid.NewGuid());
+        var node = new OscillatorGenerator(Guid.NewGuid());
         graph.AddNode(node);
 
         return (graph, node, node.Parameters.Single(parameter => parameter.Definition.Key == "frequency"));

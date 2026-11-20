@@ -26,6 +26,9 @@ public sealed class Parameter
             throw new ArgumentException("Invalid parameter definition.", nameof(definition));
         }
 
+        if (definition.RequiresRecompile && definition.CanModulate)
+            throw new ArgumentException("A structural parameter cannot be modulated.", nameof(definition));
+
         if (definition.Choices is { } choices &&
             (definition.CanModulate || choices.Count == 0 ||
              choices.Any(choice => !double.IsFinite(choice.Value) || choice.Value < definition.Minimum ||

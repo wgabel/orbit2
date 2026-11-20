@@ -35,8 +35,8 @@ try {
     const status = page.getByRole("status");
     const play = page.getByRole("button", { name: "Play patch" });
     const articles = page.locator("article");
-    const frequency = articles.nth(1).locator(".parameter-slider").nth(0);
-    const amplitude = articles.nth(1).locator(".parameter-slider").nth(1);
+    const frequency = articles.nth(1).locator(".parameter-slider").filter({ has: page.getByRole("spinbutton", { name: "Frequency (Hz)" }) });
+    const amplitude = articles.nth(1).locator(".parameter-slider").filter({ has: page.getByRole("spinbutton", { name: "Amplitude (normalized)" }) });
     const marker = frequency.locator(".parameter-effective-marker");
     await frequency.getByText("Modulation: 340–540 Hz").waitFor({ timeout: 30000 });
     assert.equal(await marker.count(), 0);
@@ -100,6 +100,15 @@ try {
     // Changing an existing control advances the audible revision without stopping.
     await page.getByRole("spinbutton", { name: "Frequency (Hz)" }).nth(1).fill("330");
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 1}$`) }).waitFor({ timeout: 10000 });
+    assert.equal(await play.isEnabled(), false);
+    // The same oscillator switches waveforms during playback without losing cables or parameters.
+    const waveform = articles.nth(1).getByLabel("Waveform");
+    assert.equal(await waveform.inputValue(), "0");
+    await waveform.selectOption("2");
+    initialRevision++;
+    await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 1}$`) }).waitFor({ timeout: 15000 });
+    assert.equal(await wire.count(), 1);
+    assert.equal(await articles.nth(1).getByRole("spinbutton", { name: "Frequency (Hz)" }).inputValue(), "330");
     assert.equal(await play.isEnabled(), false);
     // Unconnected nodes do not require a new worklet.
     await page.getByRole("button", { name: "Add", exact: true }).click();
