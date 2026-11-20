@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 import { AudioEngine } from "../../src/Orbit.Infrastructure/wwwroot/audio/AudioEngine.js";
 
 const request = {
-    soundId: "test-tone", processor: "Sine", durationMilliseconds: 400,
-    volume: 0.1, parameters: { frequency: 440 }
+    soundId: "modulation-graph", processor: "ModulatedSine",
+    volume: 0.1, parameters: { baseFrequency: 440, lfoRate: 0.5, depthHz: 100 }
 };
 
 function setup() {
@@ -42,7 +42,7 @@ test("resumes context first, creates voice, and releases its resources", async (
     const { engine, calls, finish } = setup();
     const playback = engine.play(request);
     await new Promise(resolve => setImmediate(resolve));
-    assert.deepEqual(calls, ["resume", ["create", "Sine", { frequency: 440 }], ["play", request]]);
+    assert.deepEqual(calls, ["resume", ["create", "ModulatedSine", request.parameters], ["play", request]]);
     finish();
     await playback;
     assert.equal(calls.at(-1), "dispose");

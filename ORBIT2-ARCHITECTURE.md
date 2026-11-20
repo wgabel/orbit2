@@ -44,9 +44,9 @@ The goal is a modular architecture in which new generators, processors, paramete
 | Minimal JavaScript modules | Browser audio integration and lifecycle; not application business logic |
 | GitHub Actions / Pages | Build, test and deployment of the static app |
 
-The already-established proof of concept includes a browser button playing a brief sine tone, a modular browser audio bridge, a build-time Faust compilation workflow and separated application/UI/infrastructure projects. Existing infrastructure concepts include AudioEngine, AudioContextManager, FaustModuleLoader, FaustNodeFactory, AudioVoice, AudioOutput and AudioEnvelope.
+The current implementation includes the independent Orbit.Domain graph model (Phase 1) and a continuously running, fixed two-sine modulation graph (Phase 2). The browser bridge, build-time Faust compilation and separated application/UI/infrastructure projects support this playback path. Existing infrastructure concepts include AudioEngine, AudioContextManager, AudioClock, FaustModuleLoader, FaustNodeFactory, AudioVoice, AudioOutput and AudioEnvelope.
 
-The next stage extends that boilerplate into a continuously running, graph-based synthesizer; it does not replace Blazor or the existing browser audio bridge simply for the sake of changing technologies.
+The next stage adds validated commands and application events, then a reusable graph editor and general DSP compilation. The active modulation playback path and shared infrastructure provide the baseline.
 
 ### Design principles
 
@@ -916,7 +916,7 @@ When swapping graphs, use an appropriate short fade/crossfade and preserve state
 
 ## 11. Project organization and dependencies
 
-The current solution has Application, Infrastructure, UI and Audio components. A new Orbit.Domain project is a proposed next step to isolate the evolving graph model.
+The current solution includes Domain, Application, Infrastructure, UI and Audio components. Orbit.Domain isolates the graph model from application services and browser-specific infrastructure.
 
 ~~~
 Orbit.Domain/
@@ -1166,7 +1166,7 @@ Do not attempt to build the entire modular synth in one change. Establish and te
 - Define stable ID rules, signal compatibility and fan-in/fan-out.
 - Add registry with a minimal sine generator, gain and master output.
 - Implement graph validation and reject dependency cycles.
-- Add unit tests; retain the existing working tone example.
+- Add unit tests for the independent graph model, without requiring a browser or audio device.
 
 Deliverable: create and validate a small graph without a UI or a real audio device.
 
@@ -1328,4 +1328,3 @@ Use OfflineAudioContext or an appropriate offline DSP renderer for deterministic
 ---
 
 **Summary:** The C# graph describes the instrument, Faust executes it, and Blazor visualizes and edits it. Every drone is a graph that can be opened, connected, saved and reused. Every appropriate parameter can receive signals. All real-time computations share audio timing; application events coordinate edits without becoming part of the real-time processing loop.
-

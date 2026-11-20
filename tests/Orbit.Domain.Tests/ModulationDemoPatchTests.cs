@@ -27,7 +27,6 @@ public sealed class ModulationDemoPatchTests
         Assert.Equal(lfo.Id, route.Source.NodeId);
         Assert.Equal(440d, oscillatorFrequency.BaseValue);
         Assert.Equal(100d, route.Amount);
-        Assert.Null(patch.Playback.DurationMilliseconds);
         Assert.Equal(0.1, patch.Playback.Volume);
         Assert.Equal("ModulatedSine", patch.Playback.Processor);
         Assert.Equal(440d, patch.Playback.Parameters["baseFrequency"]);

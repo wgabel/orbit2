@@ -60,7 +60,7 @@ public sealed class ModulationDemoPatch
 
         // The gain node maps to the existing audio-clock-scheduled voice envelope.
         // The Faust worklet itself generates the LFO and audible carrier.
-        var playback = new PlaybackRequest(SoundId, ProcessorName, DurationMilliseconds: null,
+        var playback = new PlaybackRequest(SoundId, ProcessorName,
             Volume: volume.BaseValue, Parameters: new Dictionary<string, double>
             {
                 ["baseFrequency"] = baseFrequency.BaseValue,

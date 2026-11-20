@@ -1,6 +1,6 @@
 // JavaScript composition root and interop entry point. Only this module
 // assembles dependencies; individual components can be tested independently.
-import { FaustMonoDspGenerator } from "./generated/sine/faustwasm/index.js";
+import { FaustMonoDspGenerator } from "./generated/modulated-sine/faustwasm/index.js";
 import { AudioEngine } from "./AudioEngine.js";
 import { AudioContextManager } from "./Components/AudioContextManager.js";
 import { AudioClock } from "./Components/AudioClock.js";
@@ -10,7 +10,6 @@ import { FaustModuleLoader } from "./Faust/FaustModuleLoader.js";
 import { FaustNodeFactory } from "./Faust/FaustNodeFactory.js";
 
 const processors = new Map([
-    ["Sine", { name: "OrbitSine", baseUrl: new URL("./generated/sine/", import.meta.url) }],
     ["ModulatedSine", { name: "OrbitModulatedSine", baseUrl: new URL("./generated/modulated-sine/", import.meta.url) }]
 ]);
 

@@ -17,10 +17,9 @@ export class AudioVoice {
 
     async play(request) {
         const startTime = this.#context.currentTime + 0.01;
-        this.#endTime = request.durationMilliseconds === null
-            ? this.#envelope.scheduleSustain(this.#gainNode.gain, startTime, request.volume)
-            : this.#envelope.schedule(this.#gainNode.gain, startTime,
-                request.durationMilliseconds / 1000, request.volume);
+        this.#envelope.scheduleAttack(this.#gainNode.gain, startTime, request.volume);
+        // Only stop establishes an end time for a sustained graph.
+        this.#endTime = Infinity;
 
         // This timer only observes the audio clock and handles cleanup.
         // All audible timing is scheduled by the AudioEnvelope.

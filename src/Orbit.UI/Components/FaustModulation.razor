@@ -4,8 +4,7 @@
 
 @* Presentation only. Settings are applied to a validated domain graph by the
    application service, and the Faust worklet computes modulation at audio rate. *@
-<section class="audio-experiment">
-    <p class="eyebrow">Experiment 03 / Signal graph</p>
+<section class="modulation-panel">
     <h2>Frequency modulation</h2>
     <p>A sine LFO changes the frequency of an audible sine oscillator.</p>
     <fieldset disabled="@(!IsReady || IsPlaying)">
@@ -33,6 +32,10 @@
         </button>
         <p role="status">@ClockDescription</p>
     </div>
+    @if (!IsReady && ErrorMessage is null)
+    {
+        <p role="status">Loading audio engine…</p>
+    }
     @if (ErrorMessage is not null)
     {
         <p role="alert">@ErrorMessage</p>

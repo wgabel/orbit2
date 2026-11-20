@@ -26,13 +26,6 @@ body {
     text-transform: uppercase;
 }
 h1 { margin: 0.5rem 0; }
-/* Counter output and controls. */
-.count {
-    display: block;
-    font-size: 3rem;
-    font-variant-numeric: tabular-nums;
-    margin: 1.5rem 0;
-}
 button {
     background: #9be3c7;
     color: #10271e;
@@ -45,25 +38,25 @@ button {
 }
 button:focus-visible { outline: 2px solid white; outline-offset: 4px; }
 
-/* Second experiment: a single Faust playback control. */
-.audio-experiment {
+/* Signal graph panel. */
+.modulation-panel {
     margin-top: 2rem;
     padding-top: 1rem;
     border-top: 1px solid #38434f;
 }
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 
-/* Modulation demonstration: settings remain presentation-only controls. */
-.audio-experiment h2 { font-size: 1.25rem; margin: 0.5rem 0; }
-.audio-experiment fieldset {
+/* Modulation settings remain presentation-only controls. */
+.modulation-panel h2 { font-size: 1.25rem; margin: 0.5rem 0; }
+.modulation-panel fieldset {
     display: grid;
     gap: 0.45rem;
     padding: 0;
     margin: 1rem 0;
     border: 0;
 }
-.audio-experiment label { color: #b8c7d4; font-size: 0.85rem; }
-.audio-experiment input[type=number] {
+.modulation-panel label { color: #b8c7d4; font-size: 0.85rem; }
+.modulation-panel input[type=number] {
     width: 100%;
     color: inherit;
     background: #11151b;

@@ -18,7 +18,7 @@ public sealed class BrowserAudioEngine(IJSRuntime javaScriptRuntime) : IAudioEng
     {
         // Import only the entry module before the user gesture. AudioContext
         // creation and resume are deferred until play is invoked.
-        // Both demo components share one import, even when they initialize together.
+        // Concurrent initializers share the one import.
         var task = audioModuleTask ??= javaScriptRuntime.InvokeAsync<IJSObjectReference>(
             "import", "./_content/Orbit.Infrastructure/audio/audio.js").AsTask();
 

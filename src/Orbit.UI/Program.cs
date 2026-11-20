@@ -12,16 +12,11 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 // Mount the App component into the #app element defined in wwwroot/index.html.
 builder.RootComponents.Add<App>("#app");
 
-// Wire the application contract to its implementation. Blazor injects the
-// service into App.razor.cs and shares one instance within this client host.
-builder.Services.AddSingleton<ICounterService, CounterService>();
-
 // Register the browser-specific audio adapter behind the application contract.
 // Both ports resolve to the same adapter and therefore the same browser context.
 builder.Services.AddSingleton<BrowserAudioEngine>();
 builder.Services.AddSingleton<IAudioEngine>(services => services.GetRequiredService<BrowserAudioEngine>());
 builder.Services.AddSingleton<IAudioClock>(services => services.GetRequiredService<BrowserAudioEngine>());
-builder.Services.AddSingleton<IAudioService, AudioService>();
 builder.Services.AddSingleton<IModulationDemoService, ModulationDemoService>();
 
 // Start the host, resolve dependencies and render the registered root component.

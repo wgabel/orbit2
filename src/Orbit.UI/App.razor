@@ -1,16 +1,10 @@
 @namespace Orbit.UI
-@using Microsoft.AspNetCore.Components.Web
 @using Orbit.UI.Components
 
-@* Root view mounted by Program.cs. App.razor.cs is its C# code-behind.
-   The markup displays Count and forwards clicks to IncrementCounter;
-   the application service owns the actual counter state. *@
+@* Root view mounted by Program.cs. The signal graph component owns its
+   presentation state and delegates audio operations to the application layer. *@
 <main class="panel">
-    <p class="eyebrow">Orbit 2 / Experiment 01</p>
-    <h1>Hello, Orbit.</h1>
-    <p>Blazor WebAssembly is running in your browser.</p>
-    <output class="count" aria-live="polite">@Count</output>
-    <button type="button" @onclick="IncrementCounter">Increment</button>
-    <FaustTone />
+    <p class="eyebrow">Orbit 2 / Signal graph</p>
+    <h1>Orbit 2</h1>
     <FaustModulation />
 </main>

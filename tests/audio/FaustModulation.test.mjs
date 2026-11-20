@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const generated = new URL("../../src/Orbit.Infrastructure/wwwroot/audio/generated/", import.meta.url);
-const { FaustMonoDspGenerator } = await import(new URL("sine/faustwasm/index.js", generated));
+const { FaustMonoDspGenerator } = await import(new URL("modulated-sine/faustwasm/index.js", generated));
 const directory = new URL("modulated-sine/", generated);
 const module = await WebAssembly.compile(await readFile(new URL("dsp-module.wasm", directory)));
 const json = await readFile(new URL("dsp-meta.json", directory), "utf8");

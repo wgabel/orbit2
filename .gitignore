@@ -8,5 +8,5 @@
 *.suo
 publish/
 
-# Faust compiler output: regenerate from the tracked Sine.dsp source.
+# Faust compiler output: regenerate from tracked DSP sources.
 src/Orbit.Infrastructure/wwwroot/audio/generated/

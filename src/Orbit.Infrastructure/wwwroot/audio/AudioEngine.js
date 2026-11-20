@@ -80,8 +80,6 @@ export class AudioEngine {
     #validate(request) {
         if (!request || typeof request.soundId !== "string" || !request.soundId ||
             typeof request.processor !== "string" || !request.processor ||
-            (request.durationMilliseconds !== null &&
-                (!Number.isFinite(request.durationMilliseconds) || request.durationMilliseconds <= 0)) ||
             !Number.isFinite(request.volume) || request.volume < 0 || request.volume > 1 ||
             (request.parameters != null &&
                 (typeof request.parameters !== "object" || Array.isArray(request.parameters)))) {
