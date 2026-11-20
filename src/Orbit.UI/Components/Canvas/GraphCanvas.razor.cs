@@ -260,8 +260,8 @@ public partial class GraphCanvas : IAsyncDisposable
         State.ZoomAt(Snapshot.Viewport.Zoom * factor, anchor);
     }
 
-    private Task ZoomIn() => ZoomByAsync(1.25);
-    private Task ZoomOut() => ZoomByAsync(0.8);
+    public Task ZoomIn() => ZoomByAsync(1.25);
+    public Task ZoomOut() => ZoomByAsync(0.8);
 
     private async Task ZoomByAsync(double factor)
     {
@@ -270,9 +270,9 @@ public partial class GraphCanvas : IAsyncDisposable
         State.ZoomAt(Snapshot.Viewport.Zoom * factor, new CanvasPoint(bounds.Width / 2, bounds.Height / 2));
     }
 
-    private void ResetViewport() => State.ResetViewport();
+    public void ResetViewport() => State.ResetViewport();
 
-    private async Task FitAsync()
+    public async Task FitAsync()
     {
         await MeasureAsync();
         FitMeasured();

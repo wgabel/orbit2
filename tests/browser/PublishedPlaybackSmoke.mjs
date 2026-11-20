@@ -39,6 +39,19 @@ try {
     const amplitude = articles.nth(1).locator(".parameter-slider").filter({ has: page.getByRole("spinbutton", { name: "Amplitude (normalized)" }) });
     const marker = frequency.locator(".parameter-effective-marker");
     await frequency.getByText("Modulation: 340–540 Hz").waitFor({ timeout: 30000 });
+    // Primary controls share one compact toolbar; the canvas consumes the
+    // remaining screen height rather than using a fixed viewport fraction.
+    const toolbar = page.locator(".canvas-caption");
+    await toolbar.getByRole("button", { name: "Zoom out" }).waitFor();
+    await toolbar.getByRole("button", { name: "Add", exact: true }).waitFor();
+    await toolbar.getByRole("button", { name: "Play patch" }).waitFor();
+    const viewport = page.locator(".canvas-viewport");
+    await viewport.getByText("4 nodes · 3 connections", { exact: true }).waitFor();
+    const canvasBounds = await viewport.boundingBox();
+    assert.ok(canvasBounds.height >= page.viewportSize().height * 0.75, "Canvas must fill most of the viewport");
+    const countBounds = await viewport.locator(".canvas-count").boundingBox();
+    assert.ok(countBounds.x > canvasBounds.x + canvasBounds.width / 2 && countBounds.y < canvasBounds.y + 40,
+        "Node and connection count must remain in the upper right of the canvas");
     assert.equal(await marker.count(), 0);
     const transport = page.getByRole("region", { name: "Musical transport" });
     const tempo = transport.getByRole("spinbutton", { name: "Tempo (BPM)" });

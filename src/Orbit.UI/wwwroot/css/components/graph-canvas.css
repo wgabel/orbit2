@@ -1,5 +1,9 @@
 /* The viewport clips one transformed world containing nodes and wires. */
 .graph-canvas {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 var(--component-canvas-min-height);
+    min-height: var(--component-canvas-min-height);
     overflow: hidden;
     border: var(--semantic-border-width) solid var(--semantic-color-border);
     border-radius: var(--semantic-radius-surface);
@@ -10,15 +14,28 @@
     align-items: center;
     flex-wrap: wrap;
     gap: var(--component-canvas-toolbar-gap);
-    padding: var(--semantic-space-compact);
-    border-bottom: var(--semantic-border-width) solid var(--semantic-color-border);
+    padding: var(--semantic-space-tight);
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-control);
+    background: var(--semantic-color-surface);
 }
 .canvas-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--component-canvas-toolbar-gap); }
 .canvas-zoom { min-width: var(--component-canvas-zoom-width); text-align: center; font-variant-numeric: tabular-nums; }
-.canvas-hint { margin-inline-start: auto; color: var(--semantic-color-muted); font-size: var(--semantic-typography-caption); }
+.canvas-hint, .canvas-count {
+    position: absolute;
+    inset-inline-end: var(--semantic-space-compact);
+    color: var(--semantic-color-muted);
+    font-size: var(--semantic-typography-caption);
+    background: var(--semantic-color-canvas);
+    padding: var(--semantic-space-tight);
+    border-radius: var(--semantic-radius-input);
+    pointer-events: none;
+}
+.canvas-count { inset-block-start: var(--semantic-space-compact); }
+.canvas-hint { inset-block-end: var(--semantic-space-compact); }
 .canvas-viewport {
     position: relative;
-    height: var(--component-canvas-height);
+    flex: 1;
     min-height: var(--component-canvas-min-height);
     overflow: hidden;
     background-color: var(--semantic-color-canvas);

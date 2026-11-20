@@ -170,14 +170,18 @@
       "draft-dash": "6px"
     },
     "workspace": {
-      "max-width": "88rem",
+      "max-width": "100%",
       "toolbar-gap": "{semantic.space.compact}",
       "select-padding": "{primitive.space.xs}",
-      "notice-size": "{semantic.typography.caption}"
+      "notice-size": "{semantic.typography.caption}",
+      "viewport-height": "100dvh",
+      "page-padding": "{semantic.space.compact}",
+      "tempo-width": "4.5rem",
+      "toolbar-button-block": "{primitive.space.input-block}",
+      "toolbar-button-inline": "{primitive.space.md}"
     },
     "canvas": {
-      "height": "65vh",
-      "min-height": "26rem",
+      "min-height": "15rem",
       "grid-spacing": "24px",
       "grid-dot": "1px",
       "toolbar-gap": "{semantic.space.compact}",

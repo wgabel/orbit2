@@ -1,13 +1,15 @@
 /* The graph workspace includes shared graph and playback controls. */
-.workspace-shell { width: min(100%, var(--component-workspace-max-width)); margin-inline: auto; }
-.graph-workspace { display: grid; gap: var(--semantic-space-compact); }
+.workspace-shell { width: min(100%, var(--component-workspace-max-width)); height: 100%; margin-inline: auto; }
+.graph-workspace { display: flex; flex-direction: column; height: 100%; gap: var(--semantic-space-tight); }
+.workspace-header { display: flex; align-items: center; flex-wrap: wrap; gap: var(--semantic-space-normal); }
+.workspace-header h1 { margin: 0; font-size: var(--semantic-typography-section); }
 .workspace-toolbar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--component-workspace-toolbar-gap);
 }
-.workspace-toolbar label, .workspace-count { font-size: var(--semantic-typography-label); color: var(--semantic-color-muted); }
+.workspace-toolbar label { font-size: var(--semantic-typography-label); color: var(--semantic-color-muted); }
 .workspace-toolbar select {
     background: var(--semantic-color-input);
     color: var(--semantic-color-text);
@@ -17,9 +19,15 @@
     font: inherit;
     max-width: 100%;
 }
-.workspace-count { margin-inline-start: auto; }
 .workspace-notice { margin: 0; color: var(--semantic-color-muted); font-size: var(--component-workspace-notice-size); }
 .workspace-error { margin: 0; }
+.toolbar-group { padding-inline-start: var(--semantic-space-compact); border-inline-start: var(--semantic-border-width) solid var(--semantic-color-border); }
+.canvas-caption button { padding: var(--component-workspace-toolbar-button-block) var(--component-workspace-toolbar-button-inline); font-size: var(--semantic-typography-label); }
+.canvas-caption select { font-size: var(--semantic-typography-label); }
+.playback-toolbar { flex: 1 1 auto; }
+.transport-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--component-workspace-toolbar-gap); flex-basis: 100%; }
+.transport-controls input[type="number"] { width: var(--component-workspace-tempo-width); }
+.transport-rates { margin-inline-start: auto; }
 .canvas-breadcrumbs {
     display: flex;
     align-items: center;
@@ -29,7 +37,7 @@
     font-size: var(--semantic-typography-label);
 }
 .canvas-breadcrumbs [aria-current="page"] { color: var(--semantic-color-text); font-weight: var(--semantic-typography-emphasis); }
-.rack-editor, .connection-amount-editor, .transport-controls {
+.rack-editor, .connection-amount-editor {
     display: grid;
     gap: var(--semantic-space-compact);
     padding: var(--semantic-space-compact);

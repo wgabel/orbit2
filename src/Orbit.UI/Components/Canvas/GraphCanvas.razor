@@ -4,11 +4,6 @@
 
 @* Root and nested editors use the same canvas, with no dependencies on the DSP runtime. *@
 <div class="graph-canvas">
-    <div class="canvas-caption">
-        <CanvasToolbar ZoomPercentage="@Snapshot.Viewport.ZoomPercentage"
-                       ZoomIn="ZoomIn" ZoomOut="ZoomOut" Reset="ResetViewport" Fit="FitAsync" />
-        <span class="canvas-hint">@Hint</span>
-    </div>
     <div class="canvas-viewport" @ref="viewportElement" tabindex="0" aria-label="Graph canvas"
          @onpointerdown="BeginBackground" @onpointerdown:preventDefault="true"
          @onpointermove="PointerMoved" @onpointerup="PointerReleasedAsync"
@@ -28,6 +23,8 @@
                            OnParameterEdit="OnParameterEdit" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" />
             }
         </div>
+        <span class="canvas-count">@($"{Snapshot.Graph.Nodes.Count} nodes · {Snapshot.Graph.Connections.Count} connections")</span>
+        <span class="canvas-hint">@Hint</span>
         @if (Snapshot.Graph.Nodes.Count == 0)
         {
             <div class="canvas-empty">Add a node to start building your graph.</div>

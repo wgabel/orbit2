@@ -20,5 +20,5 @@
         }
     </div>
     <ValidationMessage Message="@(Error ?? ClockError)" MessageId="@ErrorId" />
-    <p class="workspace-notice">Synchronized rates: 1/4 note = @Format(Snapshot.GetFrequency(MusicalDivision.QuarterNote)) Hz · 1 bar (4/4) = @Format(Snapshot.GetFrequency(MusicalDivision.WholeNote)) Hz</p>
+    <span class="workspace-notice transport-rates">Synchronized rates: 1/4 note = @Format(Snapshot.GetFrequency(MusicalDivision.QuarterNote)) Hz · 1 bar (4/4) = @Format(Snapshot.GetFrequency(MusicalDivision.WholeNote)) Hz</span>
 </section>

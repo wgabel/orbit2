@@ -31,6 +31,7 @@ public partial class GraphWorkspace : IDisposable
     private IDisposable? subscription;
     private CanvasNavigationService Navigation { get; set; } = default!;
     private ICanvasStateService Canvas => Navigation.ActiveCanvas;
+    private GraphCanvas? canvasView;
     private NodeRegistry catalog = default!;
     private IEnumerable<string> RegisteredTypes => catalog.RegisteredTypes.Where(type =>
         Canvas.Snapshot.GraphId == session.GraphId || type != MasterOutput.NodeType);

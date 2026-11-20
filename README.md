@@ -385,6 +385,7 @@ The application opens a persistent editable patch session with the initial modul
 - Begin from an output and drag to an input, or click the output then click an input. Escape cancels. The existing domain validation rejects incompatible, duplicate or cyclic edges.
 - Nodes use role-colored frames and typed port shapes. A generator feeding only modulation inputs is visually an LFO; no different DSP type is required.
 - SVG paths use cubic Bézier geometry shared by all connections, with endpoints measured from actual port markers. Click a wire to select it.
+- The compact workspace shares one toolbar for zoom, node creation/deletion, playback and transport. Breadcrumbs sit beside the title; node/connection count and interaction hints are non-interactive canvas overlays. The canvas fills remaining viewport height, with a token-defined minimum. Playback remains owned by the root workspace while the keyed canvas changes on navigation.
 - All static dimensions and colors are sourced from design tokens. Layout state is separate from graph state.
 
 ~~~mermaid
