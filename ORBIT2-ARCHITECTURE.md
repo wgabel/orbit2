@@ -799,62 +799,42 @@ A domain object can record events while being changed, but it should not directl
 
 Commands may fail validation. Events communicate committed state, not an instruction to complete that state. Do not use events as a replacement for clear application service methods or as a mechanism for hidden mutation cascades.
 
-### Example contracts
+### Implemented contracts (Phase 3 foundation)
+
+The application layer provides a concrete single-root-graph `IPatchSession`. It owns the mutable `SignalGraph`, a command handler and a private event dispatcher. The domain remains independent of observers and the UI. All edits use typed commands; the five initial commands in the preceding table are implemented with the `Command` suffix. Exposed-port and layout commands are planned.
 
 ~~~csharp
-public interface IGraphEvent
-{
-    Guid GraphId { get; }
-}
+using IPatchSession session = new PatchSession(BuiltInNodes.CreateRegistry());
 
-public record ConnectionCreated(
-    Guid GraphId,
-    SignalConnection Connection
-) : IGraphEvent;
+using var canvasSubscription = session.Subscribe(change =>
+    Console.WriteLine($"Render revision {change.Revision}"), session.GraphId);
+using var nodeSubscription = session.Subscribe<NodeAdded>(change =>
+    Console.WriteLine($"Added {change.Node.Id}"));
 
-public record ConnectionRemoved(
-    Guid GraphId,
-    SignalConnection Connection
-) : IGraphEvent;
-
-public record PortRemoved(
-    Guid GraphId,
-    Guid NodeId,
-    ExposedPort Port
-) : IGraphEvent;
-
-public record ParameterChanged(
-    Guid GraphId,
-    Guid NodeId,
-    Guid ParameterId,
-    double PreviousValue,
-    double CurrentValue
-) : IGraphEvent;
-
-public interface IEventDispatcher
-{
-    void Publish<TEvent>(TEvent graphEvent)
-        where TEvent : IGraphEvent;
-
-    IDisposable Subscribe<TEvent>(Action<TEvent> handler)
-        where TEvent : IGraphEvent;
-}
+GraphCommandResult result = session.Execute(
+    new AddNodeCommand(session.GraphId, SineGenerator.NodeType));
 ~~~
 
-This is a minimal typed observer API. Production event delivery should define ordering, subscriber isolation, lifetime management and synchronous/asynchronous behavior. Subscriptions are disposable; do not use a static event bus retaining destroyed UI components.
+The read contract is an immutable `GraphSnapshot` with graph ID, revision, node/parameter snapshots and immutable connections. The published change set contains the patch ID, final snapshot, all ordered facts from the operation, and a derived `TopologyChanged` flag. It never exposes the mutable graph or mutable domain parameter instances. A snapshot taken at revision 3 does not change at revision 4.
 
-Retaining removed connection/port data (not just the removed ID) is useful for undo and inspection. A command's reversible changes can also be stored as a separate change set.
+| Class / interface | Responsibility |
+| --- | --- |
+| `IGraphCommand` | Target graph ID and requested edit |
+| `GraphCommandHandler` | Apply one validated domain operation, construct facts |
+| `IPatchSession` / `PatchSession` | Own graph, serialize edits, commit each successful revision |
+| `GraphSnapshot` | Stable consistent read model for views and compiler |
+| `IGraphEvent` | Typed committed fact, includes graph ID |
+| `GraphChangeSet` | One revision's snapshot and all ordered facts |
+| `GraphChangeDispatcher` | Session-local notification channel (internal) |
+| `GraphCommandResult` | Committed change set, or no change, and subscriber errors |
 
-For cross-graph editing, publish a single committed change set with a patch revision and all associated domain events. A projection should use the final consistent state, not attempt to reconstruct graph mutations from partially committed events. Sample shape:
+A rejected command throws the existing domain validation exception (or registry/parameter validation error) before mutation. It produces no revision and no event. Setting a parameter to its current base value is a no-op. Node removal is one atomic domain operation: it removes all incident connections, then publishes their original immutable edge records and the removed node snapshot in one committed revision. This preserves data useful to future undo/redo.
 
-~~~csharp
-public record GraphChangeSet(
-    Guid PatchId,
-    long Revision,
-    IReadOnlyList<IGraphEvent> Events,
-    bool TopologyChanged
-);
-~~~
+Subscribe to a whole `GraphChangeSet` for graph projection and audio graph compilation; subscribe to typed events for a specific fact (for example, `ConnectionRemoved`). Subscription filters can target one graph. Registration order and fact order are deterministic within each changeset; registration changes during notification apply to the next revision. Subscribers are independently disposable, and closing the session clears them. Listener callbacks are synchronous and must return quickly; they should schedule independent asynchronous work rather than perform reentrant graph mutations. A listener exception is recorded in the command result, not treated as a failed edit or rollback. Other listeners still receive the facts.
+
+This initial transaction boundary is **one validated command on one root graph**. Cross-graph rack edits and general multi-command transactions are not implemented yet; later composite support must commit parent and child changes atomically and publish one consistent patch revision.
+
+The first application consumer is `ModulationDemoPatch`: it uses the session to construct the existing fixed graph and maps the final snapshot to a playback request. Canvas and dynamic audio subscribers will follow when their projections/compiler exist.
 
 ### Example: connecting two nodes
 
@@ -867,8 +847,9 @@ sequenceDiagram
     participant DSP as Audio graph service
     UI->>App: ConnectNodes command
     App->>Graph: Validate and add connection
-    Graph-->>App: Committed change set
-    App->>Bus: Publish connection event
+    Graph-->>App: Validated mutation
+    App->>App: Commit snapshot and revision
+    App->>Bus: Publish committed change set
     Bus-->>UI: Refresh graph view
     Bus-->>DSP: Request topology update
 ~~~
@@ -1027,8 +1008,7 @@ Orbit.Domain/
   Graphs/
     SignalGraph.cs
     SignalConnection.cs
-    PortAddress.cs
-    GraphChangeSet.cs
+    SignalGraphValidator.cs
   Nodes/
     ISignalNode.cs
     IGenerator.cs
@@ -1047,30 +1027,17 @@ Orbit.Domain/
     PortDefinition.cs
     ExposedPort.cs
     SignalType.cs
-  Events/
-    IGraphEvent.cs
-    ConnectionCreated.cs
-    ConnectionRemoved.cs
-    PortRemoved.cs
-    ParameterChanged.cs
   Timing/
     IAudioClock.cs
     ITransport.cs
 
 Orbit.Application/
-  Commands/
-    AddNode.cs
-    ConnectNodes.cs
-    RemoveConnection.cs
-    RemoveExposedPort.cs
-    SetParameterValue.cs
   Graphs/
-    SignalGraphService.cs
-    SignalGraphValidator.cs
     NodeRegistry.cs
-  Events/
-    IEventDispatcher.cs
-    PatchEventDispatcher.cs
+    Commands/                  # typed graph commands and command handler
+    Events/                    # graph facts, change set, internal dispatcher
+    Sessions/                  # IPatchSession, PatchSession and result
+    Snapshots/                 # immutable graph/node/parameter records
   Services/
     AudioGraphService.cs
     UndoRedoService.cs
@@ -1287,11 +1254,11 @@ Deliverable: audible two-sine modulation proof, no per-sample C#/JS message loop
 
 ### Phase 3 — Commands and event dispatch
 
-- Add typed ConnectNodes, RemoveConnection, SetParameterValue, AddNode and RemoveNode commands.
-- Implement validated transactions and committed change sets.
-- Add patch-session dispatcher with disposable subscriptions.
-- Separate layout events from graph events.
-- Connect AudioGraphService and CanvasStateService to change notifications.
+- Implemented: typed ConnectNodes, RemoveConnection, SetParameterValue, AddNode and RemoveNode commands.
+- Implemented: validated single-command commits, immutable snapshots and revisioned change sets.
+- Implemented: patch-session dispatcher with disposable typed and whole-change-set subscriptions, isolation and failure reporting.
+- Implemented: the fixed modulation patch is constructed through the session commands.
+- Next: canvas state projection and layout-only events; connect the dynamic audio graph service when compilation is available. Multi-graph transactions await composite support.
 
 Deliverable: a graph edit reaches independent subscribers once, with valid model state.
 

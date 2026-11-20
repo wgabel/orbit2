@@ -36,6 +36,15 @@ public sealed class SignalGraph
         nodes.Find(node => node.Id == nodeId)
         ?? throw new GraphValidationException($"Node {nodeId} does not exist in this graph.");
 
+    public SignalConnection GetConnection(Guid connectionId) =>
+        connections.Find(candidate => candidate.Id == connectionId)
+        ?? throw new GraphValidationException($"Connection {connectionId} does not exist.");
+
+    public Parameter GetParameter(ParameterAddress address) =>
+        GetNode(address.NodeId).Parameters
+            .SingleOrDefault(candidate => candidate.Id == address.ParameterId)
+        ?? throw new GraphValidationException($"Parameter {address.ParameterId} does not exist.");
+
     public void AddNode(ISignalNode node)
     {
         validator.ValidateNode(this, node);
@@ -67,18 +76,13 @@ public sealed class SignalGraph
 
     public void RemoveConnection(Guid connectionId)
     {
-        var connection = connections.Find(candidate => candidate.Id == connectionId)
-            ?? throw new GraphValidationException($"Connection {connectionId} does not exist.");
+        var connection = GetConnection(connectionId);
 
         connections.Remove(connection);
     }
 
     public void SetParameterValue(ParameterAddress address, double value)
     {
-        var parameter = GetNode(address.NodeId).Parameters
-            .SingleOrDefault(candidate => candidate.Id == address.ParameterId)
-            ?? throw new GraphValidationException($"Parameter {address.ParameterId} does not exist.");
-
-        parameter.SetBaseValue(value);
+        GetParameter(address).SetBaseValue(value);
     }
 }

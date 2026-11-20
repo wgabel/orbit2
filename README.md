@@ -2,7 +2,7 @@
 
 A browser-based modular synthesizer built with independent C# application logic, Blazor WebAssembly UI and Faust DSP. No React or TypeScript is used.
 
-The long-term modular synthesizer design is documented in [ORBIT2-ARCHITECTURE.md](ORBIT2-ARCHITECTURE.md). Phase 1 adds the independent signal graph model. Phase 2 executes a fixed modulation graph using Faust and exposes the shared audio clock.
+The long-term modular synthesizer design is documented in [ORBIT2-ARCHITECTURE.md](ORBIT2-ARCHITECTURE.md). Phase 1 adds the independent signal graph model. Phase 2 executes a fixed modulation graph using Faust and exposes the shared audio clock. Phase 3 begins with a session-owned command and committed event system.
 
 ## Requirements and local execution
 
@@ -57,7 +57,7 @@ The infrastructure uses the .NET Razor class library SDK solely to package brows
 flowchart TD
     View["FaustModulation.razor"] --> Presentation["FaustModulation.razor.cs"]
     Presentation --> Service["IModulationDemoService"]
-    Service --> Graph["ModulationDemoPatch / SignalGraph"]
+    Service --> Graph["ModulationDemoPatch / PatchSession"]
     Graph --> Request["PlaybackRequest"]
     Request --> EnginePort["IAudioEngine"]
     EnginePort --> Adapter["BrowserAudioEngine.cs"]
@@ -74,7 +74,7 @@ flowchart TD
 ```
 
 1. The Start control invokes the presentation handler, which delegates settings to the application service.
-2. `ModulationDemoPatch` constructs and validates the fixed graph, then creates a framework-neutral `PlaybackRequest` with processor ID, sound ID, gain and named DSP parameters.
+2. `ModulationDemoPatch` constructs and validates the fixed graph through typed session commands, then creates a framework-neutral `PlaybackRequest` with processor ID, sound ID, gain and named DSP parameters.
 3. `BrowserAudioEngine` implements the engine port and calls the JavaScript entry module through Blazor JS interop.
 4. `audio.js` composes the browser infrastructure and registers the active compiled DSP.
 5. `AudioEngine` resumes the shared audio context, reserves the requested sound ID and creates a worklet using `FaustNodeFactory` and `FaustModuleLoader`.
@@ -141,7 +141,7 @@ This describes a 0.5 Hz LFO modulating the second oscillator's 440 Hz base frequ
 
 ## Shared timing and audio-rate modulation (Phase 2)
 
-The current playback path builds a validated graph through ModulationDemoPatch, then maps its base frequency, LFO frequency, modulation depth and gain to the existing engine contract. It is a deliberately **fixed graph**, not a dynamic Faust compiler.
+The current playback path builds a validated graph through ModulationDemoPatch and PatchSession, then maps its base frequency, LFO frequency, modulation depth and gain to the existing engine contract. It is a deliberately **fixed graph**, not a dynamic Faust compiler.
 
 ~~~mermaid
 flowchart LR
@@ -169,6 +169,58 @@ flowchart TD
 ~~~
 
 There is no per-sample C# or JavaScript event loop. The audio engine controls waveform generation; browser timers observe playback for resource cleanup, and the UI reads passive meter snapshots at display rate. The demo does not yet support changing topology/parameters during playback.
+
+## Graph commands and committed events (Phase 3 foundation)
+
+The application layer now owns graph edits through `IPatchSession`. Each session owns one root graph and its own notification dispatcher. Neither views nor processing components mutate the graph directly. Domain validation still occurs inside `SignalGraph`; no second set of graph rules is introduced.
+
+~~~mermaid
+sequenceDiagram
+    participant Caller as Editor / patch builder
+    participant Session as PatchSession
+    participant Domain as SignalGraph
+    participant Listeners as Subscribers
+    Caller->>Session: Execute graph command
+    Session->>Domain: Validate and apply edit
+    Domain-->>Session: Success
+    Session->>Session: Capture snapshot and revision
+    Session->>Listeners: Publish one committed change set
+    Session-->>Caller: Result and listener errors
+~~~
+
+| Command | Successful event |
+| --- | --- |
+| `AddNodeCommand` | `NodeAdded` |
+| `ConnectNodesCommand` | `ConnectionCreated` |
+| `RemoveConnectionCommand` | `ConnectionRemoved` |
+| `RemoveNodeCommand` | All incident `ConnectionRemoved` facts, then `NodeRemoved`, in one change set |
+| `SetParameterValueCommand` | `ParameterChanged` (not topology) |
+
+Example: two independent listeners receive the same successful edit.
+
+~~~csharp
+using Orbit.Application.Graphs;
+using Orbit.Application.Graphs.Commands;
+using Orbit.Application.Graphs.Events;
+using Orbit.Application.Graphs.Sessions;
+using Orbit.Domain.Nodes.Generators;
+
+using IPatchSession session = new PatchSession(BuiltInNodes.CreateRegistry());
+using var graphListener = session.Subscribe(change =>
+    Console.WriteLine($"Revision {change.Revision}, {change.Snapshot.Nodes.Count} nodes"));
+using var nodeListener = session.Subscribe<NodeAdded>(change =>
+    Console.WriteLine($"Added {change.Node.Name}"));
+
+var result = session.Execute(new AddNodeCommand(session.GraphId, SineGenerator.NodeType));
+~~~
+
+- The result includes the immutable committed graph snapshot and ordered events. A revision identifies exactly which state a listener received, even after future edits.
+- Rejected commands and unchanged base-value edits do not increment the revision or publish anything. Validation exceptions are returned to the caller through the existing exception contract.
+- Subscriptions are disposable, session-scoped and optionally filtered by graph ID. Delivery is synchronous and serialized; listeners should schedule asynchronous work and return quickly. A failed listener is reported in `GraphCommandResult.SubscriberErrors`, without rolling back the change or blocking other subscribers.
+- Layout events and DSP telemetry are separate from graph commands. Audio and canvas projections will subscribe to committed changes when the dynamic editor/compiler are introduced.
+- The existing fixed demo now constructs its graph with these commands and derives its playback request from the final snapshot. Its UI, playback and timing remain unchanged.
+
+See [the architecture document](ORBIT2-ARCHITECTURE.md#9-commands-events-and-transaction-boundaries) for the transaction boundary, event flow, and future nested-graph requirements.
 
 ## Shared UI components
 
@@ -238,6 +290,10 @@ src/
     Graphs/NodeRegistry.cs
     Graphs/BuiltInNodes.cs
     Graphs/ModulationDemoPatch.cs
+    Graphs/Commands/                  # typed commands and validated command handler
+    Graphs/Events/                    # committed facts and session-local dispatcher
+    Graphs/Sessions/                  # IPatchSession, PatchSession, result
+    Graphs/Snapshots/                 # immutable graph/node/parameter read models
     Interfaces/IAudioClock.cs
     Models/ModulationDemoSettings.cs
     Services/
@@ -285,7 +341,7 @@ src/
       components/                     # button, panel, slider, validation, modulation view
 tests/ui/                            # design token and stylesheet contract tests
 tests/audio/                         # isolated browser infrastructure tests
-tests/Orbit.Domain.Tests/            # framework-neutral graph and registry tests
+tests/Orbit.Domain.Tests/            # graph, registry, transport and command/event tests
 .github/workflows/build-and-deploy.yml
 README.md
 ORBIT2-ARCHITECTURE.md
