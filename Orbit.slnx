@@ -1,3 +1,5 @@
+<!-- Groups the two .NET projects for solution-level builds; the UI's project
+     reference, not this file, defines the dependency direction. -->
 <Solution>
   <Project Path="src/Orbit.Application/Orbit.Application.csproj" />
   <Project Path="src/Orbit.UI/Orbit.UI.csproj" />

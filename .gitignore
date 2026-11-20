@@ -1,3 +1,5 @@
+# Ignore .NET build outputs, IDE-specific files and the local publish directory.
+# The CI workflow generates publish/wwwroot from the tracked source files.
 **/bin/
 **/obj/
 .vs/

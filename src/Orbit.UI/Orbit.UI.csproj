@@ -1,3 +1,4 @@
+<!-- Standalone Blazor WebAssembly client: compiled UI code runs in the browser. -->
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -5,8 +6,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Browser runtime and local development server; neither is application logic. -->
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.15" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.15" PrivateAssets="all" />
+
+    <!-- One-way dependency: the UI consumes contracts from the application library. -->
     <ProjectReference Include="../Orbit.Application/Orbit.Application.csproj" />
   </ItemGroup>
 </Project>

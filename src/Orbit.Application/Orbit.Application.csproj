@@ -1,3 +1,5 @@
+<!-- A plain .NET class library. It has no dependency on Blazor, the browser,
+     or Orbit.UI, so application services can be reused independently. -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>

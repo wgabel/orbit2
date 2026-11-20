@@ -1,14 +1,19 @@
 <!DOCTYPE html>
+<!-- Browser entry document: loads the visual styles and Blazor bootstrap script. -->
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Relative resource URLs use this base; CI rewrites it for GitHub Pages. -->
     <base href="/" />
     <title>Orbit 2</title>
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+    <!-- Program.cs mounts the root App component here after startup. -->
     <div id="app">Loading Orbit…</div>
+
+    <!-- Framework-provided script loads .NET WASM and invokes the C# entry point. -->
     <script src="_framework/blazor.webassembly.js"></script>
 </body>
 </html>
