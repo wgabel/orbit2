@@ -92,3 +92,25 @@ test("exposes meter snapshots only during active playback", async () => {
     assert.equal(engine.getOutputValues(request.soundId), null);
     assert.deepEqual(calls.slice(-2), ["monitor-dispose", "dispose"]);
 });
+
+test("dynamic playback passes source after resume and exposes lifecycle state", async () => {
+    const { engine, calls, nodeFactory } = setup();
+    const dynamic = { ...request, processor: "OrbitGraph", source: "process=0;" };
+    let finishCreation;
+    nodeFactory.create = (context, processor, parameters, source) => {
+        calls.push([processor, source]);
+        return new Promise(resolve => { finishCreation = resolve; });
+    };
+    assert.equal(engine.getPlaybackState(dynamic.soundId), "idle");
+    const task = engine.play(dynamic);
+    assert.equal(engine.getPlaybackState(dynamic.soundId), "starting");
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(calls, ["resume", ["OrbitGraph", "process=0;"]]);
+    finishCreation({});
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(engine.getPlaybackState(dynamic.soundId), "playing");
+    engine.stop(dynamic.soundId);
+    assert.equal(engine.getPlaybackState(dynamic.soundId), "stopping");
+    await task;
+    assert.equal(engine.getPlaybackState(dynamic.soundId), "idle");
+});

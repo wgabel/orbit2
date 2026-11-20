@@ -19,6 +19,6 @@
     {
         <p class="parameter-error workspace-error" role="alert">@Error</p>
     }
+    <GraphPlaybackControls Snapshot="@Canvas.Snapshot.Graph" />
     <GraphCanvas State="@Canvas" OnConnect="Connect" OnParameterEdit="EditParameter" />
-    <p class="workspace-notice">Graph editing is active. Dynamic Faust playback is not connected yet; the fixed audio proof below remains independent.</p>
 </section>

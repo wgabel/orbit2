@@ -1,4 +1,4 @@
-/* The graph is the main view; fixed audio playback is a separate proof. */
+/* The graph workspace includes shared graph and playback controls. */
 .workspace-shell { width: min(100%, var(--component-workspace-max-width)); margin-inline: auto; }
 .graph-workspace { display: grid; gap: var(--semantic-space-compact); }
 .workspace-toolbar {
@@ -20,6 +20,3 @@
 .workspace-count { margin-inline-start: auto; }
 .workspace-notice { margin: 0; color: var(--semantic-color-muted); font-size: var(--component-workspace-notice-size); }
 .workspace-error { margin: 0; }
-.audio-proof { margin-block-start: var(--semantic-space-section); }
-.audio-proof summary { cursor: pointer; color: var(--semantic-color-muted); }
-.audio-proof .panel { margin: var(--semantic-space-normal) auto; }

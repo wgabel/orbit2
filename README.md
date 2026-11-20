@@ -2,7 +2,7 @@
 
 A browser-based modular synthesizer built with independent C# application logic, Blazor WebAssembly UI and Faust DSP. No React or TypeScript is used.
 
-The long-term modular synthesizer design is documented in [ORBIT2-ARCHITECTURE.md](ORBIT2-ARCHITECTURE.md). Phase 1 adds the independent signal graph model. Phase 2 executes a fixed modulation graph using Faust and exposes the shared audio clock. Phase 3 adds a session-owned command and committed event system plus the framework-neutral canvas presentation state.
+The long-term modular synthesizer design is documented in [ORBIT2-ARCHITECTURE.md](ORBIT2-ARCHITECTURE.md). Phase 1 adds the independent signal graph model. Phase 2 executes a fixed modulation graph using Faust and exposes the shared audio clock. Phase 3 adds a session-owned command and committed event system plus the framework-neutral canvas presentation state. Phase 4 connects the editable graph to a runtime Faust compiler and AudioWorklet playback.
 
 ## Requirements and local execution
 
@@ -14,11 +14,13 @@ From the repository root:
 
 ```sh
 npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts src/Orbit.Audio/Dsp/Oscillators/ModulatedSine.dsp src/Orbit.Infrastructure/wwwroot/audio/generated/modulated-sine
+npm install --no-audit --no-fund --ignore-scripts --no-save @grame/faustwasm@0.19.0
+node scripts/prepare-faust-compiler.mjs
 node src/Orbit.UI/DesignSystem/generate-tokens.mjs
 dotnet run --project src/Orbit.UI --urls http://localhost:5000
 ```
 
-Open http://localhost:5000. The root graph editor is the main view. Open **Fixed audio proof** below the editor; **Start modulation** plays a continuous, modulated sine wave; **Stop** releases it with a short fade. Settings can be changed between playbacks. All three settings now use the shared parameter slider, with units, limits, validated numeric input and inline errors. The carrier frequency also shows the expected modulation band and a live marker from Faust.
+Open http://localhost:5000. Use **Play patch** to compile and play the current graph, and **Stop** to release it with a short fade. The initial patch is a sine LFO modulating a sine carrier through a gain node. The status reports the playing graph revision. Edit the graph while audio runs, then stop and play to apply the latest revision.
 
 ## Project boundaries
 
@@ -30,8 +32,9 @@ flowchart TD
     UI --> Infrastructure["Orbit.Infrastructure"]
     Infrastructure --> Application
     Application --> Domain["Orbit.Domain"]
-    Compiler["Orbit.Audio compiler"] --> Application
-    Infrastructure --> DSP["Orbit.Audio / compiled Faust"]
+    UI --> Audio["Orbit.Audio"]
+    Audio --> Application
+    Infrastructure --> DSP["Faust WASM runtime"]
 ```
 
 | Layer | Project | Responsibility |
@@ -51,39 +54,36 @@ The infrastructure uses the .NET Razor class library SDK solely to package brows
 
 1. The browser loads the fingerprinted Blazor bootstrap from `src/Orbit.UI/wwwroot/index.html`.
 2. Blazor starts .NET WebAssembly and invokes `Program.cs`, the composition root.
-3. The composition root registers one `BrowserAudioEngine` behind both `IAudioEngine` and `IAudioClock`, plus `IModulationDemoService`.
-4. The host renders `App.razor`, which mounts `FaustModulation`. Its code-behind initializes the audio module through the application service. AudioContext creation/resume is deferred to the Start button's user gesture.
+3. The composition root registers one `BrowserAudioEngine` behind both `IAudioEngine` and `IAudioClock`, plus `IGraphPlaybackService` implemented by `FaustGraphPlaybackService` and the graph compiler.
+4. The host renders `App.razor`, which mounts `GraphWorkspace` and `GraphPlaybackControls`. The controls initialize the audio module through the application service. AudioContext creation/resume is deferred to the Play button's user gesture.
 5. Once initialized, the component enables the playback controls.
 
 ## Audio event flow
 
-```mermaid
+~~~mermaid
 flowchart TD
-    View["FaustModulation.razor"] --> Presentation["FaustModulation.razor.cs"]
-    Presentation --> Service["IModulationDemoService"]
-    Service --> Graph["ModulationDemoPatch / PatchSession"]
-    Graph --> Request["PlaybackRequest"]
-    Request --> EnginePort["IAudioEngine"]
-    EnginePort --> Adapter["BrowserAudioEngine.cs"]
+    View["GraphPlaybackControls"] --> Service["IGraphPlaybackService"]
+    Service --> Compiler["FaustGraphCompiler"]
+    Compiler --> Request["PlaybackRequest"]
+    Request --> Port["IAudioEngine"]
+    Port --> Adapter["BrowserAudioEngine"]
     Adapter --> Entry["audio.js"]
     Entry --> Engine["AudioEngine"]
     Engine --> Context["AudioContextManager"]
     Engine --> Factory["FaustNodeFactory"]
-    Factory --> Loader["FaustModuleLoader"]
+    Factory --> Worker["FaustCompilerClient / Worker"]
+    Worker --> DSP["WASM AudioWorklet"]
     Engine --> Output["AudioOutput"]
-    Output --> Voice["AudioVoice"]
-    Voice --> Envelope["AudioEnvelope"]
-    Factory --> DSP["ModulatedSine WASM AudioWorklet"]
-    DSP --> Voice
-```
+    DSP --> Output
+    Output --> Voice["AudioVoice / AudioEnvelope"]
+~~~
 
-1. The Start control invokes the presentation handler, which delegates settings to the application service.
-2. `ModulationDemoPatch` constructs and validates the fixed graph through typed session commands, then creates a framework-neutral `PlaybackRequest` with processor ID, sound ID, gain and named DSP parameters.
-3. `BrowserAudioEngine` implements the engine port and calls the JavaScript entry module through Blazor JS interop.
-4. `audio.js` composes the browser infrastructure and registers the active compiled DSP.
-5. `AudioEngine` resumes the shared audio context, reserves the requested sound ID and creates a worklet using `FaustNodeFactory` and `FaustModuleLoader`.
-6. `AudioOutput` connects the worklet through an independent voice gain to the master output. `AudioEnvelope` schedules the attack and release against the audio clock.
-7. The worklet continuously renders the modulated audio signal. Stop releases the voice and frees its resources. The UI and application do not compute samples.
+1. Play captures the committed graph snapshot. The C# service compiles it into Faust source and the initial host control values.
+2. The adapter invokes the JavaScript entry module; the audio engine resumes the shared AudioContext before any worker download.
+3. `FaustNodeFactory` requests a compiled factory from the lazy compiler worker. The worker loads the pinned packaged Faust bundle, compiles the source outside the main and audio threads, and returns the WebAssembly module and DSP metadata.
+4. The node factory instantiates a mono AudioWorklet with a source-specific processor identity and applies the host values; the graph supplies gain, with additional output headroom.
+5. `AudioOutput` connects the node through an independent initially silent voice. `AudioEnvelope` schedules the attack and release against the audio clock. Stop cancels pending startup or releases an active voice and frees its resources.
+6. `GraphPlaybackControls` observes startup status at display rate. Edits commit normally but play the new revision only after restarting. Live parameter updates, runtime graph replacement and telemetry will follow.
 
 ## Browser infrastructure components
 
@@ -93,6 +93,8 @@ flowchart TD
 | AudioEngine.js | Coordinate playback, validate requests, manage active sound IDs and cleanup. |
 | AudioContextManager.js | Create, resume and close the one shared AudioContext. |
 | AudioClock.js | Read the existing context's frame-time snapshot without starting audio. |
+| FaustCompilerClient.js | Own the lazy compiler worker, match asynchronous replies, propagate errors and dispose it. |
+| FaustCompilerWorker.js | Serialize Faust compilations and return compiled modules and metadata; no audio render work. |
 | FaustModuleLoader.js | Download and cache compiled modules and metadata; retry failed loads. |
 | FaustOutputMonitor.js | Cache passive Faust output meter readings for display-rate snapshots. |
 | FaustNodeFactory.js | Create independent Faust worklet nodes and map parameters using their published paths. |
@@ -109,7 +111,7 @@ The independent domain model describes topology without generating samples. It h
 - Typed ports allow one output to feed several inputs, and modulatable parameters accept multiple sources. Connection amounts represent audio gain or target-specific modulation depth.
 - Graph validation rejects missing or reversed endpoints, incompatible types/channels, duplicate edges, single-input conflicts and cycles (including modulation cycles).
 - Removing a node removes its incident edges in the same operation. Parameter settings remain base values and never receive audio-rate samples.
-- The application registry creates independently identified node instances. Phase 2 provides a specific mapping from a validated graph to a precompiled Faust program; general-purpose graph compilation is still planned for Phase 4.
+- The application registry creates independently identified node instances. Phase 2 provides a specific mapping from a validated graph to a precompiled Faust program; Phase 4 implements general-purpose source compilation for the supported flat node types.
 
 A small graph can be built and validated without a UI or audio device:
 
@@ -145,7 +147,7 @@ This describes a 0.5 Hz LFO modulating the second oscillator's 440 Hz base frequ
 
 ## Shared timing and audio-rate modulation (Phase 2)
 
-The current playback path builds a validated graph through ModulationDemoPatch and PatchSession, then maps its base frequency, LFO frequency, modulation depth and gain to the existing engine contract. It is a deliberately **fixed graph**, not a dynamic Faust compiler.
+The original Phase 2 playback proof built a fixed modulation graph through ModulationDemoPatch and PatchSession. Its precompiled DSP and offline tests remain as regression fixtures; the standalone demo UI and service have now been retired in favor of the editable graph.
 
 ~~~mermaid
 flowchart LR
@@ -156,23 +158,14 @@ flowchart LR
 ~~~
 
 - ModulatedSine.dsp computes the LFO, effective frequency and carrier at the real audio sample rate. It uses the same reusable sine function for both oscillators. Faust smooths base settings before applying sample-rate modulation and clamps the effective frequency to a safe range.
-- ModulationDemoService invokes the browser adapter with a playback request. Playback is sustained until explicitly stopped. Stop schedules a release using Web Audio's time and then disposes the voice.
+- The same voice lifecycle is used by dynamic patch playback: it sustains until stopped, schedules a release using Web Audio time and disposes the voice.
 - The default values produce a frequency changing from approximately 340 Hz to 540 Hz every two seconds. Depth 0 produces the base frequency without vibrato.
-- AudioClock observes the single existing AudioContext's actual sample rate and elapsed context time. Read audio clock in the UI returns the estimated frame position at the rendering quantum boundary, not an independent clock. It does not start or resume the context.
+- AudioClock observes the single existing AudioContext's actual sample rate and elapsed context time. Its snapshot returns the estimated frame position at the rendering quantum boundary, not an independent clock. It does not start or resume the context.
 - MusicalTransport converts sample-frame differences into beats and tempo-synchronized frequency. Tempo changes preserve beat position, stopping freezes it, and resuming continues from that position. It is tested independently; live transport synchronization and graph editing are later features.
 
-~~~mermaid
-flowchart TD
-    UI["FaustModulation component"] --> S["ModulationDemoService"]
-    S --> P["Validated fixed SignalGraph"]
-    P --> R["PlaybackRequest"]
-    R --> E["Browser AudioEngine"]
-    E --> DSP["ModulatedSine Faust WASM"]
-    DSP --> O["Audio-clock-scheduled gain"]
-    O --> OUT["Audio output"]
-~~~
 
-There is no per-sample C# or JavaScript event loop. The audio engine controls waveform generation; browser timers observe playback for resource cleanup, and the UI reads passive meter snapshots at display rate. The demo does not yet support changing topology/parameters during playback.
+
+There is no per-sample C# or JavaScript event loop. The audio engine controls waveform generation; browser timers observe playback for resource cleanup, and the UI reads passive meter snapshots at display rate. Graph playback currently stages graph edits until the next start.
 
 ## Graph commands and committed events (Phase 3 foundation)
 
@@ -222,7 +215,7 @@ var result = session.Execute(new AddNodeCommand(session.GraphId, SineGenerator.N
 - Rejected commands and unchanged base-value edits do not increment the revision or publish anything. Validation exceptions are returned to the caller through the existing exception contract.
 - Subscriptions are disposable, session-scoped and optionally filtered by graph ID. Delivery is synchronous and serialized; listeners should schedule asynchronous work and return quickly. A failed listener is reported in `GraphCommandResult.SubscriberErrors`, without rolling back the change or blocking other subscribers.
 - Layout events and DSP telemetry are separate from graph commands. Audio and canvas projections will subscribe to committed changes when the dynamic editor/compiler are introduced.
-- The existing fixed demo now constructs its graph with these commands and derives its playback request from the final snapshot. Its UI, playback and timing remain unchanged.
+- The existing fixed demo now constructs its graph with these commands and derives its playback request from the final snapshot. Its precompiled regression DSP remains independent of the live graph.
 
 See [the architecture document](ORBIT2-ARCHITECTURE.md#9-commands-events-and-transaction-boundaries) for the transaction boundary, event flow, and future nested-graph requirements.
 
@@ -298,7 +291,7 @@ flowchart TD
 
 The small DOM adapter measures port/node geometry, captures pointers and resolves a dropped input. It does not own graph state or compute audio. The C# presentation library provides viewport and Bézier geometry. The workspace translates edits into session commands.
 
-The editor is not connected to live dynamic Faust playback yet. The existing fixed audio proof remains in a separate expandable section until dynamic compilation replaces it. Its settings and graph are independent of editor changes.
+The editor uses GraphPlaybackControls to play any supported committed patch. The playing revision remains stable while edits are made; Stop then Play applies the latest version. The obsolete fixed proof UI has been removed.
 
 ## Faust graph compiler (Phase 4)
 
@@ -333,7 +326,7 @@ npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts "$ORBIT_GRAPH_
 node --test tests/compiler/*.test.mjs
 ~~~
 
-Next: integrate the compiler with a browser-side Faust WASM compiler and playback lifecycle. The graph editor's audio remains separate until that step.
+The browser compiler is now connected through the graph playback service. Next: live base-value updates, topology preparation and safe audio runtime replacement with revision tracking.
 
 ## Shared UI components
 
@@ -411,14 +404,14 @@ src/
     Interfaces/IAudioClock.cs
     Models/ModulationDemoSettings.cs
     Services/
-      IModulationDemoService.cs
-      ModulationDemoService.cs
+      IGraphPlaybackService.cs
   Orbit.Presentation/
     Orbit.Presentation.csproj
     Canvas/                           # state, viewport, geometry, roles and layout events
   Orbit.Audio/
     Orbit.Audio.csproj
     Compilation/                      # graph ordering, backend emitters and control mapping
+    Playback/FaustGraphPlaybackService.cs
     Dsp/Oscillators/ModulatedSine.dsp
   Orbit.Infrastructure/
     Orbit.Infrastructure.csproj
@@ -433,6 +426,8 @@ src/
         AudioVoice.js
         AudioEnvelope.js
       Faust/
+        FaustCompilerClient.js
+        FaustCompilerWorker.js
         FaustModuleLoader.js
         FaustNodeFactory.js
         FaustOutputMonitor.js
@@ -441,9 +436,7 @@ src/
     Orbit.UI.csproj
     Program.cs
     App.razor
-    Components/Canvas/               # shared canvas, toolbar, node, port and wire components
-    Components/FaustModulation.razor
-    Components/FaustModulation.razor.cs
+    Components/Canvas/               # shared canvas, playback controls, node, port and wire components
     Components/Parameters/ParameterSlider.razor
     Components/Parameters/ParameterSlider.razor.cs
     Components/Parameters/ParameterValidation.cs
@@ -459,9 +452,10 @@ src/
       tokens.css                      # generated, tracked
       base.css
       components.css                  # shared stylesheet imports
-      components/                     # button, panel, slider, validation, modulation view
+      components/                     # button, panel, slider, validation, graph editor
 tests/ui/                            # design token and stylesheet contract tests
 tests/audio/                         # isolated browser infrastructure tests
+scripts/prepare-faust-compiler.mjs   # copies pinned bundled compiler assets
 tests/Orbit.Domain.Tests/            # graph, registry, transport and command/event tests
 tests/Orbit.Presentation.Tests/      # layout projection and viewport tests
 .github/workflows/build-and-deploy.yml

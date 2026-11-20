@@ -1,26 +1,35 @@
-// Creates independent AudioWorklet nodes from registered Faust processors.
+// Creates independent AudioWorklet nodes from compiled or dynamic Faust source.
 // Parameter paths come from the node's metadata, not the Blazor UI.
 export class FaustNodeFactory {
     #moduleLoader;
     #processors;
     #createGenerator;
+    #compiler;
 
-    constructor(moduleLoader, processors, createGenerator) {
+    constructor(moduleLoader, processors, createGenerator, compiler) {
         this.#moduleLoader = moduleLoader;
         this.#processors = processors;
         this.#createGenerator = createGenerator;
+        this.#compiler = compiler;
     }
 
-    async create(context, processor, parameters) {
-        const specification = this.#processors.get(processor);
-        if (!specification) {
-            throw new Error("Unknown audio processor: " + processor);
+    async create(context, processor, parameters, source = null) {
+        let name;
+        let compiled;
+        if (source != null) {
+            if (!this.#compiler) throw new Error("Dynamic Faust compiler is unavailable.");
+            name = processor;
+            compiled = await this.#compiler.compile(source);
+        } else {
+            const specification = this.#processors.get(processor);
+            if (!specification) throw new Error("Unknown audio processor: " + processor);
+            name = specification.name;
+            compiled = await this.#moduleLoader.load(specification.baseUrl);
         }
 
-        const compiled = await this.#moduleLoader.load(specification.baseUrl);
         const generator = this.#createGenerator();
         const node = await generator.createNode(
-            context, specification.name, { ...compiled, soundfiles: {} }, false);
+            context, name, { ...compiled, soundfiles: {} }, false);
 
         if (!node) {
             throw new Error("Could not create Faust AudioWorklet: " + processor);

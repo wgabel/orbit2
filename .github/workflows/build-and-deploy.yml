@@ -39,12 +39,18 @@ jobs:
       - name: Compile Faust DSP
         run: |
           npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts src/Orbit.Audio/Dsp/Oscillators/ModulatedSine.dsp src/Orbit.Infrastructure/wwwroot/audio/generated/modulated-sine
+      # The browser's lazy worker uses the same pinned Faust distribution.
+      - name: Prepare browser graph compiler
+        run: |
+          npm install --prefix "$RUNNER_TEMP/orbit-faust" --no-audit --no-fund --ignore-scripts --no-save @grame/faustwasm@0.19.0
+          node scripts/prepare-faust-compiler.mjs "$RUNNER_TEMP/orbit-faust/node_modules/@grame/faustwasm"
       # Assert the real DSP and its supporting runtime were generated.
       - name: Verify Faust build assets
         run: |
           test -s src/Orbit.Infrastructure/wwwroot/audio/generated/modulated-sine/dsp-module.wasm
           test -s src/Orbit.Infrastructure/wwwroot/audio/generated/modulated-sine/dsp-meta.json
           test -s src/Orbit.Infrastructure/wwwroot/audio/generated/modulated-sine/faustwasm/index.js
+          test -s src/Orbit.Infrastructure/wwwroot/audio/generated/compiler/index.js
       - name: Test audio infrastructure and compiled DSP
         run: node --test tests/audio/*.test.mjs
       # Exercise the real graph compiler output, not a handcrafted DSP fixture.
@@ -55,6 +61,17 @@ jobs:
           dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj --configuration Release -- "$ORBIT_GRAPH_PROBE_DIR"
           npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts "$ORBIT_GRAPH_PROBE_DIR/program.dsp" "$ORBIT_GRAPH_PROBE_DIR/compiled"
           node --test tests/compiler/*.test.mjs
+      # Check the bundled worker and actual browser AudioWorklet together.
+      - name: Browser graph playback smoke test
+        timeout-minutes: 5
+        env:
+          ORBIT_GRAPH_PROBE_DIR: ${{ runner.temp }}/orbit-graph-probe
+          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
+        run: |
+          npm install --prefix "$RUNNER_TEMP/orbit-browser" --no-audit --no-fund --ignore-scripts --no-save playwright-core@1.65.1
+          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
+          test -x "$ORBIT_CHROME"
+          node tests/browser/GraphPlaybackSmoke.mjs
       # Compiles the referenced projects and produces the static site in publish/wwwroot.
       - name: Build and publish
         run: dotnet publish src/Orbit.UI/Orbit.UI.csproj --configuration Release --output publish
@@ -74,6 +91,8 @@ jobs:
         run: |
           test -s publish/wwwroot/_content/Orbit.Infrastructure/audio/audio.js
           test -s publish/wwwroot/_content/Orbit.Infrastructure/audio/AudioEngine.js
+          test -s publish/wwwroot/_content/Orbit.Infrastructure/audio/Faust/FaustCompilerWorker.js
+          test -s publish/wwwroot/_content/Orbit.Infrastructure/audio/generated/compiler/index.js
           test -s publish/wwwroot/_content/Orbit.Infrastructure/audio/generated/modulated-sine/dsp-module.wasm
           test -s publish/wwwroot/_content/Orbit.Infrastructure/audio/generated/modulated-sine/dsp-meta.json
           test -s publish/wwwroot/_content/Orbit.Infrastructure/audio/generated/modulated-sine/faustwasm/index.js

@@ -871,7 +871,7 @@ Subscribe to a whole `GraphChangeSet` for graph projection and audio graph compi
 
 This initial transaction boundary is **one validated command on one root graph**. Cross-graph rack edits and general multi-command transactions are not implemented yet; later composite support must commit parent and child changes atomically and publish one consistent patch revision.
 
-The first application consumer is `ModulationDemoPatch`: it uses the session to construct the existing fixed graph and maps the final snapshot to a playback request. Canvas and dynamic audio subscribers will follow when their projections/compiler exist.
+The first application consumer is `ModulationDemoPatch`: it uses the session to construct the existing fixed graph and maps the final snapshot to a playback request. The canvas and dynamic playback consume immutable snapshots; live playback subscriptions will follow when runtime replacement is implemented.
 
 ### Example: connecting two nodes
 
@@ -1027,6 +1027,8 @@ The graph compiler produces stable parameter addresses and metadata so the brows
 | Create/remove connection | Update routing or compile a new graph |
 | Change effect order | Update routing/compile |
 | Rename a rack port | Update model/projection, typically no audio compile if stable addresses are unchanged |
+
+The browser integration now captures one committed snapshot per Play request and maps it to Faust source and initial values via `FaustGraphPlaybackService`. The pinned complete compiler bundle loads lazily inside `FaustCompilerWorker.js`, coordinated by `FaustCompilerClient`. It compiles outside both the UI and audio threads, and returns a WebAssembly module and metadata to the existing AudioWorklet node factory. The node uses the source-specific factory hash for its processor identity. The shared audio envelope handles start and stop. During this first runtime stage, edits are staged until restart, and the UI reports the active revision. Live graph swaps are not yet implemented.
 
 Compile outside the audio rendering thread, preferably in an appropriate worker or build pipeline. A new graph should be prepared before swapping it in. Use revision numbers to discard stale compilation results and coalesce rapid structural edits. Keep the last good runtime active if compilation fails; report the error in the UI.
 
@@ -1322,7 +1324,8 @@ Deliverable: a graph edit reaches independent subscribers once, with valid model
 - Implemented: reusable canvas renderer with role-colored nodes, typed ports and visible Bézier connections, plus pointer pan/zoom and fit.
 - Implemented: drag-to-connect, click-to-connect, delete selected connections/nodes, node placement and shared base parameter editor.
 - Implemented: dependency ordering and extensible C# graph-to-Faust source compiler with stable parameter controls (sine, gain, master output), plus offline WASM probe tests.
-- Next: integrate browser-side Faust compilation and live playback from the editor.
+- Implemented: on-demand graph playback from the editor, with a lazy Faust compiler worker, revision status and safe start/stop. The original fixed UI is retired.
+- Next: live parameter updates and safe runtime graph replacement.
 - Compile asynchronously, track graph revision and safely swap runtime.
 - Test fan-out and multiple modulation sources.
 - Add low-pass effect and mixer.
