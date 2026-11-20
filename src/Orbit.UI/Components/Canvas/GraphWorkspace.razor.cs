@@ -31,8 +31,8 @@ public partial class GraphWorkspace : IDisposable
     private IDisposable? subscription;
     private CanvasNavigationService Navigation { get; set; } = default!;
     private ICanvasStateService Canvas => Navigation.ActiveCanvas;
-    private IReadOnlyList<string> catalog = [];
-    private IEnumerable<string> RegisteredTypes => catalog.Where(type =>
+    private NodeRegistry catalog = default!;
+    private IEnumerable<string> RegisteredTypes => catalog.RegisteredTypes.Where(type =>
         Canvas.Snapshot.GraphId == session.GraphId || type != MasterOutput.NodeType);
     private string SelectedType { get; set; } = "";
     private string? Error { get; set; }
@@ -50,7 +50,7 @@ public partial class GraphWorkspace : IDisposable
     protected override void OnInitialized()
     {
         var registry = BuiltInNodes.CreateEditorRegistry();
-        catalog = registry.RegisteredTypes;
+        catalog = registry;
         SelectedType = OscillatorGenerator.NodeType;
         session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings(), registry);
         Navigation = new CanvasNavigationService(session, new GridNodePlacementPolicy(columnSpacing: 320, rowSpacing: 360, columns: 4));
@@ -78,15 +78,7 @@ public partial class GraphWorkspace : IDisposable
     private void OnTelemetryChanged(GraphParameterTelemetry? frame) =>
         telemetry = frame;
 
-    private static string DescribeType(string type) => type switch
-    {
-        CompositeNode.NodeType => "Drone (composite)",
-        OscillatorGenerator.NodeType => "Oscillator",
-        NoiseGenerator.NodeType => "Noise",
-        GainProcessor.NodeType => "Gain",
-        MasterOutput.NodeType => "Master output",
-        _ => type
-    };
+    private string DescribeType(string type) => catalog.Describe(type);
 
     private void OpenComposite(Guid graphId, Guid nodeId)
     {

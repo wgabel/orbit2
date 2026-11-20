@@ -770,6 +770,17 @@ A saved composite definition consists of its graph, exposed ports and optional c
 
 Define whether a preset is copied at instantiation or linked to a shared template. Start with independent instances, with stable instance-scoped IDs; do not accidentally share runtime phase, parameter state or filter state. Shared preset editing/versioning is a later feature.
 
+**Implemented Phase 6.6:** The registry accepts composite preset catalog keys separately from the resulting domain type (`composite.graph`). Factory identity and type validation remain intact. Catalog labels are supplied by registration so adding a preset does not require a UI case. `DroneTemplate` shares the starter/layered graph-construction path. The Layered fifth preset creates three ratio-linked oscillators, pink noise, a `MixerProcessor` and final gain with editable Pitch/Gain rack inputs. The mixer exposes a summed mono input; its emitter and range rule use the existing weighted-input resolution. Each instance owns all its nodes, parameters, ports and DSP state independently; no saved-preset persistence is implied.
+
+~~~mermaid
+flowchart TD
+    C[Preset catalog key] --> F[Composite factory]
+    F --> G[Fresh composite graph]
+    G --> S[Committed snapshot]
+    S --> U[Shared canvas]
+    S --> D[Existing Faust compiler]
+~~~
+
 ## 8. Input and output racks
 
 The user's proposed solution is the standard interface between canvases: a special internal Input Rack node with named ports that automatically appear as input sockets on the composite node in the parent canvas. The corresponding internal sockets are outputs, allowing external signals to be routed to any compatible internal node.
@@ -1410,8 +1421,8 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented: one reusable oscillator with waveform selector (sine, triangle, square, sawtooth), phase, normalized output and structural change crossfade.
 - Implemented: unified free/synchronized oscillator timing modes, conditional rate controls, dormant wires and active DSP lowering.
 - Implemented: separate white/pink/brown noise generator with modulatable amplitude and structural color selection.
-- Next: multi-generator drone preset, effects; later add sample-scheduled transport commands and rhythmic clock/trigger nodes.
-- Add multi-generator drone graph preset, additional waveforms and effects.
+- Implemented: independent layered drone preset, generic composite preset catalog registration and mono weighted mixer.
+- Next: audio effects; later add additional waveforms, sample-scheduled transport commands and rhythmic clock/trigger nodes.
 - Persist root/nested graphs, rack definitions and separate canvas layout.
 - Add copies/preset reuse with independent instances.
 - Add undo/redo and debounced autosave.

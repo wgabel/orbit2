@@ -16,6 +16,7 @@ const tempoSource = await readFile(resolve(directory, "tempo.dsp"), "utf8");
 const tempoControls = JSON.parse(await readFile(resolve(directory, "tempo-controls.json"), "utf8"));
 const waveforms = JSON.parse(await readFile(resolve(directory, "waveforms.json"), "utf8"));
 const noises = JSON.parse(await readFile(resolve(directory, "noise.json"), "utf8"));
+const layered = JSON.parse(await readFile(resolve(directory, "layered.json"), "utf8"));
 const root = resolve("src/Orbit.Infrastructure/wwwroot/audio");
 const server = createServer(async (request, response) => {
     try {
@@ -252,6 +253,43 @@ try {
         }
         assert.ok(white.roughness > pink.roughness && pink.roughness > brown.roughness,
             "Noise colors must progressively emphasize lower frequencies");
+    }
+
+    const layeredResults = await page.evaluate(async layered => {
+        const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
+        const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
+        const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
+        try {
+            const compiled = await compiler.compile(layered.source);
+            const results = [];
+            for (const rate of [44100, 48000]) {
+                const processor = await new FaustMonoDspGenerator().createOfflineProcessor(rate, 128, { ...compiled, soundfiles: {} });
+                for (const [name, value] of Object.entries(layered.values))
+                    processor.setParamValue(processor.getParams().find(path => path.endsWith("/" + name)), value);
+                const [audio] = processor.render([], rate * 3);
+                let peak = 0;
+                for (const sample of audio) {
+                    if (!Number.isFinite(sample)) throw new Error("Non-finite layered drone sample");
+                    peak = Math.max(peak, Math.abs(sample));
+                }
+                const tones = [110, 165, 220.7].map(frequency => {
+                    let real = 0, imaginary = 0;
+                    for (let i = rate; i < audio.length; i++) {
+                        const angle = 2 * Math.PI * frequency * i / rate;
+                        real += audio[i] * Math.cos(angle);
+                        imaginary += audio[i] * Math.sin(angle);
+                    }
+                    return Math.hypot(real, imaginary) / rate;
+                });
+                results.push({ rate, peak, tones });
+            }
+            return results;
+        } finally { compiler.dispose(); }
+    }, layered);
+    for (const result of layeredResults) {
+        console.log("Layered drone", result);
+        assert.ok(result.peak <= 0.425 && result.peak > 0.1);
+        assert.ok(result.tones.every(tone => tone > 0.06), "All three pitched voices must remain audible");
     }
 
     // All shapes now use the transport in synchronized mode. Supply the same

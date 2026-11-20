@@ -14,10 +14,11 @@ public static class BuiltInNodes
     public static NodeRegistry CreateRegistry()
     {
         var registry = new NodeRegistry();
-        registry.Register(OscillatorGenerator.NodeType, id => new OscillatorGenerator(id));
-        registry.Register(NoiseGenerator.NodeType, id => new NoiseGenerator(id));
-        registry.Register(GainProcessor.NodeType, id => new GainProcessor(id));
-        registry.Register(MasterOutput.NodeType, id => new MasterOutput(id));
+        registry.Register(OscillatorGenerator.NodeType, id => new OscillatorGenerator(id), "Oscillator");
+        registry.Register(NoiseGenerator.NodeType, id => new NoiseGenerator(id), "Noise");
+        registry.Register(GainProcessor.NodeType, id => new GainProcessor(id), "Gain");
+        registry.Register(MixerProcessor.NodeType, id => new MixerProcessor(id), "Mixer");
+        registry.Register(MasterOutput.NodeType, id => new MasterOutput(id), "Master output");
         return registry;
     }
 
@@ -26,7 +27,8 @@ public static class BuiltInNodes
     public static NodeRegistry CreateEditorRegistry()
     {
         var registry = CreateRegistry();
-        registry.Register(CompositeNode.NodeType, DroneTemplate.Create);
+        registry.Register(CompositeNode.NodeType, DroneTemplate.Create, "Drone (composite)");
+        registry.RegisterCompositePreset(DroneTemplate.LayeredPresetKey, "Drone — Layered fifth", DroneTemplate.CreateLayered);
         return registry;
     }
 }

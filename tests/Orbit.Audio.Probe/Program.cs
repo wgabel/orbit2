@@ -136,6 +136,21 @@ var noiseProbes = Enum.GetValues<NoiseColor>().Select(color =>
 }).ToArray();
 File.WriteAllText(Path.Combine(args[0], "noise.json"), JsonSerializer.Serialize(noiseProbes));
 
+using var layeredSession = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+var layeredRoot = layeredSession.GraphId;
+var layered = layeredSession.Execute(new AddNodeCommand(layeredRoot, DroneTemplate.LayeredPresetKey))
+    .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+var layeredMaster = layeredSession.Execute(new AddNodeCommand(layeredRoot, MasterOutput.NodeType))
+    .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+layeredSession.Execute(new ConnectNodesCommand(layeredRoot, new PortAddress(layered.Id, layered.Outputs[0].Id),
+    new PortAddress(layeredMaster.Id, layeredMaster.Inputs[0].Id)));
+var layeredProgram = FaustGraphCompiler.CreateBuiltIn().Compile(layeredSession.Snapshot);
+File.WriteAllText(Path.Combine(args[0], "layered.json"), JsonSerializer.Serialize(new
+{
+    source = layeredProgram.Source,
+    values = layeredProgram.Controls.ToDictionary(control => control.Name, control => control.InitialValue)
+}));
+
 GraphNodeSnapshot TempoAdd(Guid graph, string type) =>
     tempoSession.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
 

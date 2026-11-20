@@ -14,17 +14,37 @@ namespace Orbit.Domain.Tests;
 public sealed class NodeRegistryTests
 {
     [Fact]
-    public void CreatesFourBuiltInNodeTypes()
+    public void CreatesFiveBuiltInNodeTypes()
     {
         var registry = BuiltInNodes.CreateRegistry();
 
-        Assert.Equal(4, registry.RegisteredTypes.Count);
+        Assert.Equal(5, registry.RegisteredTypes.Count);
+        Assert.IsType<MixerProcessor>(registry.Create(MixerProcessor.NodeType));
         Assert.IsType<NoiseGenerator>(registry.Create(NoiseGenerator.NodeType));
         Assert.IsAssignableFrom<IGenerator>(registry.Create(OscillatorGenerator.NodeType));
         Assert.IsAssignableFrom<IProcessor>(registry.Create(GainProcessor.NodeType));
         var output = Assert.IsType<MasterOutput>(registry.Create(MasterOutput.NodeType));
         Assert.Single(output.Inputs);
         Assert.Empty(output.Outputs);
+    }
+
+    [Fact]
+    public void LayeredPresetCreatesIndependentOrdinaryCompositeGraphs()
+    {
+        var registry = BuiltInNodes.CreateEditorRegistry();
+        var first = Assert.IsType<Orbit.Domain.Nodes.Composites.CompositeNode>(registry.Create(DroneTemplate.LayeredPresetKey));
+        var second = Assert.IsType<Orbit.Domain.Nodes.Composites.CompositeNode>(registry.Create(DroneTemplate.LayeredPresetKey));
+        Assert.Equal(Orbit.Domain.Nodes.Composites.CompositeNode.NodeType, first.TypeKey);
+        Assert.Equal("Layered fifth", first.Name);
+        Assert.Equal(3, first.InternalGraph.Nodes.OfType<OscillatorGenerator>().Count());
+        Assert.Single(first.InternalGraph.Nodes.OfType<NoiseGenerator>());
+        var mixer = Assert.Single(first.InternalGraph.Nodes.OfType<MixerProcessor>());
+        Assert.Equal(4, first.InternalGraph.Connections.Count(edge => edge.Destination.NodeId == mixer.Id));
+        Assert.Empty(first.InternalGraph.Nodes.Select(node => node.Id).Intersect(second.InternalGraph.Nodes.Select(node => node.Id)));
+        var oscillator = first.InternalGraph.Nodes.OfType<OscillatorGenerator>().First();
+        var frequency = oscillator.Parameters.Single(p => p.Definition.Key == "frequency");
+        first.InternalGraph.SetParameterValue(new ParameterAddress(oscillator.Id, frequency.Id), 90);
+        Assert.Equal(110, second.InternalGraph.Nodes.OfType<OscillatorGenerator>().First().Parameters.Single(p => p.Definition.Key == "frequency").BaseValue);
     }
 
     [Fact]
