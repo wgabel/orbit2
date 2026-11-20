@@ -528,8 +528,10 @@ try {
         assert.ok(result.long.early.rms > 0.0005, "Wet signal must retain a tail after the source stops");
         assert.ok(result.long.late.rms > result.short.late.rms * 5, "Long decay must sustain more tail energy");
         assert.ok(result.long.end.rms < result.long.early.rms * 0.1, "Tail should decay");
-        assert.ok(result.dark.early.roughness < result.long.early.roughness * 0.8, "Damping must reduce high-frequency energy");
-        assert.ok(result.dry.early.rms < 1e-5, "Zero wet mix must remove the reverb tail");
+        // The early window includes the smoothed source's release and initial
+        // reflections. Measure absorption and bypass on the established tail.
+        assert.ok(result.dark.late.roughness < result.long.late.roughness * 0.5, "Damping must reduce late high-frequency energy");
+        assert.ok(result.dry.late.rms < 1e-5, "Zero wet mix must remove the reverb tail");
         assert.ok(result.peak < 2);
     }
 
