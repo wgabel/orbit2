@@ -21,6 +21,18 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      # Node is a build-time tool only: Faust produces browser-ready WASM assets.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Compile Faust DSP
+        run: npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts src/Orbit.Audio/Tone.dsp src/Orbit.UI/wwwroot/faust/generated
+      # Assert the real DSP and its supporting runtime were generated.
+      - name: Verify Faust build assets
+        run: |
+          test -s src/Orbit.UI/wwwroot/faust/generated/dsp-module.wasm
+          test -s src/Orbit.UI/wwwroot/faust/generated/dsp-meta.json
+          test -s src/Orbit.UI/wwwroot/faust/generated/faustwasm/index.js
       # Compiles both projects and produces the static site in publish/wwwroot.
       - name: Build and publish
         run: dotnet publish src/Orbit.UI/Orbit.UI.csproj --configuration Release --output publish

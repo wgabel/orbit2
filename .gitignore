@@ -7,3 +7,6 @@
 *.user
 *.suo
 publish/
+
+# Faust compiler output: regenerate from the tracked Tone.dsp source.
+src/Orbit.UI/wwwroot/faust/generated/

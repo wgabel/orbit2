@@ -1,5 +1,6 @@
 @namespace Orbit.UI
 @using Microsoft.AspNetCore.Components.Web
+@using Orbit.UI.Components
 
 @* Root view mounted by Program.cs. App.razor.cs is its C# code-behind.
    The markup displays Count and forwards clicks to IncrementCounter;
@@ -10,4 +11,5 @@
     <p>Blazor WebAssembly is running in your browser.</p>
     <output class="count" aria-live="polite">@Count</output>
     <button type="button" @onclick="IncrementCounter">Increment</button>
+    <FaustTone />
 </main>
