@@ -40,7 +40,7 @@ The infrastructure uses the .NET Razor class library SDK solely to package brows
 
 ## Startup sequence
 
-1. `src/Orbit.UI/wwwroot/index.html` loads the framework's `_framework/blazor.webassembly.js` script and defines the `#app` mount point.
+1. `src/Orbit.UI/wwwroot/index.html` loads the fingerprinted Blazor bootstrap script and defines the `#app` mount point.
 2. Blazor starts .NET WebAssembly, invoking the compiler-generated entry point in `Program.cs`.
 3. `Program.cs` creates the host, registers the root component and binds interfaces to implementations via DI: `ICounterService → CounterService`, `IAudioService → AudioService`, `IAudioEngine → BrowserAudioEngine`.
 4. The host starts and renders `App.razor`. Its code-behind reads the counter service.
@@ -186,6 +186,6 @@ dotnet build Orbit.slnx
 dotnet publish src/Orbit.UI -c Release -o publish
 ```
 
-GitHub Actions compiles Faust, tests the infrastructure modules, builds the three .NET projects, checks the published static assets and deploys `publish/wwwroot` to GitHub Pages. For main deployments it rewrites the HTML base path to `/orbit2/`.
+GitHub Actions compiles Faust, tests the infrastructure modules, builds the three .NET projects, checks the published static assets and deploys `publish/wwwroot` to GitHub Pages. For main deployments it rewrites the HTML base path to `/orbit2/`. Blazor's build-time fingerprinting and generated import map version the runtime assets, reducing mixed-version caching when a deployment replaces browser modules.
 
 Open https://wgabel.github.io/orbit2/ after deployment.
