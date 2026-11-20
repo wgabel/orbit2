@@ -20,7 +20,7 @@
                            OnOutputPointerDown="BeginOutput" OnPortActivate="ActivatePortAsync"
                            OnOpenComposite="OnOpenComposite"
                            OnEditRack="OnEditRack"
-                           OnParameterEdit="OnParameterEdit" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" />
+                           OnParameterEdit="OnParameterEdit" OnParameterGestureEnded="OnParameterGestureEnded" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" />
             }
         </div>
         <span class="canvas-count">@($"{Snapshot.Graph.Nodes.Count} nodes · {Snapshot.Graph.Connections.Count} connections")</span>

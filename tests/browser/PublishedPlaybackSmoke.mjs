@@ -54,6 +54,33 @@ try {
     assert.ok(countBounds.x > canvasBounds.x + canvasBounds.width / 2 && countBounds.y < canvasBounds.y + 40,
         "Node and connection count must remain in the upper right of the canvas");
     assert.equal(await marker.count(), 0);
+    // A real range drag commits multiple input events but exactly one undo step.
+    const range = amplitude.getByRole("slider");
+    const amplitudeInput = amplitude.getByRole("spinbutton");
+    const originalAmplitude = await amplitudeInput.inputValue();
+    await range.scrollIntoViewIfNeeded();
+    await range.evaluate(element => {
+        element.dataset.gestureInputs = "0";
+        element.addEventListener("input", () => element.dataset.gestureInputs = String(Number(element.dataset.gestureInputs) + 1));
+    });
+    const rangeBounds = await range.boundingBox();
+    const rangeY = rangeBounds.y + rangeBounds.height / 2;
+    await page.mouse.move(rangeBounds.x + rangeBounds.width * 0.35, rangeY);
+    await page.mouse.down();
+    await page.mouse.move(rangeBounds.x + rangeBounds.width * 0.8, rangeY, { steps: 12 });
+    await page.mouse.up();
+    assert.ok(Number(await range.getAttribute("data-gesture-inputs")) > 2, "Drag must produce multiple live values");
+    const changedAmplitude = await amplitudeInput.inputValue();
+    assert.notEqual(changedAmplitude, originalAmplitude);
+    const undoButton = page.getByRole("button", { name: "Undo", exact: true });
+    const redoButton = page.getByRole("button", { name: "Redo", exact: true });
+    await undoButton.click();
+    assert.equal(await amplitudeInput.inputValue(), originalAmplitude);
+    await redoButton.click();
+    assert.equal(await amplitudeInput.inputValue(), changedAmplitude);
+    await undoButton.click();
+    assert.equal(await amplitudeInput.inputValue(), originalAmplitude);
+    assert.equal(await undoButton.isEnabled(), false);
     const transport = page.getByRole("region", { name: "Musical transport" });
     const tempo = transport.getByRole("spinbutton", { name: "Tempo (BPM)" });
     const beat = transport.getByTestId("transport-beat");

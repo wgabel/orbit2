@@ -209,6 +209,7 @@ public partial class GraphWorkspace : IDisposable
     {
         if (graphId != Canvas.Snapshot.GraphId) return;
         Error = null;
+        session.CompleteHistoryGesture();
         CloseRackEditor();
         Navigation.OpenChild(nodeId);
     }
@@ -216,6 +217,7 @@ public partial class GraphWorkspace : IDisposable
     private void NavigateTo(Guid graphId)
     {
         Error = null;
+        session.CompleteHistoryGesture();
         CloseRackEditor();
         Navigation.NavigateTo(graphId);
     }
@@ -282,7 +284,13 @@ public partial class GraphWorkspace : IDisposable
     private void EditParameter(Guid graphId, ParameterEditRequest request)
     {
         if (graphId == Canvas.Snapshot.GraphId)
-            Execute(new SetParameterValueCommand(graphId, request.Address, request.Value));
+            Execute(new SetParameterValueCommand(graphId, request.Address, request.Value), request.GestureId);
+    }
+
+    private void CompleteParameterGesture(Guid graphId, Guid gestureId)
+    {
+        if (!switchingWorkspace && graphId == Canvas.Snapshot.GraphId)
+            session.CompleteHistoryGesture(gestureId);
     }
 
     private void DeleteSelection()
@@ -297,13 +305,13 @@ public partial class GraphWorkspace : IDisposable
             if (!Execute(new RemoveNodeCommand(selected.GraphId, id))) return;
     }
 
-    private bool Execute(IGraphCommand command)
+    private bool Execute(IGraphCommand command, Guid? historyGestureId = null)
     {
         if (switchingWorkspace) return false;
         Error = null;
         try
         {
-            var result = session.Execute(command);
+            var result = session.Execute(command, historyGestureId);
             if (result.SubscriberErrors.Count > 0)
                 Error = "The graph was committed, but a view failed to update: " + result.SubscriberErrors[0].Message;
             return true;

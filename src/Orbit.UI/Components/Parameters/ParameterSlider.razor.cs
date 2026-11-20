@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Orbit.Domain.Parameters;
 
 namespace Orbit.UI.Components.Parameters;
@@ -9,7 +10,8 @@ public partial class ParameterSlider
 {
     [Parameter, EditorRequired] public ParameterDefinition Definition { get; set; } = default!;
     [Parameter] public double Value { get; set; }
-    [Parameter] public EventCallback<double> ValueChanged { get; set; }
+    [Parameter] public EventCallback<ParameterValueEdit> ValueChanged { get; set; }
+    [Parameter] public EventCallback<Guid> GestureEnded { get; set; }
     [Parameter] public double Step { get; set; } = 1;
     [Parameter] public bool IsModulated { get; set; }
     [Parameter] public ParameterRange? ModulationRange { get; set; }
@@ -18,6 +20,8 @@ public partial class ParameterSlider
 
     private readonly string inputId = $"parameter-{Guid.NewGuid():N}";
     private double? lastValue;
+    private Guid? gestureId;
+    private bool keyboardGesture;
     private string InputId => inputId;
     private string DescriptionId => $"{inputId}-description";
     private string ErrorId => $"{inputId}-error";
@@ -37,7 +41,36 @@ public partial class ParameterSlider
         }
     }
 
-    private async Task EditAsync(ChangeEventArgs args)
+    private void BeginPointer(PointerEventArgs args)
+    {
+        if (!args.IsPrimary || args.Button != 0) return;
+        gestureId = Guid.NewGuid();
+        keyboardGesture = false;
+    }
+
+    private void BeginKeyboard(KeyboardEventArgs args)
+    {
+        if (!IsRangeKey(args.Key) || gestureId.HasValue) return;
+        gestureId = Guid.NewGuid();
+        keyboardGesture = true;
+    }
+
+    private Task EndKeyboard(KeyboardEventArgs args) => IsRangeKey(args.Key) && keyboardGesture ? EndGestureAsync() : Task.CompletedTask;
+    private Task EndPointerAsync() => keyboardGesture ? Task.CompletedTask : EndGestureAsync();
+    private static bool IsRangeKey(string key) => key is "ArrowLeft" or "ArrowRight" or "ArrowUp" or "ArrowDown" or "PageUp" or "PageDown" or "Home" or "End";
+
+    private async Task EndGestureAsync()
+    {
+        if (gestureId is not Guid id) return;
+        gestureId = null;
+        keyboardGesture = false;
+        await GestureEnded.InvokeAsync(id);
+    }
+
+    private Task EditRangeAsync(ChangeEventArgs args) => EditAsync(args, gestureId);
+    private Task EditNumberAsync(ChangeEventArgs args) => EditAsync(args, null);
+
+    private async Task EditAsync(ChangeEventArgs args, Guid? editGestureId)
     {
         Draft = args.Value?.ToString() ?? "";
         if (!double.TryParse(Draft, NumberStyles.Float, CultureInfo.InvariantCulture, out var value)
@@ -53,7 +86,7 @@ public partial class ParameterSlider
         {
             Error = null;
             lastValue = value;
-            await ValueChanged.InvokeAsync(value);
+            await ValueChanged.InvokeAsync(new ParameterValueEdit(value, editGestureId));
         }
 
         await ValidationChanged.InvokeAsync(new ParameterValidation(Definition.Key, Error));

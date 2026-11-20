@@ -1,4 +1,6 @@
 using Orbit.Application.Graphs.Snapshots;
+using Orbit.Application.Graphs.Events;
+using Orbit.Domain.Parameters;
 
 namespace Orbit.Application.Graphs.Sessions;
 
@@ -8,14 +10,46 @@ internal sealed class PatchHistory
     private const int Capacity = 100;
     private readonly List<Entry> undo = [];
     private readonly List<Entry> redo = [];
+    private PendingGesture? pending;
 
     internal sealed record Entry(GraphSnapshot Before, GraphSnapshot After, Guid[] AffectedGraphs);
-    public bool CanUndo => undo.Count != 0;
-    public bool CanRedo => redo.Count != 0;
+    private sealed record PendingGesture(Guid Id, Guid GraphId, ParameterAddress Address,
+        double InitialValue, double FinalValue, Entry Entry)
+    {
+        public bool HasNetChange => InitialValue != FinalValue;
+    }
+
+    public bool CanUndo => pending?.HasNetChange == true || undo.Count != 0;
+    public bool CanRedo => pending?.HasNetChange != true && redo.Count != 0;
+
+    public void RecordParameterGesture(Guid id, GraphSnapshot before, GraphSnapshot after, ParameterChanged change)
+    {
+        if (pending is { } previous && previous.Id == id && previous.GraphId == change.GraphId && previous.Address == change.Address)
+        {
+            pending = previous with { FinalValue = change.CurrentValue, Entry = previous.Entry with { After = after } };
+            return;
+        }
+        CompleteGesture();
+        pending = new PendingGesture(id, change.GraphId, change.Address, change.PreviousValue, change.CurrentValue,
+            new Entry(before, after, [change.GraphId]));
+    }
+
+    public void CompleteGesture(Guid? id = null)
+    {
+        if (pending is not { } gesture || (id.HasValue && gesture.Id != id.Value)) return;
+        pending = null;
+        if (gesture.HasNetChange) Append(gesture.Entry);
+    }
 
     public void Record(GraphSnapshot before, GraphSnapshot after, Guid[] affectedGraphs)
     {
-        undo.Add(new Entry(before, after, affectedGraphs));
+        CompleteGesture();
+        Append(new Entry(before, after, affectedGraphs));
+    }
+
+    private void Append(Entry entry)
+    {
+        undo.Add(entry);
         if (undo.Count > Capacity) undo.RemoveAt(0);
         redo.Clear();
     }
@@ -34,5 +68,5 @@ internal sealed class PatchHistory
         source.RemoveAt(source.Count - 1);
     }
 
-    public void Clear() { undo.Clear(); redo.Clear(); }
+    public void Clear() { pending = null; undo.Clear(); redo.Clear(); }
 }

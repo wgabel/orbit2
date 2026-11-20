@@ -13,6 +13,64 @@ namespace Orbit.Domain.Tests;
 public sealed class PatchHistoryTests
 {
     [Fact]
+    public void ContinuousParameterEditPublishesEveryRevisionButUndoesWholeGesture()
+    {
+        using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+        var node = session.Execute(new AddNodeCommand(session.GraphId, OscillatorGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        var parameter = node.Parameters.Single(p => p.Definition.Key == "frequency");
+        var address = new ParameterAddress(node.Id, parameter.Id);
+        var gesture = Guid.NewGuid();
+        var events = new List<ParameterChanged>();
+        using var subscription = session.Subscribe<ParameterChanged>(events.Add);
+        var revision = session.Snapshot.Revision;
+        foreach (var value in new[] { 450, 480, 520 })
+            session.Execute(new SetParameterValueCommand(session.GraphId, address, value), gesture);
+        session.CompleteHistoryGesture(gesture);
+        Assert.Equal(3, events.Count);
+        Assert.Equal(revision + 3, session.Snapshot.Revision);
+        double Current() => session.Snapshot.GetNode(node.Id).Parameters.Single(p => p.Id == parameter.Id).BaseValue;
+        session.Undo();
+        Assert.Equal(parameter.BaseValue, Current());
+        session.Redo();
+        Assert.Equal(520, Current());
+        session.Undo();
+        var unchanged = Guid.NewGuid();
+        session.Execute(new SetParameterValueCommand(session.GraphId, address, 600), unchanged);
+        session.Execute(new SetParameterValueCommand(session.GraphId, address, parameter.BaseValue), unchanged);
+        session.CompleteHistoryGesture(unchanged);
+        Assert.True(session.CanRedo);
+        session.Redo();
+        Assert.Equal(520, Current());
+        session.Undo();
+        session.Undo();
+        Assert.Empty(session.Snapshot.Nodes);
+    }
+
+    [Fact]
+    public void InterveningCommandsAndDifferentTargetsNeverMergeHistory()
+    {
+        using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+        var node = session.Execute(new AddNodeCommand(session.GraphId, OscillatorGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        var frequency = node.Parameters.Single(p => p.Definition.Key == "frequency");
+        var amplitude = node.Parameters.Single(p => p.Definition.Key == "amplitude");
+        var gesture = Guid.NewGuid();
+        void Set(Guid id, double value, Guid? group = null) => session.Execute(new SetParameterValueCommand(session.GraphId, new ParameterAddress(node.Id, id), value), group);
+        double Current(Guid id) => session.Snapshot.GetNode(node.Id).Parameters.Single(p => p.Id == id).BaseValue;
+        Set(frequency.Id, 500, gesture);
+        Set(amplitude.Id, 0.75, gesture);
+        Set(frequency.Id, 600, gesture);
+        session.CompleteHistoryGesture(Guid.NewGuid()); // stale release cannot end this gesture
+        Set(frequency.Id, 700, gesture);
+        session.Undo(); // implicit completion handles interrupted gestures
+        Assert.Equal(500, Current(frequency.Id));
+        Assert.Equal(0.75, Current(amplitude.Id));
+        session.Undo();
+        Assert.Equal(amplitude.BaseValue, Current(amplitude.Id));
+        session.Undo();
+        Assert.Equal(frequency.BaseValue, Current(frequency.Id));
+    }
+
+    [Fact]
     public void UndoRedoRestoresExactIdentitiesWithMonotonicRevisionAndNewEditClearsRedo()
     {
         using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());

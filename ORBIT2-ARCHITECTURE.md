@@ -1482,6 +1482,23 @@ Phase 6.10 adds `PatchLibraryService` and `IPatchLibraryStorage`, using distinct
 
 Phase 6.11 puts `PatchHistory` inside `PatchSession`, retaining up to 100 successful graph command before/after snapshots. Undo/redo reconstructs the target graph using the persistence reconstruction path (without JSON or storage), validates before replacing, advances the current revision and publishes one `GraphChangeSet` containing `GraphHistoryRestored` facts for affected graphs, including added/removed descendants. This preserves the original patch identity, subscriptions, and current audio lifetime. Failed/no-op edits do not enter history; divergent commands clear redo. History is not persisted and begins empty after startup or patch replacement. Presentation retains bounded last-known layouts for recently removed nodes/graphs; standalone layout gestures and tempo are outside graph history.
 
+Continuous parameter editing groups history separately from graph transactions. The shared parameter slider gives pointer drags and range keyboard gestures unique identities; `PatchSession.Execute` accepts an optional history gesture identity. `PatchHistory` retains the initial and latest immutable snapshots for consecutive parameter changes with the same identity, graph and parameter address, while every accepted value still commits and notifies the normal DSP, canvas and autosave subscribers. Release, cancellation, blur, navigation, undo/redo or an intervening successful edit finalizes the pending gesture. A stale completion cannot finalize a newer gesture. If the final value equals the initial value, no entry is added and redo is preserved. Numeric edits and discrete choices retain their ordinary command behavior. No UI component manages history snapshots directly.
+
+~~~mermaid
+sequenceDiagram
+    participant U as Shared slider
+    participant S as Patch session
+    participant H as History
+    participant D as DSP and autosave
+    loop Drag updates
+        U->>S: Value and gesture ID
+        S->>H: Keep first and latest snapshots
+        S->>D: Committed revision
+    end
+    U->>S: Gesture ended
+    S->>H: Finalize one entry
+~~~
+
 ~~~mermaid
 flowchart TD
     C[Graph command] --> H[Patch session history]

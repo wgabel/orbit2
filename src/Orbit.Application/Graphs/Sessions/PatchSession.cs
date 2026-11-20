@@ -51,7 +51,7 @@ public sealed class PatchSession : IPatchSession
         }
     }
 
-    public GraphCommandResult Execute(IGraphCommand command)
+    public GraphCommandResult Execute(IGraphCommand command, Guid? historyGestureId = null)
     {
         ArgumentNullException.ThrowIfNull(command);
         lock (gate)
@@ -75,7 +75,10 @@ public sealed class PatchSession : IPatchSession
 
                 var before = snapshot;
                 snapshot = GraphSnapshot.Capture(graph, nextRevision);
-                history.Record(before, snapshot, events.Select(fact => fact.GraphId).Append(targetGraph.Id).Distinct().ToArray());
+                if (historyGestureId is Guid gestureId && events.Count == 1 && events[0] is ParameterChanged parameter)
+                    history.RecordParameterGesture(gestureId, before, snapshot, parameter);
+                else
+                    history.Record(before, snapshot, events.Select(fact => fact.GraphId).Append(targetGraph.Id).Distinct().ToArray());
                 var changeSet = new GraphChangeSet(PatchId, targetGraph.Id, snapshot, Array.AsReadOnly(events.ToArray()));
                 // Commit precedes delivery. Subscribers should return quickly and
                 // schedule asynchronous projection or compilation independently.
@@ -92,6 +95,16 @@ public sealed class PatchSession : IPatchSession
     public GraphCommandResult Undo() => RestoreHistory(isUndo: true);
     public GraphCommandResult Redo() => RestoreHistory(isUndo: false);
 
+    public void CompleteHistoryGesture(Guid? gestureId = null)
+    {
+        lock (gate)
+        {
+            ObjectDisposedException.ThrowIf(disposed, this);
+            if (executing) throw new InvalidOperationException("History cannot change inside a graph notification.");
+            history.CompleteGesture(gestureId);
+        }
+    }
+
     internal void ClearHistory() { lock (gate) history.Clear(); }
 
     private GraphCommandResult RestoreHistory(bool isUndo)
@@ -100,6 +113,7 @@ public sealed class PatchSession : IPatchSession
         {
             ObjectDisposedException.ThrowIf(disposed, this);
             if (executing) throw new InvalidOperationException("History cannot change inside a graph notification.");
+            history.CompleteGesture();
             if (history.Peek(isUndo) is not { } entry) return new GraphCommandResult(null, Array.Empty<Exception>());
             executing = true;
             try

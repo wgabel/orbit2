@@ -8,7 +8,7 @@
         <label for="@InputId">@Definition.Name <span class="parameter-unit">(@UnitLabel)</span></label>
         <input id="@InputId" type="number" min="@Format(Definition.Minimum)"
                max="@Format(Definition.Maximum)" step="any"
-               value="@Draft" @oninput="EditAsync" aria-invalid="@(Error is not null ? "true" : "false")"
+               value="@Draft" @oninput="EditNumberAsync" aria-invalid="@(Error is not null ? "true" : "false")"
                aria-describedby="@($"{DescriptionId} {ErrorId}")" />
     </div>
     <ValidationMessage Message="@Error" MessageId="@ErrorId" />
@@ -24,7 +24,10 @@
             }
         </div>
         <input type="range" min="@Format(Definition.Minimum)" max="@Format(Definition.Maximum)"
-               step="@Format(Step)" value="@Format(Value)" @oninput="EditAsync"
+               step="@Format(Step)" value="@Format(Value)" @oninput="EditRangeAsync"
+               @onpointerdown="BeginPointer" @onpointerup="EndPointerAsync" @onpointercancel="EndPointerAsync"
+               @onlostpointercapture="EndPointerAsync" @onchange="EndPointerAsync" @onblur="EndGestureAsync"
+               @onkeydown="BeginKeyboard" @onkeyup="EndKeyboard"
                aria-label="@Definition.Name" aria-describedby="@DescriptionId" />
     </div>
     <div id="@DescriptionId" class="parameter-details">

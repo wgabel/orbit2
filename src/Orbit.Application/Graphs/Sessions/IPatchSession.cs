@@ -14,7 +14,9 @@ public interface IPatchSession : IDisposable
     /// <summary>The entire committed patch, including all nested graphs.</summary>
     GraphSnapshot Snapshot { get; }
 
-    GraphCommandResult Execute(IGraphCommand command);
+    /// <summary>An optional gesture identity groups consecutive edits to the same parameter in history only.</summary>
+    GraphCommandResult Execute(IGraphCommand command, Guid? historyGestureId = null);
+    void CompleteHistoryGesture(Guid? gestureId = null);
     bool CanUndo { get; }
     bool CanRedo { get; }
     GraphCommandResult Undo();
