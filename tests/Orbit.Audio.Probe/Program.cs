@@ -221,6 +221,25 @@ var delayProbes = Enum.GetValues<DelayTimingMode>().Select(mode =>
 }).ToArray();
 File.WriteAllText(Path.Combine(args[0], "delay.json"), JsonSerializer.Serialize(delayProbes));
 
+filterSession.Execute(new RemoveNodeCommand(filterRoot, delay.Id));
+var reverb = FilterAdd(ReverbProcessor.NodeType);
+var excitation = FilterAdd(NoiseGenerator.NodeType);
+FilterSet(excitation, "amplitude", 0);
+FilterSet(reverb, "mix", 1);
+FilterConnect(excitation, reverb, "audio-in", 1);
+FilterConnect(modulation, reverb, "decay-modulation-in", 12);
+FilterConnect(modulation, reverb, "damping-modulation-in", 1);
+FilterConnect(modulation, reverb, "mix-modulation-in", 1);
+FilterConnect(reverb, filterMaster, "audio-in", 1);
+var reverbProgram = FaustGraphCompiler.CreateBuiltIn().Compile(filterSession.Snapshot);
+string ReverbControl(GraphNodeSnapshot node, string key) => reverbProgram.Controls.Single(c => c.Address == Address(node, key)).Name;
+File.WriteAllText(Path.Combine(args[0], "reverb.json"), JsonSerializer.Serialize(new
+{
+    source = reverbProgram.Source, values = reverbProgram.Controls.ToDictionary(c => c.Name, c => c.InitialValue),
+    amplitude = ReverbControl(excitation, "amplitude"), decay = ReverbControl(reverb, "decay"),
+    damping = ReverbControl(reverb, "damping"), mix = ReverbControl(reverb, "mix"), modulation = ReverbControl(modulation, "amplitude")
+}));
+
 GraphNodeSnapshot TempoAdd(Guid graph, string type) =>
     tempoSession.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
 

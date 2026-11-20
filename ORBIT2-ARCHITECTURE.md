@@ -1103,6 +1103,12 @@ The emitter uses one bounded `de.fdelay` buffer, linear fractional-sample interp
 
 Transport-aware DSP requests distinguish beat phase and absolute BPM. `FaustNodeContext.TransportTempo` requests one reserved host control `orbit_tempo`, excluded from editable parameter manifests. Existing beat consumers still use a single audio-rate input. `TransportSignalSource` initializes the BPM control from its current anchor and updates active and retiring DSP nodes on tempo changes, without deriving tempo from a quantized wrapped phase or requiring a phase worklet for tempo-only graphs. Unregister controls on voice disposal. Offline waveform tests verify timing and feedback at 44.1/48 kHz; live host control tests verify current tempo and subsequent edits.
 
+### Algorithmic reverb (Phase 6.14)
+
+`ReverbProcessor` is mono with continuous decay (RT60, 0.1–12 s), damping (0–1) and wet mix (0–1) controls. `ReverbFaustEmitter` reuses the standard parameter/modulation context and delegates to `FaustSchroederReverb`. Eight parallel feedback combs with distinct 25–37 ms delay lengths and four serial Schroeder all-pass diffusers form the late reverberation. Delay lengths are fixed in seconds, converted at the actual sample rate, and bounded by compile-time allocations sized up to 192 kHz. Each comb uses feedback `10^(-3 * delaySeconds / decay)` and a one-pole damping filter whose cutoff moves logarithmically from 20 kHz toward 500 Hz. Coefficients remain bounded below unity even under audio-rate modulation. RT60 is an approximate low-frequency decay target, not an exact broadband measurement. Wet summing has attenuation for headroom, not clipping or adaptive normalization. Output range remains unknown for arbitrary input and time-varying parameters.
+
+Base edits and modulation retain the active delay state; dry/wet mix is linear (zero wet hides the tail but does not stop its computation). Stop and structural graph swaps use existing envelope/crossfade behavior and do not promise preservation of long reverb tails. This first implementation uses fixed geometry and mono routing; room size, stereo and alternative algorithms are later extensions. Offline tests use noise bursts to measure tail energy, decay, damping and dry bypass, with extreme modulation at 44.1/48 kHz.
+
 ### Sample-based synthesis and audio assets (planned Phase 8)
 
 Imported recordings (voice, instruments, field recordings) are reusable immutable assets, not graph parameters or DSP source code. A `SamplePlayer` generator reads an asset and emits an ordinary audio signal, allowing the same routing, modulation, nesting and effects as oscillator generators. Other sample-based generators reuse the asset subsystem.
@@ -1482,7 +1488,8 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented (6.11): bounded patch-wide graph command history with atomic undo/redo and fresh committed revisions, including nested boundaries and stable edge/node identities.
 - Implemented (6.12): single-band parametric EQ with continuously modulatable frequency, gain in dB and Q, sharing the state-variable filter core.
 - Implemented (6.13): mono feedback delay with free and synchronized timing, fractional delay, audio-rate modulation and live shared BPM.
-- Next: reverb and chorus; later add additional waveforms, sample-scheduled transport commands and rhythmic clock/trigger nodes.
+- Implemented (6.14): mono algorithmic reverb with audio-rate decay, damping and wet mix, bounded feedback combs and all-pass diffusion.
+- Next: chorus; later add additional waveforms, sample-scheduled transport commands and rhythmic clock/trigger nodes.
 - Deferred: deployment-version detection and safe workspace-save/reload prompt for long-lived tabs whose versioned lazy modules have been removed by a later Pages deployment.
 - Add copies/preset reuse with independent instances.
 

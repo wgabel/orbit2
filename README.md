@@ -579,6 +579,19 @@ session.Execute(new AddBoundaryPortCommand(childGraphId, PortDirection.Input,
 
 Changing an existing port's signal type, channel count or fan-in, and undo are future operations; in this version those properties are chosen when creating a port.
 
+### Reverb (Phase 6.14)
+
+Add **Reverb** to create a dense, decaying mono acoustic tail. Decay (RT60, 0.1–12 seconds, default 2.5) controls the approximate time for low-frequency reflections to decay by 60 dB. Damping (0–1, default 0.4) progressively absorbs high frequencies; wet mix (0–1, default 0.35) blends the original and reverberated audio. All three parameters support live modulation. The algorithm combines eight damped feedback delays and four all-pass diffusers with sample-rate-scaled lengths. The room geometry is fixed in this first implementation; longer decay increases sustain, not the physical size of the simulated space. Mix 0 bypasses the audible tail without discarding its state. Keep headroom for resonant accumulation; structural graph replacement may reset the tail.
+
+~~~mermaid
+flowchart TD
+    A[Audio input] --> C[Eight damped feedback delays]
+    C --> D[Four all-pass diffusers]
+    D --> M[Dry/wet mix]
+    A --> M
+    M --> O[Audio output]
+~~~
+
 ### Delay (Phase 6.13)
 
 Add **Delay** between any audio source and output. Free timing uses a modulatable delay time of 0.01–2 seconds (default 0.30). Synchronized timing uses a musical division from the shared transport BPM, up to one bar (12 seconds at 20 BPM); the free-time wire remains dormant until free mode returns. Feedback (0–0.9, default 0.35) and wet mix (0–1, default 0.35) are modulatable in either mode. Wet mix 0 preserves the dry input; 1 outputs only the delayed sound. Feedback repeats decay without an editable graph cycle. Delay time changes intentionally create pitch movement, as with a tape delay; base edits and tempo changes update the running worklet, while timing mode changes crossfade a graph replacement and may reset its echo tail.

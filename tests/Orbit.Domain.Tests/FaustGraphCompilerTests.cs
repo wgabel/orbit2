@@ -24,6 +24,27 @@ public sealed class FaustGraphCompilerTests
     private readonly FaustGraphCompiler compiler = FaustGraphCompiler.CreateBuiltIn();
 
     [Fact]
+    public void ReverbControlsAreLiveAndIndependentlyModulatable()
+    {
+        using var session = new PatchSession(BuiltInNodes.CreateRegistry());
+        var source = Add(session, OscillatorGenerator.NodeType);
+        var reverb = Add(session, ReverbProcessor.NodeType);
+        var output = Add(session, MasterOutput.NodeType);
+        Connect(session, source, reverb, reverb.Inputs.Single(p => p.Key == "audio-in").Id, 0.1);
+        foreach (var parameter in reverb.Parameters)
+            Connect(session, source, reverb, parameter.ModulationPortId!.Value, 0.1);
+        Connect(session, reverb, output, output.Inputs.Single().Id, 1);
+        var initial = compiler.Compile(session.Snapshot);
+        Assert.False(initial.RequiresTransport);
+        foreach (var parameter in reverb.Parameters)
+        {
+            Assert.NotNull(Control(initial, reverb, parameter.Definition.Key).MeterName);
+            session.Execute(new SetParameterValueCommand(session.GraphId, new ParameterAddress(reverb.Id, parameter.Id), parameter.BaseValue + 0.1));
+        }
+        Assert.Equal(initial.Source, compiler.Compile(session.Snapshot).Source);
+    }
+
+    [Fact]
     public void DelayUsesSharedTempoAndDormantFreeTimeConnection()
     {
         using var session = new PatchSession(BuiltInNodes.CreateRegistry());

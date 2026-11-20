@@ -20,6 +20,7 @@ const layered = JSON.parse(await readFile(resolve(directory, "layered.json"), "u
 const filters = JSON.parse(await readFile(resolve(directory, "filters.json"), "utf8"));
 const eq = JSON.parse(await readFile(resolve(directory, "eq.json"), "utf8"));
 const delays = JSON.parse(await readFile(resolve(directory, "delay.json"), "utf8"));
+const reverb = JSON.parse(await readFile(resolve(directory, "reverb.json"), "utf8"));
 const root = resolve("src/Orbit.Infrastructure/wwwroot/audio");
 const server = createServer(async (request, response) => {
     try {
@@ -471,6 +472,64 @@ try {
         assert.ok(result.before < 0.001, "Wet output must be silent before the delay time");
         assert.ok(Math.abs(result.first - 0.1 / Math.SQRT2) < 0.008);
         assert.ok(Math.abs(result.second / result.first - 1.5) < 0.1, "Feedback should add the first echo in phase");
+        assert.ok(result.peak < 2);
+    }
+
+    const reverbResults = await page.evaluate(async reverb => {
+        const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
+        const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
+        const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
+        try {
+            const compiled = await compiler.compile(reverb.source);
+            const results = [];
+            for (const rate of [44100, 48000]) {
+                const create = async (decay, damping, mix = 1) => {
+                    const processor = await new FaustMonoDspGenerator().createOfflineProcessor(rate, 128, { ...compiled, soundfiles: {} });
+                    const set = (name, value) => processor.setParamValue(processor.getParams().find(path => path.endsWith("/" + name)), value);
+                    for (const [name, value] of Object.entries(reverb.values)) set(name, value);
+                    set(reverb.decay, decay); set(reverb.damping, damping); set(reverb.mix, mix);
+                    processor.render([], rate);
+                    return { processor, set };
+                };
+                const burst = async (decay, damping, mix = 1) => {
+                    const { processor, set } = await create(decay, damping, mix);
+                    set(reverb.amplitude, 0.2);
+                    const [excitation] = processor.render([], rate);
+                    set(reverb.amplitude, 0);
+                    const [tail] = processor.render([], rate * 4);
+                    const measure = (audio, from, to) => {
+                        let power = 0, difference = 0;
+                        const start = Math.floor(from * rate), end = Math.floor(to * rate);
+                        for (let i = start; i < end; i++) {
+                            if (!Number.isFinite(audio[i])) throw new Error("Non-finite reverb response");
+                            power += audio[i] ** 2;
+                            difference += (audio[i] - audio[i - 1]) ** 2;
+                        }
+                        return { rms: Math.sqrt(power / (end - start)), roughness: difference / Math.max(power, 1e-30) };
+                    };
+                    return { input: measure(excitation, 0.5, 0.9), early: measure(tail, 0.1, 0.3), late: measure(tail, 0.8, 1.2), end: measure(tail, 3, 3.8) };
+                };
+                const short = await burst(0.4, 0.2), long = await burst(3, 0.2), dark = await burst(3, 1), dry = await burst(3, 0.2, 0);
+                const { processor, set } = await create(12, 0, 1);
+                set(reverb.amplitude, 0.2); set(reverb.modulation, 1);
+                const [stress] = processor.render([], rate * 3);
+                let peak = 0;
+                for (const sample of stress) {
+                    if (!Number.isFinite(sample)) throw new Error("Unstable modulated reverb");
+                    peak = Math.max(peak, Math.abs(sample));
+                }
+                results.push({ rate, short, long, dark, dry, peak });
+            }
+            return results;
+        } finally { compiler.dispose(); }
+    }, reverb);
+    for (const result of reverbResults) {
+        console.log("Reverb response", result);
+        assert.ok(result.long.early.rms > 0.0005, "Wet signal must retain a tail after the source stops");
+        assert.ok(result.long.late.rms > result.short.late.rms * 5, "Long decay must sustain more tail energy");
+        assert.ok(result.long.end.rms < result.long.early.rms * 0.1, "Tail should decay");
+        assert.ok(result.dark.early.roughness < result.long.early.roughness * 0.8, "Damping must reduce high-frequency energy");
+        assert.ok(result.dry.early.rms < 1e-5, "Zero wet mix must remove the reverb tail");
         assert.ok(result.peak < 2);
     }
 
