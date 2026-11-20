@@ -332,7 +332,11 @@ try {
     assert.equal(await division.inputValue(), "4");
     // Named saves are independent of recovery and imported/exported documents.
     await page.getByRole("button", { name: "Patches", exact: true }).click();
-    const manager = page.getByRole("region", { name: "Patch manager" });
+    const manager = page.locator(".patch-manager");
+    await manager.waitFor().catch(async error => {
+        console.error("Patch menu header:", await page.locator(".workspace-header").innerHTML());
+        throw error;
+    });
     await manager.getByLabel("Patch name").fill("Drone study");
     await manager.getByRole("button", { name: "Save as" }).click();
     await manager.getByText("Saved Drone study.", { exact: true }).waitFor();

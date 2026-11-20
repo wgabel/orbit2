@@ -1,10 +1,11 @@
 @namespace Orbit.UI.Components.Canvas
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
 
 <button type="button" class="secondary" aria-expanded="@IsOpen" @onclick="ToggleAsync">Patches</button>
 @if (IsOpen)
 {
-    <section class="patch-manager" aria-label="Patch manager">
+    <section class="patch-manager" role="region" aria-label="Patch manager">
         <div class="workspace-toolbar">
             <strong>Saved patches</strong>
             <button type="button" class="secondary" @onclick="ToggleAsync">Close</button>
