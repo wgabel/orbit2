@@ -86,23 +86,7 @@ The next stage extends that boilerplate into a continuously running, graph-based
 
 The term **modulator** does not need to be a separate mandatory inheritance hierarchy. A sine generator at 440 Hz generates audible sound; the same generator at 0.5 Hz can modulate another signal. A filter can process an audible signal or a modulation signal. A low-pass-filtered noise source can create smoothly varying random modulation without requiring an entirely separate random-modulation architecture.
 
-~~~mermaid
-classDiagram
-    class ISignalNode {
-        Id
-        Parameters
-        Inputs
-        Outputs
-    }
-    ISignalNode <|-- IGenerator
-    ISignalNode <|-- IProcessor
-    ISignalNode <|-- ICompositeNode
-    IGenerator <|-- SineGenerator
-    IGenerator <|-- NoiseGenerator
-    IProcessor <|-- Filter
-    IProcessor <|-- Reverb
-    IProcessor <|-- Mixer
-~~~
+![node contracts](docs/diagrams/node-contracts.svg)
 
 Examples of future nodes:
 
@@ -173,15 +157,7 @@ Generators and processors are registered by stable node type keys, e.g. "generat
 
 ### Graph ownership and fan-out
 
-~~~mermaid
-flowchart TD
-    G[Sine generator] --> F[Low-pass filter]
-    G --> D[Delay]
-    F --> R[Reverb]
-    D --> M[Mixer]
-    R --> M
-    M --> O[Output]
-~~~
+![signal fan out](docs/diagrams/signal-fan-out.svg)
 
 A generator output can have several outgoing edges. The generator itself does not own a NextNode pointer or a list of concrete downstream effects. SignalGraph owns connections and determines dependencies.
 
@@ -271,12 +247,7 @@ For example:
 - The connection has a modulation depth of 100 Hz.
 - B's frequency varies between 340 and 540 Hz, maintaining continuous phase.
 
-~~~mermaid
-flowchart LR
-    A["Sine A: 0.5 Hz"] --> P["Frequency: base 440 Hz"]
-    P --> B["Sine B: 340–540 Hz"]
-    B --> O[Audio output]
-~~~
+![frequency modulation](docs/diagrams/frequency-modulation.svg)
 
 For a musical vibrato, a modulation amount of +/-20 cents is more appropriate than +/-100 Hz. The exact mapping depends on ParameterScale, and parameter limits may apply after scaling.
 
@@ -501,14 +472,7 @@ This is the architectural feature that replaces separate hardcoded drone and pat
 
 A root patch is a SignalGraph. A drone is a composite node containing another SignalGraph. The subgraph may itself contain other composites, subject to reasonable nesting and recursion validation.
 
-~~~mermaid
-flowchart TD
-    Root[Root patch graph] --> D1[Drone A graph]
-    Root --> D2[Drone B graph]
-    Root --> E[Master effect graph]
-    D1 --> M[Modulation subgraph]
-    D1 --> R[Effects subgraph]
-~~~
+![graph hierarchy](docs/diagrams/graph-hierarchy.svg)
 
 Externally, each child appears as an ordinary node with named input and output ports. Internally, opening it reveals generators, modulators, processors, mixers, connections and boundary racks.
 
@@ -536,29 +500,11 @@ Actual mutation methods should protect graph invariants. The above represents an
 
 A main patch might contain:
 
-~~~mermaid
-flowchart LR
-    L[LFO] --> A[Drone A]
-    L --> B[Drone B]
-    A --> M[Master mixer]
-    B --> M
-    M --> O[Output]
-~~~
+![main patch](docs/diagrams/main-patch.svg)
 
 Opening Drone A reveals its own graph:
 
-~~~mermaid
-flowchart TD
-    S[Sine] --> M[Mixer]
-    T[Triangle] --> M
-    N[Noise] --> M
-    L[Internal LFO] --> F[Filter cutoff]
-    M --> LP[Low-pass]
-    F --> LP
-    LP --> R[Reverb]
-    R --> G[Gain]
-    G --> O[Output rack]
-~~~
+![drone subcanvas](docs/diagrams/drone-subcanvas.svg)
 
 The same canvas UI, interaction rules, connection rendering and node registry should be used for both root and nested graphs.
 
@@ -595,18 +541,7 @@ Output Rack is its mirror image: internal input sockets correspond to public out
 
 ### Parent graph and child graph
 
-~~~mermaid
-flowchart TD
-    L["Parent LFO"] --> P["Drone: Pitch input"]
-    P --> IR["Child Input Rack: Pitch output"]
-    IR --> A["Oscillator A pitch modulation"]
-    IR --> B["Oscillator B pitch modulation"]
-    A --> M[Internal mixer]
-    B --> M
-    M --> OR["Child Output Rack: Audio input"]
-    OR --> O["Drone: Audio output"]
-    O --> OUT[Parent mixer/output]
-~~~
+![input output racks](docs/diagrams/input-output-racks.svg)
 
 | Name | Parent composite socket | Inside corresponding rack |
 |---|---|---|
@@ -754,20 +689,7 @@ public record GraphChangeSet(
 
 ### Example: connecting two nodes
 
-~~~mermaid
-sequenceDiagram
-    participant UI as Canvas
-    participant App as Command service
-    participant Graph as SignalGraph
-    participant Bus as Event dispatcher
-    participant DSP as Audio graph service
-    UI->>App: ConnectNodes command
-    App->>Graph: Validate and add connection
-    Graph-->>App: Committed change set
-    App->>Bus: Publish connection event
-    Bus-->>UI: Refresh graph view
-    Bus-->>DSP: Request topology update
-~~~
+![connection events](docs/diagrams/connection-events.svg)
 
 ### Example: removing an exposed input port
 
@@ -781,18 +703,7 @@ sequenceDiagram
 8. Update both canvas projections and schedule one DSP graph update.
 9. Record the entire edit as one undoable command.
 
-~~~mermaid
-flowchart TD
-    A[Remove port command] --> V[Validate parent and child]
-    V --> P[Remove parent edges]
-    V --> I[Remove child edges]
-    P --> R[Remove shared port]
-    I --> R
-    R --> C[Commit revision]
-    C --> E[Publish change set]
-    E --> U[Update views]
-    E --> D[Schedule DSP update]
-~~~
+![remove exposed port](docs/diagrams/remove-exposed-port.svg)
 
 ### Subscribers
 
@@ -873,16 +784,7 @@ Preferred long-term direction: compile a flattened, connected patch (or a carefu
 
 ### Graph compilation pipeline
 
-~~~mermaid
-flowchart TD
-    P[Root SignalGraph] --> V[Validate graphs]
-    V --> F[Flatten composite boundaries]
-    F --> O[Order dependencies]
-    O --> B[Build Faust program]
-    B --> C[Compile to WASM]
-    C --> E[AudioWorklet execution]
-    E --> A[Audio output]
-~~~
+![graph compiler](docs/diagrams/graph-compiler.svg)
 
 GraphCompiler resolves Input/Output Rack mappings and gives each flattened instance a unique DSP identity. The graph dependency order includes audio dependencies AND parameter modulation dependencies. A topological sort suffices for acyclic graphs. Any explicit feedback mechanism requires additional state/scheduling and compiler support.
 
@@ -1027,15 +929,7 @@ The exact folders are illustrative and should be adjusted to existing solution n
 
 ### Dependency direction
 
-~~~mermaid
-flowchart TD
-    UI[Orbit.UI] --> APP[Orbit.Application]
-    APP --> DOM[Orbit.Domain]
-    INF[Orbit.Infrastructure] --> APP
-    INF --> DOM
-    INF --> DSP[Orbit.Audio / Faust assets]
-    UI --> INF
-~~~
+![project dependencies](docs/diagrams/project-dependencies.svg)
 
 The UI-to-infrastructure dependency is restricted to composition/setup, where dependencies are injected (e.g. Program.cs). Presentation components consume application contracts. Domain must not reference Blazor, infrastructure or Faust-specific runtime objects.
 
@@ -1043,17 +937,7 @@ The UI-to-infrastructure dependency is restricted to composition/setup, where de
 
 Program.cs in the Blazor UI is the composition root. It registers the application services, graph registry, event dispatcher, compiler and browser audio engine implementations through dependency injection. The canvas renders the graph model through a view state/projection. User input invokes commands on the application services, not direct modifications of DSP state by the UI.
 
-~~~mermaid
-flowchart TD
-    P[Program.cs / DI] --> U[Blazor canvas]
-    U --> C[Application commands]
-    C --> G[Domain graph]
-    G --> E[Committed events]
-    E --> S[Audio graph service]
-    S --> B[Browser audio bridge]
-    B --> F[Faust AudioWorklet]
-    F --> O[Browser output]
-~~~
+![application flow](docs/diagrams/application-flow.svg)
 
 The existing bridge manages browser restrictions such as starting/resuming AudioContext after a user gesture. Faust is the processing engine, not the author of the application model. JavaScript remains the infrastructure boundary, not a second independently managed graph database.
 
@@ -1083,19 +967,7 @@ The external LFO can affect Drone A pitch with a depth of +/-20 cents and Drone 
 - Gain processor.
 - Output Rack: Audio (stereo, with channel adaptation as required).
 
-~~~mermaid
-flowchart TD
-    IR["Input rack: Pitch"] --> A[Sine 110 Hz]
-    IR --> B[Triangle 220 Hz]
-    A --> M[Mixer]
-    B --> M
-    N[Noise] --> M
-    M --> F[Low-pass]
-    L["Internal LFO"] --> F
-    F --> R[Reverb]
-    R --> G[Gain]
-    G --> OR[Output rack]
-~~~
+![worked drone patch](docs/diagrams/worked-drone-patch.svg)
 
 Other exposed inputs connect to the matching cutoff, reverb mix and gain parameter sockets. The pitch input maps to cents for both pitched generators so their intervals remain intact.
 
