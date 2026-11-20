@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/Orbit.Application/Orbit.Application.csproj" />
+  <Project Path="src/Orbit.UI/Orbit.UI.csproj" />
+</Solution>
