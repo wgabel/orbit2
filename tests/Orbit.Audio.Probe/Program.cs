@@ -151,6 +151,35 @@ File.WriteAllText(Path.Combine(args[0], "layered.json"), JsonSerializer.Serializ
     values = layeredProgram.Controls.ToDictionary(control => control.Name, control => control.InitialValue)
 }));
 
+using var filterSession = new PatchSession(BuiltInNodes.CreateRegistry());
+var filterRoot = filterSession.GraphId;
+var carrier = FilterAdd(OscillatorGenerator.NodeType);
+var modulation = FilterAdd(OscillatorGenerator.NodeType);
+var filter = FilterAdd(FilterProcessor.NodeType);
+var filterMaster = FilterAdd(MasterOutput.NodeType);
+ParameterAddress Address(GraphNodeSnapshot node, string key) => new(node.Id, node.Parameters.Single(p => p.Definition.Key == key).Id);
+void FilterSet(GraphNodeSnapshot node, string key, double value) => filterSession.Execute(new SetParameterValueCommand(filterRoot, Address(node, key), value));
+void FilterConnect(GraphNodeSnapshot source, GraphNodeSnapshot target, string key, double amount) => filterSession.Execute(new ConnectNodesCommand(filterRoot,
+    new PortAddress(source.Id, source.Outputs.Single().Id), new PortAddress(target.Id, target.Inputs.Single(p => p.Key == key).Id), amount));
+GraphNodeSnapshot FilterAdd(string type) => filterSession.Execute(new AddNodeCommand(filterRoot, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+FilterSet(carrier, "amplitude", 0.1);
+FilterSet(modulation, "amplitude", 0);
+FilterSet(modulation, "frequency", 200);
+FilterConnect(carrier, filter, "audio-in", 1);
+FilterConnect(modulation, filter, "cutoff-modulation-in", 19000);
+FilterConnect(modulation, filter, "resonance-modulation-in", 8);
+FilterConnect(filter, filterMaster, "audio-in", 1);
+var filterProbes = Enum.GetValues<FilterMode>().Select(mode =>
+{
+    FilterSet(filter, "mode", (int)mode);
+    var compiled = FaustGraphCompiler.CreateBuiltIn().Compile(filterSession.Snapshot);
+    string Name(GraphNodeSnapshot node, string key) => compiled.Controls.Single(c => c.Address == Address(node, key)).Name;
+    return new { mode = mode.ToString(), source = compiled.Source,
+        values = compiled.Controls.ToDictionary(c => c.Name, c => c.InitialValue),
+        frequency = Name(carrier, "frequency"), resonance = Name(filter, "resonance"), modulation = Name(modulation, "amplitude") };
+}).ToArray();
+File.WriteAllText(Path.Combine(args[0], "filters.json"), JsonSerializer.Serialize(filterProbes));
+
 GraphNodeSnapshot TempoAdd(Guid graph, string type) =>
     tempoSession.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
 

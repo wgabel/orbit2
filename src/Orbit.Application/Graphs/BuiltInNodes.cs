@@ -18,6 +18,7 @@ public static class BuiltInNodes
         registry.Register(NoiseGenerator.NodeType, id => new NoiseGenerator(id), "Noise");
         registry.Register(GainProcessor.NodeType, id => new GainProcessor(id), "Gain");
         registry.Register(MixerProcessor.NodeType, id => new MixerProcessor(id), "Mixer");
+        registry.Register(FilterProcessor.NodeType, id => new FilterProcessor(id), "Filter");
         registry.Register(MasterOutput.NodeType, id => new MasterOutput(id), "Master output");
         return registry;
     }

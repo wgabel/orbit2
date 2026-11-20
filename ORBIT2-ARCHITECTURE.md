@@ -1076,6 +1076,18 @@ Parameter controls use stable IDs and definition defaults in the source; edited 
 
 The graph compiler produces stable parameter addresses and metadata so the browser audio engine can update base controls. Validate names/escaping when generating Faust source; do not concatenate unchecked user labels into executable code. Cache compiled factories by a structural signature where appropriate.
 
+### Resonant filter implementation (Phase 6.7)
+
+`FilterProcessor` is a mono processor with a structural mode choice and two continuously modulatable parameters, cutoff in Hz and resonance Q. `FilterFaustEmitter` selects a response from one topology-preserving state-variable filter. `FaustStateVariableFilter` calculates trapezoidal integrator updates with audio-rate coefficients derived from cutoff and Q; two delayed feedback states remain internal to DSP, not editable graph cycles. The cutoff is limited to 0.45 times the actual sample rate and Q is constrained to 0.5–8. Mode changes preserve model identities and crossfade replacement DSP; base cutoff/Q changes preserve runtime state. Output bounds are deliberately unknown given resonance and time variation.
+
+~~~mermaid
+flowchart TD
+    A[Audio input] --> F[Two-state filter]
+    C[Cutoff and Q signals] --> F
+    F --> S[Selected response]
+    S --> O[Audio output]
+~~~
+
 ### Updating without clicks
 
 | Change | Runtime operation |
@@ -1422,7 +1434,8 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented: unified free/synchronized oscillator timing modes, conditional rate controls, dormant wires and active DSP lowering.
 - Implemented: separate white/pink/brown noise generator with modulatable amplitude and structural color selection.
 - Implemented: independent layered drone preset, generic composite preset catalog registration and mono weighted mixer.
-- Next: audio effects; later add additional waveforms, sample-scheduled transport commands and rhythmic clock/trigger nodes.
+- Implemented: unified resonant filter processor (low-pass, high-pass, band-pass, notch), with audio-rate cutoff and Q modulation.
+- Next: EQ, delay, reverb and chorus; later add additional waveforms, sample-scheduled transport commands and rhythmic clock/trigger nodes.
 - Persist root/nested graphs, rack definitions and separate canvas layout.
 - Add copies/preset reuse with independent instances.
 - Add undo/redo and debounced autosave.

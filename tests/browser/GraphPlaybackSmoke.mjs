@@ -17,6 +17,7 @@ const tempoControls = JSON.parse(await readFile(resolve(directory, "tempo-contro
 const waveforms = JSON.parse(await readFile(resolve(directory, "waveforms.json"), "utf8"));
 const noises = JSON.parse(await readFile(resolve(directory, "noise.json"), "utf8"));
 const layered = JSON.parse(await readFile(resolve(directory, "layered.json"), "utf8"));
+const filters = JSON.parse(await readFile(resolve(directory, "filters.json"), "utf8"));
 const root = resolve("src/Orbit.Infrastructure/wwwroot/audio");
 const server = createServer(async (request, response) => {
     try {
@@ -290,6 +291,53 @@ try {
         console.log("Layered drone", result);
         assert.ok(result.peak <= 0.425 && result.peak > 0.1);
         assert.ok(result.tones.every(tone => tone > 0.06), "All three pitched voices must remain audible");
+    }
+
+    const filterResults = await page.evaluate(async filters => {
+        const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
+        const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
+        const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
+        const results = [];
+        try {
+            for (const filter of filters) {
+                const compiled = await compiler.compile(filter.source);
+                for (const rate of [44100, 48000]) {
+                    const processor = await new FaustMonoDspGenerator().createOfflineProcessor(rate, 128, { ...compiled, soundfiles: {} });
+                    const set = (name, value) => processor.setParamValue(processor.getParams().find(path => path.endsWith("/" + name)), value);
+                    for (const [name, value] of Object.entries(filter.values)) set(name, value);
+                    const response = frequency => {
+                        set(filter.frequency, frequency);
+                        const [audio] = processor.render([], rate);
+                        let power = 0;
+                        for (let i = rate / 2; i < audio.length; i++) {
+                            if (!Number.isFinite(audio[i])) throw new Error("Non-finite filter output");
+                            power += audio[i] ** 2;
+                        }
+                        return Math.sqrt(power / (rate / 2)) / (0.1 / Math.SQRT2);
+                    };
+                    const low = response(100), center = response(1000), high = response(8000);
+                    set(filter.resonance, 4);
+                    const resonant = response(1000);
+                    set(filter.modulation, 1);
+                    const [stress] = processor.render([], rate * 2);
+                    let stressPeak = 0;
+                    for (const sample of stress) {
+                        if (!Number.isFinite(sample)) throw new Error("Unstable audio-rate modulated filter");
+                        stressPeak = Math.max(stressPeak, Math.abs(sample));
+                    }
+                    results.push({ mode: filter.mode, rate, low, center, high, resonant, stressPeak });
+                }
+            }
+            return results;
+        } finally { compiler.dispose(); }
+    }, filters);
+    for (const r of filterResults) {
+        console.log("Filter response", r);
+        assert.ok(r.stressPeak < 5, "Extreme modulation must remain finite and bounded in the probe");
+        if (r.mode === "LowPass") assert.ok(r.low > 0.95 && r.high < 0.04 && r.resonant > 3.8);
+        if (r.mode === "HighPass") assert.ok(r.low < 0.04 && r.high > 0.95 && r.resonant > 3.8);
+        if (r.mode === "BandPass") assert.ok(r.low < 0.15 && r.high < 0.15 && r.center > 0.65 && r.resonant > 3.8);
+        if (r.mode === "Notch") assert.ok(r.low > 0.95 && r.high > 0.95 && r.center < 0.03);
     }
 
     // All shapes now use the transport in synchronized mode. Supply the same

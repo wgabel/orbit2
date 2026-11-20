@@ -555,6 +555,21 @@ session.Execute(new AddBoundaryPortCommand(childGraphId, PortDirection.Input,
 
 Changing an existing port's signal type, channel count or fan-in, and undo are future operations; in this version those properties are chosen when creating a port.
 
+### Resonant filter processor (Phase 6.7)
+
+Add **Filter** between a generator or mixer and the master output. Choose Low-pass, High-pass, Band-pass or Notch. Cutoff (20–20,000 Hz, default 1,000 Hz) and resonance Q (0.5–8, default 0.707) have independent modulation sockets. At Q 0.707, low-pass/high-pass are approximately Butterworth responses; higher Q emphasizes the cutoff region. Band-pass and notch use cutoff as their center frequency.
+
+~~~mermaid
+flowchart TD
+    I[Audio input] --> F[State-variable filter]
+    C[Effective cutoff] --> F
+    Q[Effective resonance Q] --> F
+    F --> M[Selected response]
+    M --> O[Audio output]
+~~~
+
+`FilterFaustEmitter` uses a topology-preserving state-variable filter with two trapezoidal integrator states. The coefficients follow the effective parameters at sample rate; cutoff is additionally limited to 45% of the actual sample rate to avoid the Nyquist singularity. Mode selection is structural and crossfades; live cutoff and Q edits preserve the existing state. The raw filter response is not clipped or normalized, since resonance can amplify and modulation can add energy. Use a gain stage for headroom. The range estimator intentionally returns unknown for filter output rather than inventing a fixed bound.
+
 ## Design system
 
 All static UI colors, typography, spacing, borders, control dimensions and animation durations are defined in JSON in `src/Orbit.UI/DesignSystem/`. Presentation components consume CSS custom properties rather than hardcode visual values.

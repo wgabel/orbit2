@@ -24,6 +24,38 @@ public sealed class FaustGraphCompilerTests
     private readonly FaustGraphCompiler compiler = FaustGraphCompiler.CreateBuiltIn();
 
     [Fact]
+    public void FilterModesPreserveRoutingAndContinuousControls()
+    {
+        using var session = new PatchSession(BuiltInNodes.CreateRegistry());
+        var oscillator = Add(session, OscillatorGenerator.NodeType);
+        var filter = Add(session, FilterProcessor.NodeType);
+        var master = Add(session, MasterOutput.NodeType);
+        Connect(session, oscillator, filter, filter.Inputs.Single(p => p.Key == "audio-in").Id, 0.1);
+        var cutoff = filter.Parameters.Single(p => p.Definition.Key == "cutoff");
+        var resonance = filter.Parameters.Single(p => p.Definition.Key == "resonance");
+        var mode = filter.Parameters.Single(p => p.Definition.Key == "mode");
+        Connect(session, oscillator, filter, cutoff.ModulationPortId!.Value, 100);
+        Connect(session, oscillator, filter, resonance.ModulationPortId!.Value, 0.2);
+        Connect(session, filter, master, master.Inputs.Single().Id, 1);
+        var initial = compiler.Compile(session.Snapshot);
+        Assert.NotNull(Control(initial, filter, "cutoff").MeterName);
+        Assert.NotNull(Control(initial, filter, "resonance").MeterName);
+        Assert.Null(mode.ModulationPortId);
+        session.Execute(new SetParameterValueCommand(session.GraphId, new ParameterAddress(filter.Id, cutoff.Id), 800));
+        Assert.Equal(initial.Source, compiler.Compile(session.Snapshot).Source);
+        var edges = session.Snapshot.Connections.ToArray();
+        var sources = new HashSet<string>();
+        foreach (var choice in Enum.GetValues<FilterMode>())
+        {
+            session.Execute(new SetParameterValueCommand(session.GraphId, new ParameterAddress(filter.Id, mode.Id), (int)choice));
+            var program = compiler.Compile(session.Snapshot);
+            Assert.True(sources.Add(program.Source));
+            Assert.Equal(Control(initial, filter, "cutoff").Name, Control(program, filter, "cutoff").Name);
+            Assert.Equal(edges, session.Snapshot.Connections.ToArray());
+        }
+    }
+
+    [Fact]
     public void NoiseColorRecompilesButAmplitudeAndConnectionsStayStable()
     {
         using var session = new PatchSession(BuiltInNodes.CreateRegistry());
