@@ -33,9 +33,10 @@ public sealed class CanvasNavigationService : IDisposable
             foreach (var layout in layouts.Where(layout => session.Snapshot.FindGraph(layout.GraphId) is not null))
                 canvases.Add(layout.GraphId, new CanvasStateService(session, layout.GraphId, placement, layout));
         Activate(session.GraphId);
-        if (activeGraphId is Guid target && target != session.GraphId &&
-            TryFindPath(session.Snapshot, target, out var children))
+        if (activeGraphId is Guid target && target != session.GraphId)
         {
+            if (!TryFindPath(session.Snapshot, target, out var children))
+                throw new InvalidOperationException($"Saved active canvas {target} does not exist in patch {session.GraphId}.");
             path.AddRange(children);
             Activate(target);
         }

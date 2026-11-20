@@ -283,6 +283,22 @@ try {
     const savedFrequencyId = await childFrequency.getAttribute("id");
     await page.getByRole("button", { name: "Zoom out" }).click();
     const savedTransform = await page.locator(".canvas-world").getAttribute("style");
+    const readSavedWorkspace = async () => page.evaluate(async () => {
+        const database = await new Promise((resolve, reject) => {
+            const request = indexedDB.open("orbit2-patches", 1);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+        try {
+            const saved = await new Promise((resolve, reject) => {
+                const request = database.transaction("workspace").objectStore("workspace").get("current");
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+            const document = JSON.parse(saved);
+            return { active: document.activeGraphId, root: document.rootGraph.id, childGraphs: document.rootGraph.nodes.filter(n => n.composite).map(n => n.composite.graph.id) };
+        } finally { database.close(); }
+    });
     await page.waitForFunction(async expectedTransform => {
         const database = await new Promise((resolve, reject) => {
             const request = indexedDB.open("orbit2-patches", 1);
@@ -303,9 +319,15 @@ try {
                 layout && [layout.panX, layout.panY, layout.zoom].every((value, index) => value === values[index]);
         } finally { database.close(); }
     }, savedTransform);
+    const savedWorkspace = await readSavedWorkspace();
+    console.log("Saved navigation", savedWorkspace);
+    assert.ok(savedWorkspace.childGraphs.includes(savedWorkspace.active));
     await page.reload();
     await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
     assert.equal(await page.getByRole("alert").count(), 0, await page.getByRole("alert").allTextContents());
+    console.log("Restored navigation", await breadcrumbs.innerText(), await readSavedWorkspace(),
+        await page.locator(".graph-workspace").getAttribute("data-active-graph"));
+    assert.equal(await page.locator(".graph-workspace").getAttribute("data-active-graph"), savedWorkspace.active);
     await breadcrumbs.getByText("Drone", { exact: true }).waitFor();
     const restoredFrequency = page.locator(`#${savedFrequencyId}`);
     await restoredFrequency.waitFor();
