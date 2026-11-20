@@ -97,15 +97,24 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
             !ReferenceEquals(current, playback) || playback.RequestedRevision != revision ||
             playback.Result.AppliedRevision != revision) return null;
         var addresses = controls.Where(control => control.MeterName is not null)
-            .ToDictionary(control => control.MeterName!, control => control.Address, StringComparer.Ordinal);
-        var values = new Dictionary<ParameterAddress, double>();
+            .ToDictionary(control => control.MeterName!, StringComparer.Ordinal);
+        var values = new Dictionary<Guid, Dictionary<ParameterAddress, double>>();
         foreach (var (path, value) in outputs)
         {
             var name = path[(path.LastIndexOf('/') + 1)..];
-            if (double.IsFinite(value) && addresses.TryGetValue(name, out var address))
-                values[address] = value;
+            if (double.IsFinite(value) && addresses.TryGetValue(name, out var control))
+            {
+                if (!values.TryGetValue(control.GraphId, out var local))
+                    values.Add(control.GraphId, local = new Dictionary<ParameterAddress, double>());
+                local[control.Address] = value;
+            }
         }
-        return values.Count == 0 ? null : new(graphId, revision, values);
+        return values.Count == 0 ? null : new(graphId, revision,
+            values.Remove(graphId, out var rootValues) ? rootValues : new Dictionary<ParameterAddress, double>())
+        {
+            ChildValues = values.ToDictionary(pair => pair.Key,
+                pair => (IReadOnlyDictionary<ParameterAddress, double>)pair.Value)
+        };
     }
 
     private static PlaybackRequest CreateRequest(FaustGraphProgram program, IReadOnlyDictionary<string, double>? values = null) =>
@@ -115,10 +124,10 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
 
     private static Dictionary<string, double> GetControlValues(GraphSnapshot graph, FaustGraphProgram program)
     {
-        var nodes = graph.Nodes.ToDictionary(node => node.Id);
         return program.Controls.ToDictionary(control => control.Name, control =>
         {
-            var parameter = nodes[control.Address.NodeId].Parameters.Single(p => p.Id == control.Address.ParameterId);
+            var parameter = graph.GetGraph(control.GraphId).GetNode(control.Address.NodeId)
+                .Parameters.Single(p => p.Id == control.Address.ParameterId);
             if (!parameter.Definition.IsValidBaseValue(parameter.BaseValue))
                 throw new InvalidOperationException("Invalid base parameter value.");
             return parameter.BaseValue;

@@ -4,21 +4,23 @@ using Orbit.Domain.Ports;
 
 namespace Orbit.Audio.Compilation;
 
-/// <summary>Compiles an immutable flat graph into one mono Faust program.
+/// <summary>Compiles an immutable root patch (including child graphs) into one mono Faust program.
 /// It never loads a runtime or processes samples on the application thread.</summary>
 public sealed class FaustGraphCompiler
 {
     private readonly IReadOnlyDictionary<string, IFaustNodeEmitter> emitters;
 
     public FaustGraphCompiler(IEnumerable<IFaustNodeEmitter> emitters) =>
-        this.emitters = emitters.ToDictionary(emitter => emitter.TypeKey, StringComparer.Ordinal);
+        this.emitters = emitters.Append(new BoundaryFaustEmitter())
+            .ToDictionary(emitter => emitter.TypeKey, StringComparer.Ordinal);
 
     public static FaustGraphCompiler CreateBuiltIn() =>
         new(BuiltInFaustEmitters.Create());
 
     public FaustGraphProgram Compile(GraphSnapshot graph)
     {
-        ArgumentNullException.ThrowIfNull(graph);
+        var flattened = GraphFlattener.Flatten(graph);
+        graph = flattened.Graph;
         var outputs = graph.Nodes.Where(node => node.TypeKey == MasterOutput.NodeType).ToArray();
         if (outputs.Length != 1)
             throw new FaustCompilationException("A patch must have exactly one master output.");
@@ -53,6 +55,14 @@ public sealed class FaustGraphCompiler
         // Canonical order and invariant literals make source stable across base-only edits.
         var source = "import(\"stdfaust.lib\");\ndeclare name \"OrbitGraph\";\n"
             + string.Join("\n", definitions) + "\n";
-        return new FaustGraphProgram(graph.Id, graph.Revision, source, controls.AsReadOnly());
+        // Faust uses qualified backend identities; the manifest points back to
+        // the original graph and parameter, not to temporary routing nodes.
+        var manifest = controls.Select(control =>
+        {
+            var origin = flattened.Origins[control.Address.NodeId];
+            return control with { GraphId = origin.GraphId,
+                Address = control.Address with { NodeId = origin.NodeId } };
+        }).ToArray();
+        return new FaustGraphProgram(graph.Id, graph.Revision, source, Array.AsReadOnly(manifest));
     }
 }

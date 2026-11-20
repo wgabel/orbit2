@@ -8,4 +8,6 @@ namespace Orbit.Application.Services;
 public interface IGraphModulationRangeEstimator
 {
     IReadOnlyDictionary<ParameterAddress, ParameterRange?> Estimate(GraphSnapshot graph);
+    /// <summary>Evaluate a child canvas in the context of its complete root patch.</summary>
+    IReadOnlyDictionary<ParameterAddress, ParameterRange?> Estimate(GraphSnapshot root, Guid graphId);
 }

@@ -11,10 +11,15 @@ namespace Orbit.Audio.Analysis;
 public sealed class GraphModulationRangeEstimator(IEnumerable<IFaustNodeEmitter> emitters) : IGraphModulationRangeEstimator
 {
     private readonly IReadOnlyDictionary<string, IFaustNodeEmitter> rules =
-        emitters.ToDictionary(emitter => emitter.TypeKey, StringComparer.Ordinal);
+        emitters.Append(new BoundaryFaustEmitter()).ToDictionary(emitter => emitter.TypeKey, StringComparer.Ordinal);
 
-    public IReadOnlyDictionary<ParameterAddress, ParameterRange?> Estimate(GraphSnapshot graph)
+    public IReadOnlyDictionary<ParameterAddress, ParameterRange?> Estimate(GraphSnapshot graph) => Estimate(graph, graph.Id);
+
+    public IReadOnlyDictionary<ParameterAddress, ParameterRange?> Estimate(GraphSnapshot root, Guid graphId)
     {
+        root.GetGraph(graphId);
+        var flattened = GraphFlattener.Flatten(root);
+        var graph = flattened.Graph;
         var nodes = graph.Nodes.ToDictionary(node => node.Id);
         var incoming = graph.Connections.ToLookup(edge => edge.Destination);
         var signals = new Dictionary<PortAddress, ParameterRange?>();
@@ -74,6 +79,8 @@ public sealed class GraphModulationRangeEstimator(IEnumerable<IFaustNodeEmitter>
             foreach (var parameter in node.Parameters)
                 if (parameter.ModulationPortId is Guid port && incoming[new PortAddress(node.Id, port)].Any())
                     Effective(node, parameter);
-        return ranges;
+        return ranges.Where(pair => flattened.Origins[pair.Key.NodeId].GraphId == graphId)
+            .ToDictionary(pair => pair.Key with { NodeId = flattened.Origins[pair.Key.NodeId].NodeId },
+                pair => pair.Value);
     }
 }

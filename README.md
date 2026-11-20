@@ -317,7 +317,8 @@ The editor uses GraphPlaybackControls to play any supported committed patch. The
 ~~~mermaid
 flowchart TD
     S["GraphSnapshot"] --> C["FaustGraphCompiler"]
-    C --> O["GraphDependencyOrder"]
+    C --> B["GraphFlattener"]
+    B --> O["GraphDependencyOrder"]
     O --> R["Registered node emitters"]
     R --> P["FaustNodeContext"]
     P --> F["Faust source + control mappings"]
@@ -330,9 +331,9 @@ flowchart TD
 - Each parameter control uses its node and parameter IDs, never user labels. The program source is stable across base-value edits; the latest values travel separately in the control map and must be applied before playback.
 - For linear parameters, effective value = clamped (smoothed base + sum of incoming signals × connection amounts). Frequency also stays below the sample-rate-dependent Nyquist limit. Modulation signals themselves run at audio rate.
 - Connection amounts are baked into this first source representation. Changing connection amounts or topology requires recompilation; a future runtime can expose depth controls without recompiling.
-- The current backend supports mono sine, gain and exactly one master output. Cycles and unsupported reachable node types are rejected. Composites and additional DSP node types will extend it later.
+- The current backend supports mono sine, gain, nested composite boundaries and exactly one root master output. Cycles and unsupported reachable node types are rejected.
 
-CI exports an actual graph using `tests/Orbit.Audio.Probe`, compiles the generated source using the pinned Faust CLI, then renders it offline at 44.1 and 48 kHz. Tests verify that one LFO can fan out to pitch and gain, and that a host can change a generated frequency control without recompiling.
+CI exports an actual nested graph using `tests/Orbit.Audio.Probe`, compiles the generated source using the pinned Faust CLI, then renders it offline at 44.1 and 48 kHz. Tests verify that an external LFO can fan out through two rack inputs to internal pitch and gain, that audio returns through the output rack, and that a host can change an internal frequency control without recompiling.
 
 To reproduce the graph compiler probe locally (Bash, .NET 10 and Node):
 
@@ -394,7 +395,21 @@ session.Execute(new AddNodeCommand(childGraphId, SineGenerator.NodeType));
 
 `CanvasStateService(session, childGraphId)` projects that child and maintains its own layout, selection and viewport. It observes root commits to stay synchronized with the patch. If its owning composite is removed, the canvas becomes unavailable and emits `GraphRemoved`; stale commands are rejected by the session.
 
-The initial boundary is immutable. Composite nodes are intentionally not in the editor's built-in catalog yet: transactional port edits, DSP flattening and canvas navigation are subsequent steps.
+`GraphFlattener` now resolves the complete nested patch before DSP ordering. Each mirrored socket pair becomes a transparent backend-only route; both sides retain their own edge amounts. A disconnected receiving socket contributes zero. Fan-in sums at the receiving socket and fan-out reuses the resulting signal. No extra audio clock, DSP processor or sample delay is introduced at a boundary.
+
+~~~mermaid
+flowchart TD
+    L["Root LFO"] -->|"× 100 Hz"| I["Pitch socket / Input Rack"]
+    I --> F["Child sine frequency"]
+    F --> S["Child sine"]
+    S --> G["Child gain"]
+    G --> O["Output Rack / Audio socket"]
+    O --> M["Root master output"]
+~~~
+
+Child leaf identities are qualified by graph ID in generated Faust controls. The manifest maps each control back to the original graph ID and local parameter address, so live base edits reuse the current worklet and telemetry can be read using `frame.GetValues(childGraphId)`. The range estimator uses the same flattened routes via `Estimate(rootSnapshot, childGraphId)`, taking external modulation into account.
+
+The initial boundary remains immutable. Composite nodes are intentionally not in the editor's built-in catalog yet: canvas navigation and transactional port edits are subsequent steps.
 
 ## Design system
 

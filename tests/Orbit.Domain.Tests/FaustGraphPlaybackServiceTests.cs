@@ -14,6 +14,38 @@ namespace Orbit.Domain.Tests;
 public sealed class FaustGraphPlaybackServiceTests
 {
     [Fact]
+    public async Task NestedControlEditsAndMetersUseTheOwningCanvasWithoutReplacingVoice()
+    {
+        using var patch = new NestedFaustPatch();
+        var compiler = FaustGraphCompiler.CreateBuiltIn();
+        var engine = new RecordingEngine();
+        var service = new FaustGraphPlaybackService(compiler, engine);
+        var rootId = patch.Session.GraphId;
+        var playing = service.PlayAsync(patch.Session.Snapshot);
+        var control = compiler.Compile(patch.Session.Snapshot).Controls.Single(c =>
+            c.GraphId == patch.ChildId && c.Address == patch.Frequency);
+        patch.Session.Execute(new SetParameterValueCommand(patch.ChildId, patch.Frequency, 330));
+        var revision = patch.Session.Snapshot.Revision;
+        Assert.Equal(new GraphPlaybackUpdate(revision, true), await service.UpdateAsync(patch.Session.Snapshot));
+        Assert.Equal(330, Assert.Single(engine.Updates)[control.Name]);
+        Assert.Empty(engine.Replacements);
+        engine.Outputs = new() { ["/OrbitGraph/" + control.MeterName] = 350 };
+        var frame = await service.GetTelemetryAsync(rootId);
+        Assert.NotNull(frame);
+        Assert.Empty(frame.Values);
+        Assert.Equal(350, frame.GetValues(patch.ChildId)[patch.Frequency]);
+        Assert.Equal(revision, frame.Revision);
+        // Removing an internal route changes the DSP, not the playback identity.
+        var child = patch.Session.Snapshot.GetGraph(patch.ChildId);
+        var edge = child.Connections.Single(e => e.Destination.NodeId == patch.Frequency.NodeId);
+        patch.Session.Execute(new RemoveConnectionCommand(patch.ChildId, edge.Id));
+        await service.UpdateAsync(patch.Session.Snapshot);
+        Assert.Single(engine.Replacements);
+        await service.StopAsync(rootId);
+        await playing;
+    }
+
+    [Fact]
     public async Task PassesGeneratedSourceAndHostValuesToTheEngine()
     {
         using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings(220, 1, 50));
