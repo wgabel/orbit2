@@ -16,7 +16,7 @@ public interface IPatchSession : IDisposable
 
     GraphCommandResult Execute(IGraphCommand command);
 
-    /// <summary>Observe the entire patch by default, or only commands targeting the supplied graph.</summary>
+    /// <summary>Observe the entire patch by default, or only commits affecting the supplied graph.</summary>
     IDisposable Subscribe(Action<GraphChangeSet> handler, Guid? graphId = null);
     IDisposable Subscribe<TEvent>(Action<TEvent> handler, Guid? graphId = null)
         where TEvent : IGraphEvent;

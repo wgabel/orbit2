@@ -112,4 +112,18 @@ public sealed class SignalGraph
     {
         GetParameter(address).SetBaseValue(value);
     }
+
+    // These operations are addressed to the child graph; the editor resolves
+    // its attached owner and parent. Only that boundary may be changed.
+    public BoundaryPortEditResult AddBoundaryPort(PortDirection direction, ExposedPort port) =>
+        new CompositeBoundaryEditor(this, direction).Add(port);
+
+    public BoundaryPortEditResult? RenameBoundaryPort(PortDirection direction, Guid portId, string name) =>
+        new CompositeBoundaryEditor(this, direction).Rename(portId, name);
+
+    public BoundaryPortEditResult? MoveBoundaryPort(PortDirection direction, Guid portId, int index) =>
+        new CompositeBoundaryEditor(this, direction).Move(portId, index);
+
+    public BoundaryPortEditResult RemoveBoundaryPort(PortDirection direction, Guid portId) =>
+        new CompositeBoundaryEditor(this, direction).Remove(portId);
 }

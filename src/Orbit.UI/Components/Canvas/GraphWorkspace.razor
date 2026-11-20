@@ -22,8 +22,14 @@
         <p class="parameter-error workspace-error" role="alert">@Error</p>
     }
     <GraphPlaybackControls Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" />
+    @if (EditingRack is { } rack)
+    {
+        <RackPortEditor @key="(graphId, rack.Id)" GraphId="@graphId" Rack="@rack"
+                        Dispatch="@DispatchRackCommand" OnClose="CloseRackEditor" />
+    }
     <GraphCanvas @key="graphId" State="@Canvas" AutoFitOnFirstRender="@Navigation.IsFirstVisit"
                  OnConnect="@(request => Connect(graphId, request))" OnParameterEdit="@(request => EditParameter(graphId, request))"
                  OnOpenComposite="@(nodeId => OpenComposite(graphId, nodeId))"
+                 OnEditRack="@(nodeId => OpenRackEditor(graphId, nodeId))"
                  ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" />
 </section>

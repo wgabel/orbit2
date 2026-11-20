@@ -29,3 +29,25 @@
     font-size: var(--semantic-typography-label);
 }
 .canvas-breadcrumbs [aria-current="page"] { color: var(--semantic-color-text); font-weight: var(--semantic-typography-emphasis); }
+.rack-editor {
+    display: grid;
+    gap: var(--semantic-space-compact);
+    padding: var(--semantic-space-compact);
+    background: var(--semantic-color-surface);
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-surface);
+}
+.rack-editor input[type="text"] {
+    max-width: 100%;
+    background: var(--semantic-color-input);
+    color: var(--semantic-color-text);
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-input);
+    padding: var(--component-workspace-select-padding);
+    font: inherit;
+}
+.rack-port-row {
+    padding-block: var(--semantic-space-compact);
+    border-bottom: var(--semantic-border-width) solid var(--semantic-color-border);
+}
+.rack-editor .parameter-error { margin: 0; }

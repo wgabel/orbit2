@@ -1,0 +1,19 @@
+@namespace Orbit.UI.Components.Canvas
+@using Microsoft.AspNetCore.Components.Web
+
+@* Stable key/identity survives a rename or reorder; errors stay with the row. *@
+<div class="rack-port-row">
+    <div class="workspace-toolbar">
+        <input type="text" aria-label="Name for @Port.Name" @bind="DraftName" @bind:event="oninput" />
+        <span class="workspace-notice">@Port.SignalType</span>
+        <button type="button" class="secondary" disabled="@(string.IsNullOrWhiteSpace(DraftName) || DraftName.Trim() == Port.Name)"
+                aria-label="Rename @Port.Name" @onclick="Rename">Rename</button>
+        <button type="button" class="secondary" disabled="@(Index == 0)" aria-label="Move @Port.Name up" @onclick="MoveUp">↑</button>
+        <button type="button" class="secondary" disabled="@(Index == Count - 1)" aria-label="Move @Port.Name down" @onclick="MoveDown">↓</button>
+        <button type="button" class="secondary" aria-label="Remove @Port.Name" @onclick="Remove">Remove</button>
+    </div>
+    @if (Error is not null)
+    {
+        <p class="parameter-error" role="alert">@Error</p>
+    }
+</div>

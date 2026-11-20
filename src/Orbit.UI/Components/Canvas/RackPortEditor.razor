@@ -1,0 +1,38 @@
+@namespace Orbit.UI.Components.Canvas
+@using Microsoft.AspNetCore.Components.Web
+@using Orbit.Domain.Ports
+
+@* One editor for both racks. Commands target the active child graph; domain
+   transactions synchronize the corresponding outer composite socket. *@
+<section class="rack-editor" aria-label="Edit @Rack.Name">
+    <div class="workspace-toolbar">
+        <strong>@Rack.Name · exposed ports</strong>
+        <button type="button" class="secondary" @onclick="OnClose">Close port editor</button>
+    </div>
+    <p class="workspace-notice">Names and order are mirrored on the parent node. Removing a port disconnects both canvases.</p>
+    @for (var index = 0; index < Ports.Count; index++)
+    {
+        var port = Ports[index];
+        <RackPortRow @key="port.Id" GraphId="@GraphId" Direction="@Direction" Port="@port"
+                     Index="@index" Count="@Ports.Count" Dispatch="@Dispatch" />
+    }
+    <div class="workspace-toolbar">
+        <label for="new-rack-port-name">New port name</label>
+        <input id="new-rack-port-name" type="text" @bind="NewName" @bind:event="oninput" />
+        <label for="new-rack-port-type">Signal type</label>
+        <select id="new-rack-port-type" @bind="NewSignalType">
+            <option value="@SignalType.Modulation">Modulation</option>
+            <option value="@SignalType.Audio">Audio</option>
+        </select>
+        <label for="new-rack-port-fanin">Receiving socket</label>
+        <select id="new-rack-port-fanin" @bind="NewFanIn">
+            <option value="@FanInPolicy.Single">Single source</option>
+            <option value="@FanInPolicy.Sum">Sum sources</option>
+        </select>
+        <button type="button" disabled="@string.IsNullOrWhiteSpace(NewName)" @onclick="AddPort">Add port</button>
+    </div>
+    @if (Error is not null)
+    {
+        <p class="parameter-error" role="alert">@Error</p>
+    }
+</section>

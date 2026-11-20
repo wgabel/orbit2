@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Orbit.Application.Graphs;
 using Orbit.Application.Graphs.Commands;
 using Orbit.Application.Graphs.Sessions;
+using Orbit.Application.Graphs.Snapshots;
 using Orbit.Application.Models;
 using Orbit.Application.Services;
 using Orbit.Domain.Parameters;
@@ -34,6 +35,9 @@ public partial class GraphWorkspace : IDisposable
         Canvas.Snapshot.GraphId == session.GraphId || type != MasterOutput.NodeType);
     private string SelectedType { get; set; } = "";
     private string? Error { get; set; }
+    private (Guid GraphId, Guid NodeId)? editingRack;
+    private GraphNodeSnapshot? EditingRack => editingRack is { } address && address.GraphId == Canvas.Snapshot.GraphId
+        ? Canvas.Snapshot.Graph.Nodes.SingleOrDefault(node => node.Id == address.NodeId) : null;
     private bool HasSelection => DeletableNodes.Any() ||
         Canvas.Snapshot.SelectedConnectionIds.Count > 0;
     private IEnumerable<Guid> DeletableNodes => Canvas.Snapshot.SelectedNodeIds.Where(id =>
@@ -83,13 +87,37 @@ public partial class GraphWorkspace : IDisposable
     {
         if (graphId != Canvas.Snapshot.GraphId) return;
         Error = null;
+        CloseRackEditor();
         Navigation.OpenChild(nodeId);
     }
 
     private void NavigateTo(Guid graphId)
     {
         Error = null;
+        CloseRackEditor();
         Navigation.NavigateTo(graphId);
+    }
+
+    private void OpenRackEditor(Guid graphId, Guid nodeId)
+    {
+        if (graphId != Canvas.Snapshot.GraphId) return;
+        var rack = Canvas.Snapshot.Graph.Nodes.SingleOrDefault(node => node.Id == nodeId);
+        if (rack?.TypeKey is not (InputRack.NodeType or OutputRack.NodeType)) return;
+        editingRack = (graphId, nodeId);
+    }
+
+    private void CloseRackEditor() => editingRack = null;
+
+    // The reusable editor receives validation feedback at the affected control.
+    // A stale callback cannot mutate a different canvas after navigation.
+    private string? DispatchRackCommand(IGraphCommand command)
+    {
+        if (command.GraphId != Canvas.Snapshot.GraphId || EditingRack is null)
+            return "This rack is no longer open.";
+        Execute(command);
+        var error = Error;
+        Error = null;
+        return error;
     }
 
     private void AddNode() => Execute(new AddNodeCommand(Canvas.Snapshot.GraphId, SelectedType));

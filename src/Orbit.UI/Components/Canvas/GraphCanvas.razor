@@ -24,6 +24,7 @@
                            OnHeaderPointerDown="@(args => BeginNode(node.Id, args))"
                            OnOutputPointerDown="BeginOutput" OnPortActivate="ActivatePortAsync"
                            OnOpenComposite="OnOpenComposite"
+                           OnEditRack="OnEditRack"
                            OnParameterEdit="OnParameterEdit" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" />
             }
         </div>

@@ -125,13 +125,41 @@ try {
     assert.equal(await page.locator(".canvas-world").getAttribute("style"), childTransform);
     assert.equal(await childFrequency.inputValue(), "330");
     assert.equal(await play.isEnabled(), false);
+
+    // Boundary edits are one patch commit, including both mirrored sockets.
+    await rack.getByRole("button", { name: "Edit ports" }).click();
+    const editor = page.getByRole("region", { name: "Edit Input Parameters Rack" });
+    await editor.getByLabel("New port name").fill("Cutoff");
+    await editor.getByLabel("Receiving socket").selectOption("Sum");
+    await editor.getByRole("button", { name: "Add port", exact: true }).click();
+    await rack.getByRole("button", { name: "Output: Cutoff (Modulation)" }).waitFor();
+    await editor.getByRole("textbox", { name: "Name for Pitch" }).fill("Sweep");
+    await editor.getByRole("button", { name: "Rename Pitch" }).click();
+    await rack.getByRole("button", { name: "Output: Sweep (Modulation)" }).waitFor();
+    await editor.getByRole("button", { name: "Move Sweep down" }).click();
+    await status.filter({ hasText: new RegExp(`^Playing revision ${droneRevision + 4}$`) }).waitFor({ timeout: 15000 });
+    assert.deepEqual(await rack.locator(".port-output .port-label").allTextContents(), ["Gain", "Sweep", "Cutoff"]);
+    await breadcrumbs.getByRole("button", { name: "Patch" }).click();
+    await drone.getByRole("button", { name: "Input: Sweep (Modulation)" }).waitFor();
+    assert.deepEqual(await drone.locator(".port-input .port-label").allTextContents(), ["Gain", "Sweep", "Cutoff"]);
+    await drone.getByRole("button", { name: "Open Drone" }).click();
+    await rack.getByRole("button", { name: "Edit ports" }).click();
+    await editor.getByRole("button", { name: "Remove Sweep" }).click();
+    await status.filter({ hasText: new RegExp(`^Playing revision ${droneRevision + 5}$`) }).waitFor({ timeout: 15000 });
+    assert.equal(await childFrequency.locator("xpath=../..").locator(".parameter-band").count(), 0);
+    assert.equal(await rack.getByRole("button", { name: "Output: Sweep (Modulation)" }).count(), 0);
+    assert.equal(await play.isEnabled(), false);
+    await breadcrumbs.getByRole("button", { name: "Patch" }).click();
+    await drone.getByRole("button", { name: "Input: Cutoff (Modulation)" }).waitFor();
+    assert.equal(await drone.getByRole("button", { name: "Input: Sweep (Modulation)" }).count(), 0);
+    assert.equal(await page.getByRole("alert").count(), 0);
     await page.getByRole("button", { name: "Stop", exact: true }).click();
     await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 10000 });
     const prefix = `/_content/Orbit.Infrastructure/audio-${version}/`;
     for (const file of ["audio.js", "AudioEngine.js", "Faust/FaustCompilerWorker.js", "generated/compiler/index.js"])
         assert.ok(requests.has(prefix + file), `Missing versioned asset: ${file}`);
     assert.ok([...requests].every(path => !path.startsWith("/_content/Orbit.Infrastructure/audio/")));
-    console.log("Published editor played, rewired, opened a connected drone during playback, edited its frequency and preserved both canvas viewports.");
+    console.log("Published editor played, navigated nested canvases, edited live frequency and mirrored rack port add/rename/reorder/remove during playback.");
 } finally {
     await browser?.close();
     server.close();

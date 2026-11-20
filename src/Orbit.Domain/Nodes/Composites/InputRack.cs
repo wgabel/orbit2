@@ -15,5 +15,11 @@ public sealed class InputRack : SignalNode
         Ports = ports;
     }
 
-    public IReadOnlyList<ExposedPort> Ports { get; }
+    public IReadOnlyList<ExposedPort> Ports { get; private set; }
+
+    internal void ReplaceBoundary(IReadOnlyList<ExposedPort> ports)
+    {
+        Ports = ports;
+        ReplaceSockets([], ports.Select(port => port.Project(PortDirection.Output)));
+    }
 }

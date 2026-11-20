@@ -1,6 +1,7 @@
 @namespace Orbit.UI.Components.Canvas
 @using Orbit.Domain.Ports
 @using Orbit.Domain.Parameters
+@using Orbit.Domain.Nodes.Composites
 @using Orbit.UI.Components.Parameters
 @using Microsoft.AspNetCore.Components.Web
 
@@ -34,6 +35,13 @@
         <div class="node-actions">
             <button type="button" class="secondary" @onpointerdown:stopPropagation="true"
                     @onclick="() => OnOpenComposite.InvokeAsync(Node.Id)">Open @Node.Name</button>
+        </div>
+    }
+    @if (Node.TypeKey is InputRack.NodeType or OutputRack.NodeType)
+    {
+        <div class="node-actions">
+            <button type="button" class="secondary" @onpointerdown:stopPropagation="true"
+                    @onclick="() => OnEditRack.InvokeAsync(Node.Id)">Edit ports</button>
         </div>
     }
     @if (Node.Parameters.Count > 0)

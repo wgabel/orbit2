@@ -3,8 +3,8 @@ using Orbit.Domain.Ports;
 
 namespace Orbit.Domain.Nodes.Composites;
 
-/// <summary>Owns exactly one child graph and its two boundary racks. Boundary definitions
-/// are immutable in this first implementation; later edits require a patch transaction.</summary>
+/// <summary>Owns exactly one child graph and its two boundary racks. The child
+/// graph boundary transaction replaces both mirrored views together.</summary>
 public sealed class CompositeNode : SignalNode, ICompositeNode
 {
     public const string NodeType = "composite.graph";
@@ -29,6 +29,16 @@ public sealed class CompositeNode : SignalNode, ICompositeNode
     public SignalGraph InternalGraph { get; }
     public InputRack InputRack { get; }
     public OutputRack OutputRack { get; }
+
+    internal void ReplaceBoundary(IEnumerable<ExposedPort> inputs, IEnumerable<ExposedPort> outputs)
+    {
+        // Materialize and validate the whole boundary before touching any view.
+        var boundary = Boundary.Create(inputs, outputs);
+        ReplaceSockets(boundary.Inputs.Select(port => port.Project(PortDirection.Input)),
+            boundary.Outputs.Select(port => port.Project(PortDirection.Output)));
+        InputRack.ReplaceBoundary(boundary.Inputs);
+        OutputRack.ReplaceBoundary(boundary.Outputs);
+    }
 
     /// <summary>Materializes and validates both boundary lists before any node is created.</summary>
     private sealed record Boundary(IReadOnlyList<ExposedPort> Inputs, IReadOnlyList<ExposedPort> Outputs)

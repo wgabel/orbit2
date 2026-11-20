@@ -806,7 +806,7 @@ public interface IOutputRack : ISignalNode
 
 A shared boundary definition is projected into two socket views with opposite directions. The stable port identity is preserved within the composite instance; the node/address distinguishes parent socket from internal rack socket. This is not two separately mutable collections.
 
-The first implementation uses immutable `ExposedPort` definitions (ID, name, signal type, channel count and receiver fan-in). Both socket views are created from that same definition. Port IDs are unique across the composite and names are unique per direction. Racks are graph-owned and cannot be added or removed separately. Default values and mutable boundary definitions await transactional rack edits.
+The implementation uses immutable `ExposedPort` records (ID, name, signal type, channel count and receiver fan-in). Both socket views are created from that same definition. Port IDs are unique across the composite and names are unique per direction. Racks are graph-owned and cannot be added or removed separately. The domain transaction replaces the complete validated boundary views rather than mutating records in place; IDs remain stable across rename/reorder. Unconnected default values other than zero await further support.
 
 Possible metadata includes units, ranges, unconnected default values, reorder position, labels and channel layout. For audio inputs, an unconnected default is normally silence; for a modulation input, zero is a useful default when the signal is additive. Defaults must be meaningful for the signal's declared type.
 
@@ -815,10 +815,12 @@ Possible metadata includes units, ranges, unconnected default values, reorder po
 - Add named port: parent composite socket appears automatically.
 - Rename port: both views update without breaking connections because addressing uses IDs, not names.
 - Reorder port: changes presentation without rewiring the graph.
-- Change port type/channel count: revalidate all affected internal and parent edges.
-- Remove port: detect affected connections on both sides; reject or remove them in one validated command according to the chosen UI policy.
+- Change port type/channel count/fan-in: future operation; revalidate all affected internal and parent edges.
+- Remove port: remove every incident connection on both sides in one validated command.
 - Expose optional outputs such as internal LFOs, gates or audio buses, not only the final sound.
 - Permit no implicit references from a parent directly to a child oscillator: all external signals cross published boundaries.
+
+The implemented `CompositeBoundaryEditor` resolves the child graph's attached owner and parent, prepares a candidate list and uses `CompositeNode.ReplaceBoundary` to validate it before updating the two projections. The selected rack and outer composite share stable socket IDs and mirrored order, while separate port addresses keep connections local to each graph. The reusable `RackPortEditor` and `RackPortRow` send add, rename, move and remove commands through the existing workspace; the UI offers mono Audio and Modulation ports with a selectable receiver fan-in policy. The graph layer, not a listener or UI view, implements synchronization.
 
 The racks do not generate additional samples or require a separate clock. During compilation, the boundary wiring is resolved to internal signal dependencies without artificial audio latency. The root graph's master output represents the physical playback destination; an internal Output Rack represents a graph boundary, not another speaker.
 
@@ -892,7 +894,7 @@ A rejected command throws the existing domain validation exception (or registry/
 
 Subscribe to a whole `GraphChangeSet` for graph projection and audio graph compilation; subscribe to typed events for a specific fact (for example, `ConnectionRemoved`). Subscription filters can target one graph. Registration order and fact order are deterministic within each changeset; registration changes during notification apply to the next revision. Subscribers are independently disposable, and closing the session clears them. Listener callbacks are synchronous and must return quickly; they should schedule independent asynchronous work rather than perform reentrant graph mutations. A listener exception is recorded in the command result, not treated as a failed edit or rollback. Other listeners still receive the facts.
 
-The current transaction boundary is **one validated command on one owned graph** (root or descendant). The patch session resolves the target under its lock, applies the same domain validation, captures the entire root graph and publishes a single shared patch revision. Unfiltered listeners see every commit; graph-filtered listeners match the exact command or fact's graph ID. Foreign and removed child graphs are rejected. Cross-graph rack edits and general multi-command transactions are not implemented yet; later composite support must commit parent and child changes atomically and publish one consistent patch revision.
+The transaction boundary is **one validated command on an owned graph** (root or descendant). A boundary command targets the child and atomically changes its immediate parent too. The patch session resolves the target under its lock, applies domain validation, captures the entire root graph and publishes a single shared patch revision. Unfiltered listeners see every commit once; changeset filters match the command target or any affected fact's graph ID. Typed event filters match only the local fact. Foreign and removed child graphs are rejected. General multi-command transactions remain future work.
 
 The first application consumer is `ModulationDemoPatch`: it uses the session to construct the existing fixed graph and maps the final snapshot to a playback request. The canvas and dynamic playback consume immutable snapshots; live playback subscriptions will follow when runtime replacement is implemented.
 
@@ -916,15 +918,15 @@ sequenceDiagram
 
 ### Example: removing an exposed input port
 
-1. The user requests RemoveExposedPort.
+1. The user requests `RemoveBoundaryPortCommand` with child graph ID, outer direction and port ID.
 2. Resolve the actual composite instance and shared boundary identity.
 3. Find all parent edges connected to the composite's input and all internal edges connected to the rack's matching output.
-4. Validate the requested behavior: remove all affected edges or reject and explain.
+4. Validate the candidate boundary before mutation. Removal policy is to disconnect all affected edges.
 5. Atomically update parent/child graph and remove the boundary definition.
 6. Validate the resulting patch; commit exactly one revision.
-7. Publish ConnectionRemoved and PortRemoved notifications in one committed change set.
+7. Publish `ConnectionRemoved` facts and two `BoundaryPortChanged` facts (local node ID and opposite socket directions, before/after definitions and indices) in one committed change set.
 8. Update both canvas projections and schedule one DSP graph update.
-9. Record the entire edit as one undoable command.
+9. Future undo can restore the captured port definitions and removed edge records as one edit.
 
 ~~~mermaid
 flowchart TD
@@ -1372,8 +1374,8 @@ Deliverable: construct and edit a graph of two generators, a filter, mixer/outpu
 - Implemented: child graph command routing, patch-wide committed snapshots, exact graph event filters and independent graph-ID-targeted canvas projections.
 - Implemented: recursive DSP boundary flattening, stable graph-qualified control/meter mappings, child modulation range estimation and live child parameter edits.
 - Implemented: graph navigation, breadcrumb component, cached independent canvas layouts, starter drone catalog and root playback across canvas changes.
-- Add editable Input Rack and Output Rack ports, projected automatically onto composite node sockets.
-- Add transactional add/rename/reorder/remove-port commands crossing parent/child boundaries.
+- Implemented: editable Input Rack and Output Rack ports, projected automatically onto composite node sockets.
+- Implemented: transactional add/rename/reorder/remove-port commands crossing parent/child boundaries, with one changeset and affected-graph notification filters.
 - Implemented: reuse the same canvas UI for all levels.
 
 Deliverable: open a drone node's internal canvas, connect external LFO to a named input, route it internally and hear the modulation.

@@ -1,13 +1,15 @@
 using Orbit.Application.Graphs.Events;
 using Orbit.Application.Graphs.Snapshots;
 using Orbit.Domain.Graphs;
+using Orbit.Domain.Nodes.Composites;
+using Orbit.Domain.Ports;
 
 namespace Orbit.Application.Graphs.Commands;
 
 /// <summary>
 /// Translates typed commands into existing validated domain operations.
 /// Contains no notification logic, graph ownership, UI or audio processing.
-/// Each command is one domain mutation; compound node removal is atomic.
+/// Each command is one domain mutation; node removal and boundary edits are atomic.
 /// </summary>
 internal sealed class GraphCommandHandler(NodeRegistry registry)
 {
@@ -19,8 +21,30 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
             ConnectNodesCommand connect => Connect(graph, connect),
             RemoveConnectionCommand disconnect => RemoveConnection(graph, disconnect),
             SetParameterValueCommand set => SetParameterValue(graph, set),
+            AddBoundaryPortCommand add => BoundaryFacts(graph.Id, graph.AddBoundaryPort(add.Direction,
+                new ExposedPort(Guid.NewGuid(), add.Name, add.SignalType, add.ChannelCount, add.FanIn))),
+            RenameBoundaryPortCommand rename => BoundaryFacts(graph.Id,
+                graph.RenameBoundaryPort(rename.Direction, rename.PortId, rename.Name)),
+            MoveBoundaryPortCommand move => BoundaryFacts(graph.Id,
+                graph.MoveBoundaryPort(move.Direction, move.PortId, move.Index)),
+            RemoveBoundaryPortCommand remove => BoundaryFacts(graph.Id,
+                graph.RemoveBoundaryPort(remove.Direction, remove.PortId)),
             _ => throw new NotSupportedException($"Unknown graph command: {command.GetType().Name}.")
         };
+
+    private static IReadOnlyList<IGraphEvent> BoundaryFacts(Guid childGraphId, BoundaryPortEditResult? result)
+    {
+        if (result is null) return [];
+        var facts = new List<IGraphEvent>();
+        facts.AddRange(result.ParentConnections.Select(edge => new ConnectionRemoved(result.ParentGraphId, edge)));
+        facts.AddRange(result.ChildConnections.Select(edge => new ConnectionRemoved(childGraphId, edge)));
+        facts.Add(new BoundaryPortChanged(result.ParentGraphId, result.CompositeNodeId, result.Direction,
+            result.Before, result.After, result.OldIndex, result.NewIndex));
+        var rackDirection = result.Direction == PortDirection.Input ? PortDirection.Output : PortDirection.Input;
+        facts.Add(new BoundaryPortChanged(childGraphId, result.RackNodeId, rackDirection,
+            result.Before, result.After, result.OldIndex, result.NewIndex));
+        return facts.AsReadOnly();
+    }
 
     private IReadOnlyList<IGraphEvent> AddNode(SignalGraph graph, AddNodeCommand command, long revision)
     {

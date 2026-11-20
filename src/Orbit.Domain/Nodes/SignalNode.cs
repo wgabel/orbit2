@@ -33,8 +33,16 @@ public abstract class SignalNode : ISignalNode
     public string TypeKey { get; }
     public string Name { get; }
     public IReadOnlyList<Parameter> Parameters { get; }
-    public IReadOnlyList<PortDefinition> Inputs { get; }
-    public IReadOnlyList<PortDefinition> Outputs { get; }
+    public IReadOnlyList<PortDefinition> Inputs { get; private set; }
+    public IReadOnlyList<PortDefinition> Outputs { get; private set; }
+
+    // Only derived node implementations may replace their read-only socket views.
+    // Composite boundary transactions validate the complete pair before doing so.
+    protected void ReplaceSockets(IEnumerable<PortDefinition> inputs, IEnumerable<PortDefinition> outputs)
+    {
+        Inputs = Array.AsReadOnly(inputs.ToArray());
+        Outputs = Array.AsReadOnly(outputs.ToArray());
+    }
 
     // A concrete node instance belongs to one graph. This prevents sharing
     // mutable parameter state between otherwise independent composite instances.

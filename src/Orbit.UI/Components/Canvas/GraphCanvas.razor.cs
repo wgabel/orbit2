@@ -18,6 +18,7 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter] public EventCallback<PortConnectionRequest> OnConnect { get; set; }
     [Parameter] public EventCallback<ParameterEditRequest> OnParameterEdit { get; set; }
     [Parameter] public EventCallback<Guid> OnOpenComposite { get; set; }
+    [Parameter] public EventCallback<Guid> OnEditRack { get; set; }
     [Parameter] public bool AutoFitOnFirstRender { get; set; } = true;
     [Parameter] public IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
     [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();
