@@ -280,7 +280,6 @@ try {
     // Wait for the debounced save before closing the editor, then restore a nested workspace.
     await drone.getByRole("button", { name: "Open Drone" }).click();
     await childFrequency.waitFor();
-    const savedFrequencyId = await childFrequency.getAttribute("id");
     await page.getByRole("button", { name: "Zoom out" }).click();
     const savedTransform = await page.locator(".canvas-world").getAttribute("style");
     const readSavedWorkspace = async () => page.evaluate(async () => {
@@ -320,9 +319,10 @@ try {
     assert.equal(await page.getByRole("alert").count(), 0, await page.getByRole("alert").allTextContents());
     assert.equal(await page.locator(".graph-workspace").getAttribute("data-active-graph"), expectedGraph);
     await breadcrumbs.getByText("Drone", { exact: true }).waitFor();
-    const restoredFrequency = page.locator(`#${savedFrequencyId}`);
-    await restoredFrequency.waitFor();
-    assert.equal(await restoredFrequency.inputValue(), "330");
+    // Input DOM IDs belong to transient editor components. The domain identity
+    // is covered by the serialization round-trip test, not the DOM ID.
+    await childFrequency.waitFor();
+    assert.equal(await childFrequency.inputValue(), "330");
     assert.equal(await tempo.inputValue(), "90");
     assert.equal(await page.locator(".canvas-world").getAttribute("style"), savedTransform);
     await rack.getByRole("button", { name: "Output: Cutoff (Modulation)" }).waitFor();
@@ -330,7 +330,7 @@ try {
     await breadcrumbs.getByRole("button", { name: "Patch" }).click();
     await drone.getByRole("button", { name: "Input: Cutoff (Modulation)" }).waitFor();
     assert.equal(await division.inputValue(), "4");
-    console.log("Published editor played, navigated nested canvases, edited live frequency and mirrored rack port add/rename/reorder/remove during playback.");
+    console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {
     await browser?.close();
     server.close();
