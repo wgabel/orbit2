@@ -432,16 +432,34 @@ try {
                     }
                 }
                 if (delay.mode === "Synchronized") {
-                    const context = new OfflineAudioContext(1, 128, 48000);
+                    const context = new OfflineAudioContext(1, 96000, 48000);
                     const node = await new FaustMonoDspGenerator().createNode(context, "OrbitDelay", { ...compiled, soundfiles: {} }, false);
                     const transport = new TransportSignalSource();
                     try {
+                        const writes = [];
+                        const originalSet = node.setParamValue.bind(node);
+                        node.setParamValue = (path, value) => { writes.push([path, value]); originalSet(path, value); };
+                        for (const [name, value] of Object.entries(delay.values))
+                            node.setParamValue(node.getParams().find(path => path.endsWith("/" + name)), value);
                         transport.setSnapshot({ beatsPerMinute: 90, beatPosition: 0, isPlaying: false });
                         await transport.connect(context, node);
                         const path = node.getParams().find(path => path.endsWith("/orbit_tempo"));
-                        if (node.getParamValue(path) !== 90) throw new Error("Initial tempo not applied to delay");
+                        if (!writes.some(([key, value]) => key === path && value === 90)) throw new Error("Initial tempo not applied to delay");
                         transport.setSnapshot({ beatsPerMinute: 180, beatPosition: 0, isPlaying: false });
-                        if (node.getParamValue(path) !== 180) throw new Error("Live tempo not applied to delay");
+                        if (!writes.some(([key, value]) => key === path && value === 180)) throw new Error("Live tempo not applied to delay");
+                        node.connect(context.destination);
+                        const suspended = context.suspend(0.5);
+                        const rendering = context.startRendering();
+                        await suspended;
+                        // AudioParam scheduling sets the onset at a known audio frame.
+                        const amplitudePath = node.getParams().find(path => path.endsWith("/" + delay.amplitude));
+                        node.setParamValue(amplitudePath, 0.1);
+                        await context.resume();
+                        const audio = (await rendering).getChannelData(0);
+                        const peak = (start, end) => audio.subarray(Math.floor(start * 48000), Math.floor(end * 48000))
+                            .reduce((max, sample) => Math.max(max, Math.abs(sample)), 0);
+                        if (peak(0.55, 0.78) > 0.001 || peak(0.92, 1.05) < 0.07)
+                            throw new Error("Worklet echo did not follow 180 BPM");
                     } finally { transport.dispose(); node.disconnect(); node.destroy?.(); }
                 }
             }
