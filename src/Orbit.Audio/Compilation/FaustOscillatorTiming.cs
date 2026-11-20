@@ -28,9 +28,7 @@ internal static class FaustOscillatorTiming
     {
         var division = context.Parameter("division");
         // Discrete note changes use the canonical cycle lengths (no smoothing).
-        var beats = "1.0";
-        foreach (var choice in Enum.GetValues<MusicalDivision>())
-            beats = $"select2(int({division}) == {(int)choice}, {beats}, {FaustNumber.Format(MusicalTime.GetBeats(choice))})";
+        var beats = FaustMusicalDivision.Beats(division);
         var maximumFrequency = MusicalTransport.MaximumTempo / 60 /
             Enum.GetValues<MusicalDivision>().Min(MusicalTime.GetBeats);
         // Bound the edge correction on a reset/division change. The waveform

@@ -7,17 +7,32 @@ export class TransportSignalSource {
     #node;
     #loading;
     #targets = new Set();
+    #tempoControls = new Map();
     #anchor = toTransportAnchor({ beatsPerMinute: 120, beatPosition: 0, isPlaying: false });
 
     setSnapshot(snapshot) {
+        const previousTempo = this.#anchor.beatsPerMinute;
         this.#anchor = toTransportAnchor(snapshot);
         this.#node?.port.postMessage(this.#anchor);
+        if (previousTempo !== this.#anchor.beatsPerMinute)
+            for (const [target, path] of this.#tempoControls)
+                target.setParamValue(path, this.#anchor.beatsPerMinute);
     }
 
     async connect(context, target) {
         if (this.#context !== context) {
             this.dispose();
             this.#context = context;
+        }
+        // Tempo-aware effects need the absolute BPM, not the derivative of a
+        // wrapped Float32 beat signal. Only phase consumers need the worklet.
+        const tempoPath = target.getParams().find(path => path.endsWith("/orbit_tempo"));
+        if (target.numberOfInputs === 0) {
+            if (tempoPath) {
+                target.setParamValue(tempoPath, this.#anchor.beatsPerMinute);
+                this.#tempoControls.set(target, tempoPath);
+            }
+            return;
         }
         if (!this.#node) {
             const loading = this.#loading ??= context.audioWorklet.addModule(
@@ -36,9 +51,14 @@ export class TransportSignalSource {
         }
         this.#node.connect(target);
         this.#targets.add(target);
+        if (tempoPath) {
+            target.setParamValue(tempoPath, this.#anchor.beatsPerMinute);
+            this.#tempoControls.set(target, tempoPath);
+        }
     }
 
     disconnect(target) {
+        this.#tempoControls.delete(target);
         if (this.#targets.delete(target)) this.#node?.disconnect(target);
     }
 
@@ -49,5 +69,6 @@ export class TransportSignalSource {
         this.#loading = undefined;
         this.#context = undefined;
         this.#targets.clear();
+        this.#tempoControls.clear();
     }
 }

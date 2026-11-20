@@ -197,6 +197,30 @@ File.WriteAllText(Path.Combine(args[0], "eq.json"), JsonSerializer.Serialize(new
     gain = EqControl(eq, "gain"), q = EqControl(eq, "q"), modulation = EqControl(modulation, "amplitude")
 }));
 
+filterSession.Execute(new RemoveNodeCommand(filterRoot, eq.Id));
+var delay = FilterAdd(DelayProcessor.NodeType);
+FilterSet(carrier, "frequency", 100);
+FilterSet(carrier, "amplitude", 0);
+FilterSet(delay, "time", 0.25);
+FilterSet(delay, "feedback", 0.5);
+FilterSet(delay, "mix", 1);
+FilterConnect(carrier, delay, "audio-in", 1);
+FilterConnect(modulation, delay, "time-modulation-in", 0.1);
+FilterConnect(modulation, delay, "feedback-modulation-in", 0.5);
+FilterConnect(modulation, delay, "mix-modulation-in", 0.5);
+FilterConnect(delay, filterMaster, "audio-in", 1);
+var delayProbes = Enum.GetValues<DelayTimingMode>().Select(mode =>
+{
+    FilterSet(delay, "timing", (int)mode);
+    var compiled = FaustGraphCompiler.CreateBuiltIn().Compile(filterSession.Snapshot);
+    string Name(GraphNodeSnapshot node, string key) => compiled.Controls.Single(c => c.Address == Address(node, key)).Name;
+    return new { mode = mode.ToString(), source = compiled.Source,
+        values = compiled.Controls.ToDictionary(c => c.Name, c => c.InitialValue),
+        amplitude = Name(carrier, "amplitude"), feedback = Name(delay, "feedback"), mix = Name(delay, "mix"),
+        modulation = Name(modulation, "amplitude") };
+}).ToArray();
+File.WriteAllText(Path.Combine(args[0], "delay.json"), JsonSerializer.Serialize(delayProbes));
+
 GraphNodeSnapshot TempoAdd(Guid graph, string type) =>
     tempoSession.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
 

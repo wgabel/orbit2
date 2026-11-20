@@ -24,6 +24,33 @@ public sealed class FaustGraphCompilerTests
     private readonly FaustGraphCompiler compiler = FaustGraphCompiler.CreateBuiltIn();
 
     [Fact]
+    public void DelayUsesSharedTempoAndDormantFreeTimeConnection()
+    {
+        using var session = new PatchSession(BuiltInNodes.CreateRegistry());
+        var source = Add(session, OscillatorGenerator.NodeType);
+        var delay = Add(session, DelayProcessor.NodeType);
+        var output = Add(session, MasterOutput.NodeType);
+        Connect(session, source, delay, delay.Inputs.Single(p => p.Key == "audio-in").Id, 0.1);
+        foreach (var parameter in delay.Parameters.Where(p => p.ModulationPortId.HasValue))
+            Connect(session, source, delay, parameter.ModulationPortId!.Value, 0.1);
+        Connect(session, delay, output, output.Inputs.Single().Id, 1);
+        var free = compiler.Compile(session.Snapshot);
+        Assert.False(free.RequiresTransport);
+        Assert.NotNull(Control(free, delay, "time").MeterName);
+        var timing = delay.Parameters.Single(p => p.Definition.Key == "timing");
+        session.Execute(new SetParameterValueCommand(session.GraphId, new ParameterAddress(delay.Id, timing.Id), (int)DelayTimingMode.Synchronized));
+        var synced = compiler.Compile(session.Snapshot);
+        Assert.True(synced.RequiresTransport);
+        Assert.Contains("orbit_tempo = hslider", synced.Source);
+        Assert.DoesNotContain("process(orbit_beat)", synced.Source);
+        Assert.DoesNotContain(synced.Controls, c => c.Address.ParameterId == delay.Parameters.Single(p => p.Definition.Key == "time").Id);
+        Assert.NotNull(Control(synced, delay, "feedback").MeterName);
+        Assert.NotNull(Control(synced, delay, "mix").MeterName);
+        session.Execute(new SetParameterValueCommand(session.GraphId, new ParameterAddress(delay.Id, timing.Id), (int)DelayTimingMode.Free));
+        Assert.Equal(free.Source, compiler.Compile(session.Snapshot).Source);
+    }
+
+    [Fact]
     public void ParametricEqAllParametersHaveStableModulationControls()
     {
         using var session = new PatchSession(BuiltInNodes.CreateRegistry());

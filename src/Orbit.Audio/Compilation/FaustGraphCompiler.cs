@@ -30,7 +30,8 @@ public sealed class FaustGraphCompiler
         var signals = new Dictionary<PortAddress, string>();
         var controls = new List<FaustParameterControl>();
         var definitions = new List<string>();
-        var requiresTransport = false;
+        var requiresTransportBeat = false;
+        var requiresTransportTempo = false;
         var outputExpression = "0.0";
 
         foreach (var node in ordered)
@@ -50,7 +51,8 @@ public sealed class FaustGraphCompiler
 
             var name = $"n_{node.Id:N}";
             var expression = emitter.Emit(context);
-            requiresTransport |= context.RequiresTransport;
+            requiresTransportBeat |= context.RequiresTransportBeat;
+            requiresTransportTempo |= context.RequiresTransportTempo;
             definitions.Add($"{name} = {expression};");
             signals.Add(new PortAddress(node.Id, node.Outputs[0].Id), name);
         }
@@ -58,7 +60,9 @@ public sealed class FaustGraphCompiler
         // Canonical order and invariant literals make source stable across base-only edits.
         // The formal parameter is shared by every nested definition; it is
         // exactly one audio input, not a separate input per LFO reference.
-        var body = requiresTransport
+        if (requiresTransportTempo)
+            definitions.Insert(0, "orbit_tempo = hslider(\"orbit_tempo\", 120, 20, 300, 0.001);");
+        var body = requiresTransportBeat
             ? $"process(orbit_beat) = {outputExpression} with {{\n{string.Join("\n", definitions)}\n}};\n"
             : string.Join("\n", definitions.Append($"process = {outputExpression};")) + "\n";
         var source = "import(\"stdfaust.lib\");\ndeclare name \"OrbitGraph\";\n" + body;
@@ -71,6 +75,6 @@ public sealed class FaustGraphCompiler
                 Address = control.Address with { NodeId = origin.NodeId } };
         }).ToArray();
         return new FaustGraphProgram(graph.Id, graph.Revision, source, Array.AsReadOnly(manifest))
-            { RequiresTransport = requiresTransport };
+            { RequiresTransport = requiresTransportBeat || requiresTransportTempo };
     }
 }

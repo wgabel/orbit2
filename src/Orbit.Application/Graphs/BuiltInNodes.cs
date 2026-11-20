@@ -20,6 +20,7 @@ public static class BuiltInNodes
         registry.Register(MixerProcessor.NodeType, id => new MixerProcessor(id), "Mixer");
         registry.Register(FilterProcessor.NodeType, id => new FilterProcessor(id), "Filter");
         registry.Register(ParametricEqProcessor.NodeType, id => new ParametricEqProcessor(id), "Parametric EQ");
+        registry.Register(DelayProcessor.NodeType, id => new DelayProcessor(id), "Delay");
         registry.Register(MasterOutput.NodeType, id => new MasterOutput(id), "Master output");
         return registry;
     }

@@ -48,22 +48,7 @@ public sealed class OscillatorGenerator : SignalNode, IGenerator
         })
     };
 
-    private static readonly ParameterDefinition DivisionDefinition = new(
-        "division", "Musical division", (int)MusicalDivision.QuarterNote, 0, 6,
-        ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: false)
-    {
-        ActiveWhen = new("timing", (int)OscillatorTimingMode.Synchronized),
-        Choices = Array.AsReadOnly(new ParameterChoice[]
-        {
-            new((int)MusicalDivision.SixteenthNote, "1/16 note"),
-            new((int)MusicalDivision.EighthNote, "1/8 note"),
-            new((int)MusicalDivision.QuarterNote, "1/4 note"),
-            new((int)MusicalDivision.HalfNote, "1/2 note"),
-            new((int)MusicalDivision.WholeNote, "1 bar (4/4)"),
-            new((int)MusicalDivision.QuarterNoteTriplet, "1/4 triplet"),
-            new((int)MusicalDivision.DottedQuarterNote, "Dotted 1/4 note")
-        })
-    };
+    private static readonly ParameterDefinition DivisionDefinition = MusicalDivisionParameter.Create("timing", (int)OscillatorTimingMode.Synchronized);
 
     public OscillatorGenerator(Guid id)
         : this(id, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid())

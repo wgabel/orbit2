@@ -579,6 +579,21 @@ session.Execute(new AddBoundaryPortCommand(childGraphId, PortDirection.Input,
 
 Changing an existing port's signal type, channel count or fan-in, and undo are future operations; in this version those properties are chosen when creating a port.
 
+### Delay (Phase 6.13)
+
+Add **Delay** between any audio source and output. Free timing uses a modulatable delay time of 0.01–2 seconds (default 0.30). Synchronized timing uses a musical division from the shared transport BPM, up to one bar (12 seconds at 20 BPM); the free-time wire remains dormant until free mode returns. Feedback (0–0.9, default 0.35) and wet mix (0–1, default 0.35) are modulatable in either mode. Wet mix 0 preserves the dry input; 1 outputs only the delayed sound. Feedback repeats decay without an editable graph cycle. Delay time changes intentionally create pitch movement, as with a tape delay; base edits and tempo changes update the running worklet, while timing mode changes crossfade a graph replacement and may reset its echo tail.
+
+~~~mermaid
+flowchart TD
+    A[Audio input] --> S[Sum]
+    S --> D[Fractional delay]
+    D --> F[Bounded feedback]
+    F --> S
+    D --> M[Dry/wet mix]
+    A --> M
+    M --> O[Audio output]
+~~~
+
 ### Parametric EQ (Phase 6.12)
 
 Add **Parametric EQ** to an audio path to boost or cut one frequency band. Frequency (20–20,000 Hz, default 1,000 Hz), gain (−18 to +18 dB, default 0 dB) and Q (0.2–10, default 1) each have an independent modulation socket. Gain of 0 dB is transparent; higher Q narrows the bell. The shared state-variable DSP core applies effective values at audio rate; base edits do not recompile. Chain multiple instances for multiband EQ. Allow headroom for boost and modulation; output is not clipped or normalized.

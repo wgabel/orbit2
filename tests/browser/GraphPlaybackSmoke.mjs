@@ -19,6 +19,7 @@ const noises = JSON.parse(await readFile(resolve(directory, "noise.json"), "utf8
 const layered = JSON.parse(await readFile(resolve(directory, "layered.json"), "utf8"));
 const filters = JSON.parse(await readFile(resolve(directory, "filters.json"), "utf8"));
 const eq = JSON.parse(await readFile(resolve(directory, "eq.json"), "utf8"));
+const delays = JSON.parse(await readFile(resolve(directory, "delay.json"), "utf8"));
 const root = resolve("src/Orbit.Infrastructure/wwwroot/audio");
 const server = createServer(async (request, response) => {
     try {
@@ -391,6 +392,68 @@ try {
         assert.ok(Math.abs(result.low) < 0.2 && Math.abs(result.high) < 0.2);
         assert.ok(result.broad > result.narrow + 3);
         assert.ok(result.peak < 10);
+    }
+
+    const delayResults = await page.evaluate(async delays => {
+        const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
+        const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
+        const { TransportSignalSource } = await import("/Components/TransportSignalSource.js");
+        const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
+        const results = [];
+        try {
+            for (const delay of delays) {
+                const compiled = await compiler.compile(delay.source);
+                for (const rate of [44100, 48000]) {
+                    for (const bpm of delay.mode === "Synchronized" ? [120, 240] : [120]) {
+                        const processor = await new FaustMonoDspGenerator().createOfflineProcessor(rate, 128, { ...compiled, soundfiles: {} });
+                        const set = (name, value) => processor.setParamValue(processor.getParams().find(path => path.endsWith("/" + name)), value);
+                        for (const [name, value] of Object.entries(delay.values)) set(name, value);
+                        if (delay.mode === "Synchronized") set("orbit_tempo", bpm);
+                        const duration = delay.mode === "Synchronized" ? 60 / bpm : 0.25;
+                        // Settle all smoothed controls on silence, then start the carrier.
+                        processor.render([], rate);
+                        set(delay.amplitude, 0.1);
+                        const [audio] = processor.render([], Math.ceil(rate * duration * 3));
+                        const rms = (from, to) => {
+                            let sum = 0;
+                            const start = Math.floor(from * duration * rate), end = Math.floor(to * duration * rate);
+                            for (let i = start; i < end; i++) sum += audio[i] ** 2;
+                            return Math.sqrt(sum / (end - start));
+                        };
+                        const before = rms(0.2, 0.8), first = rms(1.4, 1.8), second = rms(2.4, 2.8);
+                        set(delay.modulation, 1);
+                        const [stress] = processor.render([], rate * 2);
+                        let peak = 0;
+                        for (const sample of stress) {
+                            if (!Number.isFinite(sample)) throw new Error("Non-finite modulated delay output");
+                            peak = Math.max(peak, Math.abs(sample));
+                        }
+                        results.push({ mode: delay.mode, rate, bpm, before, first, second, peak });
+                    }
+                }
+                if (delay.mode === "Synchronized") {
+                    const context = new OfflineAudioContext(1, 128, 48000);
+                    const node = await new FaustMonoDspGenerator().createNode(context, "OrbitDelay", { ...compiled, soundfiles: {} }, false);
+                    const transport = new TransportSignalSource();
+                    try {
+                        transport.setSnapshot({ beatsPerMinute: 90, beatPosition: 0, isPlaying: false });
+                        await transport.connect(context, node);
+                        const path = node.getParams().find(path => path.endsWith("/orbit_tempo"));
+                        if (node.getParamValue(path) !== 90) throw new Error("Initial tempo not applied to delay");
+                        transport.setSnapshot({ beatsPerMinute: 180, beatPosition: 0, isPlaying: false });
+                        if (node.getParamValue(path) !== 180) throw new Error("Live tempo not applied to delay");
+                    } finally { transport.dispose(); node.disconnect(); node.destroy?.(); }
+                }
+            }
+            return results;
+        } finally { compiler.dispose(); }
+    }, delays);
+    for (const result of delayResults) {
+        console.log("Delay response", result);
+        assert.ok(result.before < 0.001, "Wet output must be silent before the delay time");
+        assert.ok(Math.abs(result.first - 0.1 / Math.SQRT2) < 0.008);
+        assert.ok(Math.abs(result.second / result.first - 1.5) < 0.1, "Feedback should add the first echo in phase");
+        assert.ok(result.peak < 2);
     }
 
     // All shapes now use the transport in synchronized mode. Supply the same

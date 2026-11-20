@@ -27,15 +27,26 @@ public sealed class FaustNodeContext
 
     public GraphNodeSnapshot Node { get; }
 
-    public bool RequiresTransport { get; private set; }
+    public bool RequiresTransportBeat { get; private set; }
+    public bool RequiresTransportTempo { get; private set; }
 
     /// <summary>Request the shared beat input only if this emitted node uses transport.</summary>
     public string TransportBeat
     {
         get
         {
-            RequiresTransport = true;
+            RequiresTransportBeat = true;
             return "orbit_beat";
+        }
+    }
+
+    /// <summary>Host-owned tempo control, independent of the wrapped beat phase.</summary>
+    public string TransportTempo
+    {
+        get
+        {
+            RequiresTransportTempo = true;
+            return "orbit_tempo";
         }
     }
 
