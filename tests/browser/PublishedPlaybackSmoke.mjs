@@ -280,6 +280,7 @@ try {
     // Wait for the debounced save before closing the editor, then restore a nested workspace.
     await drone.getByRole("button", { name: "Open Drone" }).click();
     await childFrequency.waitFor();
+    const savedFrequencyId = await childFrequency.getAttribute("id");
     await page.getByRole("button", { name: "Zoom out" }).click();
     const savedTransform = await page.locator(".canvas-world").getAttribute("style");
     await page.waitForFunction(async expectedTransform => {
@@ -303,12 +304,15 @@ try {
         } finally { database.close(); }
     }, savedTransform);
     await page.reload();
-    await childFrequency.waitFor();
-    assert.equal(await childFrequency.inputValue(), "330");
+    await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
+    assert.equal(await page.getByRole("alert").count(), 0, await page.getByRole("alert").allTextContents());
+    await breadcrumbs.getByText("Drone", { exact: true }).waitFor();
+    const restoredFrequency = page.locator(`#${savedFrequencyId}`);
+    await restoredFrequency.waitFor();
+    assert.equal(await restoredFrequency.inputValue(), "330");
     assert.equal(await tempo.inputValue(), "90");
     assert.equal(await page.locator(".canvas-world").getAttribute("style"), savedTransform);
     await rack.getByRole("button", { name: "Output: Cutoff (Modulation)" }).waitFor();
-    await status.filter({ hasText: /Ready/ }).waitFor();
     assert.equal(await play.isEnabled(), true);
     await breadcrumbs.getByRole("button", { name: "Patch" }).click();
     await drone.getByRole("button", { name: "Input: Cutoff (Modulation)" }).waitFor();

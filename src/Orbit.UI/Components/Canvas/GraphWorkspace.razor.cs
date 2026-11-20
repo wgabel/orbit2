@@ -90,7 +90,7 @@ public partial class GraphWorkspace : IDisposable
             Navigation = new CanvasNavigationService(session, placement);
         }
         RefreshRanges();
-        subscription = Navigation.Subscribe(change => { _ = InvokeAsync(() =>
+        subscription = Navigation!.Subscribe(change => { _ = InvokeAsync(() =>
         {
             if (!RegisteredTypes.Contains(SelectedType)) SelectedType = OscillatorGenerator.NodeType;
             RefreshRanges();
