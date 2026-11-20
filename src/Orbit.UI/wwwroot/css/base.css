@@ -1,0 +1,18 @@
+/* Document-wide visual rules; token values are generated from DesignSystem JSON. */
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: var(--semantic-space-page);
+    background: var(--semantic-color-canvas);
+    color: var(--semantic-color-text);
+    font-family: var(--semantic-typography-family);
+}
+
+h1 { margin: var(--semantic-space-compact) 0; }
+
+:root { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }

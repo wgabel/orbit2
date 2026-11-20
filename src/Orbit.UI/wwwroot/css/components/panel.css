@@ -1,0 +1,14 @@
+/* Shared surface and eyebrow text used by the root view. */
+.panel {
+    width: min(100%, var(--component-panel-max-width));
+    padding: var(--component-panel-padding);
+    background: var(--semantic-color-surface);
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--component-panel-radius);
+}
+.eyebrow {
+    color: var(--semantic-color-eyebrow);
+    font-size: var(--semantic-typography-caption);
+    letter-spacing: var(--semantic-typography-eyebrow-tracking);
+    text-transform: uppercase;
+}

@@ -28,6 +28,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      # Rebuild the tracked stylesheet and reject stale output or invalid tokens.
+      - name: Generate and test design tokens
+        run: |
+          node src/Orbit.UI/DesignSystem/generate-tokens.mjs
+          git diff --exit-code -- src/Orbit.UI/wwwroot/css/tokens.css
+          node --test tests/ui/*.test.mjs
       - name: Compile Faust DSP
         run: |
           npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts src/Orbit.Audio/Dsp/Oscillators/ModulatedSine.dsp src/Orbit.Infrastructure/wwwroot/audio/generated/modulated-sine
@@ -42,6 +48,16 @@ jobs:
       # Compiles the referenced projects and produces the static site in publish/wwwroot.
       - name: Build and publish
         run: dotnet publish src/Orbit.UI/Orbit.UI.csproj --configuration Release --output publish
+      # Ensure the generated token CSS and every imported stylesheet are published.
+      - name: Verify published design system
+        run: |
+          test -s publish/wwwroot/css/tokens.css
+          cmp src/Orbit.UI/wwwroot/css/tokens.css publish/wwwroot/css/tokens.css
+          test -s publish/wwwroot/css/base.css
+          test -s publish/wwwroot/css/components.css
+          for file in src/Orbit.UI/wwwroot/css/components/*.css; do
+            test -s "publish/wwwroot/css/components/$(basename "$file")"
+          done
       # Ensure the class library's browser assets actually made it to the static site.
       - name: Verify published audio assets
         run: |

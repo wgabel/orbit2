@@ -1,0 +1,166 @@
+{
+  "primitive": {
+    "color": {
+      "ink-950": "#11151b",
+      "ink-900": "#1b222d",
+      "ink-800": "#344454",
+      "ink-700": "#38434f",
+      "ink-600": "#465565",
+      "slate-300": "#a8bdcf",
+      "slate-100": "#e9eef5",
+      "mint-300": "#9be3c7",
+      "mint-400": "#65d3ae",
+      "mint-muted": "#98b9ad",
+      "ink-green": "#10271e",
+      "red-300": "#ff9f9f",
+      "white": "#ffffff",
+      "generator-blue": "#389bc6",
+      "modulator-green": "#44b58a",
+      "processor-amber": "#d59b3d",
+      "composite-violet": "#9872ce",
+      "routing-slate": "#8292a7",
+      "light-canvas": "#edf1f5",
+      "light-border": "#bdc9d4",
+      "light-track": "#8394a5",
+      "light-text": "#172332",
+      "light-muted": "#43576b",
+      "light-accent": "#176b54",
+      "light-accent-muted": "#2b715f",
+      "light-secondary": "#dce4ec",
+      "light-error": "#a52626",
+      "light-modulation": "#14785c",
+      "light-generator": "#16688f",
+      "light-modulator": "#177350",
+      "light-processor": "#9a620e",
+      "light-composite": "#7151a9",
+      "light-routing": "#52657d"
+    },
+    "space": {
+      "xxs": "0.3rem",
+      "xs": "0.45rem",
+      "sm": "0.5rem",
+      "md": "0.75rem",
+      "lg": "0.9rem",
+      "xl": "1rem",
+      "2xl": "1.5rem",
+      "3xl": "2rem",
+      "input-block": "0.35rem"
+    },
+    "radius": {
+      "sm": "0.35rem",
+      "md": "0.5rem",
+      "lg": "1rem",
+      "round": "50%"
+    },
+    "font": {
+      "family": "system-ui, sans-serif",
+      "small": "0.75rem",
+      "compact": "0.85rem",
+      "heading": "1.25rem",
+      "semibold": "600",
+      "tracking": "0.1em"
+    },
+    "border": {
+      "normal": "1px",
+      "focus": "2px",
+      "focus-offset": "4px"
+    },
+    "opacity": {
+      "disabled": "0.55",
+      "band": "0.8"
+    },
+    "motion": {
+      "fast": "45ms",
+      "easing": "linear"
+    },
+    "shadow": {
+      "meter-blur": "5px"
+    }
+  },
+  "semantic": {
+    "space": {
+      "tight": "{primitive.space.xxs}",
+      "compact": "{primitive.space.sm}",
+      "normal": "{primitive.space.xl}",
+      "section": "{primitive.space.3xl}",
+      "page": "{primitive.space.2xl}"
+    },
+    "typography": {
+      "family": "{primitive.font.family}",
+      "caption": "{primitive.font.small}",
+      "label": "{primitive.font.compact}",
+      "section": "{primitive.font.heading}",
+      "emphasis": "{primitive.font.semibold}",
+      "eyebrow-tracking": "{primitive.font.tracking}"
+    },
+    "border": {
+      "width": "{primitive.border.normal}",
+      "focus-width": "{primitive.border.focus}",
+      "focus-offset": "{primitive.border.focus-offset}"
+    },
+    "radius": {
+      "input": "{primitive.radius.sm}",
+      "control": "{primitive.radius.md}",
+      "surface": "{primitive.radius.lg}",
+      "round": "{primitive.radius.round}"
+    },
+    "opacity": {
+      "disabled": "{primitive.opacity.disabled}"
+    },
+    "motion": {
+      "meter-duration": "{primitive.motion.fast}",
+      "meter-easing": "{primitive.motion.easing}"
+    }
+  },
+  "component": {
+    "panel": {
+      "max-width": "30rem",
+      "padding": "{semantic.space.section}",
+      "radius": "{semantic.radius.surface}"
+    },
+    "button": {
+      "padding-block": "0.7rem",
+      "padding-inline": "1.25rem",
+      "secondary-padding-block": "{primitive.space.xs}",
+      "secondary-padding-inline": "{primitive.space.md}",
+      "radius": "{semantic.radius.control}"
+    },
+    "modulation": {
+      "field-gap": "{primitive.space.lg}"
+    },
+    "slider": {
+      "input-width": "6.5rem",
+      "input-padding-block": "{primitive.space.input-block}",
+      "input-padding-inline": "{semantic.space.compact}",
+      "track-height": "1.5rem",
+      "rail-top": "0.55rem",
+      "rail-inset": "0.38rem",
+      "rail-height": "0.4rem",
+      "thumb-size": "0.76rem",
+      "marker-top": "-0.32rem",
+      "marker-width": "0.22rem",
+      "marker-height": "1.04rem",
+      "marker-glow": "{primitive.shadow.meter-blur}",
+      "band-opacity": "{primitive.opacity.band}",
+      "rail-radius": "{semantic.radius.surface}",
+      "track-color": "{semantic.color.track}",
+      "thumb-color": "{semantic.color.text}",
+      "modulation-color": "{semantic.color.modulation}",
+      "marker-duration": "{semantic.motion.meter-duration}",
+      "marker-easing": "{semantic.motion.meter-easing}"
+    },
+    "node": {
+      "min-width": "240px",
+      "border-radius": "6px",
+      "header-height": "32px"
+    },
+    "port": {
+      "size": "12px",
+      "hit-size": "24px"
+    },
+    "connection": {
+      "width": "2px",
+      "hit-width": "12px"
+    }
+  }
+}

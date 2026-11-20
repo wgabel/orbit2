@@ -1,0 +1,16 @@
+/* Layout for the existing fixed modulation view; uses shared controls. */
+.modulation-panel {
+    margin-top: var(--semantic-space-section);
+    padding-top: var(--semantic-space-normal);
+    border-top: var(--semantic-border-width) solid var(--semantic-color-border);
+}
+.modulation-panel h2 { font-size: var(--semantic-typography-section); margin: var(--semantic-space-compact) 0; }
+.modulation-panel fieldset {
+    display: grid;
+    gap: var(--component-modulation-field-gap);
+    padding: 0;
+    margin: var(--semantic-space-normal) 0;
+    border: 0;
+}
+.audio-controls { display: flex; gap: var(--semantic-space-compact); flex-wrap: wrap; }
+.clock-panel { margin-top: var(--semantic-space-normal); color: var(--semantic-color-muted); font-size: var(--semantic-typography-label); }

@@ -1,0 +1,76 @@
+/* Shared parameter editor: base thumb, predicted band, and live DSP marker.
+   Dynamic percentages are supplied by the component; all visual constants are tokens. */
+.parameter-slider { display: grid; gap: var(--semantic-space-tight); }
+.parameter-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--semantic-space-compact); }
+.parameter-heading label { color: var(--semantic-color-text); font-size: var(--semantic-typography-label); }
+.parameter-unit, .parameter-details { color: var(--semantic-color-muted); font-size: var(--semantic-typography-caption); }
+.parameter-heading input {
+    width: var(--component-slider-input-width);
+    color: inherit;
+    background: var(--semantic-color-input);
+    border: var(--semantic-border-width) solid var(--component-slider-track-color);
+    border-radius: var(--semantic-radius-input);
+    padding: var(--component-slider-input-padding-block) var(--component-slider-input-padding-inline);
+    font: inherit;
+    text-align: right;
+}
+.parameter-heading input[aria-invalid="true"] { border-color: var(--semantic-color-error); }
+.parameter-track { position: relative; height: var(--component-slider-track-height); }
+.parameter-rail {
+    position: absolute;
+    inset: var(--component-slider-rail-top) var(--component-slider-rail-inset);
+    height: var(--component-slider-rail-height);
+    background: var(--component-slider-track-color);
+    border-radius: var(--component-slider-rail-radius);
+    pointer-events: none;
+}
+.parameter-band {
+    position: absolute;
+    height: 100%;
+    background: var(--component-slider-modulation-color);
+    opacity: var(--component-slider-band-opacity);
+    border-radius: var(--component-slider-rail-radius);
+}
+.parameter-effective-marker {
+    position: absolute;
+    top: var(--component-slider-marker-top);
+    width: var(--component-slider-marker-width);
+    height: var(--component-slider-marker-height);
+    background: var(--component-slider-modulation-color);
+    box-shadow: 0 0 var(--component-slider-marker-glow) var(--component-slider-modulation-color);
+    border-radius: var(--component-slider-rail-radius);
+    transform: translateX(-50%);
+    transition: left var(--component-slider-marker-duration) var(--component-slider-marker-easing);
+}
+.parameter-track input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+.parameter-track input::-webkit-slider-runnable-track { background: transparent; }
+.parameter-track input::-moz-range-track { background: transparent; }
+.parameter-track input::-webkit-slider-thumb {
+    appearance: none;
+    width: var(--component-slider-thumb-size);
+    height: var(--component-slider-thumb-size);
+    background: var(--component-slider-thumb-color);
+    border-radius: var(--semantic-radius-round);
+}
+.parameter-track input::-moz-range-thumb {
+    width: var(--component-slider-thumb-size);
+    height: var(--component-slider-thumb-size);
+    background: var(--component-slider-thumb-color);
+    border: 0;
+    border-radius: var(--semantic-radius-round);
+}
+.parameter-track input:disabled { cursor: default; }
+.parameter-details, .parameter-modulation { display: flex; justify-content: space-between; gap: var(--semantic-space-compact); }
+.parameter-modulation { color: var(--component-slider-modulation-color); font-size: var(--semantic-typography-caption); font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) {
+    .parameter-effective-marker { transition: none; }
+}

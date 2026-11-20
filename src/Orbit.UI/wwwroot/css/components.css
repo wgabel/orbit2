@@ -1,0 +1,6 @@
+/* Shared UI component styles. Import order is deliberate: controls before views. */
+@import url("./components/button.css");
+@import url("./components/panel.css");
+@import url("./components/parameter-slider.css");
+@import url("./components/validation-message.css");
+@import url("./components/modulation-panel.css");

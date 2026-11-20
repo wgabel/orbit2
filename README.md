@@ -14,6 +14,7 @@ From the repository root:
 
 ```sh
 npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts src/Orbit.Audio/Dsp/Oscillators/ModulatedSine.dsp src/Orbit.Infrastructure/wwwroot/audio/generated/modulated-sine
+node src/Orbit.UI/DesignSystem/generate-tokens.mjs
 dotnet run --project src/Orbit.UI --urls http://localhost:5000
 ```
 
@@ -185,6 +186,39 @@ flowchart TD
 
 The meter is read at ~20 Hz and never changes the base parameter. Future root and nested canvases share the same viewport, node frame, port connector and Bézier connection components. Their interaction and visual contracts are defined in [the architecture document](ORBIT2-ARCHITECTURE.md#shared-canvas-and-component-standards).
 
+## Design system
+
+All static UI colors, typography, spacing, borders, control dimensions and animation durations are defined in JSON in `src/Orbit.UI/DesignSystem/`. Presentation components consume CSS custom properties rather than hardcode visual values.
+
+~~~mermaid
+flowchart TD
+    JSON["design-tokens.json"] --> Generator["generate-tokens.mjs"]
+    Themes["Themes/dark.json and light.json"] --> Generator
+    Generator --> Tokens["wwwroot/css/tokens.css"]
+    Tokens --> CSS["Base and component styles"]
+    CSS --> UI["Blazor UI"]
+~~~
+
+| Token level | Role | Example |
+| --- | --- | --- |
+| Primitive | Shared palette, spacing and other raw values | `primitive.color.ink-950` |
+| Semantic | Meaning independent of component | `semantic.color.canvas` |
+| Component | Specific reusable control appearance | `component.slider.thumb-size` |
+
+The generator flattens token paths into CSS variables, e.g. `--component-slider-thumb-size`. A JSON value such as `"{semantic.color.modulation}"` is an alias, emitted as a CSS `var(...)` reference. The dark theme defines the default color roles; the light theme defines the identical roles with alternate palette aliases. Both share the same sizing and component rules. The default remains dark; an app-level theme controller can later set `data-theme="light"` on the root HTML element without rebuilding or changing Razor views.
+
+To change the design, edit the token JSON or theme files, then regenerate and test:
+
+~~~sh
+node src/Orbit.UI/DesignSystem/generate-tokens.mjs
+node src/Orbit.UI/DesignSystem/generate-tokens.mjs --check
+node --test tests/ui/*.test.mjs
+~~~
+
+Commit the regenerated `wwwroot/css/tokens.css` together with source JSON. The generated file is tracked so a fresh checkout can build directly with .NET; do not edit it manually. CI regenerates it, rejects differences from the tracked output, tests token references and styles, and verifies all published CSS assets. Node is only used at build time, not in browser rendering.
+
+`wwwroot/index.html` loads the generated variables first, then `base.css` and `components.css` (which imports each reusable component stylesheet). No styling constants belong in Razor markup or C#; computed geometry such as the live marker position and modulation band percentage remains presentation state. Audio values, ranges and DSP settings remain in the domain/application layers.
+
 ## Repository layout
 
 ```text
@@ -238,8 +272,18 @@ src/
     Components/Parameters/ParameterSlider.razor.cs
     Components/Parameters/ParameterValidation.cs
     Components/Parameters/ValidationMessage.razor
+    DesignSystem/
+      design-tokens.json
+      Themes/dark.json
+      Themes/light.json
+      generate-tokens.mjs
     wwwroot/index.html
-    wwwroot/styles.css
+    wwwroot/css/
+      tokens.css                      # generated, tracked
+      base.css
+      components.css                  # shared stylesheet imports
+      components/                     # button, panel, slider, validation, modulation view
+tests/ui/                            # design token and stylesheet contract tests
 tests/audio/                         # isolated browser infrastructure tests
 tests/Orbit.Domain.Tests/            # framework-neutral graph and registry tests
 .github/workflows/build-and-deploy.yml
@@ -253,6 +297,7 @@ ORBIT2-ARCHITECTURE.md
 - Single responsibility; constructor injection; composition over inheritance.
 - Application contracts, data and use cases never depend on Blazor or browser APIs.
 - UI logic remains in code-behind; no audio implementation or source parameters in Razor.
+- Define static visual values in the design token JSON and consume semantic/component CSS variables in reusable styles. The only inline CSS values are computed presentation geometry.
 - C# and JS composition roots are the only places where concrete dependencies are wired.
 - Browser components are independently testable and have no global mutable state outside the composed engine.
 - The real-time DSP and envelopes use the audio rendering system, not UI rendering or timers.
@@ -264,11 +309,13 @@ Run the Faust compile command shown above before building or running the complet
 
 ```sh
 dotnet test tests/Orbit.Domain.Tests/Orbit.Domain.Tests.csproj -c Release
+node src/Orbit.UI/DesignSystem/generate-tokens.mjs --check
+node --test tests/ui/*.test.mjs
 node --test tests/audio/*.test.mjs
 dotnet build Orbit.slnx
 dotnet publish src/Orbit.UI -c Release -o publish
 ```
 
-GitHub Actions tests the domain, registry and transport, compiles the active Faust program, tests infrastructure and renders the actual compiled modulation DSP at 44.1 and 48 kHz, builds the referenced .NET projects, checks the published static assets and deploys `publish/wwwroot` to GitHub Pages. For main deployments it rewrites the HTML base path to `/orbit2/`. Blazor's build-time fingerprinting and generated import map version the runtime assets, reducing mixed-version caching when a deployment replaces browser modules.
+GitHub Actions tests the domain, registry and transport, regenerates and tests the design system, compiles the active Faust program, tests infrastructure and renders the actual compiled modulation DSP at 44.1 and 48 kHz, builds the referenced .NET projects, checks the published static assets and deploys `publish/wwwroot` to GitHub Pages. For main deployments it rewrites the HTML base path to `/orbit2/`. Blazor's build-time fingerprinting and generated import map version the runtime assets, reducing mixed-version caching when a deployment replaces browser modules.
 
 Open https://wgabel.github.io/orbit2/ after deployment.

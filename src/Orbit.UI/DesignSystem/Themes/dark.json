@@ -1,0 +1,27 @@
+{
+  "semantic": {
+    "color": {
+      "canvas": "{primitive.color.ink-950}",
+      "surface": "{primitive.color.ink-900}",
+      "input": "{primitive.color.ink-950}",
+      "border": "{primitive.color.ink-700}",
+      "track": "{primitive.color.ink-600}",
+      "text": "{primitive.color.slate-100}",
+      "muted": "{primitive.color.slate-300}",
+      "eyebrow": "{primitive.color.mint-muted}",
+      "action": "{primitive.color.mint-300}",
+      "action-text": "{primitive.color.ink-green}",
+      "secondary": "{primitive.color.ink-800}",
+      "secondary-text": "{primitive.color.slate-100}",
+      "error": "{primitive.color.red-300}",
+      "focus": "{primitive.color.white}",
+      "selected": "{primitive.color.white}",
+      "modulation": "{primitive.color.mint-400}",
+      "generator": "{primitive.color.generator-blue}",
+      "modulator": "{primitive.color.modulator-green}",
+      "processor": "{primitive.color.processor-amber}",
+      "composite": "{primitive.color.composite-violet}",
+      "routing": "{primitive.color.routing-slate}"
+    }
+  }
+}

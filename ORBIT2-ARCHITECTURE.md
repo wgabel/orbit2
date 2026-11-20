@@ -609,6 +609,46 @@ A sine used as an LFO remains the same generator implementation: the displayed r
 
 Map these presentation shapes to the existing domain port kinds; introduce future kinds only when their domain semantics exist. Audio channel count is a label, not a separate signal kind.
 
+#### Design token and theme system
+
+The design system is a presentation-owned boundary. Static visual values must have a single JSON source, independent of markup, application commands and audio processing. Each root canvas and nested canvas uses the same semantic tokens and shared component styles.
+
+| Level | Responsibility | Example |
+| --- | --- | --- |
+| Primitive | Raw shared palette, spacing, font sizes, radii, opacity and motion | `primitive.color.ink-950` |
+| Semantic | Visual purpose independent of the widget | `semantic.color.generator` |
+| Component | Reusable widget dimensions or semantic aliases | `component.node.min-width`, `component.slider.modulation-color` |
+
+The base file is `src/Orbit.UI/DesignSystem/design-tokens.json`; `Themes/dark.json` and `Themes/light.json` supply the same semantic color keys. A theme cannot redefine component sizes: both themes share the same interaction geometry. Domain role colors, selection/focus, errors and modulation use semantic keys. New UI components should reference those keys instead of duplicating their values.
+
+~~~mermaid
+flowchart TD
+    J["Shared token JSON"] --> G["Build-time generator"]
+    T["Dark and light theme JSON"] --> G
+    G --> V["Generated CSS variables"]
+    V --> B["Base CSS"]
+    V --> C["Component styles"]
+    B --> R["Root and nested Blazor views"]
+    C --> R
+~~~
+
+JSON aliases use `"{primitive.color.generator-blue}"` syntax and compile into CSS variable references. The deterministic generator validates token names, flattened name collisions, missing and circular references, and matching theme keys. It emits `wwwroot/css/tokens.css`, which is tracked and loaded before the base and component styles. CI verifies regenerated output and all published CSS assets; there is no runtime JSON reader or styling framework. Dark is the default, light can be activated by setting `data-theme="light"` on the HTML root. Theme selection UI/persistence is a future concern.
+
+Example use in a shared node stylesheet:
+
+~~~css
+.node-frame {
+    min-width: var(--component-node-min-width);
+    border-radius: var(--component-node-border-radius);
+    background: var(--semantic-color-surface);
+}
+.node-frame--generator {
+    border-color: var(--semantic-color-generator);
+}
+~~~
+
+Keep layout structure in CSS and markup, with numeric styling constants in JSON. Reuse token-based component styles for repeated UI controls (the existing button, slider and validation message are migrated). Only computed presentation geometry such as port coordinates, canvas transforms, live modulation percentages and Bézier path points can be provided dynamically by code. Parameter bounds, units, sample rates, transport settings, zoom interaction limits and graph rules are functional values, not visual tokens.
+
 #### Reusable presentation building blocks
 
 | Component | Single responsibility |
@@ -1257,6 +1297,7 @@ Deliverable: a graph edit reaches independent subscribers once, with valid model
 
 ### Phase 4 — Flat canvas and dynamic graph compiler
 
+- Reuse the implemented JSON design token system for canvas, node, port, connection and parameter styles.
 - Add reusable canvas renderer with nodes, ports and visible audio/modulation connections.
 - Introduce drag-to-connect, delete connection, node placement and parameter editor.
 - Implement dependency ordering and Faust graph builder/compiler.

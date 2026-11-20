@@ -1,0 +1,2 @@
+/* Shared field validation presentation, independent of the parameter editor. */
+.parameter-error { color: var(--semantic-color-error); font-size: var(--semantic-typography-caption); }

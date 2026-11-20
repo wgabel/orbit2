@@ -1,0 +1,21 @@
+/* Shared button variants and interaction states. */
+button {
+    background: var(--semantic-color-action);
+    color: var(--semantic-color-action-text);
+    border: 0;
+    border-radius: var(--component-button-radius);
+    padding: var(--component-button-padding-block) var(--component-button-padding-inline);
+    font: inherit;
+    font-weight: var(--semantic-typography-emphasis);
+    cursor: pointer;
+}
+button:focus-visible {
+    outline: var(--semantic-border-focus-width) solid var(--semantic-color-focus);
+    outline-offset: var(--semantic-border-focus-offset);
+}
+button:disabled { opacity: var(--semantic-opacity-disabled); cursor: not-allowed; }
+button.secondary {
+    background: var(--semantic-color-secondary);
+    color: var(--semantic-color-secondary-text);
+    padding: var(--component-button-secondary-padding-block) var(--component-button-secondary-padding-inline);
+}
