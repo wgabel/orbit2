@@ -19,6 +19,11 @@ export class AudioContextManager {
         return this.#context;
     }
 
+    // Clock queries must never create or resume an AudioContext.
+    getCurrentContext() {
+        return this.#context;
+    }
+
     async dispose() {
         if (this.#context && this.#context.state !== "closed") {
             await this.#context.close();

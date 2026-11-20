@@ -17,8 +17,12 @@ builder.RootComponents.Add<App>("#app");
 builder.Services.AddSingleton<ICounterService, CounterService>();
 
 // Register the browser-specific audio adapter behind the application contract.
-builder.Services.AddSingleton<IAudioEngine, BrowserAudioEngine>();
+// Both ports resolve to the same adapter and therefore the same browser context.
+builder.Services.AddSingleton<BrowserAudioEngine>();
+builder.Services.AddSingleton<IAudioEngine>(services => services.GetRequiredService<BrowserAudioEngine>());
+builder.Services.AddSingleton<IAudioClock>(services => services.GetRequiredService<BrowserAudioEngine>());
 builder.Services.AddSingleton<IAudioService, AudioService>();
+builder.Services.AddSingleton<IModulationDemoService, ModulationDemoService>();
 
 // Start the host, resolve dependencies and render the registered root component.
 await builder.Build().RunAsync();

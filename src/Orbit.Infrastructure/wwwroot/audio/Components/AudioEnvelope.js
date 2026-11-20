@@ -15,6 +15,15 @@ export class AudioEnvelope {
         return endTime;
     }
 
+    // Continuous voices have no predetermined end; only the attack is
+    // scheduled. Stop schedules the release on the same audio clock.
+    scheduleSustain(gain, startTime, volume) {
+        gain.cancelScheduledValues(startTime);
+        gain.setValueAtTime(0, startTime);
+        gain.linearRampToValueAtTime(volume, startTime + 0.02);
+        return Infinity;
+    }
+
     release(gain, time, durationSeconds = 0.04) {
         // Hold the current instantaneous gain when cancelling the envelope.
         // The fallback retains compatibility with older Web Audio engines.

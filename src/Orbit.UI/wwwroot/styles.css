@@ -52,3 +52,27 @@ button:focus-visible { outline: 2px solid white; outline-offset: 4px; }
     border-top: 1px solid #38434f;
 }
 button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* Modulation demonstration: settings remain presentation-only controls. */
+.audio-experiment h2 { font-size: 1.25rem; margin: 0.5rem 0; }
+.audio-experiment fieldset {
+    display: grid;
+    gap: 0.45rem;
+    padding: 0;
+    margin: 1rem 0;
+    border: 0;
+}
+.audio-experiment label { color: #b8c7d4; font-size: 0.85rem; }
+.audio-experiment input[type=number] {
+    width: 100%;
+    color: inherit;
+    background: #11151b;
+    border: 1px solid #465565;
+    border-radius: 0.35rem;
+    padding: 0.45rem 0.6rem;
+    font: inherit;
+    margin-bottom: 0.4rem;
+}
+.audio-controls { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.clock-panel { margin-top: 1rem; color: #a8bdcf; font-size: 0.85rem; }
+button.secondary { background: #344454; color: #e9eef5; padding: 0.45rem 0.75rem; }

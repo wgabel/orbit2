@@ -2,7 +2,7 @@
 
 A browser-based experiment for rebuilding Orbit with independent C# application logic, Blazor WebAssembly UI and Faust DSP. The existing counter demonstrates state ownership; the Faust button demonstrates real-time audio processing. No React or TypeScript is used.
 
-The long-term modular synthesizer design is documented in [ORBIT2-ARCHITECTURE.md](ORBIT2-ARCHITECTURE.md). Phase 1 adds the independent signal graph model; the original tone demo remains the running audio example.
+The long-term modular synthesizer design is documented in [ORBIT2-ARCHITECTURE.md](ORBIT2-ARCHITECTURE.md). Phase 1 adds the independent signal graph model. Phase 2 executes a fixed modulation graph using Faust and exposes the shared audio clock. The original tone demo remains unchanged.
 
 ## Requirements and local execution
 
@@ -14,10 +14,11 @@ From the repository root:
 
 ```sh
 npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts src/Orbit.Audio/Dsp/Oscillators/Sine.dsp src/Orbit.Infrastructure/wwwroot/audio/generated/sine
+npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts src/Orbit.Audio/Dsp/Oscillators/ModulatedSine.dsp src/Orbit.Infrastructure/wwwroot/audio/generated/modulated-sine
 dotnet run --project src/Orbit.UI --urls http://localhost:5000
 ```
 
-Open http://localhost:5000. **Increment** increases the counter; **Play Faust tone** plays a 440 Hz sine wave for 400 ms at 0.1 linear gain with gentle fades.
+Open http://localhost:5000. **Increment** increases the counter; **Play Faust tone** plays a 440 Hz sine wave for 400 ms at 0.1 linear gain with gentle fades. **Start modulation** plays a continuous, modulated sine wave; **Stop** releases it with a short fade. Settings can be changed between playbacks.
 
 ## Project boundaries
 
@@ -118,6 +119,7 @@ process = os.osc(frequency);
 | audio.js | Compose dependencies and expose the narrow interop API; no playback or DSP logic. |
 | AudioEngine.js | Coordinate playback, validate requests, manage active sound IDs and cleanup. |
 | AudioContextManager.js | Create, resume and close the one shared AudioContext. |
+| AudioClock.js | Read the existing context's frame-time snapshot without starting audio. |
 | FaustModuleLoader.js | Download and cache compiled modules and metadata; retry failed loads. |
 | FaustNodeFactory.js | Create independent Faust worklet nodes and map parameters using their published paths. |
 | AudioOutput.js | Own master output; create separate, initially silent voice paths. |
@@ -133,7 +135,7 @@ The independent domain model describes topology without generating samples. It h
 - Typed ports allow one output to feed several inputs, and modulatable parameters accept multiple sources. Connection amounts represent audio gain or target-specific modulation depth.
 - Graph validation rejects missing or reversed endpoints, incompatible types/channels, duplicate edges, single-input conflicts and cycles (including modulation cycles).
 - Removing a node removes its incident edges in the same operation. Parameter settings remain base values and never receive audio-rate samples.
-- The application registry creates independently identified node instances. The tone demo is deliberately unchanged: the graph is not yet compiled into executable Faust DSP.
+- The application registry creates independently identified node instances. The tone demo is deliberately unchanged. Phase 2 provides a specific mapping from a validated graph to a precompiled Faust program; general-purpose graph compilation is still planned for Phase 4.
 
 A small graph can be built and validated without a UI or audio device:
 
@@ -165,7 +167,38 @@ graph.Connect(new PortAddress(oscillator.Id, oscillator.Outputs.Single().Id),
     new PortAddress(output.Id, output.Inputs.Single().Id));
 ```
 
-This describes a 0.5 Hz LFO modulating the second oscillator's 440 Hz base frequency by ±100 Hz. The actual sample-rate calculation and playback of this graph are planned in Phase 2.
+This describes a 0.5 Hz LFO modulating the second oscillator's 440 Hz base frequency by ±100 Hz. Phase 2 implements this particular modulation topology, including a gain stage, as an audible proof.
+
+## Shared timing and audio-rate modulation (Phase 2)
+
+The new experiment builds a validated graph through ModulationDemoPatch, then maps its base frequency, LFO frequency, modulation depth and gain to the existing engine contract. It is a deliberately **fixed graph**, not a dynamic Faust compiler.
+
+~~~mermaid
+flowchart LR
+    LFO["Sine LFO · 0.5 Hz"] --> P["Frequency · 440 ± 100 Hz"]
+    P --> OSC["Sine carrier"]
+    OSC --> G["Voice gain and envelope"]
+    G --> O["Master output"]
+~~~
+
+- ModulatedSine.dsp computes the LFO, effective frequency and carrier at the real audio sample rate. It uses the same reusable sine function for both oscillators. Faust smooths base settings before applying sample-rate modulation and clamps the effective frequency to a safe range.
+- ModulationDemoService invokes the browser adapter with a playback request. A null duration indicates sustained playback rather than a fixed-length voice. Stop schedules a release using Web Audio's time and then disposes the voice.
+- The default values produce a frequency changing from approximately 340 Hz to 540 Hz every two seconds. Depth 0 produces the base frequency without vibrato.
+- AudioClock observes the single existing AudioContext's actual sample rate and elapsed context time. Read audio clock in the UI returns the estimated frame position at the rendering quantum boundary, not an independent clock. It does not start or resume the context.
+- MusicalTransport converts sample-frame differences into beats and tempo-synchronized frequency. Tempo changes preserve beat position, stopping freezes it, and resuming continues from that position. It is tested independently; live transport synchronization and graph editing are later features.
+
+~~~mermaid
+flowchart TD
+    UI["FaustModulation component"] --> S["ModulationDemoService"]
+    S --> P["Validated fixed SignalGraph"]
+    P --> R["PlaybackRequest"]
+    R --> E["Browser AudioEngine"]
+    E --> DSP["ModulatedSine Faust WASM"]
+    DSP --> O["Audio-clock-scheduled gain"]
+    O --> OUT["Audio output"]
+~~~
+
+There is no per-sample C# or JavaScript event loop. The audio engine controls waveform generation, while browser timers only observe end-of-playback for resource cleanup. The demo does not yet support changing topology/parameters during playback.
 
 ## Repository layout
 
@@ -178,19 +211,26 @@ src/
     Nodes/
     Parameters/
     Ports/
+    Timing/
   Orbit.Application/
     Orbit.Application.csproj
     Interfaces/IAudioEngine.cs
     Models/PlaybackRequest.cs
     Graphs/NodeRegistry.cs
     Graphs/BuiltInNodes.cs
+    Graphs/ModulationDemoPatch.cs
+    Interfaces/IAudioClock.cs
+    Models/ModulationDemoSettings.cs
     Services/
       IAudioService.cs
       AudioService.cs
       ICounterService.cs
       CounterService.cs
+      IModulationDemoService.cs
+      ModulationDemoService.cs
   Orbit.Audio/
     Dsp/Oscillators/Sine.dsp
+    Dsp/Oscillators/ModulatedSine.dsp
   Orbit.Infrastructure/
     Orbit.Infrastructure.csproj
     Audio/BrowserAudioEngine.cs
@@ -199,13 +239,14 @@ src/
       AudioEngine.js
       Components/
         AudioContextManager.js
+        AudioClock.js
         AudioOutput.js
         AudioVoice.js
         AudioEnvelope.js
       Faust/
         FaustModuleLoader.js
         FaustNodeFactory.js
-      generated/sine/                 # compiled WASM and runtime; ignored
+      generated/                      # compiled WASM and runtime; ignored
   Orbit.UI/
     Orbit.UI.csproj
     Program.cs
@@ -213,6 +254,8 @@ src/
     App.razor.cs
     Components/FaustTone.razor
     Components/FaustTone.razor.cs
+    Components/FaustModulation.razor
+    Components/FaustModulation.razor.cs
     wwwroot/index.html
     wwwroot/styles.css
 tests/audio/                         # isolated browser infrastructure tests
@@ -235,7 +278,7 @@ ORBIT2-ARCHITECTURE.md
 
 ## Build, tests and deployment
 
-Run the Faust compile command shown above before building. The official pinned FaustWasm compiler generates the browser-only runtime and WASM output; the compiler is not shipped or executed in the browser.
+Run both Faust compile commands shown above before building or running the complete audio test suite. The official pinned FaustWasm compiler generates the browser-only runtime and WASM output; the compiler is not shipped or executed in the browser.
 
 ```sh
 dotnet test tests/Orbit.Domain.Tests/Orbit.Domain.Tests.csproj -c Release
@@ -244,6 +287,6 @@ dotnet build Orbit.slnx
 dotnet publish src/Orbit.UI -c Release -o publish
 ```
 
-GitHub Actions tests the domain and registry, compiles Faust, tests the infrastructure modules, builds the referenced .NET projects, checks the published static assets and deploys `publish/wwwroot` to GitHub Pages. For main deployments it rewrites the HTML base path to `/orbit2/`. Blazor's build-time fingerprinting and generated import map version the runtime assets, reducing mixed-version caching when a deployment replaces browser modules.
+GitHub Actions tests the domain, registry and transport, compiles both Faust programs, tests infrastructure and renders the actual compiled modulation DSP at 44.1 and 48 kHz, builds the referenced .NET projects, checks the published static assets and deploys `publish/wwwroot` to GitHub Pages. For main deployments it rewrites the HTML base path to `/orbit2/`. Blazor's build-time fingerprinting and generated import map version the runtime assets, reducing mixed-version caching when a deployment replaces browser modules.
 
 Open https://wgabel.github.io/orbit2/ after deployment.

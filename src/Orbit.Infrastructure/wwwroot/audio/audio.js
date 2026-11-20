@@ -3,13 +3,15 @@
 import { FaustMonoDspGenerator } from "./generated/sine/faustwasm/index.js";
 import { AudioEngine } from "./AudioEngine.js";
 import { AudioContextManager } from "./Components/AudioContextManager.js";
+import { AudioClock } from "./Components/AudioClock.js";
 import { AudioEnvelope } from "./Components/AudioEnvelope.js";
 import { AudioOutput } from "./Components/AudioOutput.js";
 import { FaustModuleLoader } from "./Faust/FaustModuleLoader.js";
 import { FaustNodeFactory } from "./Faust/FaustNodeFactory.js";
 
 const processors = new Map([
-    ["Sine", { name: "OrbitSine", baseUrl: new URL("./generated/sine/", import.meta.url) }]
+    ["Sine", { name: "OrbitSine", baseUrl: new URL("./generated/sine/", import.meta.url) }],
+    ["ModulatedSine", { name: "OrbitModulatedSine", baseUrl: new URL("./generated/modulated-sine/", import.meta.url) }]
 ]);
 
 const contextManager = new AudioContextManager(() => {
@@ -17,6 +19,7 @@ const contextManager = new AudioContextManager(() => {
     if (!Context) throw new Error("Web Audio is unavailable.");
     return new Context();
 });
+const audioClock = new AudioClock(contextManager);
 const moduleLoader = new FaustModuleLoader(
     url => fetch(url),
     bytes => WebAssembly.compile(bytes));
@@ -27,4 +30,5 @@ const engine = new AudioEngine(contextManager, nodeFactory, output);
 
 export const play = request => engine.play(request);
 export const stop = soundId => engine.stop(soundId);
+export const getClockSnapshot = () => audioClock.getSnapshot();
 export const dispose = () => engine.dispose();

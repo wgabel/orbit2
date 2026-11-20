@@ -16,11 +16,11 @@ export class AudioVoice {
     }
 
     async play(request) {
-        this.#endTime = this.#envelope.schedule(
-            this.#gainNode.gain,
-            this.#context.currentTime + 0.01,
-            request.durationMilliseconds / 1000,
-            request.volume);
+        const startTime = this.#context.currentTime + 0.01;
+        this.#endTime = request.durationMilliseconds === null
+            ? this.#envelope.scheduleSustain(this.#gainNode.gain, startTime, request.volume)
+            : this.#envelope.schedule(this.#gainNode.gain, startTime,
+                request.durationMilliseconds / 1000, request.volume);
 
         // This timer only observes the audio clock and handles cleanup.
         // All audible timing is scheduled by the AudioEnvelope.
