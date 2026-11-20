@@ -4,13 +4,15 @@ export class AudioEngine {
     #contextManager;
     #nodeFactory;
     #output;
+    #createMonitor;
     #active = new Map();
     #disposed = false;
 
-    constructor(contextManager, nodeFactory, output) {
+    constructor(contextManager, nodeFactory, output, createMonitor) {
         this.#contextManager = contextManager;
         this.#nodeFactory = nodeFactory;
         this.#output = output;
+        this.#createMonitor = createMonitor;
     }
 
     async play(request) {
@@ -47,16 +49,27 @@ export class AudioEngine {
                 throw error;
             }
 
+            playback.monitor = this.#createMonitor(node);
             if (!playback.cancelled) {
                 await playback.voice.play(request);
             }
         } finally {
             try {
-                playback.voice?.dispose();
+                try {
+                    playback.monitor?.dispose();
+                } finally {
+                    playback.voice?.dispose();
+                }
             } finally {
                 this.#active.delete(request.soundId);
             }
         }
+    }
+
+    // A snapshot is read at display rate, independently of the sample clock.
+    getOutputValues(soundId) {
+        const playback = this.#active.get(soundId);
+        return !playback || playback.cancelled ? null : playback.monitor?.getSnapshot() ?? null;
     }
 
     stop(soundId) {

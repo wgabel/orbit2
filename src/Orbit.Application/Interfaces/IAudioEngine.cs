@@ -11,4 +11,7 @@ public interface IAudioEngine
     Task InitializeAsync();
     Task PlayAsync(PlaybackRequest request);
     Task StopAsync(string soundId);
+
+    /// <summary>Latest read-only processor meter values, or null when inactive.</summary>
+    Task<Dictionary<string, double>?> GetOutputValuesAsync(string soundId);
 }

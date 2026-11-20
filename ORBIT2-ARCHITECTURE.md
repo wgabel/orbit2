@@ -575,6 +575,70 @@ Moving a node or changing zoom/selection must not recompile DSP. Opening or clos
 
 The UI can show a breadcrumb such as Patch / Drone A / Effect rack. Use stable graph IDs to resolve the currently edited graph.
 
+### Shared canvas and component standards
+
+Every root canvas and nested canvas uses the same editor and viewport behavior. A canvas is a view over a signal graph, not a separate audio engine.
+
+- Pan freely along both axes using a background drag (middle mouse or space + drag also works over nodes). Panning must not move graph nodes.
+- Zoom with the wheel or toolbar controls, anchored at the pointer when zooming on the canvas. Show the current percentage at all times, with zoom in/out, reset to 100%, and fit-to-content controls. Use a configurable bounded zoom range (initially 25–400%).
+- Store viewport pan and zoom separately for each graph. Preserve them when navigating between root and child canvases. Use a single world-to-screen transform shared by nodes, ports, connections and hit testing: screen = world × zoom + pan.
+- Render connections as cubic Bézier curves between the actual port anchors. Use one connection renderer for draft, connected, selected and invalid-preview states; keep wire endpoints attached during node movement, pan and zoom.
+- Input ports appear on the left, outputs on the right, with accessible names and adequate hit targets. The port shape encodes signal type, not direction. Use both labels and shapes so color is never the only distinction.
+
+#### Visual vocabulary
+
+All nodes have a filled background and a role-specific accent color from shared semantic theme tokens. The colors below are the initial palette, not values hard-coded into individual components.
+
+| Node role | Accent |
+| --- | --- |
+| Audio generator | Cyan / blue |
+| Modulation source (e.g. sine used as an LFO) | Green |
+| Signal processor / effect | Amber |
+| Composite / drone | Violet |
+| Input rack, output rack, master output | Slate |
+
+A sine used as an LFO remains the same generator implementation: the displayed role does not create a new DSP class. Processors that produce modulation retain their processor role; port types distinguish their signals.
+
+| Signal kind | Port shape |
+| --- | --- |
+| Audio | Circle |
+| Modulation / continuous control | Diamond |
+| Trigger (future) | Triangle |
+| Gate (future) | Square |
+| Clock (future) | Hexagon |
+
+Map these presentation shapes to the existing domain port kinds; introduce future kinds only when their domain semantics exist. Audio channel count is a label, not a separate signal kind.
+
+#### Reusable presentation building blocks
+
+| Component | Single responsibility |
+| --- | --- |
+| GraphCanvas | Compose viewport, graph nodes, connections and local interaction state for any graph |
+| CanvasViewport | Coordinate conversion, pan, zoom and viewport state |
+| CanvasToolbar | Zoom controls, percentage readout, fit and reset |
+| NodeFrame | Shared node background, role accent, header, input/output layout and content slot |
+| PortConnector | Render shape, label, typed endpoint, hit area and connection gesture |
+| ConnectionLayer / ConnectionPath | Render and hit-test Bézier connections using shared port geometry |
+| ParameterSlider | Name, unit, editable numeric base value, min/max, range slider, inline error, modulation band and effective marker |
+| ValidationMessage | Consistent field-level error presentation directly below an invalid value box |
+
+Razor markup composes reusable components; code-behind handles presentation interaction. Domain validation and application commands remain authoritative. Node-specific views supply definitions and content, rather than duplicating viewport, slider, port or connection code. Theme tokens and reusable styles live in the UI project, never in Domain.
+
+#### Parameter editor contract
+
+A parameter's immutable definition supplies its name, unit (Hz, ratio, dB, etc.), minimum, maximum, scale and modulation capability. The parameter instance supplies its editable base value. A range slider and number box edit that same value; invalid, non-finite or out-of-range input stays in the field with an explanatory message beneath it and is not committed to the graph. Use appropriate scales (linear initially, logarithmic/pitch-aware where required).
+
+Modulation adds two read-only visual values to the editor:
+
+- A colored interval on the rail displays the predicted effective-value range; it is computed from the known modulation bounds and routing amounts, not from an animation timer. Unknown bounds are displayed as unknown.
+- A moving marker and numeric live readout display the actual effective value sampled from the processing engine. The base thumb and numeric input stay stable.
+
+For example, a frequency base of 440 Hz with a sine LFO at ±100 Hz displays a 340–540 Hz band, while the live marker follows the DSP frequency. Where modulation exceeds the editable base limits, the rail is clipped and the full effective bounds and current value remain visible in text.
+
+Live telemetry is a passive, display-rate snapshot (around 20–30 Hz initially, batched per graph when scaled up), not an application event for every sample. Audio processing never waits for the UI. Do not persist telemetry or write it back to editable parameter values. A stopped or unavailable processor has no live marker.
+
+The first implementation is the shared ParameterSlider in the fixed modulation screen. Phase 4 implements the shared canvas, node frames, typed ports and connection renderer; Phase 5 reuses them for nested canvases.
+
 ### Reusable modules and presets
 
 A saved composite definition consists of its graph, exposed ports and optional canvas layout. This supports:

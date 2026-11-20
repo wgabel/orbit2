@@ -19,5 +19,17 @@ public sealed class ModulationDemoService(IAudioEngine audioEngine, IAudioClock 
 
     public Task StopAsync() => audioEngine.StopAsync(ModulationDemoPatch.SoundId);
 
+    // Keep the processor-specific meter name out of the presentation layer.
+    public async Task<double?> GetEffectiveFrequencyAsync()
+    {
+        var values = await audioEngine.GetOutputValuesAsync(ModulationDemoPatch.SoundId);
+        if (values is not null)
+            foreach (var (path, value) in values)
+                if (path.EndsWith("/effectiveFrequency", StringComparison.Ordinal))
+                    return value;
+
+        return null;
+    }
+
     public Task<AudioClockSnapshot?> GetClockSnapshotAsync() => audioClock.GetSnapshotAsync();
 }

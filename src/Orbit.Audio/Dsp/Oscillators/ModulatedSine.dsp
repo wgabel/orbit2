@@ -12,7 +12,9 @@ lfoRate = hslider("lfoRate", 0.5, 0.05, 5, 0.01) : si.smoo;
 depthHz = hslider("depthHz", 100, 0, 200, 1) : si.smoo;
 
 lfo = sineGenerator(lfoRate);
-effectiveFrequency = max(20, min(0.49 * ma.SR, baseFrequency + depthHz * lfo));
+// The passive meter observes the actual frequency without changing the signal.
+effectiveFrequency = max(20, min(0.49 * ma.SR, baseFrequency + depthHz * lfo))
+    : hbargraph("effectiveFrequency", 20, 1200);
 
 // os.osc advances its phase using the actual DSP sample rate; modulation
 // changes the increment without resetting the phase. The browser's existing

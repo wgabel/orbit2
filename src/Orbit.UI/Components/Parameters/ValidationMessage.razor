@@ -1,0 +1,13 @@
+@namespace Orbit.UI.Components.Parameters
+@using Microsoft.AspNetCore.Components
+
+@* Reusable inline error presentation; the owning editor determines validity. *@
+@if (Message is not null)
+{
+    <div id="@MessageId" class="parameter-error" role="alert">@Message</div>
+}
+
+@code {
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public string? MessageId { get; set; }
+}

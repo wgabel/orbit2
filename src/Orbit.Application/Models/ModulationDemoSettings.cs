@@ -1,3 +1,5 @@
+using Orbit.Domain.Parameters;
+
 namespace Orbit.Application.Models;
 
 /// <summary>Editable settings for the first fixed modulation graph, in Hz.</summary>
@@ -13,18 +15,33 @@ public sealed record ModulationDemoSettings(
     public const double MaximumLfoFrequency = 5;
     public const double MaximumDepth = 200;
 
+    // These definitions drive both validation and reusable presentation controls.
+    public static ParameterDefinition BaseFrequencyDefinition { get; } =
+        new("baseFrequency", "Base frequency", 440, MinimumBaseFrequency, MaximumBaseFrequency,
+            ParameterUnit.Hertz, ParameterScale.Linear, true);
+    public static ParameterDefinition LfoFrequencyDefinition { get; } =
+        new("lfoRate", "LFO frequency", 0.5, MinimumLfoFrequency, MaximumLfoFrequency,
+            ParameterUnit.Hertz, ParameterScale.Linear, true);
+    public static ParameterDefinition DepthDefinition { get; } =
+        new("depthHz", "Modulation depth", 100, 0, MaximumDepth,
+            ParameterUnit.Hertz, ParameterScale.Linear, false);
+
+    // The fixed sine LFO spans [-1, 1]; the DSP enforces a 20 Hz floor.
+    public ParameterRange FrequencyModulationRange => new(
+        Math.Max(20, BaseFrequencyHertz - DepthHertz),
+        BaseFrequencyHertz + DepthHertz);
+
     public void Validate()
     {
-        ValidateRange(BaseFrequencyHertz, MinimumBaseFrequency, MaximumBaseFrequency,
-            nameof(BaseFrequencyHertz));
-        ValidateRange(LfoFrequencyHertz, MinimumLfoFrequency, MaximumLfoFrequency,
-            nameof(LfoFrequencyHertz));
-        ValidateRange(DepthHertz, 0, MaximumDepth, nameof(DepthHertz));
+        ValidateRange(BaseFrequencyHertz, BaseFrequencyDefinition, nameof(BaseFrequencyHertz));
+        ValidateRange(LfoFrequencyHertz, LfoFrequencyDefinition, nameof(LfoFrequencyHertz));
+        ValidateRange(DepthHertz, DepthDefinition, nameof(DepthHertz));
     }
 
-    private static void ValidateRange(double value, double minimum, double maximum, string name)
+    private static void ValidateRange(double value, ParameterDefinition definition, string name)
     {
-        if (!double.IsFinite(value) || value < minimum || value > maximum)
-            throw new ArgumentOutOfRangeException(name, value, $"Expected {minimum} to {maximum}.");
+        if (!definition.IsValidBaseValue(value))
+            throw new ArgumentOutOfRangeException(name, value,
+                $"Expected {definition.Minimum} to {definition.Maximum}.");
     }
 }

@@ -50,21 +50,74 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .modulation-panel h2 { font-size: 1.25rem; margin: 0.5rem 0; }
 .modulation-panel fieldset {
     display: grid;
-    gap: 0.45rem;
+    gap: 0.9rem;
     padding: 0;
     margin: 1rem 0;
     border: 0;
 }
-.modulation-panel label { color: #b8c7d4; font-size: 0.85rem; }
-.modulation-panel input[type=number] {
-    width: 100%;
+/* Reusable parameter editor. Semantic colors are independent of node type. */
+:root {
+    --parameter-track: #465565;
+    --parameter-base: #e9eef5;
+    --parameter-modulation: #65d3ae;
+    --parameter-error: #ff9f9f;
+}
+.parameter-slider { display: grid; gap: 0.3rem; }
+.parameter-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.parameter-heading label { color: #e9eef5; font-size: 0.85rem; }
+.parameter-unit, .parameter-details { color: #a8bdcf; font-size: 0.75rem; }
+.parameter-heading input {
+    width: 6.5rem;
     color: inherit;
     background: #11151b;
     border: 1px solid #465565;
     border-radius: 0.35rem;
-    padding: 0.45rem 0.6rem;
+    padding: 0.35rem 0.5rem;
     font: inherit;
-    margin-bottom: 0.4rem;
+    text-align: right;
+}
+.parameter-heading input[aria-invalid="true"] { border-color: var(--parameter-error); }
+.parameter-error { color: var(--parameter-error); font-size: 0.75rem; }
+.parameter-track { position: relative; height: 1.5rem; }
+.parameter-rail {
+    position: absolute;
+    inset: 0.55rem 0.38rem;
+    height: 0.4rem;
+    background: var(--parameter-track);
+    border-radius: 1rem;
+    pointer-events: none;
+}
+.parameter-band { position: absolute; height: 100%; background: var(--parameter-modulation); opacity: 0.8; border-radius: 1rem; }
+.parameter-effective-marker {
+    position: absolute;
+    top: -0.32rem;
+    width: 0.22rem;
+    height: 1.04rem;
+    background: var(--parameter-modulation);
+    box-shadow: 0 0 5px var(--parameter-modulation);
+    border-radius: 1rem;
+    transform: translateX(-50%);
+    transition: left 45ms linear;
+}
+.parameter-track input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+.parameter-track input::-webkit-slider-runnable-track { background: transparent; }
+.parameter-track input::-moz-range-track { background: transparent; }
+.parameter-track input::-webkit-slider-thumb { appearance: none; width: 0.76rem; height: 0.76rem; background: var(--parameter-base); border-radius: 50%; }
+.parameter-track input::-moz-range-thumb { width: 0.76rem; height: 0.76rem; background: var(--parameter-base); border: 0; border-radius: 50%; }
+.parameter-track input:disabled { cursor: default; }
+.parameter-details, .parameter-modulation { display: flex; justify-content: space-between; gap: 0.5rem; }
+.parameter-modulation { color: var(--parameter-modulation); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) {
+    .parameter-effective-marker { transition: none; }
 }
 .audio-controls { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .clock-panel { margin-top: 1rem; color: #a8bdcf; font-size: 0.85rem; }

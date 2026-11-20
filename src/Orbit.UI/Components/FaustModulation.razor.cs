@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Orbit.Application.Models;
 using Orbit.Application.Services;
+using Orbit.UI.Components.Parameters;
 
 namespace Orbit.UI.Components;
 
@@ -8,7 +9,7 @@ namespace Orbit.UI.Components;
 /// Holds only presentation settings, status and errors. Playback continues
 /// until Stop is requested, without an application-level audio timer.
 /// </summary>
-public partial class FaustModulation
+public partial class FaustModulation : IDisposable
 {
     [Inject]
     private IModulationDemoService ModulationService { get; set; } = default!;
@@ -16,6 +17,20 @@ public partial class FaustModulation
     private double BaseFrequency { get; set; } = new ModulationDemoSettings().BaseFrequencyHertz;
     private double LfoFrequency { get; set; } = new ModulationDemoSettings().LfoFrequencyHertz;
     private double Depth { get; set; } = new ModulationDemoSettings().DepthHertz;
+    private ModulationDemoSettings CurrentSettings => new(BaseFrequency, LfoFrequency, Depth);
+    private readonly HashSet<string> InvalidParameters = [];
+    private CancellationTokenSource? monitorCancellation;
+    private double? EffectiveFrequency { get; set; }
+    private string? TelemetryError { get; set; }
+
+    private void OnParameterValidation(ParameterValidation validation)
+    {
+        if (validation.Error is null)
+            InvalidParameters.Remove(validation.Key);
+        else
+            InvalidParameters.Add(validation.Key);
+    }
+
     private bool IsReady { get; set; }
     private bool IsPlaying { get; set; }
     private bool IsStopping { get; set; }
@@ -42,14 +57,18 @@ public partial class FaustModulation
 
     private async Task PlayAsync()
     {
-        if (!IsReady || IsPlaying)
+        if (!IsReady || IsPlaying || InvalidParameters.Count > 0)
             return;
 
         ErrorMessage = null;
         IsPlaying = true;
+        TelemetryError = null;
+        using var cancellation = new CancellationTokenSource();
+        monitorCancellation = cancellation;
+        var monitoring = MonitorEffectiveValueAsync(cancellation.Token);
         try
         {
-            await ModulationService.PlayAsync(new ModulationDemoSettings(BaseFrequency, LfoFrequency, Depth));
+            await ModulationService.PlayAsync(CurrentSettings);
         }
         catch (Exception exception)
         {
@@ -57,9 +76,40 @@ public partial class FaustModulation
         }
         finally
         {
+            cancellation.Cancel();
+            await monitoring;
+            monitorCancellation = null;
+            EffectiveFrequency = null;
             IsPlaying = false;
         }
     }
+
+    // Display-rate observation only: Faust generates every audio sample itself.
+    private async Task MonitorEffectiveValueAsync(CancellationToken cancellationToken)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(50));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                var value = await ModulationService.GetEffectiveFrequencyAsync();
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+                EffectiveFrequency = value;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            EffectiveFrequency = null;
+            TelemetryError = "Live parameter feedback unavailable.";
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception) when (cancellationToken.IsCancellationRequested) { }
+    }
+
+    public void Dispose() => monitorCancellation?.Cancel();
 
     private async Task StopAsync()
     {

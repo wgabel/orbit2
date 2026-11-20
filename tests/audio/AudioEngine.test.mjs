@@ -34,7 +34,9 @@ function setup() {
         }
     };
     const output = { createVoice: () => voice, dispose: () => calls.push("output-dispose") };
-    return { engine: new AudioEngine(contextManager, nodeFactory, output), calls,
+    const monitor = { getSnapshot: () => ({ "/ModulatedSine/effectiveFrequency": 430 }),
+        dispose: () => calls.push("monitor-dispose") };
+    return { engine: new AudioEngine(contextManager, nodeFactory, output, () => monitor), calls,
         finish: () => finishPlayback(), contextManager, nodeFactory, output };
 }
 
@@ -57,7 +59,7 @@ test("rejects duplicate IDs and stops only the requested playback", async () => 
     assert.ok(!calls.includes("stop"));
     engine.stop(request.soundId);
     await playback;
-    assert.deepEqual(calls.slice(-2), ["stop", "dispose"]);
+    assert.deepEqual(calls.slice(-3), ["stop", "monitor-dispose", "dispose"]);
 });
 
 test("cancels a pending node creation and destroys the resulting node", async () => {
@@ -76,4 +78,17 @@ test("rejects invalid requests without invoking browser infrastructure", async (
     const { engine, calls } = setup();
     await assert.rejects(engine.play({ ...request, volume: 2 }), /Invalid audio playback/);
     assert.deepEqual(calls, []);
+});
+
+test("exposes meter snapshots only during active playback", async () => {
+    const { engine, calls, finish } = setup();
+    assert.equal(engine.getOutputValues(request.soundId), null);
+    const playback = engine.play(request);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(engine.getOutputValues(request.soundId), { "/ModulatedSine/effectiveFrequency": 430 });
+    assert.equal(engine.getOutputValues("other"), null);
+    finish();
+    await playback;
+    assert.equal(engine.getOutputValues(request.soundId), null);
+    assert.deepEqual(calls.slice(-2), ["monitor-dispose", "dispose"]);
 });

@@ -58,7 +58,16 @@ function assertContinuous(samples, sampleRate) {
 for (const sampleRate of [44100, 48000]) {
     test("compiled Faust produces the expected vibrato at " + sampleRate + " Hz", async () => {
         const processor = await createProcessor(sampleRate, { baseFrequency: 440, lfoRate: 0.5, depthHz: 100 });
+        const meterValues = [];
+        processor.setOutputParamHandler((path, value) => {
+            if (path.endsWith("/effectiveFrequency")) meterValues.push(value);
+        });
         const [samples] = processor.render([], sampleRate * 4);
+        // Ignore startup smoothing; the passive meter observes the same live DSP signal.
+        const settled = meterValues.slice(Math.floor(meterValues.length / 8));
+        assert.ok(settled.length > 10, "Expected effective frequency meter readings");
+        assert.ok(Math.min(...settled) > 330 && Math.min(...settled) < 360);
+        assert.ok(Math.max(...settled) > 520 && Math.max(...settled) < 550);
         assert.equal(samples.length, sampleRate * 4);
         assertContinuous(samples, sampleRate);
         const frequencies = [];

@@ -44,6 +44,32 @@ public sealed class ModulationDemoPatchTests
     }
 
     [Theory]
+    [InlineData(440, 100, 340, 540)]
+    [InlineData(100, 200, 20, 300)]
+    [InlineData(1000, 200, 800, 1200)]
+    [InlineData(440, 0, 440, 440)]
+    public void ReportsModulationBoundsWithoutChangingTheBaseValue(
+        double frequency, double depth, double minimum, double maximum)
+    {
+        var settings = new ModulationDemoSettings(frequency, 0.5, depth);
+        var range = settings.FrequencyModulationRange;
+        Assert.Equal(minimum, range.Minimum);
+        Assert.Equal(maximum, range.Maximum);
+        Assert.Equal(frequency, settings.BaseFrequencyHertz);
+    }
+
+    [Fact]
+    public void EditorDefinitionsShareTheValidationLimits()
+    {
+        var definition = ModulationDemoSettings.BaseFrequencyDefinition;
+        Assert.Equal(ModulationDemoSettings.MinimumBaseFrequency, definition.Minimum);
+        Assert.Equal(ModulationDemoSettings.MaximumBaseFrequency, definition.Maximum);
+        Assert.True(definition.IsValidBaseValue(440));
+        Assert.False(definition.IsValidBaseValue(double.NaN));
+        Assert.False(definition.IsValidBaseValue(1001));
+    }
+
+    [Theory]
     [InlineData(0, 0.5, 100)]
     [InlineData(440, 0, 100)]
     [InlineData(440, 0.5, -1)]

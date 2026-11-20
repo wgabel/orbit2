@@ -48,6 +48,9 @@ public sealed class BrowserAudioEngine(IJSRuntime javaScriptRuntime) : IAudioEng
     public async Task<AudioClockSnapshot?> GetSnapshotAsync() =>
         await GetAudioModule().InvokeAsync<AudioClockSnapshot?>("getClockSnapshot");
 
+    public async Task<Dictionary<string, double>?> GetOutputValuesAsync(string soundId) =>
+        await GetAudioModule().InvokeAsync<Dictionary<string, double>?>("getOutputValues", soundId);
+
     public async ValueTask DisposeAsync()
     {
         if (audioModule is null)

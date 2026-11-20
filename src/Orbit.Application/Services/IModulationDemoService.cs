@@ -9,5 +9,6 @@ public interface IModulationDemoService
     Task InitializeAsync();
     Task PlayAsync(ModulationDemoSettings settings);
     Task StopAsync();
+    Task<double?> GetEffectiveFrequencyAsync();
     Task<AudioClockSnapshot?> GetClockSnapshotAsync();
 }

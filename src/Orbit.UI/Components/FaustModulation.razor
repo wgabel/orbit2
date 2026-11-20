@@ -1,6 +1,7 @@
 @namespace Orbit.UI.Components
 @using Microsoft.AspNetCore.Components.Web
 @using Orbit.Application.Models
+@using Orbit.UI.Components.Parameters
 
 @* Presentation only. Settings are applied to a validated domain graph by the
    application service, and the Faust worklet computes modulation at audio rate. *@
@@ -8,20 +9,17 @@
     <h2>Frequency modulation</h2>
     <p>A sine LFO changes the frequency of an audible sine oscillator.</p>
     <fieldset disabled="@(!IsReady || IsPlaying)">
-        <label for="modulation-base">Base frequency (Hz)</label>
-        <input id="modulation-base" type="number"
-               min="@ModulationDemoSettings.MinimumBaseFrequency"
-               max="@ModulationDemoSettings.MaximumBaseFrequency" step="1" @bind="BaseFrequency" />
-        <label for="modulation-rate">LFO frequency (Hz)</label>
-        <input id="modulation-rate" type="number"
-               min="@ModulationDemoSettings.MinimumLfoFrequency"
-               max="@ModulationDemoSettings.MaximumLfoFrequency" step="0.05" @bind="LfoFrequency" />
-        <label for="modulation-depth">Modulation depth (Hz)</label>
-        <input id="modulation-depth" type="number" min="0"
-               max="@ModulationDemoSettings.MaximumDepth" step="1" @bind="Depth" />
+        <ParameterSlider Definition="@ModulationDemoSettings.BaseFrequencyDefinition"
+                         @bind-Value="BaseFrequency" Step="1"
+                         ModulationRange="@CurrentSettings.FrequencyModulationRange" EffectiveValue="@EffectiveFrequency"
+                         ValidationChanged="OnParameterValidation" />
+        <ParameterSlider Definition="@ModulationDemoSettings.LfoFrequencyDefinition"
+                         @bind-Value="LfoFrequency" Step="0.01" ValidationChanged="OnParameterValidation" />
+        <ParameterSlider Definition="@ModulationDemoSettings.DepthDefinition"
+                         @bind-Value="Depth" Step="1" ValidationChanged="OnParameterValidation" />
     </fieldset>
     <div class="audio-controls">
-        <button type="button" @onclick="PlayAsync" disabled="@(!IsReady || IsPlaying)">
+        <button type="button" @onclick="PlayAsync" disabled="@(!IsReady || IsPlaying || InvalidParameters.Count > 0)">
             @(IsPlaying ? "Playing…" : "Start modulation")
         </button>
         <button type="button" @onclick="StopAsync" disabled="@(!IsPlaying || IsStopping)">Stop</button>
@@ -35,6 +33,10 @@
     @if (!IsReady && ErrorMessage is null)
     {
         <p role="status">Loading audio engine…</p>
+    }
+    @if (TelemetryError is not null)
+    {
+        <p role="status">@TelemetryError</p>
     }
     @if (ErrorMessage is not null)
     {

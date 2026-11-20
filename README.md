@@ -17,7 +17,7 @@ npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts src/Orbit.Audi
 dotnet run --project src/Orbit.UI --urls http://localhost:5000
 ```
 
-Open http://localhost:5000. **Start modulation** plays a continuous, modulated sine wave; **Stop** releases it with a short fade. Settings can be changed between playbacks.
+Open http://localhost:5000. **Start modulation** plays a continuous, modulated sine wave; **Stop** releases it with a short fade. Settings can be changed between playbacks. All three settings now use the shared parameter slider, with units, limits, validated numeric input and inline errors. The carrier frequency also shows the expected modulation band and a live marker from Faust.
 
 ## Project boundaries
 
@@ -89,6 +89,7 @@ flowchart TD
 | AudioContextManager.js | Create, resume and close the one shared AudioContext. |
 | AudioClock.js | Read the existing context's frame-time snapshot without starting audio. |
 | FaustModuleLoader.js | Download and cache compiled modules and metadata; retry failed loads. |
+| FaustOutputMonitor.js | Cache passive Faust output meter readings for display-rate snapshots. |
 | FaustNodeFactory.js | Create independent Faust worklet nodes and map parameters using their published paths. |
 | AudioOutput.js | Own master output; create separate, initially silent voice paths. |
 | AudioVoice.js | Own one playback's source/gain lifecycle; stop and release resources. |
@@ -166,7 +167,23 @@ flowchart TD
     O --> OUT["Audio output"]
 ~~~
 
-There is no per-sample C# or JavaScript event loop. The audio engine controls waveform generation, while browser timers only observe end-of-playback for resource cleanup. The demo does not yet support changing topology/parameters during playback.
+There is no per-sample C# or JavaScript event loop. The audio engine controls waveform generation; browser timers observe playback for resource cleanup, and the UI reads passive meter snapshots at display rate. The demo does not yet support changing topology/parameters during playback.
+
+## Shared UI components
+
+`ParameterSlider` is the first reusable presentation building block. It takes a domain parameter definition, editable base value and optional read-only modulation range and effective value. The same component renders all three settings, validates draft input without committing invalid values and reports errors to its parent.
+
+~~~mermaid
+flowchart TD
+    D["ParameterDefinition + base value"] --> UI["ParameterSlider"]
+    UI --> V["Validated base edit"]
+    V --> Parent["Owning editor"]
+    DSP["Faust effective frequency meter"] --> M["FaustOutputMonitor"]
+    M --> S["Application service"]
+    S --> UI
+~~~
+
+The meter is read at ~20 Hz and never changes the base parameter. Future root and nested canvases share the same viewport, node frame, port connector and Bézier connection components. Their interaction and visual contracts are defined in [the architecture document](ORBIT2-ARCHITECTURE.md#shared-canvas-and-component-standards).
 
 ## Repository layout
 
@@ -209,6 +226,7 @@ src/
       Faust/
         FaustModuleLoader.js
         FaustNodeFactory.js
+        FaustOutputMonitor.js
       generated/                      # compiled WASM and runtime; ignored
   Orbit.UI/
     Orbit.UI.csproj
@@ -216,6 +234,10 @@ src/
     App.razor
     Components/FaustModulation.razor
     Components/FaustModulation.razor.cs
+    Components/Parameters/ParameterSlider.razor
+    Components/Parameters/ParameterSlider.razor.cs
+    Components/Parameters/ParameterValidation.cs
+    Components/Parameters/ValidationMessage.razor
     wwwroot/index.html
     wwwroot/styles.css
 tests/audio/                         # isolated browser infrastructure tests
