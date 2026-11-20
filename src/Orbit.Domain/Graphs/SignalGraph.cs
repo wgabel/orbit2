@@ -108,6 +108,17 @@ public sealed class SignalGraph
         connections.Remove(connection);
     }
 
+    /// <summary>Replace only the signed coefficient. Endpoints, order and edge identity stay unchanged.</summary>
+    public SignalConnection SetConnectionAmount(Guid connectionId, double amount)
+    {
+        var previous = GetConnection(connectionId);
+        SignalGraphValidator.ValidateConnectionAmount(amount);
+        if (previous.Amount == amount) return previous;
+        var updated = previous with { Amount = amount };
+        connections[connections.IndexOf(previous)] = updated;
+        return updated;
+    }
+
     public void SetParameterValue(ParameterAddress address, double value)
     {
         GetParameter(address).SetBaseValue(value);

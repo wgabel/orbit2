@@ -20,6 +20,7 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
             RemoveNodeCommand remove => RemoveNode(graph, remove, revision),
             ConnectNodesCommand connect => Connect(graph, connect),
             RemoveConnectionCommand disconnect => RemoveConnection(graph, disconnect),
+            SetConnectionAmountCommand amount => SetConnectionAmount(graph, amount),
             SetParameterValueCommand set => SetParameterValue(graph, set),
             AddBoundaryPortCommand add => BoundaryFacts(graph.Id, graph.AddBoundaryPort(add.Direction,
                 new ExposedPort(Guid.NewGuid(), add.Name, add.SignalType, add.ChannelCount, add.FanIn))),
@@ -89,5 +90,12 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
 
         graph.SetParameterValue(command.Address, command.Value);
         return [new ParameterChanged(graph.Id, command.Address, previous, command.Value)];
+    }
+
+    private static IReadOnlyList<IGraphEvent> SetConnectionAmount(SignalGraph graph, SetConnectionAmountCommand command)
+    {
+        var previous = graph.GetConnection(command.ConnectionId);
+        var current = graph.SetConnectionAmount(command.ConnectionId, command.Amount);
+        return previous == current ? [] : [new ConnectionAmountChanged(graph.Id, previous, current)];
     }
 }

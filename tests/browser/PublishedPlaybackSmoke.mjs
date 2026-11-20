@@ -42,7 +42,7 @@ try {
     assert.equal(await marker.count(), 0);
     await play.click({ timeout: 30000 });
     await status.filter({ hasText: /Playing revision/ }).waitFor({ timeout: 30000 });
-    const initialRevision = Number((await status.innerText()).match(/Playing revision (\d+)/)[1]);
+    let initialRevision = Number((await status.innerText()).match(/Playing revision (\d+)/)[1]);
     await marker.waitFor({ timeout: 10000 });
     const firstPosition = await marker.getAttribute("style");
     let moved = false;
@@ -51,6 +51,28 @@ try {
         moved = (await marker.getAttribute("style")) !== firstPosition;
     }
     assert.ok(moved, "Live frequency marker did not move");
+    // Select the existing modulation wire, edit depth and retain its identity.
+    const wire = page.locator(".connection-modulation .connection-hit");
+    const position = await wire.evaluate(path => {
+        const point = path.getPointAtLength(path.getTotalLength() / 2).matrixTransform(path.getScreenCTM());
+        return { x: point.x, y: point.y };
+    });
+    await page.mouse.click(position.x, position.y);
+    const amountEditor = page.getByRole("region", { name: "Connection amount editor" });
+    const amount = amountEditor.getByRole("spinbutton", { name: "Modulation depth (Hz)" });
+    await amount.waitFor();
+    assert.equal(await amount.inputValue(), "100");
+    await amount.fill("");
+    await amountEditor.getByRole("button", { name: "Apply amount" }).click();
+    await amountEditor.getByText("Enter a finite number.").waitFor();
+    await amount.fill("25");
+    await amountEditor.getByRole("button", { name: "Apply amount" }).click();
+    initialRevision++;
+    await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
+    await frequency.getByText("Modulation: 415–465 Hz").waitFor();
+    await marker.waitFor({ timeout: 10000 });
+    assert.equal(await wire.count(), 1);
+    assert.equal(await play.isEnabled(), false);
     // Changing an existing control advances the audible revision without stopping.
     await page.getByRole("spinbutton", { name: "Frequency (Hz)" }).nth(1).fill("330");
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 1}$`) }).waitFor({ timeout: 10000 });
@@ -59,7 +81,6 @@ try {
     await page.getByRole("button", { name: "Add", exact: true }).click();
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 2}$`) }).waitFor({ timeout: 10000 });
     // Remove the original LFO-to-frequency connection, then connect to amplitude.
-    const wire = page.locator(".connection-modulation .connection-hit");
     const midpoint = await wire.evaluate(path => {
         const point = path.getPointAtLength(path.getTotalLength() / 2).matrixTransform(path.getScreenCTM());
         return { x: point.x, y: point.y };

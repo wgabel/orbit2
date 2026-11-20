@@ -82,8 +82,9 @@ public sealed class SignalGraphValidator
         ArgumentNullException.ThrowIfNull(graph);
         ArgumentNullException.ThrowIfNull(connection);
 
-        if (connection.Id == Guid.Empty || !double.IsFinite(connection.Amount))
-            throw new GraphValidationException("Connection ID and amount must be valid.");
+        if (connection.Id == Guid.Empty)
+            throw new GraphValidationException("Connection ID must be valid.");
+        ValidateConnectionAmount(connection.Amount);
 
         var source = graph.GetNode(connection.Source.NodeId);
         var destination = graph.GetNode(connection.Destination.NodeId);
@@ -106,6 +107,13 @@ public sealed class SignalGraphValidator
 
         if (CreatesCycle(graph, source.Id, destination.Id))
             throw new GraphValidationException("The connection would create a dependency cycle.");
+    }
+
+    /// <summary>Signed, finite coefficients are valid for existing and new edges.</summary>
+    public static void ValidateConnectionAmount(double amount)
+    {
+        if (!double.IsFinite(amount))
+            throw new GraphValidationException("Connection amount must be a finite number.");
     }
 
     // A mono audio oscillator can drive a modulation input at any rate. The

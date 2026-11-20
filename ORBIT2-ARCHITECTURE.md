@@ -837,7 +837,7 @@ A connection belongs to the graph and involves two endpoints. Removing a boundar
 | Scope | Example events |
 |---|---|
 | Node | ParameterChanged, NodeRenamed |
-| Graph | NodeAdded, NodeRemoved, ConnectionCreated, ConnectionRemoved, PortAdded, PortRemoved, PortRenamed |
+| Graph | NodeAdded, NodeRemoved, ConnectionCreated, ConnectionRemoved, ConnectionAmountChanged, PortAdded, PortRemoved, PortRenamed |
 | Patch/session | GraphChanged, PatchLoaded, TransportStarted, TransportStopped |
 | Layout/UI | NodeMoved, SelectionChanged, CanvasOpened, CanvasClosed |
 
@@ -853,6 +853,7 @@ A domain object can record events while being changed, but it should not directl
 | RemoveNode | NodeRemoved |
 | ConnectNodes | ConnectionCreated |
 | RemoveConnection | ConnectionRemoved |
+| SetConnectionAmount | ConnectionAmountChanged |
 | SetParameterValue | ParameterChanged |
 | AddExposedPort | PortAdded |
 | RemoveExposedPort | PortRemoved |
@@ -1377,6 +1378,7 @@ Deliverable: construct and edit a graph of two generators, a filter, mixer/outpu
 - Implemented: editable Input Rack and Output Rack ports, projected automatically onto composite node sockets.
 - Implemented: transactional add/rename/reorder/remove-port commands crossing parent/child boundaries, with one changeset and affected-graph notification filters.
 - Implemented: reuse the same canvas UI for all levels.
+- Implemented: selected-wire amount editing in root and nested canvases. Keep immutable edge identity and endpoints; commit a graph-local `ConnectionAmountChanged` with before/after values. Signed finite amounts support polarity inversion and silent connected routes. Direct parameter targets use their own unit; boundary/audio edges use multipliers. Existing range estimation, topology comparison and crossfade apply the revised coefficient from the committed snapshot.
 
 Deliverable: open a drone node's internal canvas, connect external LFO to a named input, route it internally and hear the modulation.
 

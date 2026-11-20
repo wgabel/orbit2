@@ -207,6 +207,7 @@ sequenceDiagram
 | `AddNodeCommand` | `NodeAdded` |
 | `ConnectNodesCommand` | `ConnectionCreated` |
 | `RemoveConnectionCommand` | `ConnectionRemoved` |
+| `SetConnectionAmountCommand` | `ConnectionAmountChanged` (same edge identity, before and after coefficients) |
 | `RemoveNodeCommand` | All incident `ConnectionRemoved` facts, then `NodeRemoved`, in one change set |
 | `SetParameterValueCommand` | `ParameterChanged` (not topology) |
 
@@ -308,7 +309,19 @@ flowchart TD
 
 The small DOM adapter measures port/node geometry, captures pointers and resolves a dropped input. It does not own graph state or compute audio. The C# presentation library provides viewport and Bézier geometry. The workspace translates edits into session commands.
 
-The editor uses GraphPlaybackControls to play any supported committed patch. The playing revision remains stable while edits are made; Stop then Play applies the latest version. The obsolete fixed proof UI has been removed.
+The editor uses GraphPlaybackControls to play any supported committed patch. Edits update the playing revision automatically, either through live base controls or by crossfading a replacement worklet. The obsolete fixed proof UI has been removed.
+
+### Editing connection amounts
+
+Click a Bézier connection to select it and open the shared `ConnectionAmountEditor`. Enter a signed number and choose **Apply amount**. For direct parameter modulation the editor displays the target unit (Hz, normalized, ratio, etc.); for audio and intermediate boundary routes it displays a multiplier. Each route has its own coefficient. A zero amount silences its contribution without removing the wire; a negative amount inverts its signal. The source amplitude still determines the actual excursion.
+
+~~~csharp
+session.Execute(new SetConnectionAmountCommand(graphId, connectionId, 100));
+~~~
+
+For a unit-amplitude bipolar sine, depth 100 into a 440 Hz frequency gives 340–540 Hz; depth 0.2 into amplitude gives a ±0.2 contribution before clamping. At a composite boundary, amounts multiply along the route, and the final parameter's unit applies only at its input.
+
+`SignalGraph.SetConnectionAmount` replaces the immutable edge in place, retaining ID, endpoints and order. The session commits one revision and publishes `ConnectionAmountChanged` with the before/after records. Invalid or unchanged values do not commit. The canvas retains the selection; range estimation and playback receive the new snapshot. As amounts are presently source literals, a reachable changed amount recompiles and crossfades while playing. Explicit Apply avoids recompiling each intermediate keystroke.
 
 ## Faust graph compiler (Phase 4)
 

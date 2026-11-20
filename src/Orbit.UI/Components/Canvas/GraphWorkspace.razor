@@ -22,6 +22,11 @@
         <p class="parameter-error workspace-error" role="alert">@Error</p>
     }
     <GraphPlaybackControls Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" />
+    @if (SelectedConnection is { } connection)
+    {
+        <ConnectionAmountEditor @key="(graphId, connection.Id)" Graph="@Canvas.Snapshot.Graph"
+                                Connection="@connection" Dispatch="@DispatchConnectionCommand" />
+    }
     @if (EditingRack is { } rack)
     {
         <RackPortEditor @key="(graphId, rack.Id)" GraphId="@graphId" Rack="@rack"

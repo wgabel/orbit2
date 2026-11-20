@@ -29,7 +29,7 @@
     font-size: var(--semantic-typography-label);
 }
 .canvas-breadcrumbs [aria-current="page"] { color: var(--semantic-color-text); font-weight: var(--semantic-typography-emphasis); }
-.rack-editor {
+.rack-editor, .connection-amount-editor {
     display: grid;
     gap: var(--semantic-space-compact);
     padding: var(--semantic-space-compact);
@@ -37,7 +37,7 @@
     border: var(--semantic-border-width) solid var(--semantic-color-border);
     border-radius: var(--semantic-radius-surface);
 }
-.rack-editor input[type="text"] {
+.rack-editor input[type="text"], .connection-amount-editor input[type="number"] {
     max-width: 100%;
     background: var(--semantic-color-input);
     color: var(--semantic-color-text);
@@ -50,4 +50,4 @@
     padding-block: var(--semantic-space-compact);
     border-bottom: var(--semantic-border-width) solid var(--semantic-color-border);
 }
-.rack-editor .parameter-error { margin: 0; }
+.rack-editor .parameter-error, .connection-amount-editor .parameter-error { margin: 0; }

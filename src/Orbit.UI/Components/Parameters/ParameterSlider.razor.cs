@@ -24,17 +24,7 @@ public partial class ParameterSlider
     private string Draft { get; set; } = "";
     private string? Error { get; set; }
 
-    private string UnitLabel => Definition.Unit switch
-    {
-        ParameterUnit.Hertz => "Hz",
-        ParameterUnit.Decibels => "dB",
-        ParameterUnit.Seconds => "s",
-        ParameterUnit.Cents => "cent",
-        ParameterUnit.Degrees => "°",
-        ParameterUnit.BeatsPerMinute => "BPM",
-        ParameterUnit.Ratio => "ratio",
-        _ => "normalized"
-    };
+    private string UnitLabel => ParameterUnitLabel.Format(Definition.Unit);
 
     protected override void OnParametersSet()
     {

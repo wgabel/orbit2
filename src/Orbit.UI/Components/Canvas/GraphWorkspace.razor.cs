@@ -6,6 +6,7 @@ using Orbit.Application.Graphs.Snapshots;
 using Orbit.Application.Models;
 using Orbit.Application.Services;
 using Orbit.Domain.Parameters;
+using Orbit.Domain.Graphs;
 using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Nodes.Outputs;
@@ -40,6 +41,9 @@ public partial class GraphWorkspace : IDisposable
         ? Canvas.Snapshot.Graph.Nodes.SingleOrDefault(node => node.Id == address.NodeId) : null;
     private bool HasSelection => DeletableNodes.Any() ||
         Canvas.Snapshot.SelectedConnectionIds.Count > 0;
+    private SignalConnection? SelectedConnection => Canvas.Snapshot.SelectedConnectionIds.Count == 1
+        ? Canvas.Snapshot.Graph.Connections.SingleOrDefault(edge => edge.Id == Canvas.Snapshot.SelectedConnectionIds[0])
+        : null;
     private IEnumerable<Guid> DeletableNodes => Canvas.Snapshot.SelectedNodeIds.Where(id =>
         Canvas.Snapshot.Graph.GetNode(id).TypeKey is not (InputRack.NodeType or OutputRack.NodeType));
 
@@ -114,6 +118,18 @@ public partial class GraphWorkspace : IDisposable
     {
         if (command.GraphId != Canvas.Snapshot.GraphId || EditingRack is null)
             return "This rack is no longer open.";
+        return ExecuteForEditor(command);
+    }
+
+    private string? DispatchConnectionCommand(SetConnectionAmountCommand command)
+    {
+        if (command.GraphId != Canvas.Snapshot.GraphId || SelectedConnection?.Id != command.ConnectionId)
+            return "This connection is no longer selected.";
+        return ExecuteForEditor(command);
+    }
+
+    private string? ExecuteForEditor(IGraphCommand command)
+    {
         Execute(command);
         var error = Error;
         Error = null;

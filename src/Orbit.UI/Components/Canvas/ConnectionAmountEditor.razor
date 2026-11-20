@@ -1,0 +1,17 @@
+@namespace Orbit.UI.Components.Canvas
+@using Orbit.UI.Components.Parameters
+@using Microsoft.AspNetCore.Components.Web
+
+@* Edit a selected route without changing its topology. Apply explicitly so
+   typing intermediate values does not repeatedly compile new audio programs. *@
+<section class="connection-amount-editor" aria-label="Connection amount editor">
+    <strong>@RouteName</strong>
+    <div class="workspace-toolbar">
+        <label for="@InputId">@AmountLabel (@UnitLabel)</label>
+        <input id="@InputId" type="number" step="any" value="@Draft" @oninput="EditDraft"
+               aria-invalid="@(Error is not null ? "true" : "false")" aria-describedby="@ErrorId" />
+        <button type="button" @onclick="Apply">Apply amount</button>
+    </div>
+    <ValidationMessage Message="@Error" MessageId="@ErrorId" />
+    <p class="workspace-notice">@Explanation</p>
+</section>
