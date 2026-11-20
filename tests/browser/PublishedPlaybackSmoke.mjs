@@ -40,9 +40,32 @@ try {
     const marker = frequency.locator(".parameter-effective-marker");
     await frequency.getByText("Modulation: 340–540 Hz").waitFor({ timeout: 30000 });
     assert.equal(await marker.count(), 0);
+    const transport = page.getByRole("region", { name: "Musical transport" });
+    const tempo = transport.getByRole("spinbutton", { name: "Tempo (BPM)" });
+    const beat = transport.getByTestId("transport-beat");
+    const transportState = transport.getByTestId("transport-state");
+    const applyTempo = transport.getByRole("button", { name: "Apply tempo" });
+    assert.equal(await tempo.inputValue(), "120");
+    await tempo.fill("0");
+    await applyTempo.click();
+    await transport.getByText("Enter a tempo from 20 to 300 BPM.").waitFor();
+    await tempo.fill("60");
+    await applyTempo.click();
+    await transport.getByText("Synchronized rates: 1/4 note = 1 Hz · 1 bar (4/4) = 0.25 Hz").waitFor();
+    assert.equal(await beat.innerText(), "0");
+    assert.equal(await transport.getByTestId("transport-sample-rate").count(), 0);
     await play.click({ timeout: 30000 });
     await status.filter({ hasText: /Playing revision/ }).waitFor({ timeout: 30000 });
     let initialRevision = Number((await status.innerText()).match(/Playing revision (\d+)/)[1]);
+    await transportState.filter({ hasText: "Running" }).waitFor();
+    await transport.getByTestId("transport-sample-rate").waitFor();
+    const firstBeat = Number(await beat.innerText());
+    await page.waitForFunction(previous => Number(document.querySelector('[data-testid="transport-beat"]').textContent) > previous, firstBeat);
+    await tempo.fill("90");
+    await applyTempo.click();
+    await transport.getByText("Synchronized rates: 1/4 note = 1.5 Hz · 1 bar (4/4) = 0.375 Hz").waitFor();
+    assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
+    assert.ok(Number(await beat.innerText()) >= firstBeat);
     await marker.waitFor({ timeout: 10000 });
     const firstPosition = await marker.getAttribute("style");
     let moved = false;
@@ -53,6 +76,7 @@ try {
     assert.ok(moved, "Live frequency marker did not move");
     // Select the existing modulation wire, edit depth and retain its identity.
     const wire = page.locator(".connection-modulation .connection-hit");
+    await wire.scrollIntoViewIfNeeded();
     const position = await wire.evaluate(path => {
         const point = path.getPointAtLength(path.getTotalLength() / 2).matrixTransform(path.getScreenCTM());
         return { x: point.x, y: point.y };
@@ -81,6 +105,7 @@ try {
     await page.getByRole("button", { name: "Add", exact: true }).click();
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 2}$`) }).waitFor({ timeout: 10000 });
     // Remove the original LFO-to-frequency connection, then connect to amplitude.
+    await wire.scrollIntoViewIfNeeded();
     const midpoint = await wire.evaluate(path => {
         const point = path.getPointAtLength(path.getTotalLength() / 2).matrixTransform(path.getScreenCTM());
         return { x: point.x, y: point.y };
@@ -97,6 +122,10 @@ try {
     await amplitude.locator(".parameter-effective-marker").waitFor({ timeout: 10000 });
     await page.getByRole("button", { name: "Stop", exact: true }).click();
     await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 10000 });
+    await transportState.filter({ hasText: "Stopped" }).waitFor();
+    const frozenBeat = await beat.innerText();
+    await page.waitForTimeout(300);
+    assert.equal(await beat.innerText(), frozenBeat);
     assert.equal(await amplitude.locator(".parameter-effective-marker").count(), 0);
     assert.equal(await amplitude.locator(".parameter-band").count(), 1);
 
@@ -108,6 +137,7 @@ try {
     await drone.waitFor();
     await page.getByRole("button", { name: "Fit", exact: true }).click();
     const masterWire = page.locator(".connection-audio .connection-hit").nth(1);
+    await masterWire.scrollIntoViewIfNeeded();
     const masterMidpoint = await masterWire.evaluate(path => {
         const point = path.getPointAtLength(path.getTotalLength() / 2).matrixTransform(path.getScreenCTM());
         return { x: point.x, y: point.y };
@@ -126,6 +156,9 @@ try {
     await drone.getByRole("button", { name: "Open Drone" }).click();
     const breadcrumbs = page.getByRole("navigation", { name: "Canvas path" });
     await breadcrumbs.getByText("Drone", { exact: true }).waitFor();
+    assert.equal(await tempo.inputValue(), "90");
+    await transportState.filter({ hasText: "Running" }).waitFor();
+    assert.ok(Number(await beat.innerText()) >= Number(frozenBeat));
     assert.equal(await page.locator("#node-type option[value='output.master']").count(), 0);
     assert.equal(await articles.count(), 4);
     const rack = articles.filter({ hasText: "Input Parameters Rack" });
@@ -176,6 +209,9 @@ try {
     assert.equal(await page.getByRole("alert").count(), 0);
     await page.getByRole("button", { name: "Stop", exact: true }).click();
     await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 10000 });
+    await transport.getByRole("button", { name: "Reset transport" }).click();
+    await beat.filter({ hasText: /^0$/ }).waitFor();
+    assert.equal(await tempo.inputValue(), "90");
     const prefix = `/_content/Orbit.Infrastructure/audio-${version}/`;
     for (const file of ["audio.js", "AudioEngine.js", "Faust/FaustCompilerWorker.js", "generated/compiler/index.js"])
         assert.ok(requests.has(prefix + file), `Missing versioned asset: ${file}`);

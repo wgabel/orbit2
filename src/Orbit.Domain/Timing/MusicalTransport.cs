@@ -7,11 +7,14 @@ namespace Orbit.Domain.Timing;
 /// </summary>
 public sealed class MusicalTransport
 {
+    public const double MinimumTempo = 20;
+    public const double MaximumTempo = 300;
+    public const double DefaultTempo = 120;
     private double anchorBeat;
     private long anchorSample;
     private int anchorSampleRate;
 
-    public MusicalTransport(double beatsPerMinute = 120)
+    public MusicalTransport(double beatsPerMinute = DefaultTempo)
     {
         ValidateTempo(beatsPerMinute);
         BeatsPerMinute = beatsPerMinute;
@@ -37,21 +40,37 @@ public sealed class MusicalTransport
         IsPlaying = false;
     }
 
-    public void SetTempo(double beatsPerMinute, AudioClockSnapshot clock)
+    public void SetTempo(double beatsPerMinute, AudioClockSnapshot? clock = null)
     {
         ValidateTempo(beatsPerMinute);
         anchorBeat = GetBeatPosition(clock);
-        anchorSample = clock.CurrentSample;
-        anchorSampleRate = clock.SampleRate;
+        if (clock is not null)
+        {
+            anchorSample = clock.CurrentSample;
+            anchorSampleRate = clock.SampleRate;
+        }
         BeatsPerMinute = beatsPerMinute;
     }
 
-    public double GetBeatPosition(AudioClockSnapshot clock)
+    /// <summary>Return to beat zero, preserving tempo and running state.</summary>
+    public void Reset(AudioClockSnapshot? clock = null)
     {
-        ValidateClock(clock);
+        GetBeatPosition(clock); // Validate the current clock before changing anything.
+        anchorBeat = 0;
+        if (clock is not null)
+        {
+            anchorSample = clock.CurrentSample;
+            anchorSampleRate = clock.SampleRate;
+        }
+    }
+
+    public double GetBeatPosition(AudioClockSnapshot? clock = null)
+    {
+        if (clock is not null) ValidateClock(clock);
         if (!IsPlaying)
             return anchorBeat;
 
+        ArgumentNullException.ThrowIfNull(clock);
         if (clock.SampleRate != anchorSampleRate || clock.CurrentSample < anchorSample)
             throw new InvalidOperationException("The audio clock changed during transport playback.");
 
@@ -62,16 +81,16 @@ public sealed class MusicalTransport
     /// <summary>Converts a musical cycle length, in beats, to a frequency in Hz.</summary>
     public double GetSynchronizedFrequency(double beatsPerCycle)
     {
-        if (!double.IsFinite(beatsPerCycle) || beatsPerCycle <= 0)
-            throw new ArgumentOutOfRangeException(nameof(beatsPerCycle));
-
-        return BeatsPerMinute / (60 * beatsPerCycle);
+        return MusicalTime.GetFrequency(BeatsPerMinute, beatsPerCycle);
     }
 
-    private static void ValidateTempo(double beatsPerMinute)
+    public double GetSynchronizedFrequency(MusicalDivision division) =>
+        GetSynchronizedFrequency(MusicalTime.GetBeats(division));
+
+    public static void ValidateTempo(double beatsPerMinute)
     {
-        if (!double.IsFinite(beatsPerMinute) || beatsPerMinute <= 0)
-            throw new ArgumentOutOfRangeException(nameof(beatsPerMinute));
+        if (!double.IsFinite(beatsPerMinute) || beatsPerMinute < MinimumTempo || beatsPerMinute > MaximumTempo)
+            throw new ArgumentOutOfRangeException(nameof(beatsPerMinute), $"Tempo must be between {MinimumTempo} and {MaximumTempo} BPM.");
     }
 
     private static void ValidateClock(AudioClockSnapshot clock)

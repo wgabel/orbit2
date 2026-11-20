@@ -493,6 +493,10 @@ Tempo changes affect musical time, not audio sample rate. Integrate beat positio
 
 The audio clock can continue while musical transport is stopped, allowing effects tails and free-running signals. The transport's start/stop/reset semantics need to be deliberate.
 
+**Implemented Phase 6.1:** `MusicalTransportService` owns one domain `MusicalTransport` and reads the existing `IAudioClock`. It serializes asynchronous observations and edits, publishes immutable `TransportSnapshot` results, and never creates an audio context. The composition root registers one service for the patch. Tempo defaults to 120 BPM and is constrained to 20–300 BPM. The shared `TransportControls` panel displays tempo, beat position, sample rate and derived note/bar rates. Start follows observed root playback, Stop freezes position, replay resumes, and reset anchors beat zero while preserving tempo and running state. Tempo changes preserve accumulated beats. Suspension or clock identity changes freeze and re-anchor the timeline. Canvas navigation and worklet crossfades do not reset transport; tempo edits do not mutate the signal graph.
+
+`MusicalDivision` and `MusicalTime` define reusable quarter-note-relative cycle lengths and the conversion to Hertz. The application timeline is calculated from actual sampled audio frames, not from UI timer ticks. It is not yet a sample-scheduled DSP transport: precise phase lock, transport-derived clock signals and tempo-synchronized oscillator modes require the next backend step.
+
 ## 7. Hierarchical signal graphs and canvases
 
 ### Composite nodes
@@ -1384,7 +1388,8 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 
 ### Phase 6 — Transport synchronization and drone presets
 
-- Finish BPM, musical divisions, start/reset/phase policy and clock nodes.
+- Implemented: shared patch-wide transport service, BPM editor, sample-frame-derived musical position, start/stop/resume/reset semantics, and musical divisions.
+- Next: sample-scheduled transport phase, tempo-synchronized oscillators and clock nodes.
 - Add multi-generator drone graph preset, additional waveforms and effects.
 - Persist root/nested graphs, rack definitions and separate canvas layout.
 - Add copies/preset reuse with independent instances.

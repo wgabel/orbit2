@@ -1,0 +1,24 @@
+@namespace Orbit.UI.Components.Canvas
+@using Orbit.UI.Components.Parameters
+@using Orbit.Domain.Timing
+@using Microsoft.AspNetCore.Components.Web
+
+@* One patch-wide transport panel; the application service owns musical time. *@
+<section class="transport-controls" aria-label="Musical transport">
+    <div class="workspace-toolbar">
+        <label for="@InputId">Tempo (BPM)</label>
+        <input id="@InputId" type="number" min="@MusicalTransport.MinimumTempo" max="@MusicalTransport.MaximumTempo"
+               step="any" value="@Draft" @oninput="EditDraft"
+               aria-invalid="@(Error is not null ? "true" : "false")" aria-describedby="@ErrorId" />
+        <button type="button" @onclick="ApplyTempoAsync">Apply tempo</button>
+        <button type="button" class="secondary" @onclick="OnReset">Reset transport</button>
+        <span class="workspace-notice" data-testid="transport-state">@(Snapshot.IsPlaying ? "Running" : "Stopped")</span>
+        <span class="workspace-notice">Beat <span data-testid="transport-beat">@Format(Snapshot.BeatPosition)</span></span>
+        @if (Snapshot.Clock is { } clock)
+        {
+            <span class="workspace-notice" data-testid="transport-sample-rate">@clock.SampleRate Hz</span>
+        }
+    </div>
+    <ValidationMessage Message="@(Error ?? ClockError)" MessageId="@ErrorId" />
+    <p class="workspace-notice">Synchronized rates: 1/4 note = @Format(Snapshot.GetFrequency(MusicalDivision.QuarterNote)) Hz · 1 bar (4/4) = @Format(Snapshot.GetFrequency(MusicalDivision.WholeNote)) Hz</p>
+</section>

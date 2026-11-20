@@ -20,6 +20,7 @@ builder.RootComponents.Add<App>("#app");
 builder.Services.AddSingleton<BrowserAudioEngine>();
 builder.Services.AddSingleton<IAudioEngine>(services => services.GetRequiredService<BrowserAudioEngine>());
 builder.Services.AddSingleton<IAudioClock>(services => services.GetRequiredService<BrowserAudioEngine>());
+builder.Services.AddSingleton<IMusicalTransportService, MusicalTransportService>();
 var emitters = BuiltInFaustEmitters.Create();
 builder.Services.AddSingleton(new FaustGraphCompiler(emitters));
 builder.Services.AddSingleton<IGraphModulationRangeEstimator>(new GraphModulationRangeEstimator(emitters));

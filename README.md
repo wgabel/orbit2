@@ -178,7 +178,27 @@ flowchart LR
 - The same voice lifecycle is used by dynamic patch playback: it sustains until stopped, schedules a release using Web Audio time and disposes the voice.
 - The default values produce a frequency changing from approximately 340 Hz to 540 Hz every two seconds. Depth 0 produces the base frequency without vibrato.
 - AudioClock observes the single existing AudioContext's actual sample rate and elapsed context time. Its snapshot returns the estimated frame position at the rendering quantum boundary, not an independent clock. It does not start or resume the context.
-- MusicalTransport converts sample-frame differences into beats and tempo-synchronized frequency. Tempo changes preserve beat position, stopping freezes it, and resuming continues from that position. It is tested independently; live transport synchronization and graph editing are later features.
+- MusicalTransport converts sample-frame differences into beats and tempo-synchronized frequency. Tempo changes preserve beat position, stopping freezes it, and resuming continues from that position. The patch-wide transport is now wired to the browser clock (Phase 6.1).
+
+### Shared musical transport (Phase 6.1)
+
+The workspace has one tempo control (20–300 BPM, default 120), current beat number, real sample rate when available, and reset. The transport starts when patch playback is observed to be running, freezes on Stop, resumes at the previous beat when playing again, and resets to zero without changing tempo. Editing tempo before playing requires no audio context. Editing tempo during playback does not commit a graph revision or restart audio. Enter a value and choose **Apply tempo**.
+
+~~~mermaid
+flowchart TD
+    A["Shared AudioContext"] --> C["IAudioClock"]
+    C --> T["MusicalTransportService"]
+    T --> M["MusicalTransport"]
+    M --> S["TransportSnapshot"]
+    S --> U["TransportControls"]
+    U --> T
+~~~
+
+`MusicalTransportService` is registered once in the composition root and serializes clock observations, tempo changes and reset. `GraphPlaybackControls` observes the root playback lifetime and supplies the transport panel with immutable snapshots; it does not integrate beats itself. All nested canvases use that same transport; opening a drone or replacing its DSP never resets musical time. A suspended or replaced audio context freezes/re-anchors the timeline instead of jumping to another beat.
+
+`MusicalTime` maps `MusicalDivision` to quarter-note beat lengths and converts them to Hz: for example at 120 BPM a quarter-note cycle is 2 Hz and a 4/4 bar is 0.5 Hz. Dotted and triplet divisions are defined too.
+
+The transport is a frame-derived application timeline, observed at UI rate. Start/stop/reset/tempo actions anchor to the observed audio frame, not a scheduled DSP sample. Exact phase-locked oscillators and audio-rate clock outputs are the next step; existing free-running generators still use their Hz parameter.
 
 
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Orbit.Application.Graphs.Snapshots;
 using Orbit.Application.Models;
 using Orbit.Application.Services;
+using Orbit.Domain.Timing;
 
 namespace Orbit.UI.Components.Canvas;
 
@@ -10,6 +11,7 @@ namespace Orbit.UI.Components.Canvas;
 public partial class GraphPlaybackControls : IAsyncDisposable
 {
     [Inject] private IGraphPlaybackService Playback { get; set; } = default!;
+    [Inject] private IMusicalTransportService Transport { get; set; } = default!;
     [Parameter, EditorRequired] public GraphSnapshot Snapshot { get; set; } = default!;
     [Parameter] public EventCallback<GraphParameterTelemetry?> TelemetryChanged { get; set; }
 
@@ -25,6 +27,8 @@ public partial class GraphPlaybackControls : IAsyncDisposable
     private bool hasTelemetry;
     private PlaybackState state;
     private string? Error { get; set; }
+    private TransportSnapshot TransportState { get; set; } = TransportSnapshot.Initial;
+    private string? TransportError { get; set; }
     private string Status => !IsReady ? "Audio engine not ready."
         : !IsActive ? "Ready · plays the current graph"
         : IsStopping ? "Stopping…"
@@ -105,6 +109,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
         {
             cancellation.Cancel();
             await observer;
+            await SynchronizeTransportAsync(false);
             IsActive = false;
             IsStopping = false;
             state = PlaybackState.Idle;
@@ -129,6 +134,9 @@ public partial class GraphPlaybackControls : IAsyncDisposable
                     state = current;
                     await InvokeAsync(StateHasChanged);
                 }
+                // This is a read of the engine's sample clock, not a timer-based
+                // beat increment. Only one transport serves the whole patch.
+                await SynchronizeTransportAsync(!IsStopping);
                 var frame = !IsStopping && Snapshot.Revision == activeRevision
                     ? await Playback.GetTelemetryAsync(graphId) : null;
                 if (disposed || cancellation.IsCancellationRequested) return;
@@ -156,6 +164,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
     {
         if (!IsActive || IsStopping) return;
         IsStopping = true;
+        await SynchronizeTransportAsync(false);
         await PublishTelemetryAsync(null);
         try { await Playback.StopAsync(activeGraph); }
         catch (Exception exception)
@@ -165,10 +174,39 @@ public partial class GraphPlaybackControls : IAsyncDisposable
         }
     }
 
+    private Task SynchronizeTransportAsync(bool playing) =>
+        UpdateTransportAsync(() => Transport.SynchronizeAsync(playing));
+
+    private Task SetTempoAsync(double beatsPerMinute) =>
+        UpdateTransportAsync(() => Transport.SetTempoAsync(beatsPerMinute));
+
+    private Task ResetTransportAsync() => UpdateTransportAsync(Transport.ResetAsync);
+
+    private async Task UpdateTransportAsync(Func<Task<TransportSnapshot>> operation)
+    {
+        // Transport failures are displayed separately and never stop audio.
+        var previous = TransportState;
+        var previousError = TransportError;
+        try
+        {
+            TransportState = await operation();
+            TransportError = null;
+        }
+        catch (Exception exception)
+        {
+            TransportError = $"Transport unavailable: {exception.Message}";
+        }
+        if (!disposed && (previous != TransportState || previousError != TransportError))
+            await InvokeAsync(StateHasChanged);
+    }
+
     public async ValueTask DisposeAsync()
     {
         disposed = true;
         if (IsActive)
+        {
             await Playback.StopAsync(activeGraph);
+            await SynchronizeTransportAsync(false);
+        }
     }
 }

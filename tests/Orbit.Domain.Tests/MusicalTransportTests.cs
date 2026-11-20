@@ -61,4 +61,31 @@ public sealed class MusicalTransportTests
         Assert.Throws<InvalidOperationException>(() =>
             transport.GetBeatPosition(new AudioClockSnapshot(200, 44100, true)));
     }
+
+    [Theory]
+    [InlineData(MusicalDivision.SixteenthNote, 8)]
+    [InlineData(MusicalDivision.EighthNote, 4)]
+    [InlineData(MusicalDivision.QuarterNote, 2)]
+    [InlineData(MusicalDivision.HalfNote, 1)]
+    [InlineData(MusicalDivision.WholeNote, 0.5)]
+    [InlineData(MusicalDivision.QuarterNoteTriplet, 3)]
+    [InlineData(MusicalDivision.DottedQuarterNote, 4d / 3)]
+    public void ConvertsMusicalDivisionsToCyclesPerSecond(MusicalDivision division, double expected)
+    {
+        var transport = new MusicalTransport(120);
+        Assert.Equal(expected, transport.GetSynchronizedFrequency(division), 10);
+    }
+
+    [Fact]
+    public void ResetDuringPlaybackKeepsTempoAndStartsAtNewAnchor()
+    {
+        var transport = new MusicalTransport(90);
+        transport.Start(new AudioClockSnapshot(48000, 48000, true));
+        var resetAt = new AudioClockSnapshot(96000, 48000, true);
+        transport.Reset(resetAt);
+        Assert.True(transport.IsPlaying);
+        Assert.Equal(90, transport.BeatsPerMinute);
+        Assert.Equal(0, transport.GetBeatPosition(resetAt));
+        Assert.Equal(1.5, transport.GetBeatPosition(new AudioClockSnapshot(144000, 48000, true)));
+    }
 }

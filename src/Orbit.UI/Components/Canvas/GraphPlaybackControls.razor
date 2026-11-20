@@ -7,6 +7,8 @@
     <button type="button" class="secondary" @onclick="StopAsync" disabled="@(!IsActive || IsStopping)">Stop</button>
     <span class="workspace-notice" role="status">@Status</span>
 </div>
+<TransportControls Snapshot="@TransportState" ClockError="@TransportError"
+                   OnSetTempo="SetTempoAsync" OnReset="ResetTransportAsync" />
 @if (Error is not null)
 {
     <p class="parameter-error workspace-error" role="alert">@Error</p>
