@@ -44,7 +44,7 @@ public abstract class SignalNode : ISignalNode
     public Guid Id { get; }
     public string TypeKey { get; }
     public string Name { get; }
-    public IReadOnlyList<Parameter> Parameters { get; }
+    public IReadOnlyList<Parameter> Parameters { get; private set; }
     public IReadOnlyList<PortDefinition> Inputs { get; private set; }
     public IReadOnlyList<PortDefinition> Outputs { get; private set; }
 
@@ -59,4 +59,27 @@ public abstract class SignalNode : ISignalNode
     // A concrete node instance belongs to one graph. This prevents sharing
     // mutable parameter state between otherwise independent composite instances.
     internal SignalGraph? OwningGraph { get; set; }
+
+    /// <summary>Restore a factory-created, detached leaf using stable keys and saved identities.
+    /// Definitions remain owned by the current node type, never by the document.</summary>
+    public void RestoreIdentity(IReadOnlyDictionary<string, Guid> portIds,
+        IReadOnlyDictionary<string, (Guid Id, double Value)> parameterValues)
+    {
+        if (OwningGraph is not null || this is Composites.ICompositeNode or Composites.InputRack or Composites.OutputRack)
+            throw new InvalidOperationException("Only detached leaf nodes can restore identities.");
+        if (portIds.Count != Inputs.Count + Outputs.Count || parameterValues.Count != Parameters.Count ||
+            portIds.Values.Any(id => id == Guid.Empty) || portIds.Values.Distinct().Count() != portIds.Count ||
+            parameterValues.Values.Select(value => value.Id).Distinct().Count() != parameterValues.Count)
+            throw new ArgumentException("Saved node identities do not match its definition.");
+        var mapping = Inputs.Concat(Outputs).ToDictionary(port => port.Id, port => portIds[port.Key]);
+        var parameters = Parameters.Select(parameter =>
+        {
+            var saved = parameterValues[parameter.Definition.Key];
+            return new Parameter(saved.Id, parameter.Definition,
+                parameter.ModulationPortId is Guid portId ? mapping[portId] : null, saved.Value);
+        }).ToArray();
+        ReplaceSockets(Inputs.Select(port => port with { Id = mapping[port.Id] }),
+            Outputs.Select(port => port with { Id = mapping[port.Id] }));
+        Parameters = Array.AsReadOnly(parameters);
+    }
 }

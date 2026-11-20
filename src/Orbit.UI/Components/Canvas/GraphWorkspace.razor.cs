@@ -12,6 +12,8 @@ using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Nodes.Processors;
 using Orbit.Presentation.Canvas;
+using Orbit.Application.Persistence;
+using Orbit.Domain.Timing;
 
 namespace Orbit.UI.Components.Canvas;
 
@@ -19,6 +21,14 @@ namespace Orbit.UI.Components.Canvas;
 public partial class GraphWorkspace : IDisposable
 {
     [Inject] private IGraphModulationRangeEstimator ModulationEstimator { get; set; } = default!;
+    [Inject] private PatchDocumentSerializer Serializer { get; set; } = default!;
+    [Inject] private PatchPersistenceService Persistence { get; set; } = default!;
+    [Inject] private IMusicalTransportService Transport { get; set; } = default!;
+    private bool initialized;
+    private bool autosaveEnabled = true;
+    private bool disposed;
+    private double tempo = MusicalTransport.DefaultTempo;
+    private string? PersistenceError { get; set; }
     private IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
     private static readonly IReadOnlyDictionary<ParameterAddress, double> EmptyValues = new Dictionary<ParameterAddress, double>();
     private long rangeRevision = -1;
@@ -48,20 +58,68 @@ public partial class GraphWorkspace : IDisposable
     private IEnumerable<Guid> DeletableNodes => Canvas.Snapshot.SelectedNodeIds.Where(id =>
         Canvas.Snapshot.Graph.GetNode(id).TypeKey is not (InputRack.NodeType or OutputRack.NodeType));
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         var registry = BuiltInNodes.CreateEditorRegistry();
         catalog = registry;
         SelectedType = OscillatorGenerator.NodeType;
-        session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings(), registry);
-        Navigation = new CanvasNavigationService(session, new GridNodePlacementPolicy(columnSpacing: 320, rowSpacing: 360, columns: 4));
+        var placement = new GridNodePlacementPolicy(columnSpacing: 320, rowSpacing: 360, columns: 4);
+        try
+        {
+            if (await Persistence.LoadAsync() is { } document)
+            {
+                session = Serializer.Restore(document, registry);
+                Navigation = new CanvasNavigationService(session, placement, document.CanvasLayouts, document.ActiveGraphId);
+                await Transport.SetTempoAsync(document.BeatsPerMinute);
+                tempo = document.BeatsPerMinute;
+            }
+        }
+        catch (Exception exception)
+        {
+            Navigation?.Dispose();
+            session?.Dispose();
+            session = null!;
+            // Do not replace an unreadable or newer document with a demo patch.
+            autosaveEnabled = false;
+            PersistenceError = $"Saved patch could not be restored; autosave is disabled: {exception.Message}";
+        }
+        if (disposed) { Navigation?.Dispose(); session?.Dispose(); return; }
+        if (session is null)
+        {
+            session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings(), registry);
+            Navigation = new CanvasNavigationService(session, placement);
+        }
         RefreshRanges();
         subscription = Navigation.Subscribe(change => { _ = InvokeAsync(() =>
         {
             if (!RegisteredTypes.Contains(SelectedType)) SelectedType = OscillatorGenerator.NodeType;
             RefreshRanges();
             StateHasChanged();
+            _ = SaveWorkspaceAsync();
         }); });
+        initialized = true;
+    }
+
+    private async Task SaveWorkspaceAsync()
+    {
+        if (!autosaveEnabled || disposed) return;
+        try
+        {
+            await Persistence.ScheduleSaveAsync(() => Serializer.Capture(session, tempo,
+                Canvas.Snapshot.GraphId, Navigation.CaptureLayouts()));
+            if (!disposed && PersistenceError is not null) { PersistenceError = null; StateHasChanged(); }
+        }
+        catch (Exception exception)
+        {
+            if (!disposed) { PersistenceError = $"Autosave failed: {exception.Message}"; StateHasChanged(); }
+        }
+    }
+
+    private void OnTempoChanged(double value)
+    {
+        if (tempo == value) return;
+        tempo = value;
+        _ = SaveWorkspaceAsync();
     }
 
     // Analyze only graph/revision changes, not viewport changes or meter frames.
@@ -175,6 +233,8 @@ public partial class GraphWorkspace : IDisposable
 
     public void Dispose()
     {
+        disposed = true;
+        Persistence.Dispose();
         subscription?.Dispose();
         Navigation?.Dispose();
         session?.Dispose();

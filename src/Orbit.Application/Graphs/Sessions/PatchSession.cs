@@ -13,7 +13,7 @@ namespace Orbit.Application.Graphs.Sessions;
 public sealed class PatchSession : IPatchSession
 {
     private readonly object gate = new();
-    private readonly SignalGraph graph = new();
+    private readonly SignalGraph graph;
     private readonly GraphCommandHandler commands;
     private readonly GraphChangeDispatcher dispatcher = new();
 
@@ -21,14 +21,19 @@ public sealed class PatchSession : IPatchSession
     private bool executing;
     private bool disposed;
 
-    public PatchSession(NodeRegistry registry)
+    public PatchSession(NodeRegistry registry) : this(registry, new SignalGraph(), Guid.NewGuid()) { }
+
+    internal PatchSession(NodeRegistry registry, SignalGraph graph, Guid patchId)
     {
         ArgumentNullException.ThrowIfNull(registry);
+        if (patchId == Guid.Empty) throw new ArgumentException("Patch ID cannot be empty.", nameof(patchId));
+        this.graph = graph;
+        PatchId = patchId;
         commands = new GraphCommandHandler(registry);
         snapshot = GraphSnapshot.Capture(graph, 0);
     }
 
-    public Guid PatchId { get; } = Guid.NewGuid();
+    public Guid PatchId { get; }
     public Guid GraphId => graph.Id;
 
     public GraphSnapshot Snapshot

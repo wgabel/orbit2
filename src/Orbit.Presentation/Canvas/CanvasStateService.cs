@@ -4,6 +4,7 @@ using Orbit.Application.Graphs.Sessions;
 using Orbit.Application.Graphs.Snapshots;
 using Orbit.Application.Notifications;
 using Orbit.Domain.Nodes.Composites;
+using Orbit.Application.Persistence;
 
 namespace Orbit.Presentation.Canvas;
 
@@ -27,18 +28,22 @@ public sealed class CanvasStateService : ICanvasStateService
     {
     }
 
-    public CanvasStateService(IPatchSession session, Guid graphId, INodePlacementPolicy? placement = null)
+    public CanvasStateService(IPatchSession session, Guid graphId, INodePlacementPolicy? placement = null, SavedCanvas? saved = null)
     {
         ArgumentNullException.ThrowIfNull(session);
         this.placement = placement ?? new GridNodePlacementPolicy();
         var graph = session.Snapshot.GetGraph(graphId);
         var positions = new Dictionary<Guid, CanvasPoint>();
+        var viewport = saved is null ? CanvasViewport.Initial : new CanvasViewport(new CanvasPoint(saved.PanX, saved.PanY), saved.Zoom);
+        if (saved is not null)
+            foreach (var position in saved.Positions.Where(position => graph.Nodes.Any(node => node.Id == position.NodeId)))
+                positions.Add(position.NodeId, new CanvasPoint(position.X, position.Y).RequireFinite(nameof(saved)));
         // Place the receiving rack at the end of a new child layout, so the
         // default signal flow reads left to right. Existing positions never move.
         foreach (var node in graph.Nodes.OrderBy(node => node.TypeKey == OutputRack.NodeType ? 1 : 0))
-            positions.Add(node.Id, PlaceNode(positions));
+            if (!positions.ContainsKey(node.Id)) positions.Add(node.Id, PlaceNode(positions));
 
-        snapshot = new CanvasStateSnapshot(graph, 0, CanvasViewport.Initial,
+        snapshot = new CanvasStateSnapshot(graph, 0, viewport,
             Freeze(positions), Array.Empty<Guid>(), Array.Empty<Guid>());
         // Observe patch commits, including edits of descendants and deletion of
         // the composite that owns this canvas. Each local projection has its own layout.

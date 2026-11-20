@@ -10,18 +10,22 @@ public sealed class CompositeNode : SignalNode, ICompositeNode
     public const string NodeType = "composite.graph";
 
     public CompositeNode(Guid id, string name, IEnumerable<ExposedPort> inputs, IEnumerable<ExposedPort> outputs)
-        : this(id, name, Boundary.Create(inputs, outputs))
+        : this(id, name, inputs, outputs, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid())
     {
     }
 
-    private CompositeNode(Guid id, string name, Boundary boundary)
+    public CompositeNode(Guid id, string name, IEnumerable<ExposedPort> inputs, IEnumerable<ExposedPort> outputs,
+        Guid graphId, Guid inputRackId, Guid outputRackId)
+        : this(id, name, Boundary.Create(inputs, outputs), graphId, inputRackId, outputRackId) { }
+
+    private CompositeNode(Guid id, string name, Boundary boundary, Guid graphId, Guid inputRackId, Guid outputRackId)
         : base(id, NodeType, name, [],
             boundary.Inputs.Select(port => port.Project(PortDirection.Input)),
             boundary.Outputs.Select(port => port.Project(PortDirection.Output)))
     {
-        InputRack = new InputRack(Guid.NewGuid(), boundary.Inputs);
-        OutputRack = new OutputRack(Guid.NewGuid(), boundary.Outputs);
-        InternalGraph = new SignalGraph(this);
+        InputRack = new InputRack(inputRackId, boundary.Inputs);
+        OutputRack = new OutputRack(outputRackId, boundary.Outputs);
+        InternalGraph = new SignalGraph(this, graphId);
         InternalGraph.AddNode(InputRack);
         InternalGraph.AddNode(OutputRack);
     }

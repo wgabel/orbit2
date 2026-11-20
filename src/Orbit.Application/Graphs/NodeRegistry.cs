@@ -33,14 +33,15 @@ public sealed class NodeRegistry
             throw new InvalidOperationException($"Node type '{typeKey}' is already registered.");
     }
 
-    public ISignalNode Create(string typeKey)
+    public ISignalNode Create(string typeKey) => Create(typeKey, Guid.NewGuid());
+
+    internal ISignalNode Create(string typeKey, Guid id)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(typeKey);
 
         if (!factories.TryGetValue(typeKey, out var factory))
             throw new KeyNotFoundException($"Node type '{typeKey}' is not registered.");
 
-        var id = Guid.NewGuid();
         var node = factory.Create(id);
 
         if (node.Id != id || !string.Equals(node.TypeKey, factory.NodeType, StringComparison.Ordinal))

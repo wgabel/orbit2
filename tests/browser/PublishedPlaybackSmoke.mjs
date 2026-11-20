@@ -277,6 +277,42 @@ try {
         "Components/TransportSignalProcessor.js"])
         assert.ok(requests.has(prefix + file), `Missing versioned asset: ${file}`);
     assert.ok([...requests].every(path => !path.startsWith("/_content/Orbit.Infrastructure/audio/")));
+    // Wait for the debounced save before closing the editor, then restore a nested workspace.
+    await drone.getByRole("button", { name: "Open Drone" }).click();
+    await childFrequency.waitFor();
+    await page.getByRole("button", { name: "Zoom out" }).click();
+    const savedTransform = await page.locator(".canvas-world").getAttribute("style");
+    await page.waitForFunction(async expectedTransform => {
+        const database = await new Promise((resolve, reject) => {
+            const request = indexedDB.open("orbit2-patches", 1);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+        try {
+            const saved = await new Promise((resolve, reject) => {
+                const request = database.transaction("workspace").objectStore("workspace").get("current");
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+            if (!saved) return false;
+            const document = JSON.parse(saved);
+            const layout = document.canvasLayouts.find(item => item.graphId === document.activeGraphId);
+            const values = expectedTransform.match(/translate\(([^,]+)px,([^,]+)px\) scale\(([^)]+)\)/).slice(1).map(Number);
+            return document.activeGraphId !== document.rootGraph.id && document.beatsPerMinute === 90 &&
+                layout && [layout.panX, layout.panY, layout.zoom].every((value, index) => value === values[index]);
+        } finally { database.close(); }
+    }, savedTransform);
+    await page.reload();
+    await childFrequency.waitFor();
+    assert.equal(await childFrequency.inputValue(), "330");
+    assert.equal(await tempo.inputValue(), "90");
+    assert.equal(await page.locator(".canvas-world").getAttribute("style"), savedTransform);
+    await rack.getByRole("button", { name: "Output: Cutoff (Modulation)" }).waitFor();
+    await status.filter({ hasText: /Ready/ }).waitFor();
+    assert.equal(await play.isEnabled(), true);
+    await breadcrumbs.getByRole("button", { name: "Patch" }).click();
+    await drone.getByRole("button", { name: "Input: Cutoff (Modulation)" }).waitFor();
+    assert.equal(await division.inputValue(), "4");
     console.log("Published editor played, navigated nested canvases, edited live frequency and mirrored rack port add/rename/reorder/remove during playback.");
 } finally {
     await browser?.close();

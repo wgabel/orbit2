@@ -29,7 +29,7 @@ public sealed class SignalGraph
         Connections = connections.AsReadOnly();
     }
 
-    internal SignalGraph(CompositeNode owner) : this(Guid.NewGuid())
+    internal SignalGraph(CompositeNode owner, Guid id) : this(id)
     {
         Owner = owner;
     }

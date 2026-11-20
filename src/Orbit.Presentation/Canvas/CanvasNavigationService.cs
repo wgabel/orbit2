@@ -1,6 +1,8 @@
 using Orbit.Application.Graphs.Events;
 using Orbit.Application.Graphs.Sessions;
 using Orbit.Application.Notifications;
+using Orbit.Application.Persistence;
+using Orbit.Application.Graphs.Snapshots;
 
 namespace Orbit.Presentation.Canvas;
 
@@ -18,7 +20,8 @@ public sealed class CanvasNavigationService : IDisposable
     private IDisposable? activeSubscription;
     private bool disposed;
 
-    public CanvasNavigationService(IPatchSession session, INodePlacementPolicy? placement = null)
+    public CanvasNavigationService(IPatchSession session, INodePlacementPolicy? placement = null,
+        SavedCanvas[]? layouts = null, Guid? activeGraphId = null)
     {
         this.session = session ?? throw new ArgumentNullException(nameof(session));
         this.placement = placement;
@@ -26,7 +29,35 @@ public sealed class CanvasNavigationService : IDisposable
         // released outside their own layout notifications.
         patchSubscription = session.Subscribe(OnPatchCommitted);
         path.Add(new CanvasBreadcrumb(session.GraphId, "Patch"));
+        if (layouts is not null)
+            foreach (var layout in layouts.Where(layout => session.Snapshot.FindGraph(layout.GraphId) is not null))
+                canvases.Add(layout.GraphId, new CanvasStateService(session, layout.GraphId, placement, layout));
         Activate(session.GraphId);
+        if (activeGraphId is Guid target && target != session.GraphId &&
+            TryFindPath(session.Snapshot, target, out var children))
+        {
+            path.AddRange(children);
+            Activate(target);
+        }
+    }
+
+    public SavedCanvas[] CaptureLayouts() => canvases.Values.Select(canvas => canvas.Snapshot)
+        .Where(snapshot => snapshot.IsAvailable).Select(snapshot => new SavedCanvas(snapshot.GraphId,
+            snapshot.Viewport.Pan.X, snapshot.Viewport.Pan.Y, snapshot.Viewport.Zoom,
+            snapshot.NodePositions.Select(pair => new SavedNodePosition(pair.Key, pair.Value.X, pair.Value.Y)).ToArray())).ToArray();
+
+    private static bool TryFindPath(GraphSnapshot graph, Guid target, out List<CanvasBreadcrumb> path)
+    {
+        path = [];
+        if (graph.Id == target) return true;
+        foreach (var node in graph.Nodes)
+            if (node.Composite is { } composite && TryFindPath(composite.Graph, target, out var children))
+            {
+                path.Add(new CanvasBreadcrumb(composite.Graph.Id, node.Name));
+                path.AddRange(children);
+                return true;
+            }
+        return false;
     }
 
     public ICanvasStateService ActiveCanvas { get; private set; } = default!;

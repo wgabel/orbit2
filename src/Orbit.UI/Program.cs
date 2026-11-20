@@ -7,6 +7,8 @@ using Orbit.Infrastructure.Audio;
 using Orbit.Audio.Compilation;
 using Orbit.Audio.Playback;
 using Orbit.Audio.Analysis;
+using Orbit.Application.Persistence;
+using Orbit.Infrastructure.Persistence;
 
 // Application entry point and composition root. Blazor's browser bootstrap
 // script loads the .NET runtime, then runs these top-level C# statements.
@@ -26,6 +28,9 @@ var emitters = BuiltInFaustEmitters.Create();
 builder.Services.AddSingleton(new FaustGraphCompiler(emitters));
 builder.Services.AddSingleton<IGraphModulationRangeEstimator>(new GraphModulationRangeEstimator(emitters));
 builder.Services.AddSingleton<IGraphPlaybackService, FaustGraphPlaybackService>();
+builder.Services.AddSingleton<IPatchStorage, BrowserPatchStorage>();
+builder.Services.AddSingleton<PatchDocumentSerializer>();
+builder.Services.AddTransient<PatchPersistenceService>();
 
 // Start the host, resolve dependencies and render the registered root component.
 await builder.Build().RunAsync();

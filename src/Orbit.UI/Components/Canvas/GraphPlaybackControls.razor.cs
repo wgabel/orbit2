@@ -14,6 +14,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
     [Inject] private IMusicalTransportService Transport { get; set; } = default!;
     [Parameter, EditorRequired] public GraphSnapshot Snapshot { get; set; } = default!;
     [Parameter] public EventCallback<GraphParameterTelemetry?> TelemetryChanged { get; set; }
+    [Parameter] public EventCallback<double> TempoChanged { get; set; }
 
     private bool IsReady { get; set; }
     private bool IsActive { get; set; }
@@ -73,6 +74,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
         try
         {
             await Playback.InitializeAsync();
+            TransportState = await Transport.SynchronizeAsync(false);
             IsReady = true;
         }
         catch (Exception exception)
@@ -177,8 +179,11 @@ public partial class GraphPlaybackControls : IAsyncDisposable
     private Task SynchronizeTransportAsync(bool playing) =>
         UpdateTransportAsync(() => Transport.SynchronizeAsync(playing));
 
-    private Task SetTempoAsync(double beatsPerMinute) =>
-        UpdateTransportAsync(() => Transport.SetTempoAsync(beatsPerMinute));
+    private async Task SetTempoAsync(double beatsPerMinute)
+    {
+        await UpdateTransportAsync(() => Transport.SetTempoAsync(beatsPerMinute));
+        if (TransportError is null) await TempoChanged.InvokeAsync(TransportState.BeatsPerMinute);
+    }
 
     private Task ResetTransportAsync() => UpdateTransportAsync(Transport.ResetAsync);
 

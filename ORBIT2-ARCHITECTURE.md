@@ -1436,10 +1436,22 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented: separate white/pink/brown noise generator with modulatable amplitude and structural color selection.
 - Implemented: independent layered drone preset, generic composite preset catalog registration and mono weighted mixer.
 - Implemented: unified resonant filter processor (low-pass, high-pass, band-pass, notch), with audio-rate cutoff and Q modulation.
-- Next: EQ, delay, reverb and chorus; later add additional waveforms, sample-scheduled transport commands and rhythmic clock/trigger nodes.
-- Persist root/nested graphs, rack definitions and separate canvas layout.
+- Implemented (6.8): versioned `PatchDocument` serialization, including root/nested graph identities, rack definitions, primitive parameter values and separate canvas layout. Reconstruction uses registered leaf factories and validated domain graph operations, not persisted DSP definitions.
+- Implemented (6.9): browser-local IndexedDB, debounced autosave and startup recovery of all visited layouts, active canvas and BPM; playback starts stopped.
+- Next: manual save/load and project management (6.10), undo/redo (6.11), then EQ, delay, reverb and chorus; later add additional waveforms, sample-scheduled transport commands and rhythmic clock/trigger nodes.
 - Add copies/preset reuse with independent instances.
-- Add undo/redo and debounced autosave.
+
+Workspace persistence uses a data-only schema version 1. `PatchDocumentSerializer` captures immutable session snapshots with stable node, parameter, socket, connection and graph IDs. Parameter and port definitions are reconstructed by the registry using their stable keys; composites reconstruct their boundary definitions, preserving both rack identities and receiving-side fan-in. Invalid definitions, unknown schemas and invalid connections are rejected before a session is exposed. `CanvasNavigationService` captures and restores layout and navigation independently. `PatchPersistenceService` coalesces changes for 350 ms and serializes writes; `IPatchStorage` is implemented by `BrowserPatchStorage` through IndexedDB transactions. No live runtime state or selection is stored. Startup loads before rendering the workspace; a missing document seeds the demo, while a failed restore preserves the saved record and disables autosave for that session. Very fast reloads within the debounce window can lose the latest edit; storage is browser-local and can be cleared by the browser.
+
+~~~mermaid
+flowchart TD
+    S[Patch session snapshot] --> D[Patch document serializer]
+    L[Canvas navigation layouts] --> D
+    T[Tempo] --> D
+    D --> P[Patch persistence service]
+    P --> B[IPatchStorage]
+    B --> I[(IndexedDB)]
+~~~
 
 Deliverable: several independently configurable drones from one reusable modular architecture.
 

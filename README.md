@@ -46,7 +46,20 @@ flowchart TD
 | Infrastructure | Orbit.Infrastructure | C# adapter and modular browser audio runtime. No UI or use-case policy. |
 | Processing/DSP | Orbit.Audio | Graph-to-Faust source compiler and Faust programs that generate samples. |
 
-The infrastructure implements contracts declared by Application. The UI composition root registers concrete implementations; UI components consume application-facing interfaces only. There is no database or persistence layer yet.
+The infrastructure implements contracts declared by Application. The UI composition root registers concrete implementations; UI components consume application-facing interfaces only. The current editor workspace is recovered from browser-local IndexedDB; no server database or account is required.
+
+## Workspace recovery (Phases 6.8–6.9)
+
+Orbit automatically saves the committed patch, including nested graphs, rack definitions, dormant connections, base parameter values, BPM, per-canvas node positions and viewport, and the active graph. After the last edit autosave waits 350 ms, then replaces the recovery document in IndexedDB in one transaction. Reload restores that document before the canvas is shown. Playback remains stopped and live telemetry, beat position, and selection are not persisted. A missing document opens the demo; an incompatible or unreadable document is retained and autosave disabled for that session with a visible warning. Browser data clearing/private browsing can remove this local data. Manual patch files, multiple projects and undo/redo remain future work.
+
+```mermaid
+flowchart TD
+    G[Committed graph] --> D[Versioned patch document]
+    C[Canvas layouts] --> D
+    T[Tempo] --> D
+    D --> P[Debounced persistence service]
+    P --> I[(IndexedDB)]
+```
 
 The infrastructure uses the .NET Razor class library SDK solely to package browser-side static assets. Local builds expose them under `_content/Orbit.Infrastructure/audio/`; deployed builds also use a commit-versioned `audio-<commit>/` directory for the complete relative-import tree, including the worker and generated Faust assets. This prevents mixed-version browser caches. The library contains no Razor views.
 
