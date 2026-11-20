@@ -1,0 +1,30 @@
+// JavaScript composition root and interop entry point. Only this module
+// assembles dependencies; individual components can be tested independently.
+import { FaustMonoDspGenerator } from "./generated/sine/faustwasm/index.js";
+import { AudioEngine } from "./AudioEngine.js";
+import { AudioContextManager } from "./Components/AudioContextManager.js";
+import { AudioEnvelope } from "./Components/AudioEnvelope.js";
+import { AudioOutput } from "./Components/AudioOutput.js";
+import { FaustModuleLoader } from "./Faust/FaustModuleLoader.js";
+import { FaustNodeFactory } from "./Faust/FaustNodeFactory.js";
+
+const processors = new Map([
+    ["Sine", { name: "OrbitSine", baseUrl: new URL("./generated/sine/", import.meta.url) }]
+]);
+
+const contextManager = new AudioContextManager(() => {
+    const Context = globalThis.AudioContext || globalThis.webkitAudioContext;
+    if (!Context) throw new Error("Web Audio is unavailable.");
+    return new Context();
+});
+const moduleLoader = new FaustModuleLoader(
+    url => fetch(url),
+    bytes => WebAssembly.compile(bytes));
+const nodeFactory = new FaustNodeFactory(
+    moduleLoader, processors, () => new FaustMonoDspGenerator());
+const output = new AudioOutput(new AudioEnvelope());
+const engine = new AudioEngine(contextManager, nodeFactory, output);
+
+export const play = request => engine.play(request);
+export const stop = soundId => engine.stop(soundId);
+export const dispose = () => engine.dispose();

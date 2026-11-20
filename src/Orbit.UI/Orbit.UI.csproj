@@ -12,5 +12,7 @@
 
     <!-- One-way dependency: the UI consumes contracts from the application library. -->
     <ProjectReference Include="../Orbit.Application/Orbit.Application.csproj" />
+    <!-- The composition root wires browser infrastructure; Razor components use only contracts. -->
+    <ProjectReference Include="../Orbit.Infrastructure/Orbit.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

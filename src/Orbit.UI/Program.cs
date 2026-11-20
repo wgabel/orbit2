@@ -2,7 +2,8 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Orbit.Application.Services;
 using Orbit.UI;
-using Orbit.UI.Infrastructure;
+using Orbit.Application.Interfaces;
+using Orbit.Infrastructure.Audio;
 
 // Application entry point and composition root. Blazor's browser bootstrap
 // script loads the .NET runtime, then runs these top-level C# statements.
@@ -16,7 +17,8 @@ builder.RootComponents.Add<App>("#app");
 builder.Services.AddSingleton<ICounterService, CounterService>();
 
 // Register the browser-specific audio adapter behind the application contract.
-builder.Services.AddSingleton<IAudioService, BrowserAudioService>();
+builder.Services.AddSingleton<IAudioEngine, BrowserAudioEngine>();
+builder.Services.AddSingleton<IAudioService, AudioService>();
 
 // Start the host, resolve dependencies and render the registered root component.
 await builder.Build().RunAsync();

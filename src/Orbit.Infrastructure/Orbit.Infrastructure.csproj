@@ -1,0 +1,14 @@
+<!-- Browser infrastructure and static audio assets. The Razor SDK packages
+     wwwroot as _content/Orbit.Infrastructure/ in the consuming Blazor app.
+     This library contains no Razor views or application use cases. -->
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.15" />
+    <ProjectReference Include="../Orbit.Application/Orbit.Application.csproj" />
+  </ItemGroup>
+</Project>
