@@ -27,6 +27,18 @@ public abstract class SignalNode : ISignalNode
         Parameters = Array.AsReadOnly(parameters.ToArray());
         Inputs = Array.AsReadOnly(inputs.ToArray());
         Outputs = Array.AsReadOnly(outputs.ToArray());
+
+        // Activation depends only on a local, unconditional structural choice.
+        // This avoids recursive conditions or per-sample structural changes.
+        foreach (var parameter in Parameters)
+        {
+            if (parameter.Definition.ActiveWhen is not { } activation) continue;
+            var selector = Parameters.SingleOrDefault(candidate => candidate.Definition.Key == activation.SelectorKey);
+            if (selector is null || selector.Definition.ActiveWhen is not null ||
+                !selector.Definition.RequiresRecompile || selector.Definition.Choices is null ||
+                !selector.Definition.IsValidBaseValue(activation.EqualsValue))
+                throw new ArgumentException("Parameter activation requires a valid unconditional structural choice.", nameof(parameters));
+        }
     }
 
     public Guid Id { get; }

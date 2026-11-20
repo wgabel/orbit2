@@ -6,5 +6,6 @@
 .connection-modulation .connection-line { stroke: var(--semantic-color-modulation); }
 .connection-trigger .connection-line { stroke: var(--semantic-color-processor); }
 .connection-gate .connection-line { stroke: var(--semantic-color-composite); }
+.connection-dormant .connection-line { stroke: var(--semantic-color-muted); stroke-dasharray: var(--component-connection-draft-dash); }
 .connection-selected .connection-line { stroke: var(--semantic-color-selected); stroke-width: var(--component-connection-selected-width); }
 .connection-draft { stroke: var(--semantic-color-selected); stroke-dasharray: var(--component-connection-draft-dash); }

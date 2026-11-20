@@ -14,13 +14,12 @@ namespace Orbit.Domain.Tests;
 public sealed class NodeRegistryTests
 {
     [Fact]
-    public void CreatesFourBuiltInNodeTypes()
+    public void CreatesThreeBuiltInNodeTypes()
     {
         var registry = BuiltInNodes.CreateRegistry();
 
-        Assert.Equal(4, registry.RegisteredTypes.Count);
+        Assert.Equal(3, registry.RegisteredTypes.Count);
         Assert.IsAssignableFrom<IGenerator>(registry.Create(OscillatorGenerator.NodeType));
-        Assert.IsAssignableFrom<IGenerator>(registry.Create(TempoSineGenerator.NodeType));
         Assert.IsAssignableFrom<IProcessor>(registry.Create(GainProcessor.NodeType));
         var output = Assert.IsType<MasterOutput>(registry.Create(MasterOutput.NodeType));
         Assert.Single(output.Inputs);
@@ -51,16 +50,22 @@ public sealed class NodeRegistryTests
     }
 
     [Fact]
-    public void TempoGeneratorHasDiscreteDivisionAndModulatablePhaseAndAmplitude()
+    public void OscillatorHasDiscreteDivisionAndTimingMode()
     {
         var graph = new SignalGraph();
-        var node = new TempoSineGenerator(Guid.NewGuid());
+        var node = new OscillatorGenerator(Guid.NewGuid());
         graph.AddNode(node);
         var division = node.Parameters.Single(p => p.Definition.Key == "division");
         Assert.Equal((double)MusicalDivision.QuarterNote, division.BaseValue);
         Assert.Equal(7, division.Definition.Choices!.Count);
         Assert.Null(division.ModulationPortId);
-        Assert.Equal(2, node.Inputs.Count);
+        Assert.Equal(3, node.Inputs.Count);
+        var timing = node.Parameters.Single(p => p.Definition.Key == "timing");
+        Assert.Equal((double)OscillatorTimingMode.Free, timing.BaseValue);
+        Assert.Null(timing.ModulationPortId);
+        Assert.True(timing.Definition.RequiresRecompile);
+        graph.SetParameterValue(new ParameterAddress(node.Id, timing.Id), (int)OscillatorTimingMode.Synchronized);
+        Assert.Equal((double)OscillatorTimingMode.Synchronized, timing.BaseValue);
         var address = new ParameterAddress(node.Id, division.Id);
         Assert.Throws<ArgumentOutOfRangeException>(() => graph.SetParameterValue(address, 2.5));
         Assert.Equal((double)MusicalDivision.QuarterNote, division.BaseValue);

@@ -198,9 +198,9 @@ flowchart TD
 
 `MusicalTime` maps `MusicalDivision` to quarter-note beat lengths and converts them to Hz: for example at 120 BPM a quarter-note cycle is 2 Hz and a 4/4 bar is 0.5 Hz. Dotted and triplet divisions are defined too.
 
-### Tempo-synchronized sine LFO (Phase 6.2)
+### Tempo-synchronized oscillator (Phase 6.2 / 6.4)
 
-Add a **Tempo sine LFO** to any canvas. Choose a musical division (for example, 1/4 note), connect Signal to a frequency, amplitude or other modulation socket, and adjust the connection amount in the receiving parameter's units. At 120 BPM, a quarter note gives two cycles per second; a bar gives one cycle every two seconds. Change BPM while playing or reset transport to hear the synchronized modulation respond. Phase offset (degrees) and amplitude remain independently modulatable. Division is a validated discrete choice, not a modulation socket. The same reusable choice editor can serve future enum-like parameters.
+Add an **Oscillator** to any canvas and choose **Synchronized (BPM)** under Timing mode. Select a waveform and musical division (for example, 1/4 note), connect Signal to a frequency, amplitude or other modulation socket, and adjust the connection amount in the receiving parameter's units. At 120 BPM, a quarter note gives two cycles per second; a bar gives one cycle every two seconds. Change BPM while playing or reset transport to hear the synchronized modulation respond. Phase offset (degrees) and amplitude remain independently modulatable. Division is a validated discrete live choice, not a modulation socket.
 
 ~~~mermaid
 flowchart TD
@@ -213,7 +213,7 @@ flowchart TD
     D --> P
 ~~~
 
-The application publishes transport anchors only when transport state changes. The browser owns one lazy `TransportSignalSource` per audio context; its worklet produces one beat sample per audio frame. When a reachable emitter requires transport, `FaustGraphCompiler` adds one beat input to the compiled graph. Every tempo sine calculates `sin(2π × (beat / beatsPerCycle + phaseDegrees / 360)) × amplitude` from that shared input. The 12-beat wrap keeps Float32 precision while preserving phase for all current divisions. Old and new graphs during a crossfade share the same source. Free-running sine generators still use Hertz and need no transport input.
+The application publishes transport anchors only when transport state changes. The browser owns one lazy `TransportSignalSource` per audio context; its worklet produces one beat sample per audio frame. When a reachable emitter requests the transport beat from `FaustNodeContext`, `FaustGraphCompiler` adds one beat input to the compiled graph. Every synchronized oscillator calculates phase in cycles as `beat / beatsPerCycle + phaseDegrees / 360`, then evaluates its chosen waveform. The 12-beat wrap keeps Float32 precision while preserving phase for all current divisions. Old and new graphs during a crossfade share the same source. Free-running oscillators use Hertz and need no transport input.
 
 Steady-state phase is calculated at the actual audio sample rate (including 44.1 and 48 kHz). Start/stop/reset/tempo commands anchor to the observed audio frame and arrive at an audio-worklet message boundary; scheduled sample-exact command execution and rhythmic clock/trigger nodes remain future work.
 
@@ -234,7 +234,28 @@ flowchart TD
 
 `OscillatorWaveform` defines stable discrete choices; `ParameterDefinition.RequiresRecompile` distinguishes DSP-shaping choices from live controls. `GraphTopology` includes structural values, so selecting a different waveform recompiles the program and crossfades the replacement; ordinary frequency/amplitude/phase changes update the existing worklet. The compiler emits only the selected shape—not four parallel oscillators. A free-running oscillator integrates frequency into one phase signal at the actual sample rate, wraps phase plus the offset, evaluates the chosen waveform and clamps its normalized result before amplitude scaling. Saw and square use polynomial step corrections (PolyBLEP), and triangle uses a slope correction (PolyBLAMP) to reduce aliasing. This avoids a fixed audio-rate frequency floor for slow modulation. Equal peak amplitude is not equal perceived loudness; loudness matching is a separate feature.
 
-Tempo sine LFO remains transport-locked for now. A later timing-mode change can unify its beat-derived phase with the same waveform calculation. Noise remains a separate generator family.
+### Unified timing modes (Phase 6.4)
+
+The separate tempo sine node has been removed. All four oscillator waveforms work in both timing modes.
+
+| Timing mode | Active rate parameter | Frequency modulation input |
+|---|---|---|
+| Free (Hz) | Frequency | Active |
+| Synchronized (BPM) | Musical division | Dormant (cables preserved) |
+
+`ParameterDefinition.ActiveWhen` references an unconditional local structural choice. The snapshot exposes `IsParameterActive` and `IsInputActive`, which drive the shared editor and backend. The inactive editor is hidden, but its stored value and socket survive. Dormant frequency connections remain visible as muted dashed wires, may be edited, and automatically reactivate when returning to free mode. `GraphFlattener` excludes dormant receiving routes from the backend graph before dependency ordering and range analysis. This prevents unused upstream DSP/control allocation; the original committed graph stays untouched. The graph still validates all connections, including dormant ones, so reactivation cannot create a cycle.
+
+~~~mermaid
+flowchart TD
+    M["Timing mode"] --> H["Free: instantaneous Hz"]
+    M --> B["Sync: transport beat / division"]
+    H --> P["FaustOscillatorTiming"]
+    B --> P
+    P --> W["Shared phase-to-waveform DSP"]
+    W --> S["Signal output"]
+~~~
+
+Changing timing mode is a structural edit and crossfades to the new program. Changing musical division is a discrete live control; it intentionally reinterprets the current beat relative to the selected cycle length (it can change phase immediately). Tempo edits preserve beat position without recompiling. Free and synchronized settings are remembered independently. Noise remains a separate generator family.
 
 
 
@@ -396,11 +417,11 @@ flowchart TD
 ~~~
 
 - The compiler walks backward from the sole master output and orders all reachable audio and modulation dependencies. Disconnected nodes are excluded; a disconnected master produces silence.
-- `IFaustNodeEmitter` is the backend extension point. Oscillator, tempo sine and gain have independent implementations. `FaustNodeContext` handles routing, weighted input summation, parameter slider generation, smoothing, clamping and validated structural constants.
+- `IFaustNodeEmitter` is the backend extension point. Oscillator and gain have independent implementations. `FaustNodeContext` handles routing, weighted input summation, parameter slider generation, smoothing, clamping, validated structural constants and the optional transport dependency.
 - Each parameter control uses its node and parameter IDs, never user labels. The program source is stable across base-value edits; the latest values travel separately in the control map and must be applied before playback.
 - For linear parameters, effective value = clamped (smoothed base + sum of incoming signals × connection amounts). Frequency also stays below the sample-rate-dependent Nyquist limit. Modulation signals themselves run at audio rate.
 - Connection amounts are baked into this first source representation. Changing connection amounts or topology requires recompilation; a future runtime can expose depth controls without recompiling.
-- The current backend supports mono periodic oscillators, tempo sine LFO, gain, nested composite boundaries and exactly one root master output. Cycles and unsupported reachable node types are rejected.
+- The current backend supports mono free or tempo-synchronized periodic oscillators, gain, nested composite boundaries and exactly one root master output. Cycles and unsupported reachable node types are rejected.
 
 CI exports an actual nested graph using `tests/Orbit.Audio.Probe`, compiles the generated source using the pinned Faust CLI, then renders it offline at 44.1 and 48 kHz. Tests verify that an external LFO can fan out through two rack inputs to internal pitch and gain, that audio returns through the output rack, and that a host can change an internal frequency control without recompiling.
 

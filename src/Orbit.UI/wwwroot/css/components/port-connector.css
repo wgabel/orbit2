@@ -25,3 +25,5 @@
 .port-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .port-active .port-marker, .port-connector:hover .port-marker { filter: brightness(1.4); }
 .port-active { outline: var(--semantic-border-focus-width) solid var(--semantic-color-selected); }
+.port-dormant { color: var(--semantic-color-muted); }
+.port-dormant .port-marker { background: var(--semantic-color-muted); }

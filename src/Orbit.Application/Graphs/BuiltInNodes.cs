@@ -15,7 +15,6 @@ public static class BuiltInNodes
     {
         var registry = new NodeRegistry();
         registry.Register(OscillatorGenerator.NodeType, id => new OscillatorGenerator(id));
-        registry.Register(TempoSineGenerator.NodeType, id => new TempoSineGenerator(id));
         registry.Register(GainProcessor.NodeType, id => new GainProcessor(id));
         registry.Register(MasterOutput.NodeType, id => new MasterOutput(id));
         return registry;

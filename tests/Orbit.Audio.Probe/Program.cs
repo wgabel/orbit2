@@ -63,11 +63,15 @@ tempoRegistry.Register(CompositeNode.NodeType, id => new CompositeNode(id, "Temp
     [new ExposedPort(Guid.NewGuid(), "Mixed", SignalType.Audio, FanIn: FanInPolicy.Sum)]));
 using var tempoSession = new PatchSession(tempoRegistry);
 var tempoRoot = tempoSession.GraphId;
-var outerLfo = TempoAdd(tempoRoot, TempoSineGenerator.NodeType);
+var outerLfo = TempoAdd(tempoRoot, OscillatorGenerator.NodeType);
 var tempoDrone = TempoAdd(tempoRoot, CompositeNode.NodeType);
 var tempoMaster = TempoAdd(tempoRoot, MasterOutput.NodeType);
 var tempoChild = tempoDrone.Composite!.Graph.Id;
-var innerLfo = TempoAdd(tempoChild, TempoSineGenerator.NodeType);
+var innerLfo = TempoAdd(tempoChild, OscillatorGenerator.NodeType);
+foreach (var (graph, node) in new[] { (tempoRoot, outerLfo), (tempoChild, innerLfo) })
+    tempoSession.Execute(new SetParameterValueCommand(graph,
+        new ParameterAddress(node.Id, node.Parameters.Single(p => p.Definition.Key == "timing").Id),
+        (int)OscillatorTimingMode.Synchronized));
 TempoConnect(tempoRoot, outerLfo.Id, outerLfo.Outputs[0].Id, tempoDrone.Id, tempoDrone.Inputs[0].Id);
 TempoConnect(tempoChild, tempoDrone.Composite.InputRackId, tempoDrone.Inputs[0].Id,
     tempoDrone.Composite.OutputRackId, tempoDrone.Outputs[0].Id, 0.5);
@@ -91,8 +95,14 @@ waveformSession.Execute(new ConnectNodesCommand(waveformGraph, new PortAddress(w
     new PortAddress(waveMaster.Id, waveMaster.Inputs[0].Id)));
 var waveformAddress = new ParameterAddress(waveNode.Id,
     waveNode.Parameters.Single(parameter => parameter.Definition.Key == "waveform").Id);
-var waveformProbes = Enum.GetValues<OscillatorWaveform>().Select(waveform =>
+var timingAddress = new ParameterAddress(waveNode.Id,
+    waveNode.Parameters.Single(parameter => parameter.Definition.Key == "timing").Id);
+var waveformProbes = (from mode in Enum.GetValues<OscillatorTimingMode>()
+    from waveform in Enum.GetValues<OscillatorWaveform>()
+    select (mode, waveform)).Select(pair =>
 {
+    var (mode, waveform) = pair;
+    waveformSession.Execute(new SetParameterValueCommand(waveformGraph, timingAddress, (int)mode));
     waveformSession.Execute(new SetParameterValueCommand(waveformGraph, waveformAddress, (int)waveform));
     var compiled = FaustGraphCompiler.CreateBuiltIn().Compile(waveformSession.Snapshot);
     string ControlName(string key) => compiled.Controls.Single(control => control.Address.ParameterId ==
@@ -100,9 +110,10 @@ var waveformProbes = Enum.GetValues<OscillatorWaveform>().Select(waveform =>
     return new
     {
         waveform = waveform.ToString(),
+        timing = mode.ToString(),
         source = compiled.Source,
         values = compiled.Controls.ToDictionary(control => control.Name, control => control.InitialValue),
-        frequency = ControlName("frequency"),
+        rateControl = ControlName(mode == OscillatorTimingMode.Free ? "frequency" : "division"),
         phase = ControlName("phase")
     };
 }).ToArray();

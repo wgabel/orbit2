@@ -27,8 +27,17 @@ public sealed class FaustNodeContext
 
     public GraphNodeSnapshot Node { get; }
 
-    /// <summary>Shared formal input used by emitters declaring RequiresTransport.</summary>
-    public string TransportBeat => "orbit_beat";
+    public bool RequiresTransport { get; private set; }
+
+    /// <summary>Request the shared beat input only if this emitted node uses transport.</summary>
+    public string TransportBeat
+    {
+        get
+        {
+            RequiresTransport = true;
+            return "orbit_beat";
+        }
+    }
 
     public string Input(string key)
     {
@@ -42,6 +51,8 @@ public sealed class FaustNodeContext
         var parameter = Node.Parameters.SingleOrDefault(parameter => parameter.Definition.Key == key)
             ?? throw new FaustCompilationException($"Node {Node.TypeKey} has no parameter '{key}'.");
         var definition = parameter.Definition;
+        if (!Node.IsParameterActive(parameter))
+            throw new FaustCompilationException($"Parameter '{key}' is inactive in this mode.");
         if (definition.RequiresRecompile)
             throw new FaustCompilationException($"Parameter '{key}' must be read as a compiled constant.");
         if (definition.Scale != ParameterScale.Linear)
@@ -79,7 +90,8 @@ public sealed class FaustNodeContext
     {
         var parameter = Node.Parameters.SingleOrDefault(parameter => parameter.Definition.Key == key)
             ?? throw new FaustCompilationException($"Node {Node.TypeKey} has no parameter '{key}'.");
-        if (!parameter.Definition.RequiresRecompile || !parameter.Definition.IsValidBaseValue(parameter.BaseValue))
+        if (!Node.IsParameterActive(parameter) || !parameter.Definition.RequiresRecompile ||
+            !parameter.Definition.IsValidBaseValue(parameter.BaseValue))
             throw new FaustCompilationException($"Parameter '{key}' is not a valid compiled constant.");
         return parameter.BaseValue;
     }

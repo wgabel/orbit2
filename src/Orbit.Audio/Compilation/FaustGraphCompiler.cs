@@ -49,8 +49,8 @@ public sealed class FaustGraphCompiler
                 throw new FaustCompilationException("Only mono, single-output nodes are supported.");
 
             var name = $"n_{node.Id:N}";
-            requiresTransport |= emitter.RequiresTransport;
             var expression = emitter.Emit(context);
+            requiresTransport |= context.RequiresTransport;
             definitions.Add($"{name} = {expression};");
             signals.Add(new PortAddress(node.Id, node.Outputs[0].Id), name);
         }

@@ -117,10 +117,12 @@ public partial class GraphCanvas : IAsyncDisposable
             {
                 if (PortPoint(edge.Source) is not CanvasPoint start || PortPoint(edge.Destination) is not CanvasPoint end)
                     continue;
-                var kind = Snapshot.Graph.GetNode(edge.Destination.NodeId).Inputs
+                var destination = Snapshot.Graph.GetNode(edge.Destination.NodeId);
+                var kind = destination.Inputs
                     .Single(port => port.Id == edge.Destination.PortId).SignalType;
                 result.Add(new ConnectionVisual(edge.Id, PathBetween(start, end), kind,
-                    Snapshot.SelectedConnectionIds.Contains(edge.Id)));
+                    Snapshot.SelectedConnectionIds.Contains(edge.Id),
+                    !destination.IsInputActive(edge.Destination.PortId)));
             }
             return result;
         }

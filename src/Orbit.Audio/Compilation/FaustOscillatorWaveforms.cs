@@ -7,7 +7,7 @@ namespace Orbit.Audio.Compilation;
 /// without a minimum audio frequency, so these shapes also work as slow LFOs.</summary>
 internal static class FaustOscillatorWaveforms
 {
-    public static string Emit(OscillatorWaveform waveform, string frequency, string phaseDegrees)
+    public static string Emit(OscillatorWaveform waveform, FaustOscillatorTiming.PhaseSource timing, string phaseDegrees)
     {
         // PolyBLEP smooths saw/square steps over the adjacent sample intervals.
         // Integrating that correction (PolyBLAMP) rounds the triangle's slope changes.
@@ -22,12 +22,16 @@ internal static class FaustOscillatorWaveforms
             OscillatorWaveform.Sawtooth => "2.0 * p - 1.0 - blep(p)",
             _ => throw new FaustCompilationException($"Unsupported oscillator waveform: {waveform}.")
         };
+        // Wrapped differences also work when the transport wraps its beat
+        // period. When stopped, a small positive step prevents division by zero.
+        var increment = timing.Increment ?? "min(delta, 1.0 - delta)";
         return $$"""
             min(1.0, max(-1.0, {{expression}})) with {
-                f = {{frequency}};
-                d = f / ma.SR;
                 wrap(x) = x - floor(x);
-                p = wrap(os.lf_sawpos(f) + {{phaseDegrees}} / 360.0);
+                basePhase = wrap({{timing.Cycles}});
+                delta = abs(basePhase - basePhase');
+                d = max(0.00000001, min({{timing.MaximumIncrement}}, {{increment}}));
+                p = wrap(basePhase + {{phaseDegrees}} / 360.0);
                 q = wrap(p + 0.25);
                 left(x) = max(0.0, 1.0 - x / d);
                 right(x) = max(0.0, 1.0 - (1.0 - x) / d);

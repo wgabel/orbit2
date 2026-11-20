@@ -6,12 +6,14 @@ using Orbit.Application.Graphs.Sessions;
 using Orbit.Application.Graphs.Snapshots;
 using Orbit.Application.Models;
 using Orbit.Audio.Compilation;
+using Orbit.Audio.Analysis;
 using Orbit.Domain.Graphs;
 using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Nodes.Processors;
 using Orbit.Domain.Parameters;
 using Orbit.Domain.Ports;
+using Orbit.Domain.Timing;
 using Xunit;
 
 namespace Orbit.Domain.Tests;
@@ -33,7 +35,8 @@ public sealed class FaustGraphCompilerTests
         Assert.Equal(7, program.Controls.Count);
         Assert.Contains($"n_{lfo.Id:N} * 100.0", program.Source);
         Assert.Contains($"n_{oscillator.Id:N} * 1.0", program.Source);
-        Assert.Contains("f = min(0.49 * ma.SR", program.Source);
+        Assert.Contains("os.lf_sawpos(min(0.49 * ma.SR", program.Source);
+        Assert.False(program.RequiresTransport);
         Assert.Contains(" : si.smoo;", program.Source);
         Assert.Contains("process = ", program.Source);
         Assert.Equal(0.5, Control(program, lfo, "frequency").InitialValue);
@@ -42,6 +45,44 @@ public sealed class FaustGraphCompilerTests
         Assert.NotNull(meter);
         Assert.Contains($"hbargraph(\"{meter}\"", program.Source);
         Assert.Null(Control(program, lfo, "frequency").MeterName);
+    }
+
+    [Fact]
+    public void SynchronizationSuspendsFrequencyRoutesAndRestoresThemWithoutRemovingConnections()
+    {
+        using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings(440, 0.5, 100));
+        var free = session.Snapshot;
+        var carrier = free.Nodes[1];
+        var frequency = carrier.Parameters.Single(p => p.Definition.Key == "frequency");
+        var division = carrier.Parameters.Single(p => p.Definition.Key == "division");
+        var timing = carrier.Parameters.Single(p => p.Definition.Key == "timing");
+        var frequencyAddress = new ParameterAddress(carrier.Id, frequency.Id);
+        var timingAddress = new ParameterAddress(carrier.Id, timing.Id);
+        var divisionAddress = new ParameterAddress(carrier.Id, division.Id);
+        var estimator = new GraphModulationRangeEstimator(BuiltInFaustEmitters.Create());
+        var first = compiler.Compile(free);
+        Assert.True(carrier.IsInputActive(frequency.ModulationPortId!.Value));
+        Assert.False(carrier.IsParameterActive(division));
+        Assert.NotNull(estimator.Estimate(free)[frequencyAddress]);
+        session.Execute(new SetParameterValueCommand(session.GraphId, timingAddress, (int)OscillatorTimingMode.Synchronized));
+        var synchronized = session.Snapshot;
+        var node = synchronized.GetNode(carrier.Id);
+        Assert.False(node.IsInputActive(frequency.ModulationPortId.Value));
+        Assert.True(node.IsParameterActive(division));
+        Assert.Equal(free.Connections.ToArray(), synchronized.Connections.ToArray());
+        var locked = compiler.Compile(synchronized);
+        Assert.True(locked.RequiresTransport);
+        Assert.Contains("process(orbit_beat)", locked.Source);
+        Assert.DoesNotContain(locked.Controls, c => c.Address == frequencyAddress || c.Address.NodeId == free.Nodes[0].Id);
+        Assert.Contains(locked.Controls, c => c.Address == divisionAddress);
+        Assert.False(estimator.Estimate(synchronized).ContainsKey(frequencyAddress));
+        session.Execute(new SetParameterValueCommand(session.GraphId, divisionAddress, (int)MusicalDivision.HalfNote));
+        Assert.Equal(locked.Source, compiler.Compile(session.Snapshot).Source);
+        session.Execute(new SetParameterValueCommand(session.GraphId, timingAddress, (int)OscillatorTimingMode.Free));
+        var restored = compiler.Compile(session.Snapshot);
+        Assert.Equal(first.Source, restored.Source);
+        Assert.False(restored.RequiresTransport);
+        Assert.Equal(new ParameterRange(340, 540), estimator.Estimate(session.Snapshot)[frequencyAddress]!.Value);
     }
 
     [Fact]

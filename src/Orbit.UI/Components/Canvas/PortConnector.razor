@@ -9,5 +9,5 @@
         @onpointerdown="PointerDown" @onpointerdown:stopPropagation="true"
         @onclick="Activate" @onclick:stopPropagation="true">
     <span class="@MarkerClass" data-port-id="@Port.Id" aria-hidden="true"></span>
-    <span class="port-label">@Port.Name</span>
+    <span class="port-label">@Port.Name@(Dormant ? " (inactive)" : "")</span>
 </button>

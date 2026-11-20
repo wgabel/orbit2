@@ -105,8 +105,12 @@ internal static class GraphFlattener
                 var id = owner is null ? edge.Id : StableId("edge", graph.Id, edge.Id);
                 if (!edgeIds.Add(id))
                     throw new FaustCompilationException("Flattened connection identities collide.");
-                edges.Add(edge with { Id = id, Source = Resolve(graph.Id, edge.Source),
-                    Destination = Resolve(graph.Id, edge.Destination) });
+                var source = Resolve(graph.Id, edge.Source);
+                var destination = Resolve(graph.Id, edge.Destination);
+                // Dormant modulation stays in the editable snapshot, but cannot
+                // contribute dependencies, controls or bounds to the active DSP.
+                if (graph.GetNode(edge.Destination.NodeId).IsInputActive(edge.Destination.PortId))
+                    edges.Add(edge with { Id = id, Source = source, Destination = destination });
             }
         }
 

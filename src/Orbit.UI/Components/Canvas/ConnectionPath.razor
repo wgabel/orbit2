@@ -3,6 +3,10 @@
 
 @* A wide transparent hit path and a visible Bézier path share identical geometry. *@
 <g class="@WireClass">
+    @if (Wire.Dormant)
+    {
+        <title>Inactive in current mode; connection retained</title>
+    }
     <path class="connection-hit" d="@Wire.Path" @onpointerdown="Select" @onpointerdown:stopPropagation="true" />
     <path class="connection-line" d="@Wire.Path" />
 </g>

@@ -20,6 +20,9 @@ public sealed record ParameterDefinition(
     /// <summary>Changing this value changes the compiled DSP, not a running numeric control.</summary>
     public bool RequiresRecompile { get; init; }
 
+    /// <summary>Optional condition controlling whether this parameter participates in DSP.</summary>
+    public ParameterActivation? ActiveWhen { get; init; }
+
     /// <summary>Checks the allowed finite range, including both endpoints.</summary>
     public bool IsValidBaseValue(double value) =>
         double.IsFinite(value) && value >= Minimum && value <= Maximum &&

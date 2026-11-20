@@ -82,7 +82,6 @@ public partial class GraphWorkspace : IDisposable
     {
         CompositeNode.NodeType => "Drone (composite)",
         OscillatorGenerator.NodeType => "Oscillator",
-        TempoSineGenerator.NodeType => "Tempo sine LFO",
         GainProcessor.NodeType => "Gain",
         MasterOutput.NodeType => "Master output",
         _ => type

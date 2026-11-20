@@ -17,7 +17,7 @@
         <div class="node-inputs">
             @foreach (var port in Node.Inputs)
             {
-                <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port" OnActivate="OnPortActivate"
+                <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
                                OnOutputPointerDown="OnOutputPointerDown" />
             }
         </div>
@@ -47,7 +47,7 @@
     @if (Node.Parameters.Count > 0)
     {
         <div class="node-parameters">
-            @foreach (var parameter in Node.Parameters.OrderByDescending(parameter => parameter.Definition.Choices is not null))
+            @foreach (var parameter in Node.Parameters.Where(Node.IsParameterActive).OrderByDescending(parameter => parameter.Definition.Choices is not null))
             {
                 @if (parameter.Definition.Choices is not null)
                 {

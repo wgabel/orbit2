@@ -134,13 +134,13 @@ try {
         const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
         const results = [];
         try {
-            for (const wave of waveforms) {
+            for (const wave of waveforms.filter(wave => wave.timing === "Free")) {
                 const compiled = await compiler.compile(wave.source);
                 for (const rate of [44100, 48000]) {
                     const render = async (frequency, phase = 0) => {
                         const processor = await new FaustMonoDspGenerator().createOfflineProcessor(
                             rate, 128, { ...compiled, soundfiles: {} });
-                        const values = { ...wave.values, [wave.frequency]: frequency, [wave.phase]: phase };
+                        const values = { ...wave.values, [wave.rateControl]: frequency, [wave.phase]: phase };
                         for (const [name, value] of Object.entries(values)) {
                             const path = processor.getParams().find(path => path.endsWith("/" + name));
                             if (!path) throw new Error("Missing waveform control " + name);
@@ -211,6 +211,56 @@ try {
             const expectedRms = { Sine: Math.SQRT1_2, Triangle: Math.sqrt(1 / 3), Square: 1, Sawtooth: Math.sqrt(1 / 3) }[result.waveform];
             assert.ok(Math.abs(result.rms - expectedRms) < 0.07, "Incorrect waveform shape");
         }
+    }
+
+    // All shapes now use the transport in synchronized mode. Supply the same
+    // beat stream as the worklet, including a wrap and a phase-continuous tempo edit.
+    const lockedWaveforms = await page.evaluate(async waveforms => {
+        const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
+        const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
+        const { beatAtFrame } = await import("/Components/TransportPhase.js");
+        const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
+        const results = [];
+        const wrap = value => value - Math.floor(value);
+        try {
+            for (const wave of waveforms.filter(wave => wave.timing === "Synchronized")) {
+                const compiled = await compiler.compile(wave.source);
+                for (const rate of [44100, 48000]) {
+                    const processor = await new FaustMonoDspGenerator().createOfflineProcessor(
+                        rate, 128, { ...compiled, soundfiles: {} });
+                    // Dotted quarter = 1.5 beats; test phase with a 90-degree offset.
+                    for (const [name, value] of Object.entries({ ...wave.values,
+                        [wave.rateControl]: 6, [wave.phase]: 90 })) {
+                        const path = processor.getParams().find(path => path.endsWith("/" + name));
+                        if (!path) throw new Error("Missing synchronized control " + name);
+                        processor.setParamValue(path, value);
+                    }
+                    const beat = new Float32Array(rate * 2);
+                    const first = { beat: 11.25, frame: 0, beatsPerMinute: 120, isPlaying: true };
+                    const second = { beat: 13.25, frame: rate, beatsPerMinute: 90, isPlaying: true };
+                    for (let i = 0; i < beat.length; i++)
+                        beat[i] = beatAtFrame(i < rate ? first : second, i, rate);
+                    const [audio] = processor.render([beat], beat.length);
+                    let error = 0, count = 0;
+                    for (let i = Math.floor(rate * 0.2); i < audio.length; i++) {
+                        const p = wrap(beat[i] / 1.5 + 0.25);
+                        const expected = wave.waveform === "Sine" ? Math.sin(2 * Math.PI * p) :
+                            wave.waveform === "Triangle" ? 1 - 4 * Math.abs(wrap(p + 0.25) - 0.5) :
+                            wave.waveform === "Square" ? (p < 0.5 ? 1 : -1) : 2 * p - 1;
+                        if (!Number.isFinite(audio[i])) throw new Error("Non-finite synchronized sample");
+                        error += (expected - audio[i]) ** 2;
+                        count++;
+                    }
+                    results.push({ waveform: wave.waveform, rate, rms: Math.sqrt(error / count) });
+                }
+            }
+            return results;
+        } finally { compiler.dispose(); }
+    }, waveforms);
+    assert.equal(lockedWaveforms.length, 8);
+    for (const result of lockedWaveforms) {
+        console.log("Tempo-locked waveform", result);
+        assert.ok(result.rms < 0.035, "Waveform does not follow the shared transport");
     }
 
     // Render two independent Faust worklets receiving the same transport.

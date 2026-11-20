@@ -110,6 +110,24 @@ try {
     assert.equal(await wire.count(), 1);
     assert.equal(await articles.nth(1).getByRole("spinbutton", { name: "Frequency (Hz)" }).inputValue(), "330");
     assert.equal(await play.isEnabled(), false);
+    // Switching modes keeps the frequency connection visible but dormant,
+    // then restores the same live input and value when returning to free mode.
+    const timing = articles.nth(1).getByLabel("Timing mode");
+    await timing.selectOption("1");
+    initialRevision++;
+    await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 1}$`) }).waitFor({ timeout: 15000 });
+    assert.equal(await wire.count(), 1);
+    assert.equal(await page.locator(".connection-dormant").count(), 1);
+    assert.equal(await articles.nth(1).locator(".port-dormant").count(), 1);
+    assert.equal(await frequency.count(), 0);
+    assert.equal(await articles.nth(1).getByLabel("Musical division").inputValue(), "2");
+    await timing.selectOption("0");
+    initialRevision++;
+    await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 1}$`) }).waitFor({ timeout: 15000 });
+    assert.equal(await page.locator(".connection-dormant").count(), 0);
+    assert.equal(await wire.count(), 1);
+    assert.equal(await articles.nth(1).getByRole("spinbutton", { name: "Frequency (Hz)" }).inputValue(), "330");
+    await marker.waitFor({ timeout: 10000 });
     // Unconnected nodes do not require a new worklet.
     await page.getByRole("button", { name: "Add", exact: true }).click();
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 2}$`) }).waitFor({ timeout: 10000 });
@@ -221,10 +239,13 @@ try {
     await transport.getByRole("button", { name: "Reset transport" }).click();
     await beat.filter({ hasText: /^0$/ }).waitFor();
     assert.equal(await tempo.inputValue(), "90");
-    // The tempo LFO is an ordinary registered generator and a live control source.
-    await page.locator("#node-type").selectOption("generator.tempo-sine");
+    // Any oscillator can be a synchronized modulation source.
+    await page.locator("#node-type").selectOption("generator.oscillator");
+    const newNodeIndex = await articles.count();
     await page.getByRole("button", { name: "Add", exact: true }).click();
-    const tempoLfo = articles.filter({ hasText: "Tempo sine LFO" });
+    const tempoLfo = articles.nth(newNodeIndex);
+    await tempoLfo.getByLabel("Timing mode").selectOption("1");
+    await tempoLfo.getByLabel("Waveform").selectOption("1");
     const division = tempoLfo.getByLabel("Musical division");
     await division.waitFor();
     assert.equal(await division.inputValue(), "2");

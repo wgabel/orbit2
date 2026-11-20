@@ -15,10 +15,10 @@ public sealed class OscillatorFaustEmitter : IFaustNodeEmitter
 
     public string Emit(FaustNodeContext context)
     {
-        var frequency = context.Parameter("frequency", "0.49 * ma.SR");
+        var timing = FaustOscillatorTiming.Resolve(context);
         var amplitude = context.Parameter("amplitude");
         var phase = context.Parameter("phase");
         var waveform = (OscillatorWaveform)context.ConstantParameter("waveform");
-        return $"({FaustOscillatorWaveforms.Emit(waveform, frequency, phase)}) * {amplitude}";
+        return $"({FaustOscillatorWaveforms.Emit(waveform, timing, phase)}) * {amplitude}";
     }
 }
