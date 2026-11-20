@@ -24,6 +24,30 @@ public sealed class FaustGraphCompilerTests
     private readonly FaustGraphCompiler compiler = FaustGraphCompiler.CreateBuiltIn();
 
     [Fact]
+    public void NoiseColorRecompilesButAmplitudeAndConnectionsStayStable()
+    {
+        using var session = new PatchSession(BuiltInNodes.CreateRegistry());
+        var noise = Add(session, NoiseGenerator.NodeType);
+        var master = Add(session, MasterOutput.NodeType);
+        Connect(session, noise, master, master.Inputs.Single().Id, 1);
+        var color = noise.Parameters.Single(p => p.Definition.Key == "color");
+        var amplitude = noise.Parameters.Single(p => p.Definition.Key == "amplitude");
+        var first = compiler.Compile(session.Snapshot);
+        Assert.Single(first.Controls);
+        Assert.False(first.RequiresTransport);
+        Assert.Null(color.ModulationPortId);
+        Assert.NotNull(amplitude.ModulationPortId);
+        session.Execute(new SetParameterValueCommand(session.GraphId, new ParameterAddress(noise.Id, amplitude.Id), 0.5));
+        Assert.Equal(first.Source, compiler.Compile(session.Snapshot).Source);
+        var connections = session.Snapshot.Connections.ToArray();
+        session.Execute(new SetParameterValueCommand(session.GraphId, new ParameterAddress(noise.Id, color.Id), (int)NoiseColor.Pink));
+        var pink = compiler.Compile(session.Snapshot);
+        Assert.NotEqual(first.Source, pink.Source);
+        Assert.Equal(first.Controls.Single().Name, pink.Controls.Single().Name);
+        Assert.Equal(connections, session.Snapshot.Connections.ToArray());
+    }
+
+    [Fact]
     public void CompilesSeedWithStableControlsAndAudioRateModulation()
     {
         using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings(440, 0.5, 100));

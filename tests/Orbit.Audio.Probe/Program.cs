@@ -119,6 +119,23 @@ var waveformProbes = (from mode in Enum.GetValues<OscillatorTimingMode>()
 }).ToArray();
 File.WriteAllText(Path.Combine(args[0], "waveforms.json"), JsonSerializer.Serialize(waveformProbes));
 
+using var noiseSession = new PatchSession(BuiltInNodes.CreateRegistry());
+var noiseGraph = noiseSession.GraphId;
+var noise = noiseSession.Execute(new AddNodeCommand(noiseGraph, NoiseGenerator.NodeType))
+    .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+var noiseMaster = noiseSession.Execute(new AddNodeCommand(noiseGraph, MasterOutput.NodeType))
+    .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+noiseSession.Execute(new ConnectNodesCommand(noiseGraph, new PortAddress(noise.Id, noise.Outputs[0].Id),
+    new PortAddress(noiseMaster.Id, noiseMaster.Inputs[0].Id)));
+var noiseColor = new ParameterAddress(noise.Id, noise.Parameters.Single(p => p.Definition.Key == "color").Id);
+var noiseProbes = Enum.GetValues<NoiseColor>().Select(color =>
+{
+    noiseSession.Execute(new SetParameterValueCommand(noiseGraph, noiseColor, (int)color));
+    var compiled = FaustGraphCompiler.CreateBuiltIn().Compile(noiseSession.Snapshot);
+    return new { color = color.ToString(), source = compiled.Source, amplitude = compiled.Controls.Single().Name };
+}).ToArray();
+File.WriteAllText(Path.Combine(args[0], "noise.json"), JsonSerializer.Serialize(noiseProbes));
+
 GraphNodeSnapshot TempoAdd(Guid graph, string type) =>
     tempoSession.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
 

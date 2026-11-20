@@ -503,6 +503,17 @@ The audio clock can continue while musical transport is stopped, allowing effect
 
 **Implemented Phase 6.4:** `OscillatorTimingMode` selects Free or Synchronized. `FaustOscillatorTiming` resolves phase separately from waveform evaluation: free frequency integration or shared beat/division. Both paths use the same `FaustOscillatorWaveforms` implementation. The redundant tempo sine node and emitter are removed. Musical division is a live discrete control; timing mode is structural. `ParameterActivation` describes a condition on an unconditional structural selector. `GraphNodeSnapshot.IsParameterActive` and `IsInputActive` drive both the editor and backend lowering. Inactive rate settings are retained, their editors hidden, and associated sockets/wires visibly dormant. `GraphFlattener` filters dormant inputs before dependency ordering and range estimation, so dead upstream nodes are not compiled. The editable graph continues to validate dormant routes to prevent reactivation cycles. Waveform and timing replacements share the original node and socket identities; synchronized phase follows the shared beat throughout free/sync changes and crossfades. Changing division can intentionally change phase; tempo changes preserve it.
 
+**Implemented Phase 6.5:** `NoiseGenerator` (`generator.noise`) is independent of periodic oscillator timing. `NoiseColor` is a structural discrete choice (White, Pink, Brown); amplitude is the only continuous parameter and uses the existing modulation and control manifest. `NoiseFaustEmitter` delegates spectral shaping to `FaustNoiseSpectra`. A deterministic pseudorandom recurrence uses a graph-qualified node identity to distinguish streams; pink uses octave-spaced low-pass responses, brown uses a sample-rate-aware leaky integrator. The shaped signal is bounded to ±1 before effective amplitude scaling. Color replacement uses the established graph crossfade; amplitude updates preserve DSP state. Noise can drive audio or modulation routes, with no additional UI or infrastructure implementation.
+
+~~~mermaid
+flowchart TD
+    N[Noise definition] --> E[NoiseFaustEmitter]
+    E --> R[Node-local random recurrence]
+    R --> C[Selected spectrum]
+    C --> A[Bounded signal times effective amplitude]
+    A --> O[Audio or modulation route]
+~~~
+
 ## 7. Hierarchical signal graphs and canvases
 
 ### Composite nodes
@@ -1398,7 +1409,8 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented: audio-rate shared transport phase, tempo-synchronized sine LFO, validated musical division parameter choices, root/nested and crossfade phase sharing.
 - Implemented: one reusable oscillator with waveform selector (sine, triangle, square, sawtooth), phase, normalized output and structural change crossfade.
 - Implemented: unified free/synchronized oscillator timing modes, conditional rate controls, dormant wires and active DSP lowering.
-- Next: separate noise generator, multi-generator drone preset, effects; later add sample-scheduled transport commands and rhythmic clock/trigger nodes.
+- Implemented: separate white/pink/brown noise generator with modulatable amplitude and structural color selection.
+- Next: multi-generator drone preset, effects; later add sample-scheduled transport commands and rhythmic clock/trigger nodes.
 - Add multi-generator drone graph preset, additional waveforms and effects.
 - Persist root/nested graphs, rack definitions and separate canvas layout.
 - Add copies/preset reuse with independent instances.

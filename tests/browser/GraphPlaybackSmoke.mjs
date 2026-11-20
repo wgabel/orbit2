@@ -15,6 +15,7 @@ const manifest = JSON.parse(await readFile(resolve(directory, "controls.json"), 
 const tempoSource = await readFile(resolve(directory, "tempo.dsp"), "utf8");
 const tempoControls = JSON.parse(await readFile(resolve(directory, "tempo-controls.json"), "utf8"));
 const waveforms = JSON.parse(await readFile(resolve(directory, "waveforms.json"), "utf8"));
+const noises = JSON.parse(await readFile(resolve(directory, "noise.json"), "utf8"));
 const root = resolve("src/Orbit.Infrastructure/wwwroot/audio");
 const server = createServer(async (request, response) => {
     try {
@@ -211,6 +212,46 @@ try {
             const expectedRms = { Sine: Math.SQRT1_2, Triangle: Math.sqrt(1 / 3), Square: 1, Sawtooth: Math.sqrt(1 / 3) }[result.waveform];
             assert.ok(Math.abs(result.rms - expectedRms) < 0.07, "Incorrect waveform shape");
         }
+    }
+
+    const noiseResults = await page.evaluate(async noises => {
+        const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
+        const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
+        const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
+        const results = [];
+        try {
+            for (const noise of noises) {
+                const compiled = await compiler.compile(noise.source);
+                for (const rate of [44100, 48000]) {
+                    const processor = await new FaustMonoDspGenerator().createOfflineProcessor(rate, 128, { ...compiled, soundfiles: {} });
+                    const path = processor.getParams().find(path => path.endsWith("/" + noise.amplitude));
+                    processor.setParamValue(path, 0.5);
+                    const [samples] = processor.render([], rate * 3);
+                    let power = 0, differencePower = 0, peak = 0;
+                    for (let i = rate; i < samples.length; i++) {
+                        if (!Number.isFinite(samples[i])) throw new Error("Non-finite noise sample");
+                        power += samples[i] ** 2;
+                        differencePower += (samples[i] - samples[i - 1]) ** 2;
+                        peak = Math.max(peak, Math.abs(samples[i]));
+                    }
+                    processor.setParamValue(path, 0);
+                    const [muted] = processor.render([], rate);
+                    results.push({ color: noise.color, rate, peak, rms: Math.sqrt(power / (2 * rate)),
+                        roughness: differencePower / power, mutedPeak: Math.max(...muted.slice(rate / 2)) });
+                }
+            }
+            return results;
+        } finally { compiler.dispose(); }
+    }, noises);
+    for (const rate of [44100, 48000]) {
+        const [white, pink, brown] = ["White", "Pink", "Brown"].map(color => noiseResults.find(result => result.rate === rate && result.color === color));
+        for (const result of [white, pink, brown]) {
+            console.log("Noise spectrum", result);
+            assert.ok(result.peak <= 0.501 && result.rms > 0.015);
+            assert.ok(result.mutedPeak < 0.001);
+        }
+        assert.ok(white.roughness > pink.roughness && pink.roughness > brown.roughness,
+            "Noise colors must progressively emphasize lower frequencies");
     }
 
     // All shapes now use the transport in synchronized mode. Supply the same

@@ -257,6 +257,20 @@ flowchart TD
 
 Changing timing mode is a structural edit and crossfades to the new program. Changing musical division is a discrete live control; it intentionally reinterprets the current beat relative to the selected cycle length (it can change phase immediately). Tempo edits preserve beat position without recompiling. Free and synchronized settings are remembered independently. Noise remains a separate generator family.
 
+### Noise generator (Phase 6.5)
+
+Choose **Noise** in Add node, then select White (broadband), Pink (approximately equal power per octave), or Brown (bass-weighted). Amplitude defaults to 0.2 and supports audio-rate modulation from 0–1. Connect Signal to audio or a modulation input in any canvas. Unlike a periodic oscillator, noise has no frequency, phase or transport controls.
+
+~~~mermaid
+flowchart TD
+    R[Node-specific random stream] --> C[Selected spectral shaping]
+    C --> B[Bound to -1 through +1]
+    B --> A[Modulatable amplitude]
+    A --> S[Signal output]
+~~~
+
+`NoiseGenerator` uses the shared choice and slider editors. `NoiseFaustEmitter` selects the spectrum at compile time; changing color retains the connections and crossfades the replacement. Amplitude changes update the existing DSP. `FaustNoiseSpectra` uses a deterministic node-specific integer recurrence, octave-spaced low-pass responses for approximate pink noise and a leaky integrator for brown noise (not an unbounded random walk). Filter coefficients use the actual sample rate. The output is bounded before amplitude scaling, so existing modulation range prediction applies. Noise colors are not loudness matched. A structural replacement restarts the pseudorandom sequence.
+
 
 
 There is no per-sample C# or JavaScript event loop. The audio engine controls waveform generation; browser timers observe playback for resource cleanup, and the UI reads passive meter snapshots at display rate. Graph playback currently stages graph edits until the next start.
