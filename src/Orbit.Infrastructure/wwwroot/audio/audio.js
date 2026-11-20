@@ -8,6 +8,7 @@ import { AudioEnvelope } from "./Components/AudioEnvelope.js";
 import { AudioOutput } from "./Components/AudioOutput.js";
 import { FaustModuleLoader } from "./Faust/FaustModuleLoader.js";
 import { FaustNodeFactory } from "./Faust/FaustNodeFactory.js";
+import { FaustCompilerClient } from "./Faust/FaustCompilerClient.js";
 
 import { FaustOutputMonitor } from "./Faust/FaustOutputMonitor.js";
 
@@ -24,13 +25,19 @@ const audioClock = new AudioClock(contextManager);
 const moduleLoader = new FaustModuleLoader(
     url => fetch(url),
     bytes => WebAssembly.compile(bytes));
+const compiler = new FaustCompilerClient(() =>
+    new Worker(new URL("./Faust/FaustCompilerWorker.js", import.meta.url), { type: "module" }));
 const nodeFactory = new FaustNodeFactory(
-    moduleLoader, processors, () => new FaustMonoDspGenerator());
+    moduleLoader, processors, () => new FaustMonoDspGenerator(), compiler);
 const output = new AudioOutput(new AudioEnvelope());
 const engine = new AudioEngine(contextManager, nodeFactory, output, node => new FaustOutputMonitor(node));
 
 export const play = request => engine.play(request);
 export const stop = soundId => engine.stop(soundId);
 export const getClockSnapshot = () => audioClock.getSnapshot();
+export const getPlaybackState = soundId => engine.getPlaybackState(soundId);
 export const getOutputValues = soundId => engine.getOutputValues(soundId);
-export const dispose = () => engine.dispose();
+export async function dispose() {
+    try { await engine.dispose(); }
+    finally { compiler.dispose(); }
+}

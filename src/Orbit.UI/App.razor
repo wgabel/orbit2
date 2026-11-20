@@ -1,17 +1,9 @@
 @namespace Orbit.UI
-@using Orbit.UI.Components
 @using Orbit.UI.Components.Canvas
 
-@* Root composition: the editable graph workspace is now the main UI.
-   The fixed proof stays available until dynamic graph compilation replaces it. *@
+@* Root composition: one graph workspace, with real patch playback. *@
 <main class="workspace-shell">
     <p class="eyebrow">Orbit 2 / Signal graph</p>
     <h1>Orbit 2</h1>
     <GraphWorkspace />
-    <details class="audio-proof">
-        <summary>Fixed audio proof</summary>
-        <div class="panel">
-            <FaustModulation />
-        </div>
-    </details>
 </main>

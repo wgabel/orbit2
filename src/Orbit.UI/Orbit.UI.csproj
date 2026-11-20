@@ -18,5 +18,7 @@
     <ProjectReference Include="../Orbit.Presentation/Orbit.Presentation.csproj" />
     <!-- The composition root wires browser infrastructure; Razor components use only contracts. -->
     <ProjectReference Include="../Orbit.Infrastructure/Orbit.Infrastructure.csproj" />
+    <!-- The composition root registers the graph compiler and playback service. -->
+    <ProjectReference Include="../Orbit.Audio/Orbit.Audio.csproj" />
   </ItemGroup>
 </Project>
