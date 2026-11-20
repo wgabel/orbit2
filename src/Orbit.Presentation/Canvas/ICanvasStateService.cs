@@ -13,4 +13,5 @@ public interface ICanvasStateService : IDisposable
     CanvasChangeResult PanBy(CanvasPoint screenDelta);
     CanvasChangeResult ZoomAt(double zoom, CanvasPoint screenAnchor);
     CanvasChangeResult ResetViewport();
+    CanvasChangeResult FitToBounds(CanvasBounds bounds, double width, double height, double padding);
 }

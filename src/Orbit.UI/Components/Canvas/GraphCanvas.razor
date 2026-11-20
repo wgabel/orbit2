@@ -1,0 +1,34 @@
+@namespace Orbit.UI.Components.Canvas
+@using Microsoft.AspNetCore.Components.Web
+@using Orbit.Presentation.Canvas
+
+@* Root and nested editors use the same canvas, with no dependencies on the DSP runtime. *@
+<div class="graph-canvas">
+    <div class="canvas-caption">
+        <CanvasToolbar ZoomPercentage="@Snapshot.Viewport.ZoomPercentage"
+                       ZoomIn="ZoomIn" ZoomOut="ZoomOut" Reset="ResetViewport" Fit="FitAsync" />
+        <span class="canvas-hint">@Hint</span>
+    </div>
+    <div class="canvas-viewport" @ref="viewportElement" tabindex="0" aria-label="Graph canvas"
+         @onpointerdown="BeginBackground" @onpointerdown:preventDefault="true"
+         @onpointermove="PointerMoved" @onpointerup="PointerReleasedAsync"
+         @onpointercancel="CancelGesture" @onpointerleave="CancelGesture"
+         @onwheel="OnWheelAsync" @onwheel:preventDefault="true" @onkeydown="KeyDown">
+        <div class="canvas-world" style="@WorldStyle">
+            <ConnectionLayer Wires="@Wires" DraftPath="@DraftPath" OnSelect="SelectConnection" />
+            @foreach (var node in Snapshot.Graph.Nodes)
+            {
+                <NodeFrame @key="node.Id" Node="@node" Position="@Snapshot.NodePositions[node.Id]"
+                           Role="@NodeRoleClassifier.Classify(Snapshot.Graph, node)"
+                           Selected="@Snapshot.SelectedNodeIds.Contains(node.Id)" PendingSource="@pendingSource"
+                           OnHeaderPointerDown="@(args => BeginNode(node.Id, args))"
+                           OnOutputPointerDown="BeginOutput" OnPortActivate="ActivatePortAsync"
+                           OnParameterEdit="OnParameterEdit" />
+            }
+        </div>
+        @if (Snapshot.Graph.Nodes.Count == 0)
+        {
+            <div class="canvas-empty">Add a node to start building your graph.</div>
+        }
+    </div>
+</div>

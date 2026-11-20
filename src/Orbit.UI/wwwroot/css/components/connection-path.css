@@ -1,0 +1,10 @@
+/* SVG wires use actual port anchors. Only transparent hit paths accept pointer input. */
+.connection-layer { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.connection-hit { fill: none; stroke: transparent; stroke-width: var(--component-connection-hit-width); pointer-events: stroke; cursor: pointer; }
+.connection-line { fill: none; stroke: var(--semantic-color-routing); stroke-width: var(--component-connection-width); stroke-linecap: round; vector-effect: non-scaling-stroke; pointer-events: none; }
+.connection-audio .connection-line { stroke: var(--semantic-color-generator); }
+.connection-modulation .connection-line { stroke: var(--semantic-color-modulation); }
+.connection-trigger .connection-line { stroke: var(--semantic-color-processor); }
+.connection-gate .connection-line { stroke: var(--semantic-color-composite); }
+.connection-selected .connection-line { stroke: var(--semantic-color-selected); stroke-width: var(--component-connection-selected-width); }
+.connection-draft { stroke: var(--semantic-color-selected); stroke-dasharray: var(--component-connection-draft-dash); }

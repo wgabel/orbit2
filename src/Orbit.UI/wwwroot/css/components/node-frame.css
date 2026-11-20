@@ -1,0 +1,38 @@
+/* All node roles use this shell; only a semantic accent changes. */
+.node-frame {
+    position: absolute;
+    width: var(--component-node-min-width);
+    border: var(--semantic-border-width) solid var(--component-node-accent);
+    border-radius: var(--component-node-border-radius);
+    background: var(--semantic-color-surface);
+    pointer-events: auto;
+    cursor: default;
+}
+.node-role-generator { --component-node-accent: var(--semantic-color-generator); }
+.node-role-modulator { --component-node-accent: var(--semantic-color-modulator); }
+.node-role-processor { --component-node-accent: var(--semantic-color-processor); }
+.node-role-composite { --component-node-accent: var(--semantic-color-composite); }
+.node-role-routing { --component-node-accent: var(--semantic-color-routing); }
+.node-selected { outline: var(--semantic-border-focus-width) solid var(--semantic-color-selected); outline-offset: var(--semantic-border-focus-offset); }
+.node-header {
+    min-height: var(--component-node-header-height);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--component-node-padding);
+    padding: var(--component-node-padding);
+    background: color-mix(in srgb, var(--component-node-accent) var(--component-node-header-tint), var(--semantic-color-surface));
+    color: var(--semantic-color-text);
+    font-weight: var(--semantic-typography-emphasis);
+    border-radius: var(--component-node-border-radius) var(--component-node-border-radius) 0 0;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+}
+.node-header:active { cursor: grabbing; }
+.node-role { color: var(--component-node-accent); font-size: var(--semantic-typography-caption); font-weight: normal; }
+.node-ports { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--component-node-port-gap); padding-block: var(--component-node-padding); }
+.node-inputs, .node-outputs { display: grid; align-content: start; gap: var(--component-node-port-gap); min-width: 0; }
+.node-parameters { display: grid; gap: var(--component-node-parameter-gap); padding: var(--component-node-padding); border-top: var(--semantic-border-width) solid var(--semantic-color-border); }
+.node-parameters .parameter-heading input { min-width: 0; max-width: 45%; }
+.node-parameters .parameter-heading label { min-width: 0; overflow-wrap: anywhere; }

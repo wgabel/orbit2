@@ -99,6 +99,12 @@ public sealed class CanvasStateService : ICanvasStateService
         return CommitViewport(CanvasViewport.Initial);
     }
 
+    public CanvasChangeResult FitToBounds(CanvasBounds bounds, double width, double height, double padding)
+    {
+        EnsureEditable();
+        return CommitViewport(CanvasViewport.Fit(bounds, width, height, padding));
+    }
+
     private void OnGraphChanged(GraphChangeSet change)
     {
         if (disposed || change.GraphId != snapshot.GraphId || change.Revision <= snapshot.GraphRevision)

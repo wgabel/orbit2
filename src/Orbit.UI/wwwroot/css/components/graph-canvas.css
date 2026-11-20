@@ -1,0 +1,32 @@
+/* The viewport clips one transformed world containing nodes and wires. */
+.graph-canvas {
+    overflow: hidden;
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-surface);
+    background: var(--semantic-color-surface);
+}
+.canvas-caption {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--component-canvas-toolbar-gap);
+    padding: var(--semantic-space-compact);
+    border-bottom: var(--semantic-border-width) solid var(--semantic-color-border);
+}
+.canvas-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--component-canvas-toolbar-gap); }
+.canvas-zoom { min-width: var(--component-canvas-zoom-width); text-align: center; font-variant-numeric: tabular-nums; }
+.canvas-hint { margin-inline-start: auto; color: var(--semantic-color-muted); font-size: var(--semantic-typography-caption); }
+.canvas-viewport {
+    position: relative;
+    height: var(--component-canvas-height);
+    min-height: var(--component-canvas-min-height);
+    overflow: hidden;
+    background-color: var(--semantic-color-canvas);
+    background-image: radial-gradient(var(--semantic-color-track) var(--component-canvas-grid-dot), transparent var(--component-canvas-grid-dot));
+    background-size: var(--component-canvas-grid-spacing) var(--component-canvas-grid-spacing);
+    touch-action: none;
+    cursor: grab;
+}
+.canvas-viewport:active { cursor: grabbing; }
+.canvas-world { position: absolute; inset: 0; transform-origin: top left; pointer-events: none; }
+.canvas-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--semantic-color-muted); pointer-events: none; }

@@ -32,38 +32,14 @@ public sealed class ModulationDemoPatch
 
     public static ModulationDemoPatch Create(ModulationDemoSettings settings)
     {
-        settings.Validate();
-        using var session = new PatchSession(BuiltInNodes.CreateRegistry());
-        var graphId = session.GraphId;
-        var lfo = AddNode(session, SineGenerator.NodeType);
-        var oscillator = AddNode(session, SineGenerator.NodeType);
-        var gain = AddNode(session, GainProcessor.NodeType);
-        var output = AddNode(session, MasterOutput.NodeType);
-
-        var lfoFrequency = GetParameter(lfo, "frequency");
-        var baseFrequency = GetParameter(oscillator, "frequency");
-        var volume = GetParameter(gain, "gain");
-
-        session.Execute(new SetParameterValueCommand(graphId,
-            new ParameterAddress(lfo.Id, lfoFrequency.Id), settings.LfoFrequencyHertz));
-        session.Execute(new SetParameterValueCommand(graphId,
-            new ParameterAddress(oscillator.Id, baseFrequency.Id), settings.BaseFrequencyHertz));
-        session.Execute(new SetParameterValueCommand(graphId,
-            new ParameterAddress(gain.Id, volume.Id), 0.1));
-
-        session.Execute(new ConnectNodesCommand(graphId,
-            new PortAddress(lfo.Id, lfo.Outputs.Single().Id),
-            new PortAddress(oscillator.Id, baseFrequency.ModulationPortId!.Value),
-            settings.DepthHertz));
-        session.Execute(new ConnectNodesCommand(graphId,
-            new PortAddress(oscillator.Id, oscillator.Outputs.Single().Id),
-            new PortAddress(gain.Id, gain.Inputs.Single(port => port.Key == "audio-in").Id)));
-        session.Execute(new ConnectNodesCommand(graphId,
-            new PortAddress(gain.Id, gain.Outputs.Single().Id),
-            new PortAddress(output.Id, output.Inputs.Single().Id)));
-
-        // Read the final committed revision; earlier snapshots are immutable.
+        using var session = OpenSession(settings);
+        // This mapping is intentionally specific to the seed topology.
         var graph = session.Snapshot;
+        var generators = graph.Nodes.Where(node => node.TypeKey == SineGenerator.NodeType).ToArray();
+        var lfo = generators[0];
+        var oscillator = generators[1];
+        var gain = graph.Nodes.Single(node => node.TypeKey == GainProcessor.NodeType);
+        var baseFrequency = GetParameter(oscillator, "frequency");
         var route = graph.Connections.Single(connection =>
             connection.Destination == new PortAddress(oscillator.Id, baseFrequency.ModulationPortId!.Value));
         var playback = new PlaybackRequest(SoundId, ProcessorName,
@@ -76,6 +52,49 @@ public sealed class ModulationDemoPatch
             });
 
         return new ModulationDemoPatch(graph, playback);
+    }
+
+    /// <summary>Seed an editable session with the same initial topology as the fixed audio proof.</summary>
+    public static IPatchSession OpenSession(ModulationDemoSettings settings, NodeRegistry? registry = null)
+    {
+        settings.Validate();
+        var session = new PatchSession(registry ?? BuiltInNodes.CreateRegistry());
+        try
+        {
+            var graphId = session.GraphId;
+            var lfo = AddNode(session, SineGenerator.NodeType);
+            var oscillator = AddNode(session, SineGenerator.NodeType);
+            var gain = AddNode(session, GainProcessor.NodeType);
+            var output = AddNode(session, MasterOutput.NodeType);
+
+            var lfoFrequency = GetParameter(lfo, "frequency");
+            var baseFrequency = GetParameter(oscillator, "frequency");
+            var volume = GetParameter(gain, "gain");
+
+            session.Execute(new SetParameterValueCommand(graphId,
+                new ParameterAddress(lfo.Id, lfoFrequency.Id), settings.LfoFrequencyHertz));
+            session.Execute(new SetParameterValueCommand(graphId,
+                new ParameterAddress(oscillator.Id, baseFrequency.Id), settings.BaseFrequencyHertz));
+            session.Execute(new SetParameterValueCommand(graphId,
+                new ParameterAddress(gain.Id, volume.Id), 0.1));
+
+            session.Execute(new ConnectNodesCommand(graphId,
+                new PortAddress(lfo.Id, lfo.Outputs.Single().Id),
+                new PortAddress(oscillator.Id, baseFrequency.ModulationPortId!.Value),
+                settings.DepthHertz));
+            session.Execute(new ConnectNodesCommand(graphId,
+                new PortAddress(oscillator.Id, oscillator.Outputs.Single().Id),
+                new PortAddress(gain.Id, gain.Inputs.Single(port => port.Key == "audio-in").Id)));
+            session.Execute(new ConnectNodesCommand(graphId,
+                new PortAddress(gain.Id, gain.Outputs.Single().Id),
+                new PortAddress(output.Id, output.Inputs.Single().Id)));
+            return session;
+        }
+        catch
+        {
+            session.Dispose();
+            throw;
+        }
     }
 
     private static GraphNodeSnapshot AddNode(IPatchSession session, string type)

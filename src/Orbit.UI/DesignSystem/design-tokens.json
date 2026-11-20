@@ -152,7 +152,12 @@
     "node": {
       "min-width": "240px",
       "border-radius": "6px",
-      "header-height": "32px"
+      "header-height": "32px",
+      "padding": "{semantic.space.compact}",
+      "port-gap": "{semantic.space.tight}",
+      "parameter-gap": "{component.modulation.field-gap}",
+      "accent": "{semantic.color.routing}",
+      "header-tint": "18%"
     },
     "port": {
       "size": "12px",
@@ -160,7 +165,23 @@
     },
     "connection": {
       "width": "2px",
-      "hit-width": "12px"
+      "hit-width": "12px",
+      "selected-width": "3px",
+      "draft-dash": "6px"
+    },
+    "workspace": {
+      "max-width": "88rem",
+      "toolbar-gap": "{semantic.space.compact}",
+      "select-padding": "{primitive.space.xs}",
+      "notice-size": "{semantic.typography.caption}"
+    },
+    "canvas": {
+      "height": "65vh",
+      "min-height": "26rem",
+      "grid-spacing": "24px",
+      "grid-dot": "1px",
+      "toolbar-gap": "{semantic.space.compact}",
+      "zoom-width": "4rem"
     }
   }
 }

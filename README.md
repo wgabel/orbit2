@@ -18,7 +18,7 @@ node src/Orbit.UI/DesignSystem/generate-tokens.mjs
 dotnet run --project src/Orbit.UI --urls http://localhost:5000
 ```
 
-Open http://localhost:5000. **Start modulation** plays a continuous, modulated sine wave; **Stop** releases it with a short fade. Settings can be changed between playbacks. All three settings now use the shared parameter slider, with units, limits, validated numeric input and inline errors. The carrier frequency also shows the expected modulation band and a live marker from Faust.
+Open http://localhost:5000. The root graph editor is the main view. Open **Fixed audio proof** below the editor; **Start modulation** plays a continuous, modulated sine wave; **Stop** releases it with a short fade. Settings can be changed between playbacks. All three settings now use the shared parameter slider, with units, limits, validated numeric input and inline errors. The carrier frequency also shows the expected modulation band and a live marker from Faust.
 
 ## Project boundaries
 
@@ -271,7 +271,33 @@ canvas.ZoomAt(2, new CanvasPoint(200, 100)); // 200%, anchored to pointer
 
 The coordinate transform is `screen = world * zoom + pan`, so moving a node by a screen delta at 200% zoom changes its world position by half that delta. Zoom is clamped to 25–400%. Canvas instances have independent state. Use the presentation dispatcher thread for layout and graph edits observed by the canvas; previously captured immutable snapshots can be read by asynchronous work. Dispose each canvas to unsubscribe from the session.
 
-This foundation is tested independently of Blazor. No graph visualization has been added yet; the next phase will render the node frames and connections using these snapshots and transforms. Fit-to-content will use measured node bounds in the renderer.
+This foundation is tested independently of Blazor. The first visible graph editor uses these snapshots and transforms, and fit-to-content uses measured node bounds.
+
+## First visual graph editor (Phase 4)
+
+The application opens a persistent editable patch session with the initial modulation topology (LFO → sine generator → gain → output). The editor uses the existing domain registry; add nodes, delete selected nodes or wires, and edit the base values using the shared ParameterSlider. These changes commit graph revisions, not audio events.
+
+- Drag a node header to move it. Drag empty background or middle-drag a node header to pan.
+- Wheel zoom is anchored at the pointer; the toolbar shows the current zoom, zoom buttons, reset and fit-to-content.
+- Begin from an output and drag to an input, or click the output then click an input. Escape cancels. The existing domain validation rejects incompatible, duplicate or cyclic edges.
+- Nodes use role-colored frames and typed port shapes. A generator feeding only modulation inputs is visually an LFO; no different DSP type is required.
+- SVG paths use cubic Bézier geometry shared by all connections, with endpoints measured from actual port markers. Click a wire to select it.
+- All static dimensions and colors are sourced from design tokens. Layout state is separate from graph state.
+
+~~~mermaid
+flowchart TD
+    Workspace["GraphWorkspace"] --> Session["PatchSession"]
+    Workspace --> State["CanvasStateService"]
+    Session --> State
+    State --> Renderer["GraphCanvas"]
+    Renderer --> Components["NodeFrame / PortConnector / ConnectionLayer"]
+    Renderer --> DOM["canvasDom.js · DOM only"]
+    Renderer --> Workspace
+~~~
+
+The small DOM adapter measures port/node geometry, captures pointers and resolves a dropped input. It does not own graph state or compute audio. The C# presentation library provides viewport and Bézier geometry. The workspace translates edits into session commands.
+
+The editor is not connected to live dynamic Faust playback yet. The existing fixed audio proof remains in a separate expandable section until dynamic compilation replaces it. Its settings and graph are independent of editor changes.
 
 ## Shared UI components
 
@@ -353,7 +379,7 @@ src/
       ModulationDemoService.cs
   Orbit.Presentation/
     Orbit.Presentation.csproj
-    Canvas/                           # state, viewport, geometry and layout events
+    Canvas/                           # state, viewport, geometry, roles and layout events
   Orbit.Audio/
     Dsp/Oscillators/ModulatedSine.dsp
   Orbit.Infrastructure/
@@ -377,6 +403,7 @@ src/
     Orbit.UI.csproj
     Program.cs
     App.razor
+    Components/Canvas/               # shared canvas, toolbar, node, port and wire components
     Components/FaustModulation.razor
     Components/FaustModulation.razor.cs
     Components/Parameters/ParameterSlider.razor
@@ -389,6 +416,7 @@ src/
       Themes/light.json
       generate-tokens.mjs
     wwwroot/index.html
+    wwwroot/js/canvasDom.js            # DOM measurements and pointer capture only
     wwwroot/css/
       tokens.css                      # generated, tracked
       base.css

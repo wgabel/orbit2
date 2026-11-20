@@ -1,0 +1,13 @@
+@namespace Orbit.UI.Components.Canvas
+
+@* All wires share the canvas world transform and sit beneath the node frames. *@
+<svg class="connection-layer" aria-label="Graph connections">
+    @foreach (var wire in Wires)
+    {
+        <ConnectionPath @key="wire.Id" Wire="@wire" OnSelect="OnSelect" />
+    }
+    @if (DraftPath is not null)
+    {
+        <path class="connection-line connection-draft" d="@DraftPath" />
+    }
+</svg>

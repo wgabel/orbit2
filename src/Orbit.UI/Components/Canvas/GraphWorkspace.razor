@@ -1,0 +1,23 @@
+@namespace Orbit.UI.Components.Canvas
+
+@* Owns this root graph's session; GraphCanvas is reusable for future subgraphs. *@
+<section class="graph-workspace">
+    <div class="workspace-toolbar">
+        <label for="node-type">Add node</label>
+        <select id="node-type" @bind="SelectedType">
+            @foreach (var type in RegisteredTypes)
+            {
+                <option value="@type">@type</option>
+            }
+        </select>
+        <button type="button" @onclick="AddNode">Add</button>
+        <button type="button" class="secondary" disabled="@(!HasSelection)" @onclick="DeleteSelection">Delete selected</button>
+        <span class="workspace-count">@($"{Canvas.Snapshot.Graph.Nodes.Count} nodes · {Canvas.Snapshot.Graph.Connections.Count} connections")</span>
+    </div>
+    @if (Error is not null)
+    {
+        <p class="parameter-error workspace-error" role="alert">@Error</p>
+    }
+    <GraphCanvas State="@Canvas" OnConnect="Connect" OnParameterEdit="EditParameter" />
+    <p class="workspace-notice">Graph editing is active. Dynamic Faust playback is not connected yet; the fixed audio proof below remains independent.</p>
+</section>

@@ -1,0 +1,13 @@
+@namespace Orbit.UI.Components.Canvas
+@using Microsoft.AspNetCore.Components.Web
+@using Orbit.Domain.Ports
+
+@* One typed port for every node, including future rack nodes. The small marker
+   is measured by the canvas DOM adapter; the whole button is a hit target. *@
+<button type="button" class="@ConnectorClass" title="@Description" aria-label="@Description"
+        aria-pressed="@(Active ? "true" : "false")"
+        @onpointerdown="PointerDown" @onpointerdown:stopPropagation="true"
+        @onclick="Activate" @onclick:stopPropagation="true">
+    <span class="@MarkerClass" data-port-id="@Port.Id" aria-hidden="true"></span>
+    <span class="port-label">@Port.Name</span>
+</button>

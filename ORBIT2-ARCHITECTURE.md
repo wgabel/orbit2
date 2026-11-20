@@ -602,7 +602,7 @@ flowchart TD
 
 Each view consumes an immutable `CanvasStateSnapshot` with separate graph and layout revision numbers, world positions, selected node/connection IDs and viewport. Layout changes never call `IPatchSession.Execute` or publish graph events. Graph and canvas dispatchers share the generic disposable `NotificationChannel<T>` implementation but remain separate notification instances. Listeners are notified after state commits; their failures do not undo state. Use the presentation dispatcher thread for interactive canvas operations and graph commands observed by the canvas; immutable snapshots may be handed to asynchronous processing. Consumers must dispose canvas subscriptions and the service when closing the corresponding canvas.
 
-The geometry and projection are implemented and independently tested. Actual canvas rendering, mouse/pointer gestures, measured node bounds, Bézier paths and navigation controls arrive in Phase 4/5.
+The geometry and projection are implemented and independently tested. The first Phase 4 renderer now consumes this state, including measured node bounds, pointer gestures and Bézier paths. Nested navigation arrives in Phase 5.
 
 ### Shared canvas and component standards
 
@@ -706,7 +706,15 @@ For example, a frequency base of 440 Hz with a sine LFO at ±100 Hz displays a 3
 
 Live telemetry is a passive, display-rate snapshot (around 20–30 Hz initially, batched per graph when scaled up), not an application event for every sample. Audio processing never waits for the UI. Do not persist telemetry or write it back to editable parameter values. A stopped or unavailable processor has no live marker.
 
-The first implementation is the shared ParameterSlider in the fixed modulation screen. Phase 4 implements the shared canvas, node frames, typed ports and connection renderer; Phase 5 reuses them for nested canvases.
+The shared ParameterSlider is implemented in both the fixed modulation proof and the editable node frames. The graph editor currently edits base values only; live modulation meters in arbitrary node graphs await the dynamic compiler. Phase 4 implements the shared canvas, node frames, typed ports and connection renderer; Phase 5 reuses them for nested canvases.
+
+### First visible editor implementation
+
+`GraphWorkspace` constructs the root patch session from `ModulationDemoPatch.OpenSession`, owns one presentation state service, and translates completed user actions into typed commands. `GraphCanvas` consumes that state and is reusable for future child graphs. It composes `CanvasToolbar`, `NodeFrame`, `PortConnector`, `ConnectionLayer`, `ConnectionPath` and the existing `ParameterSlider` inside node frames. There is no per-node renderer duplication.
+
+The canvas world is one transformed coordinate space shared by HTML node frames and SVG Bézier paths. The browser adapter (`wwwroot/js/canvasDom.js`) only measures actual DOM bounds/port centers, captures a pointer, and identifies the input under a dropped wire. The renderer converts measured offsets back into world coordinates, so zoom and panning do not change the topology or require new measurements. Nodes move using the state service and connections follow their positions. Fit uses measured frame bounds; `BezierConnection.Between` supplies horizontal tangents even for backwards edges.
+
+The first editor supports node addition/removal, base parameter edits, drag-to-connect or keyboard/click port activation, selection, background panning, middle-button panning from node headers, pointer zoom and fit. Space-drag and nested navigation are future enhancements. The fixed modulation proof is preserved separately until the dynamic Faust compiler can render the editor's graph.
 
 ### Reusable modules and presets
 
@@ -1305,8 +1313,9 @@ Deliverable: a graph edit reaches independent subscribers once, with valid model
 ### Phase 4 — Flat canvas and dynamic graph compiler
 
 - Reuse the implemented JSON design token system for canvas, node, port, connection and parameter styles.
-- Add reusable canvas renderer with nodes, ports and visible audio/modulation connections.
-- Introduce drag-to-connect, delete connection, node placement and parameter editor.
+- Implemented: reusable canvas renderer with role-colored nodes, typed ports and visible Bézier connections, plus pointer pan/zoom and fit.
+- Implemented: drag-to-connect, click-to-connect, delete selected connections/nodes, node placement and shared base parameter editor.
+- Next: dynamic graph compilation and live playback from the editor.
 - Implement dependency ordering and Faust graph builder/compiler.
 - Compile asynchronously, track graph revision and safely swap runtime.
 - Test fan-out and multiple modulation sources.

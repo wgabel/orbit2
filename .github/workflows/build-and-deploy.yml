@@ -57,6 +57,7 @@ jobs:
           cmp src/Orbit.UI/wwwroot/css/tokens.css publish/wwwroot/css/tokens.css
           test -s publish/wwwroot/css/base.css
           test -s publish/wwwroot/css/components.css
+          test -s publish/wwwroot/js/canvasDom.js
           for file in src/Orbit.UI/wwwroot/css/components/*.css; do
             test -s "publish/wwwroot/css/components/$(basename "$file")"
           done

@@ -4,3 +4,8 @@
 @import url("./components/parameter-slider.css");
 @import url("./components/validation-message.css");
 @import url("./components/modulation-panel.css");
+@import url("./components/graph-workspace.css");
+@import url("./components/graph-canvas.css");
+@import url("./components/node-frame.css");
+@import url("./components/port-connector.css");
+@import url("./components/connection-path.css");

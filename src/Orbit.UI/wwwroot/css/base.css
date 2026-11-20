@@ -12,6 +12,8 @@ body {
     font-family: var(--semantic-typography-family);
 }
 
+#app { width: 100%; }
+
 h1 { margin: var(--semantic-space-compact) 0; }
 
 :root { color-scheme: dark; }

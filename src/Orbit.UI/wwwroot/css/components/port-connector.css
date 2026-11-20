@@ -1,0 +1,27 @@
+/* Port markers encode type by both shape and accent; buttons are larger hit targets. */
+.port-connector {
+    display: flex;
+    align-items: center;
+    gap: var(--component-node-port-gap);
+    width: 100%;
+    min-height: var(--component-port-hit-size);
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--semantic-color-text);
+    font-size: var(--semantic-typography-caption);
+    font-weight: normal;
+    text-align: start;
+    touch-action: none;
+}
+.port-input { justify-content: start; transform: translateX(calc(var(--component-port-size) / -2)); }
+.port-output { justify-content: end; flex-direction: row-reverse; transform: translateX(calc(var(--component-port-size) / 2)); text-align: end; }
+.port-marker { display: inline-block; width: var(--component-port-size); height: var(--component-port-size); flex: 0 0 var(--component-port-size); background: var(--semantic-color-routing); }
+.port-kind-audio { border-radius: var(--semantic-radius-round); background: var(--semantic-color-generator); }
+.port-kind-modulation { clip-path: polygon(50% 0,100% 50%,50% 100%,0 50%); background: var(--semantic-color-modulation); }
+.port-kind-trigger { clip-path: polygon(50% 0,100% 100%,0 100%); background: var(--semantic-color-processor); }
+.port-kind-gate { background: var(--semantic-color-composite); }
+.port-kind-clock { clip-path: polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%); }
+.port-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.port-active .port-marker, .port-connector:hover .port-marker { filter: brightness(1.4); }
+.port-active { outline: var(--semantic-border-focus-width) solid var(--semantic-color-selected); }

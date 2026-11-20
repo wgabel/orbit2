@@ -1,10 +1,17 @@
 @namespace Orbit.UI
 @using Orbit.UI.Components
+@using Orbit.UI.Components.Canvas
 
-@* Root view mounted by Program.cs. The signal graph component owns its
-   presentation state and delegates audio operations to the application layer. *@
-<main class="panel">
+@* Root composition: the editable graph workspace is now the main UI.
+   The fixed proof stays available until dynamic graph compilation replaces it. *@
+<main class="workspace-shell">
     <p class="eyebrow">Orbit 2 / Signal graph</p>
     <h1>Orbit 2</h1>
-    <FaustModulation />
+    <GraphWorkspace />
+    <details class="audio-proof">
+        <summary>Fixed audio proof</summary>
+        <div class="panel">
+            <FaustModulation />
+        </div>
+    </details>
 </main>

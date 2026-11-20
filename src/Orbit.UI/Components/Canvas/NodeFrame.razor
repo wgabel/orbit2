@@ -1,0 +1,42 @@
+@namespace Orbit.UI.Components.Canvas
+@using Orbit.Domain.Ports
+@using Orbit.Domain.Parameters
+@using Orbit.UI.Components.Parameters
+@using Microsoft.AspNetCore.Components.Web
+
+@* Shared node shell: header is the drag handle; ports and parameter editors
+   are independent interactive children, never specific to a DSP implementation. *@
+<article class="@FrameClass" style="@PositionStyle" data-node-id="@Node.Id"
+         @onpointerdown:stopPropagation="true">
+    <header class="node-header" @onpointerdown="OnHeaderPointerDown">
+        <span>@Node.Name</span>
+        <span class="node-role">@Role</span>
+    </header>
+    <div class="node-ports">
+        <div class="node-inputs">
+            @foreach (var port in Node.Inputs)
+            {
+                <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port" OnActivate="OnPortActivate"
+                               OnOutputPointerDown="OnOutputPointerDown" />
+            }
+        </div>
+        <div class="node-outputs">
+            @foreach (var port in Node.Outputs)
+            {
+                <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port"
+                               Active="@(PendingSource == new PortAddress(Node.Id, port.Id))"
+                               OnActivate="OnPortActivate" OnOutputPointerDown="OnOutputPointerDown" />
+            }
+        </div>
+    </div>
+    @if (Node.Parameters.Count > 0)
+    {
+        <div class="node-parameters">
+            @foreach (var parameter in Node.Parameters)
+            {
+                <ParameterSlider @key="parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue" Step="0.01"
+                                 ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))" />
+            }
+        </div>
+    }
+</article>

@@ -33,6 +33,21 @@ public sealed record CanvasViewport
     public CanvasViewport PanBy(CanvasPoint screenDelta) =>
         new(Pan.Add(screenDelta.RequireFinite(nameof(screenDelta))), Zoom);
 
+    /// <summary>Center measured world bounds in the viewport with a screen-space margin.</summary>
+    public static CanvasViewport Fit(CanvasBounds bounds, double width, double height, double padding)
+    {
+        if (!bounds.IsValid || !double.IsFinite(width) || !double.IsFinite(height) ||
+            !double.IsFinite(padding) || width <= 0 || height <= 0 || padding < 0)
+            throw new ArgumentOutOfRangeException(nameof(bounds), "Fit requires finite, positive bounds and viewport.");
+
+        var availableWidth = Math.Max(1, width - 2 * padding);
+        var availableHeight = Math.Max(1, height - 2 * padding);
+        var zoom = Math.Clamp(Math.Min(availableWidth / bounds.Width, availableHeight / bounds.Height),
+            MinimumZoom, MaximumZoom);
+        var pan = new CanvasPoint(width / 2, height / 2).Subtract(bounds.Center.Scale(zoom));
+        return new CanvasViewport(pan, zoom);
+    }
+
     /// <summary>Keep the world point under the supplied screen anchor fixed while zooming.</summary>
     public CanvasViewport ZoomAt(double requestedZoom, CanvasPoint screenAnchor)
     {

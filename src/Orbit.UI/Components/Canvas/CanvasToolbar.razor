@@ -1,0 +1,10 @@
+@namespace Orbit.UI.Components.Canvas
+
+@* Viewport controls dispatch layout actions only. *@
+<div class="canvas-toolbar">
+    <button type="button" class="secondary" title="Zoom out" aria-label="Zoom out" @onclick="ZoomOut">−</button>
+    <span class="canvas-zoom" aria-label="Current zoom">@($"{ZoomPercentage:0}%")</span>
+    <button type="button" class="secondary" title="Zoom in" aria-label="Zoom in" @onclick="ZoomIn">+</button>
+    <button type="button" class="secondary" @onclick="Reset">100%</button>
+    <button type="button" class="secondary" @onclick="Fit">Fit</button>
+</div>
