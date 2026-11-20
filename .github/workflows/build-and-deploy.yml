@@ -47,6 +47,14 @@ jobs:
           test -s src/Orbit.Infrastructure/wwwroot/audio/generated/modulated-sine/faustwasm/index.js
       - name: Test audio infrastructure and compiled DSP
         run: node --test tests/audio/*.test.mjs
+      # Exercise the real graph compiler output, not a handcrafted DSP fixture.
+      - name: Compile and render generated graph
+        env:
+          ORBIT_GRAPH_PROBE_DIR: ${{ runner.temp }}/orbit-graph-probe
+        run: |
+          dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj --configuration Release -- "$ORBIT_GRAPH_PROBE_DIR"
+          npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts "$ORBIT_GRAPH_PROBE_DIR/program.dsp" "$ORBIT_GRAPH_PROBE_DIR/compiled"
+          node --test tests/compiler/*.test.mjs
       # Compiles the referenced projects and produces the static site in publish/wwwroot.
       - name: Build and publish
         run: dotnet publish src/Orbit.UI/Orbit.UI.csproj --configuration Release --output publish

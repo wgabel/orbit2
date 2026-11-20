@@ -1,0 +1,72 @@
+using Orbit.Application.Graphs.Snapshots;
+using Orbit.Domain.Graphs;
+using Orbit.Domain.Parameters;
+using Orbit.Domain.Ports;
+
+namespace Orbit.Audio.Compilation;
+
+/// <summary>Provides resolved, weighted input signals and clamped modulatable controls
+/// to a single node emitter. Every reference is a safe backend-generated identifier.</summary>
+public sealed class FaustNodeContext
+{
+    private readonly ILookup<PortAddress, SignalConnection> incoming;
+    private readonly IReadOnlyDictionary<PortAddress, string> signals;
+    private readonly List<FaustParameterControl> controls;
+    private readonly List<string> definitions;
+
+    internal FaustNodeContext(GraphNodeSnapshot node, ILookup<PortAddress, SignalConnection> incoming,
+        IReadOnlyDictionary<PortAddress, string> signals, List<FaustParameterControl> controls,
+        List<string> definitions)
+    {
+        Node = node;
+        this.incoming = incoming;
+        this.signals = signals;
+        this.controls = controls;
+        this.definitions = definitions;
+    }
+
+    public GraphNodeSnapshot Node { get; }
+
+    public string Input(string key)
+    {
+        var port = Node.Inputs.SingleOrDefault(port => port.Key == key)
+            ?? throw new FaustCompilationException($"Node {Node.TypeKey} has no input '{key}'.");
+        return InputSignal(port.Id);
+    }
+
+    public string Parameter(string key)
+    {
+        var parameter = Node.Parameters.SingleOrDefault(parameter => parameter.Definition.Key == key)
+            ?? throw new FaustCompilationException($"Node {Node.TypeKey} has no parameter '{key}'.");
+        var definition = parameter.Definition;
+        if (definition.Scale != ParameterScale.Linear)
+            throw new FaustCompilationException($"Parameter '{key}' has an unsupported modulation scale.");
+        if (!definition.IsValidBaseValue(parameter.BaseValue))
+            throw new FaustCompilationException($"Parameter '{key}' has an invalid base value.");
+
+        // IDs, rather than user-visible names, are stable across renames and revisions.
+        var name = $"p_{Node.Id:N}_{parameter.Id:N}";
+        var minimum = FaustNumber.Format(definition.Minimum);
+        var maximum = FaustNumber.Format(definition.Maximum);
+        var initial = FaustNumber.Format(definition.DefaultValue);
+        if (!controls.Any(control => control.Name == name))
+        {
+            controls.Add(new FaustParameterControl(new ParameterAddress(Node.Id, parameter.Id), name, parameter.BaseValue));
+            definitions.Add($"{name} = hslider(\"{name}\", {initial}, {minimum}, {maximum}, 0.001) : si.smoo;");
+        }
+
+        var modulation = parameter.ModulationPortId is Guid portId ? InputSignal(portId) : "0.0";
+        return $"max({minimum}, min({maximum}, {name} + {modulation}))";
+    }
+
+    private string InputSignal(Guid portId)
+    {
+        var terms = incoming[new PortAddress(Node.Id, portId)].OrderBy(edge => edge.Id).Select(edge =>
+        {
+            if (!signals.TryGetValue(edge.Source, out var signal))
+                throw new FaustCompilationException($"Missing compiled signal for connection {edge.Id}.");
+            return $"({signal} * {FaustNumber.Format(edge.Amount)})";
+        }).ToArray();
+        return terms.Length == 0 ? "0.0" : "(" + string.Join(" + ", terms) + ")";
+    }
+}

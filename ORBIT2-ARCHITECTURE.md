@@ -1008,7 +1008,13 @@ flowchart TD
 
 GraphCompiler resolves Input/Output Rack mappings and gives each flattened instance a unique DSP identity. The graph dependency order includes audio dependencies AND parameter modulation dependencies. A topological sort suffices for acyclic graphs. Any explicit feedback mechanism requires additional state/scheduling and compiler support.
 
-The graph compiler should produce stable parameter addresses and metadata so the browser audio engine can update base controls. Validate names/escaping when generating Faust source; do not concatenate unchecked user labels into executable code. Cache compiled factories by a structural signature where appropriate.
+The first implementation lives in the plain .NET `Orbit.Audio` library. `FaustGraphCompiler.Compile(GraphSnapshot)` returns a `FaustGraphProgram` containing the source, graph ID and revision, and a list of `FaustParameterControl` mappings. `GraphDependencyOrder` topologically sorts reachable audio and modulation dependencies. `IFaustNodeEmitter` is the strategy interface for one mono output; `SineFaustEmitter` and `GainFaustEmitter` delegate shared routing, control creation and modulation to `FaustNodeContext`. The master output is the terminal expression. No UI or browser runtime is involved.
+
+The first backend supports linear parameters, applying weighted incoming modulation to the smoothed base value and clamping to its definition. Oscillator frequencies also respect the actual sample rate. Disconnected components do not affect the source; master output without an incoming edge produces silence. Exactly one master output is required. Unsupported reachable node types and cycles are rejected.
+
+Parameter controls use stable IDs and definition defaults in the source; edited base values are supplied separately so base-only changes can reuse compiled factories. Edge amounts currently appear as invariant literal coefficients, so depth edits require compiling another program until explicit depth controls are implemented. The probe CLI and offline WASM tests verify generated source, fan-out, pitch/gain modulation and control overrides.
+
+The graph compiler produces stable parameter addresses and metadata so the browser audio engine can update base controls. Validate names/escaping when generating Faust source; do not concatenate unchecked user labels into executable code. Cache compiled factories by a structural signature where appropriate.
 
 ### Updating without clicks
 
@@ -1315,8 +1321,8 @@ Deliverable: a graph edit reaches independent subscribers once, with valid model
 - Reuse the implemented JSON design token system for canvas, node, port, connection and parameter styles.
 - Implemented: reusable canvas renderer with role-colored nodes, typed ports and visible Bézier connections, plus pointer pan/zoom and fit.
 - Implemented: drag-to-connect, click-to-connect, delete selected connections/nodes, node placement and shared base parameter editor.
-- Next: dynamic graph compilation and live playback from the editor.
-- Implement dependency ordering and Faust graph builder/compiler.
+- Implemented: dependency ordering and extensible C# graph-to-Faust source compiler with stable parameter controls (sine, gain, master output), plus offline WASM probe tests.
+- Next: integrate browser-side Faust compilation and live playback from the editor.
 - Compile asynchronously, track graph revision and safely swap runtime.
 - Test fan-out and multiple modulation sources.
 - Add low-pass effect and mixer.

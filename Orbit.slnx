@@ -4,8 +4,10 @@
   <Project Path="src/Orbit.Domain/Orbit.Domain.csproj" />
   <Project Path="src/Orbit.Application/Orbit.Application.csproj" />
   <Project Path="src/Orbit.Presentation/Orbit.Presentation.csproj" />
+  <Project Path="src/Orbit.Audio/Orbit.Audio.csproj" />
   <Project Path="src/Orbit.Infrastructure/Orbit.Infrastructure.csproj" />
   <Project Path="src/Orbit.UI/Orbit.UI.csproj" />
   <Project Path="tests/Orbit.Domain.Tests/Orbit.Domain.Tests.csproj" />
   <Project Path="tests/Orbit.Presentation.Tests/Orbit.Presentation.Tests.csproj" />
+  <Project Path="tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj" />
 </Solution>

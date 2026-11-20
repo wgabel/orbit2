@@ -30,6 +30,7 @@ flowchart TD
     UI --> Infrastructure["Orbit.Infrastructure"]
     Infrastructure --> Application
     Application --> Domain["Orbit.Domain"]
+    Compiler["Orbit.Audio compiler"] --> Application
     Infrastructure --> DSP["Orbit.Audio / compiled Faust"]
 ```
 
@@ -40,7 +41,7 @@ flowchart TD
 | Application | Orbit.Application | Framework-neutral contracts, request models, node registry, timing contracts and audio use cases. |
 | Domain | Orbit.Domain | Signal graphs, nodes, parameters, ports, connections and graph validation. |
 | Infrastructure | Orbit.Infrastructure | C# adapter and modular browser audio runtime. No UI or use-case policy. |
-| Processing/DSP | Orbit.Audio | Faust programs that generate samples. Compiled into WASM during build. |
+| Processing/DSP | Orbit.Audio | Graph-to-Faust source compiler and Faust programs that generate samples. |
 
 The infrastructure implements contracts declared by Application. The UI composition root registers concrete implementations; UI components consume application-facing interfaces only. There is no database or persistence layer yet.
 
@@ -299,6 +300,41 @@ The small DOM adapter measures port/node geometry, captures pointers and resolve
 
 The editor is not connected to live dynamic Faust playback yet. The existing fixed audio proof remains in a separate expandable section until dynamic compilation replaces it. Its settings and graph are independent of editor changes.
 
+## Faust graph compiler (Phase 4)
+
+`Orbit.Audio` is a plain .NET library that consumes a committed `GraphSnapshot` and produces a `FaustGraphProgram`: Faust source plus graph ID, revision and stable host control mappings. It does not load WASM, own the browser audio device or have any dependency on the canvas.
+
+~~~mermaid
+flowchart TD
+    S["GraphSnapshot"] --> C["FaustGraphCompiler"]
+    C --> O["GraphDependencyOrder"]
+    O --> R["Registered node emitters"]
+    R --> P["FaustNodeContext"]
+    P --> F["Faust source + control mappings"]
+    F --> W["Faust WASM compilation"]
+    W --> T["Offline sample rendering tests"]
+~~~
+
+- The compiler walks backward from the sole master output and orders all reachable audio and modulation dependencies. Disconnected nodes are excluded; a disconnected master produces silence.
+- `IFaustNodeEmitter` is the backend extension point. Sine and gain have independent implementations. `FaustNodeContext` handles routing, weighted input summation, parameter slider generation, smoothing and clamping.
+- Each parameter control uses its node and parameter IDs, never user labels. The program source is stable across base-value edits; the latest values travel separately in the control map and must be applied before playback.
+- For linear parameters, effective value = clamped (smoothed base + sum of incoming signals × connection amounts). Frequency also stays below the sample-rate-dependent Nyquist limit. Modulation signals themselves run at audio rate.
+- Connection amounts are baked into this first source representation. Changing connection amounts or topology requires recompilation; a future runtime can expose depth controls without recompiling.
+- The current backend supports mono sine, gain and exactly one master output. Cycles and unsupported reachable node types are rejected. Composites and additional DSP node types will extend it later.
+
+CI exports an actual graph using `tests/Orbit.Audio.Probe`, compiles the generated source using the pinned Faust CLI, then renders it offline at 44.1 and 48 kHz. Tests verify that one LFO can fan out to pitch and gain, and that a host can change a generated frequency control without recompiling.
+
+To reproduce the graph compiler probe locally (Bash, .NET 10 and Node):
+
+~~~bash
+export ORBIT_GRAPH_PROBE_DIR="$(mktemp -d)"
+dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj -- "$ORBIT_GRAPH_PROBE_DIR"
+npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts "$ORBIT_GRAPH_PROBE_DIR/program.dsp" "$ORBIT_GRAPH_PROBE_DIR/compiled"
+node --test tests/compiler/*.test.mjs
+~~~
+
+Next: integrate the compiler with a browser-side Faust WASM compiler and playback lifecycle. The graph editor's audio remains separate until that step.
+
 ## Shared UI components
 
 `ParameterSlider` is the first reusable presentation building block. It takes a domain parameter definition, editable base value and optional read-only modulation range and effective value. The same component renders all three settings, validates draft input without committing invalid values and reports errors to its parent.
@@ -381,6 +417,8 @@ src/
     Orbit.Presentation.csproj
     Canvas/                           # state, viewport, geometry, roles and layout events
   Orbit.Audio/
+    Orbit.Audio.csproj
+    Compilation/                      # graph ordering, backend emitters and control mapping
     Dsp/Oscillators/ModulatedSine.dsp
   Orbit.Infrastructure/
     Orbit.Infrastructure.csproj

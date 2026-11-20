@@ -1,0 +1,12 @@
+<!-- CLI fixture exporter: feeds actual C# compiler output to the pinned Faust CLI in CI. -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Orbit.Audio/Orbit.Audio.csproj" />
+  </ItemGroup>
+</Project>

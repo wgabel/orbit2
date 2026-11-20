@@ -1,0 +1,11 @@
+<!-- Pure Faust source generation, independent of Blazor and browser APIs. -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Orbit.Application/Orbit.Application.csproj" />
+  </ItemGroup>
+</Project>

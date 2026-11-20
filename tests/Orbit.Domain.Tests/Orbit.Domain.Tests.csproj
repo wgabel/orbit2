@@ -13,5 +13,6 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2" PrivateAssets="all" />
     <ProjectReference Include="../../src/Orbit.Domain/Orbit.Domain.csproj" />
     <ProjectReference Include="../../src/Orbit.Application/Orbit.Application.csproj" />
+    <ProjectReference Include="../../src/Orbit.Audio/Orbit.Audio.csproj" />
   </ItemGroup>
 </Project>
