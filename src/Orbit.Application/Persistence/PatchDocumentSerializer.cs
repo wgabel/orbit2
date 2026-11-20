@@ -27,10 +27,19 @@ public sealed class PatchDocumentSerializer
         if (document.SchemaVersion != PatchDocument.CurrentVersion)
             throw new NotSupportedException($"Unsupported patch schema {document.SchemaVersion}.");
         _ = new MusicalTransport(document.BeatsPerMinute);
-        var graphIds = new HashSet<Guid>();
-        var root = new SignalGraph(document.RootGraph.Id);
-        RestoreGraph(document.RootGraph, root, registry, graphIds);
+        var root = RestoreGraph(document.RootGraph, registry);
         return new PatchSession(registry, root, document.PatchId);
+    }
+
+    // Session history uses the same validated reconstruction path without JSON or storage.
+    internal static SignalGraph RestoreSnapshot(GraphSnapshot snapshot, NodeRegistry registry) =>
+        RestoreGraph(CaptureGraph(snapshot), registry);
+
+    private static SignalGraph RestoreGraph(SavedGraph saved, NodeRegistry registry)
+    {
+        var root = new SignalGraph(saved.Id);
+        RestoreGraph(saved, root, registry, new HashSet<Guid>());
+        return root;
     }
 
     private static SavedGraph CaptureGraph(GraphSnapshot graph) => new(graph.Id,

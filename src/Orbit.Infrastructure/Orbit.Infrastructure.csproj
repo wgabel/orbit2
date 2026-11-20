@@ -12,7 +12,7 @@
     <ProjectReference Include="../Orbit.Application/Orbit.Application.csproj" />
   </ItemGroup>
   <!-- CI sets this to the commit SHA and publishes the matching module tree. -->
-  <ItemGroup Condition="'$(OrbitAudioAssetVersion)' != ''">
-    <AssemblyMetadata Include="OrbitAudioAssetVersion" Value="$(OrbitAudioAssetVersion)" />
+  <ItemGroup Condition="'$(OrbitBrowserAssetVersion)' != ''">
+    <AssemblyMetadata Include="OrbitBrowserAssetVersion" Value="$(OrbitBrowserAssetVersion)" />
   </ItemGroup>
 </Project>

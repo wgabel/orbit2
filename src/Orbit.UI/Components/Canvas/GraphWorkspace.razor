@@ -20,6 +20,10 @@ else
                        ZoomIn="@(() => canvasView!.ZoomIn())" ZoomOut="@(() => canvasView!.ZoomOut())"
                        Reset="@(() => canvasView!.ResetViewport())" Fit="@(() => canvasView!.FitAsync())" />
         <div class="workspace-toolbar toolbar-group">
+            <button type="button" class="secondary" disabled="@(!session.CanUndo || switchingWorkspace)" @onclick="Undo">Undo</button>
+            <button type="button" class="secondary" disabled="@(!session.CanRedo || switchingWorkspace)" @onclick="Redo">Redo</button>
+        </div>
+        <div class="workspace-toolbar toolbar-group">
         <label for="node-type">Add node</label>
         <select id="node-type" @bind="SelectedType">
             @foreach (var type in RegisteredTypes)

@@ -15,6 +15,10 @@ public interface IPatchSession : IDisposable
     GraphSnapshot Snapshot { get; }
 
     GraphCommandResult Execute(IGraphCommand command);
+    bool CanUndo { get; }
+    bool CanRedo { get; }
+    GraphCommandResult Undo();
+    GraphCommandResult Redo();
 
     /// <summary>Observe the entire patch by default, or only commits affecting the supplied graph.</summary>
     IDisposable Subscribe(Action<GraphChangeSet> handler, Guid? graphId = null);

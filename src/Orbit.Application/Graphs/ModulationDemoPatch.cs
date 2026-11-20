@@ -88,6 +88,7 @@ public sealed class ModulationDemoPatch
             session.Execute(new ConnectNodesCommand(graphId,
                 new PortAddress(gain.Id, gain.Outputs.Single().Id),
                 new PortAddress(output.Id, output.Inputs.Single().Id)));
+            session.ClearHistory();
             return session;
         }
         catch

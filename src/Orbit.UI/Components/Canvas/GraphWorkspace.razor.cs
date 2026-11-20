@@ -256,6 +256,23 @@ public partial class GraphWorkspace : IDisposable
 
     private void AddNode() => Execute(new AddNodeCommand(Canvas.Snapshot.GraphId, SelectedType));
 
+    private void Undo() => RestoreHistory(session.Undo);
+    private void Redo() => RestoreHistory(session.Redo);
+
+    private void RestoreHistory(Func<GraphCommandResult> operation)
+    {
+        if (switchingWorkspace) return;
+        Error = null;
+        try
+        {
+            CloseRackEditor();
+            var result = operation();
+            if (result.SubscriberErrors.Count > 0)
+                Error = "History was committed, but a view failed to update: " + result.SubscriberErrors[0].Message;
+        }
+        catch (Exception exception) { Error = exception.Message; }
+    }
+
     private void Connect(Guid graphId, PortConnectionRequest request)
     {
         if (graphId == Canvas.Snapshot.GraphId)

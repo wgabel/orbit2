@@ -19,6 +19,7 @@ public sealed class CanvasStateService : ICanvasStateService
     private readonly NotificationChannel<CanvasStateChange> notifications = new();
     private readonly IDisposable graphSubscription;
     private readonly Queue<CanvasStateChange> pendingNotifications = new();
+    private readonly Dictionary<Guid, CanvasPoint> removedPositions = [];
     private CanvasStateSnapshot snapshot;
     private bool publishing;
     private bool disposed;
@@ -141,9 +142,12 @@ public sealed class CanvasStateService : ICanvasStateService
         var connectionIds = graph.Connections.Select(connection => connection.Id).ToHashSet();
         var positions = snapshot.NodePositions
             .Where(pair => nodeIds.Contains(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value);
+        foreach (var pair in snapshot.NodePositions.Where(pair => !nodeIds.Contains(pair.Key)))
+            removedPositions[pair.Key] = pair.Value;
+        while (removedPositions.Count > 512) removedPositions.Remove(removedPositions.Keys.First());
         foreach (var node in graph.Nodes)
             if (!positions.ContainsKey(node.Id))
-                positions.Add(node.Id, PlaceNode(positions));
+                positions.Add(node.Id, removedPositions.Remove(node.Id, out var restored) ? restored : PlaceNode(positions));
 
         var selectedNodes = snapshot.SelectedNodeIds.Where(nodeIds.Contains).ToArray();
         var selectedConnections = snapshot.SelectedConnectionIds.Where(connectionIds.Contains).ToArray();

@@ -54,7 +54,11 @@ Orbit automatically saves the committed patch, including nested graphs, rack def
 
 ### Named patches and portable files (Phase 6.10)
 
-Open **Patches** in the header to save the current workspace by name, open an existing snapshot, explicitly overwrite or delete it, create a new patch, or export/import a JSON file. Named snapshots are independent of the automatic recovery record. New patches start with a master output; opening/importing requires stopped playback, validates the complete candidate before replacement, and commits recovery immediately. Invalid files leave the current graph intact. The JSON file uses the same versioned document as autosave. Undo/redo is the next phase.
+Open **Patches** in the header to save the current workspace by name, open an existing snapshot, explicitly overwrite or delete it, create a new patch, or export/import a JSON file. Named snapshots are independent of the automatic recovery record. New patches start with a master output; opening/importing requires stopped playback, validates the complete candidate before replacement, and commits recovery immediately. Invalid files leave the current graph intact. The JSON file uses the same versioned document as autosave.
+
+### Graph history (Phase 6.11)
+
+Undo and Redo in the shared toolbar restore up to 100 successful graph commands, including nested edits, parameter values, connections and rack boundaries, without stopping playback. Each operation publishes a new committed revision and uses the normal audio update and autosave paths. New edits discard redo history; loading a patch or refreshing starts a fresh history. Canvas pan, zoom, movement, selection and tempo are not graph commands and are not undoable. Recently deleted nodes and canvases recover their last layout when restored.
 
 ```mermaid
 flowchart TD
@@ -65,7 +69,7 @@ flowchart TD
     P --> I[(IndexedDB)]
 ```
 
-The infrastructure uses the .NET Razor class library SDK solely to package browser-side static assets. Local builds expose them under `_content/Orbit.Infrastructure/audio/`; deployed builds also use a commit-versioned `audio-<commit>/` directory for the complete relative-import tree, including the worker and generated Faust assets. This prevents mixed-version browser caches. The library contains no Razor views.
+The infrastructure uses the .NET Razor class library SDK solely to package browser-side static assets. Local builds expose the default module directories under `_content/Orbit.Infrastructure/`; deployed builds use commit-versioned `audio-<commit>/` and `persistence-<commit>/` directories. The shared module-path resolver ensures .NET always imports matching JavaScript, including workers and generated Faust assets. IndexedDB names and keys stay unchanged across deployments. The library contains no Razor views.
 
 ## Startup sequence
 

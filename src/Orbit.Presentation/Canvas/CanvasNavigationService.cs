@@ -14,6 +14,7 @@ public sealed class CanvasNavigationService : IDisposable
     private readonly IPatchSession session;
     private readonly INodePlacementPolicy? placement;
     private readonly Dictionary<Guid, ICanvasStateService> canvases = [];
+    private readonly Dictionary<Guid, SavedCanvas> removedLayouts = [];
     private readonly List<CanvasBreadcrumb> path = [];
     private readonly NotificationChannel<CanvasStateSnapshot> changes = new();
     private readonly IDisposable patchSubscription;
@@ -43,9 +44,11 @@ public sealed class CanvasNavigationService : IDisposable
     }
 
     public SavedCanvas[] CaptureLayouts() => canvases.Values.Select(canvas => canvas.Snapshot)
-        .Where(snapshot => snapshot.IsAvailable).Select(snapshot => new SavedCanvas(snapshot.GraphId,
+        .Where(snapshot => snapshot.IsAvailable).Select(CaptureLayout).ToArray();
+
+    private static SavedCanvas CaptureLayout(CanvasStateSnapshot snapshot) => new(snapshot.GraphId,
             snapshot.Viewport.Pan.X, snapshot.Viewport.Pan.Y, snapshot.Viewport.Zoom,
-            snapshot.NodePositions.Select(pair => new SavedNodePosition(pair.Key, pair.Value.X, pair.Value.Y)).ToArray())).ToArray();
+            snapshot.NodePositions.Select(pair => new SavedNodePosition(pair.Key, pair.Value.X, pair.Value.Y)).ToArray());
 
     private static bool TryFindPath(GraphSnapshot graph, Guid target, out List<CanvasBreadcrumb> path)
     {
@@ -97,7 +100,9 @@ public sealed class CanvasNavigationService : IDisposable
         IsFirstVisit = !canvases.TryGetValue(graphId, out var canvas);
         if (canvas is null)
         {
-            canvas = new CanvasStateService(session, graphId, placement);
+            removedLayouts.Remove(graphId, out var restored);
+            if (restored is not null) IsFirstVisit = false;
+            canvas = new CanvasStateService(session, graphId, placement, restored);
             canvases.Add(graphId, canvas);
         }
         ActiveCanvas = canvas;
@@ -119,9 +124,11 @@ public sealed class CanvasNavigationService : IDisposable
         }
         foreach (var id in removed)
         {
+            removedLayouts[id] = CaptureLayout(canvases[id].Snapshot);
             canvases[id].Dispose();
             canvases.Remove(id);
         }
+        while (removedLayouts.Count > 100) removedLayouts.Remove(removedLayouts.Keys.First());
         // The surviving active projection receives this same patch commit next
         // and publishes the reconciled state (including the truncated path).
     }
@@ -141,6 +148,7 @@ public sealed class CanvasNavigationService : IDisposable
         activeSubscription?.Dispose();
         foreach (var canvas in canvases.Values) canvas.Dispose();
         canvases.Clear();
+        removedLayouts.Clear();
         changes.Clear();
     }
 }

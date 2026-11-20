@@ -7,7 +7,7 @@ public sealed class BrowserPatchStorage(IJSRuntime runtime) : IPatchStorage, IPa
 {
     private Task<IJSObjectReference>? module;
     private Task<IJSObjectReference> GetModuleAsync() => module ??= runtime.InvokeAsync<IJSObjectReference>(
-        "import", "./_content/Orbit.Infrastructure/persistence/patchStorage.js").AsTask();
+        "import", BrowserModulePaths.GetPath("persistence", "patchStorage.js")).AsTask();
 
     public async Task<string?> LoadAsync() => await (await GetModuleAsync()).InvokeAsync<string?>("load");
     public async Task SaveAsync(string json) => await (await GetModuleAsync()).InvokeVoidAsync("save", json);

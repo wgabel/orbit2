@@ -1,5 +1,5 @@
 // Exercise the published Blazor app, not just its JavaScript components.
-// Reject the unversioned audio path to model a browser holding stale assets.
+// Reject unversioned interop paths to model a browser holding stale assets.
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
@@ -16,7 +16,8 @@ const server = createServer(async (request, response) => {
     const path = new URL(request.url, "http://localhost").pathname;
     requests.add(path);
     try {
-        if (path.startsWith("/_content/Orbit.Infrastructure/audio/")) throw new Error("Unversioned audio assets are stale");
+        if (["audio", "persistence"].some(directory => path.startsWith(`/_content/Orbit.Infrastructure/${directory}/`)))
+            throw new Error("Unversioned browser assets are stale");
         const file = resolve(root, "." + (path === "/" ? "/index.html" : path));
         if (!file.startsWith(root + sep)) throw new Error("Outside static assets");
         const bytes = await readFile(file);
@@ -104,6 +105,15 @@ try {
     await amountEditor.getByText("Enter a finite number.").waitFor();
     await amount.fill("25");
     await amountEditor.getByRole("button", { name: "Apply amount" }).click();
+    initialRevision++;
+    await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
+    await frequency.getByText("Modulation: 415–465 Hz").waitFor();
+    // History is a fresh committed revision even while the worklet is running.
+    await page.getByRole("button", { name: "Undo", exact: true }).click();
+    initialRevision++;
+    await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
+    await frequency.getByText("Modulation: 340–540 Hz").waitFor();
+    await page.getByRole("button", { name: "Redo", exact: true }).click();
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
     await frequency.getByText("Modulation: 415–465 Hz").waitFor();
@@ -316,6 +326,8 @@ try {
     assert.ok(savedWorkspace.rootGraph.nodes.some(node => node.composite?.graph.id === expectedGraph));
     await page.reload();
     await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
+    assert.equal(await page.getByRole("button", { name: "Undo", exact: true }).isEnabled(), false);
+    assert.equal(await page.getByRole("button", { name: "Redo", exact: true }).isEnabled(), false);
     assert.equal(await page.getByRole("alert").count(), 0, await page.getByRole("alert").allTextContents());
     assert.equal(await page.locator(".graph-workspace").getAttribute("data-active-graph"), expectedGraph);
     await breadcrumbs.getByText("Drone", { exact: true }).waitFor();
@@ -369,6 +381,8 @@ try {
     await manager.getByRole("button", { name: "Delete saved patch" }).click();
     await manager.getByText("Saved patch deleted; current workspace unchanged.").waitFor();
     assert.equal(await manager.getByLabel("Saved patch").locator("option[value='Empty study']").count(), 0);
+    assert.ok(requests.has(`/_content/Orbit.Infrastructure/persistence-${version}/patchStorage.js`));
+    assert.ok([...requests].every(path => !path.startsWith("/_content/Orbit.Infrastructure/persistence/")));
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {
     await browser?.close();

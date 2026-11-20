@@ -1,5 +1,4 @@
 using Microsoft.JSInterop;
-using System.Reflection;
 using Orbit.Application.Interfaces;
 using Orbit.Application.Models;
 using Orbit.Domain.Timing;
@@ -14,7 +13,7 @@ public sealed class BrowserAudioEngine(IJSRuntime javaScriptRuntime) : IAudioEng
 {
     // Deployments publish the entire relative-import tree under a unique URL.
     // An entry-only cache buster would still allow stale transitive imports.
-    private static readonly string AudioModulePath = GetAudioModulePath();
+    private static readonly string AudioModulePath = BrowserModulePaths.GetPath("audio", "audio.js");
     private IJSObjectReference? audioModule;
     private Task<IJSObjectReference>? audioModuleTask;
 
@@ -99,11 +98,4 @@ public sealed class BrowserAudioEngine(IJSRuntime javaScriptRuntime) : IAudioEng
     private IJSObjectReference GetAudioModule() =>
         audioModule ?? throw new InvalidOperationException("The audio engine is not initialized.");
 
-    private static string GetAudioModulePath()
-    {
-        var version = typeof(BrowserAudioEngine).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
-            .FirstOrDefault(attribute => attribute.Key == "OrbitAudioAssetVersion")?.Value;
-        var directory = string.IsNullOrEmpty(version) ? "audio" : $"audio-{version}";
-        return $"./_content/Orbit.Infrastructure/{directory}/audio.js";
-    }
 }
