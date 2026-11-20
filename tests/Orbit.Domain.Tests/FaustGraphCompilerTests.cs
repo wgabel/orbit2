@@ -24,6 +24,26 @@ public sealed class FaustGraphCompilerTests
     private readonly FaustGraphCompiler compiler = FaustGraphCompiler.CreateBuiltIn();
 
     [Fact]
+    public void ParametricEqAllParametersHaveStableModulationControls()
+    {
+        using var session = new PatchSession(BuiltInNodes.CreateRegistry());
+        var oscillator = Add(session, OscillatorGenerator.NodeType);
+        var eq = Add(session, ParametricEqProcessor.NodeType);
+        var master = Add(session, MasterOutput.NodeType);
+        Connect(session, oscillator, eq, eq.Inputs.Single(p => p.Key == "audio-in").Id, 0.1);
+        foreach (var parameter in eq.Parameters)
+            Connect(session, oscillator, eq, parameter.ModulationPortId!.Value, 0.1);
+        Connect(session, eq, master, master.Inputs.Single().Id, 1);
+        var first = compiler.Compile(session.Snapshot);
+        foreach (var parameter in eq.Parameters)
+        {
+            Assert.NotNull(Control(first, eq, parameter.Definition.Key).MeterName);
+            session.Execute(new SetParameterValueCommand(session.GraphId, new ParameterAddress(eq.Id, parameter.Id), parameter.BaseValue + 0.1));
+        }
+        Assert.Equal(first.Source, compiler.Compile(session.Snapshot).Source);
+    }
+
+    [Fact]
     public void FilterModesPreserveRoutingAndContinuousControls()
     {
         using var session = new PatchSession(BuiltInNodes.CreateRegistry());

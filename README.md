@@ -577,6 +577,17 @@ session.Execute(new AddBoundaryPortCommand(childGraphId, PortDirection.Input,
 
 Changing an existing port's signal type, channel count or fan-in, and undo are future operations; in this version those properties are chosen when creating a port.
 
+### Parametric EQ (Phase 6.12)
+
+Add **Parametric EQ** to an audio path to boost or cut one frequency band. Frequency (20–20,000 Hz, default 1,000 Hz), gain (−18 to +18 dB, default 0 dB) and Q (0.2–10, default 1) each have an independent modulation socket. Gain of 0 dB is transparent; higher Q narrows the bell. The shared state-variable DSP core applies effective values at audio rate; base edits do not recompile. Chain multiple instances for multiband EQ. Allow headroom for boost and modulation; output is not clipped or normalized.
+
+~~~mermaid
+flowchart TD
+    I[Audio input] --> E[Parametric EQ]
+    L[Modulation signals] -->|Frequency, gain, Q| E
+    E --> O[Audio output]
+~~~
+
 ### Resonant filter processor (Phase 6.7)
 
 Add **Filter** between a generator or mixer and the master output. Choose Low-pass, High-pass, Band-pass or Notch. Cutoff (20–20,000 Hz, default 1,000 Hz) and resonance Q (0.5–8, default 0.707) have independent modulation sockets. At Q 0.707, low-pass/high-pass are approximately Butterworth responses; higher Q emphasizes the cutoff region. Band-pass and notch use cutoff as their center frequency.

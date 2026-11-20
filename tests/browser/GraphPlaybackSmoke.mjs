@@ -18,6 +18,7 @@ const waveforms = JSON.parse(await readFile(resolve(directory, "waveforms.json")
 const noises = JSON.parse(await readFile(resolve(directory, "noise.json"), "utf8"));
 const layered = JSON.parse(await readFile(resolve(directory, "layered.json"), "utf8"));
 const filters = JSON.parse(await readFile(resolve(directory, "filters.json"), "utf8"));
+const eq = JSON.parse(await readFile(resolve(directory, "eq.json"), "utf8"));
 const root = resolve("src/Orbit.Infrastructure/wwwroot/audio");
 const server = createServer(async (request, response) => {
     try {
@@ -338,6 +339,58 @@ try {
         if (r.mode === "HighPass") assert.ok(r.low < 0.04 && r.high > 0.95 && r.resonant > 3.8);
         if (r.mode === "BandPass") assert.ok(r.low < 0.15 && r.high < 0.15 && r.center > 0.65 && r.resonant > 3.8);
         if (r.mode === "Notch") assert.ok(r.low > 0.95 && r.high > 0.95 && r.center < 0.03);
+    }
+
+    const eqResults = await page.evaluate(async eq => {
+        const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
+        const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
+        const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
+        try {
+            const compiled = await compiler.compile(eq.source);
+            const results = [];
+            for (const rate of [44100, 48000]) {
+                const processor = await new FaustMonoDspGenerator().createOfflineProcessor(rate, 128, { ...compiled, soundfiles: {} });
+                const set = (name, value) => processor.setParamValue(processor.getParams().find(path => path.endsWith("/" + name)), value);
+                for (const [name, value] of Object.entries(eq.values)) set(name, value);
+                const response = frequency => {
+                    set(eq.carrier, frequency);
+                    const [audio] = processor.render([], rate);
+                    let power = 0;
+                    for (let i = rate / 2; i < audio.length; i++) power += audio[i] ** 2;
+                    return 20 * Math.log10(Math.sqrt(power / (rate / 2)) / (0.1 / Math.SQRT2));
+                };
+                const flat = response(1000);
+                set(eq.gain, 12);
+                const boost = response(1000), low = response(20), high = response(12000);
+                set(eq.q, 0.5);
+                const broad = response(1500);
+                set(eq.q, 8);
+                const narrow = response(1500);
+                set(eq.gain, -12);
+                const cut = response(1000);
+                set(eq.frequency, 2000);
+                const moved = response(2000);
+                set(eq.gain, 12);
+                set(eq.modulation, 1);
+                const [stress] = processor.render([], rate * 2);
+                let peak = 0;
+                for (const sample of stress) {
+                    if (!Number.isFinite(sample)) throw new Error("Non-finite modulated EQ output");
+                    peak = Math.max(peak, Math.abs(sample));
+                }
+                results.push({ rate, flat, boost, low, high, broad, narrow, cut, moved, peak });
+            }
+            return results;
+        } finally { compiler.dispose(); }
+    }, eq);
+    for (const result of eqResults) {
+        console.log("Parametric EQ response", result);
+        assert.ok(Math.abs(result.flat) < 0.1);
+        assert.ok(Math.abs(result.boost - 12) < 0.2 && Math.abs(result.cut + 12) < 0.2);
+        assert.ok(Math.abs(result.moved + 12) < 0.2);
+        assert.ok(Math.abs(result.low) < 0.2 && Math.abs(result.high) < 0.2);
+        assert.ok(result.broad > result.narrow + 3);
+        assert.ok(result.peak < 10);
     }
 
     // All shapes now use the transport in synchronized mode. Supply the same

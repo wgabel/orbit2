@@ -180,6 +180,23 @@ var filterProbes = Enum.GetValues<FilterMode>().Select(mode =>
 }).ToArray();
 File.WriteAllText(Path.Combine(args[0], "filters.json"), JsonSerializer.Serialize(filterProbes));
 
+// Reuse the same carrier and modulation source, replacing only the processor.
+filterSession.Execute(new RemoveNodeCommand(filterRoot, filter.Id));
+var eq = FilterAdd(ParametricEqProcessor.NodeType);
+FilterConnect(carrier, eq, "audio-in", 1);
+FilterConnect(modulation, eq, "frequency-modulation-in", 19000);
+FilterConnect(modulation, eq, "gain-modulation-in", 18);
+FilterConnect(modulation, eq, "q-modulation-in", 9);
+FilterConnect(eq, filterMaster, "audio-in", 1);
+var eqProgram = FaustGraphCompiler.CreateBuiltIn().Compile(filterSession.Snapshot);
+string EqControl(GraphNodeSnapshot node, string key) => eqProgram.Controls.Single(c => c.Address == Address(node, key)).Name;
+File.WriteAllText(Path.Combine(args[0], "eq.json"), JsonSerializer.Serialize(new
+{
+    source = eqProgram.Source, values = eqProgram.Controls.ToDictionary(c => c.Name, c => c.InitialValue),
+    carrier = EqControl(carrier, "frequency"), frequency = EqControl(eq, "frequency"),
+    gain = EqControl(eq, "gain"), q = EqControl(eq, "q"), modulation = EqControl(modulation, "amplitude")
+}));
+
 GraphNodeSnapshot TempoAdd(Guid graph, string type) =>
     tempoSession.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
 
