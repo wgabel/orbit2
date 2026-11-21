@@ -70,7 +70,7 @@ try {
     // Physical frequency and visual coordinates are deliberately different.
     const frequencyRange = frequency.getByRole("slider", { name: "Frequency" });
     const frequencyInput = frequency.getByRole("spinbutton", { name: "Frequency (Hz)" });
-    assert.equal(await frequency.getByLabel("Cycle duration").innerText(), "2.273 ms");
+    assert.equal(await frequency.getByLabel("Cycle duration", { exact: true }).innerText(), "2.273 ms");
     assert.equal(await frequency.getByLabel("Positive duration").innerText(), "1.136 ms");
     assert.equal(Number(await frequency.getByRole("spinbutton", { name: "Period (s)" }).inputValue()), 1 / 440);
     const frequencyPosition = value => {
@@ -143,7 +143,7 @@ try {
     const periodInput = frequency.getByRole("spinbutton", { name: "Period (s)" });
     await periodInput.fill("5");
     await periodInput.press("Tab");
-    await frequency.getByLabel("Cycle duration").filter({ hasText: /^5 s$/ }).waitFor();
+    await frequency.getByLabel("Cycle duration", { exact: true }).filter({ hasText: /^5 s$/ }).waitFor();
     assert.equal(await frequencyInput.inputValue(), "0.2");
     await undoButton.click();
     assert.equal(await frequencyInput.inputValue(), "440");
