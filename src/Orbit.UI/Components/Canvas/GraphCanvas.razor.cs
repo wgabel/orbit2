@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Orbit.Application.Graphs.Commands;
 using Orbit.Domain.Ports;
 using Orbit.Domain.Parameters;
 using Orbit.Domain.Timing;
@@ -16,6 +17,7 @@ public partial class GraphCanvas : IAsyncDisposable
 {
     [Inject] private IJSRuntime JavaScript { get; set; } = default!;
     [Parameter, EditorRequired] public ICanvasStateService State { get; set; } = default!;
+    [Parameter, EditorRequired] public Func<SetConnectionAmountCommand, string?> DispatchConnectionAmount { get; set; } = default!;
     [Parameter] public Guid PatchId { get; set; }
     [Parameter] public EventCallback<PortConnectionRequest> OnConnect { get; set; }
     [Parameter] public EventCallback<ParameterEditRequest> OnParameterEdit { get; set; }
@@ -271,6 +273,12 @@ public partial class GraphCanvas : IAsyncDisposable
     {
         pendingSource = null;
         State.SelectConnection(connectionId);
+    }
+
+    private async Task CloseConnectionEditorAsync()
+    {
+        State.ClearSelection();
+        await viewportElement.FocusAsync(preventScroll: true);
     }
 
     private void KeyDown(KeyboardEventArgs args)

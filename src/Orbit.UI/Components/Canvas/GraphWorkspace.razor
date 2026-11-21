@@ -53,17 +53,13 @@ else
     {
         <NodePresetManager @key="(graphId, presetNode.Id)" Node="@presetNode" OnClose="ClosePresetManager" OnLibraryChanged="OnPresetLibraryChanged" />
     }
-    @if (SelectedConnection is { } connection)
-    {
-        <ConnectionAmountEditor @key="(graphId, connection.Id)" Graph="@Canvas.Snapshot.Graph"
-                                Connection="@connection" Dispatch="@DispatchConnectionCommand" />
-    }
     @if (EditingRack is { } rack)
     {
         <RackPortEditor @key="(graphId, rack.Id)" GraphId="@graphId" Rack="@rack"
                         Dispatch="@DispatchRackCommand" OnClose="CloseRackEditor" />
     }
     <GraphCanvas @key="(workspaceGeneration, graphId)" @ref="canvasView" State="@Canvas" PatchId="@session.GraphId" AutoFitOnFirstRender="@Navigation.IsFirstVisit"
+                 DispatchConnectionAmount="@DispatchConnectionCommand"
                  CanShowScope="@(ScopeSelection is not null || ScopeOpen)" ScopeOpen="@ScopeOpen" OnToggleScope="ToggleScope"
                  OnConnect="@(request => Connect(graphId, request))" OnParameterEdit="@(request => EditParameter(graphId, request))"
                  OnParameterGestureEnded="@(id => CompleteParameterGesture(graphId, id))"

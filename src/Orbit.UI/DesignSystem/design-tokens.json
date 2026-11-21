@@ -179,7 +179,9 @@
       "selected-width": "3px",
       "draft-dash": "6px",
       "badge-max-width": "12rem",
-      "label-select-max-width": "7rem"
+      "label-select-max-width": "7rem",
+      "editor-width": "20rem",
+      "editor-gap": "{semantic.space.normal}"
     },
     "workspace": {
       "max-width": "100%",

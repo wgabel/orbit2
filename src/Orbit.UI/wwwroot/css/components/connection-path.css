@@ -47,3 +47,20 @@
 }
 .connection-label-control select { max-width: var(--component-connection-label-select-max-width); }
 .connection-path.connection-zero .connection-line { opacity: var(--semantic-opacity-disabled); }
+
+/* Only the editor floats above nodes; the badge stays in the world transform. */
+.connection-amount-editor {
+    position: absolute;
+    z-index: 4;
+    width: var(--component-connection-editor-width);
+    margin: var(--component-connection-editor-gap);
+    overflow: auto;
+    overflow-wrap: anywhere;
+    border-color: var(--semantic-color-selected);
+    cursor: default;
+    touch-action: auto;
+    visibility: hidden;
+}
+.connection-amount-editor[data-positioned] { visibility: visible; }
+.connection-amount-editor .workspace-toolbar { align-items: baseline; }
+.connection-amount-editor input { min-width: 0; width: 100%; }
