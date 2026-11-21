@@ -81,7 +81,8 @@ public sealed class FaustGraphCompiler
             if (context.ManualRhythmicInput.HasValue || context.ManualPitchInput)
             {
                 var origin = flattened.Origins[node.Id];
-                actionInputs.Add(($"action_{node.Id:N}", new(origin.GraphId, origin.NodeId, context.ManualRhythmicInput ?? false, context.ManualPitchInput)));
+                actionInputs.Add(($"action_{node.Id:N}", new(origin.GraphId, origin.NodeId, context.ManualRhythmicInput ?? false, context.ManualPitchInput,
+                    Pattern: context.ManualPitchInput ? PitchPattern.FromNode(node) : null)));
                 if (actionInputs.Count > 30) throw new FaustCompilationException("A patch supports at most 30 reachable manual action sources.");
             }
             definitions.Add($"{name} = {expression};");
@@ -142,7 +143,7 @@ public sealed class FaustGraphCompiler
                 Address = control.Address with { NodeId = origin.NodeId } };
         }).ToArray();
         return new FaustGraphProgram(graph.Id, graph.Revision, source, Array.AsReadOnly(manifest))
-            { RequiresTransport = requiresTransportBeat || requiresTransportTempo, TransportInputChannels = transportChannels,
+            { RequiresTransport = requiresTransportBeat || requiresTransportTempo || actionInputs.Any(input => input.Input.Pattern is not null), TransportInputChannels = transportChannels,
                 RhythmicInputs = actionInputs.Select(input => input.Input).ToArray(), AuditionControls = audition.Manifest,
                 SignalTaps = new SignalTapManifest(tapChannels, outputExpressions.Count), EnvelopeMeters = envelopeMeters.AsReadOnly(), PitchMeters = pitchMeters.AsReadOnly() };
     }

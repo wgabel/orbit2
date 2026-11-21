@@ -39,3 +39,24 @@ for (const rate of [44100, 48000]) test(`Live notes latch a shared exact offset 
         for (const at of [rate, rate*2]) assert.ok(Math.abs(signal[at]-signal[at-1]) < 0.02);
     }
 });
+
+for (const rate of [44100, 48000]) test(`Encoded sequence steps glide linearly, hold and retarget at ${rate}`, async () => {
+    const processor = await new FaustMonoDspGenerator().createOfflineProcessor(rate, 128, { ...factory, soundfiles: {} });
+    for (const [name, value] of Object.entries(fixture.values)) processor.setParamValue(processor.getParams().find(p => p.endsWith('/' + name)), value);
+    processor.setParamValue(processor.getParams().find(p => p.endsWith('/' + fixture.glide)), 0.1);
+    const n = Math.ceil(rate / 128) * 128;
+    const action = new Float32Array(n);
+    const ramp = Math.round(rate * .1);
+    action[128] = 256 + 58; // step 1, +12 st
+    action[128 + ramp / 2] = 512; // step 2 Hold does not interrupt glide
+    action[128 + ramp] = 768 + 46; // step 3, unison
+    action[128 + ramp + ramp / 2] = 1024 + 58; // retarget from +6
+    const meters = new Set();
+    processor.setOutputParamHandler((path, value) => { if (path.endsWith('/' + fixture.stepMeter)) meters.add(value); });
+    const pitch = processor.render([action], n)[fixture.pitch];
+    const near = (sample, expected) => assert.ok(Math.abs(pitch[sample] - expected) < .015, `${sample}: ${pitch[sample]} != ${expected}`);
+    near(127, 0); near(128 + ramp / 2 - 1, 6); near(128 + ramp - 1, 12);
+    near(128 + ramp + ramp / 2 - 1, 6);
+    near(128 + ramp * 2 - 1, 9); near(128 + ramp * 3, 12);
+    assert.ok(meters.has(1) && meters.has(2) && meters.has(3) && meters.has(4));
+});

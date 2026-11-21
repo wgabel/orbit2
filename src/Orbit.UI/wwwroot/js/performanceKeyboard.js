@@ -20,8 +20,9 @@ export function mountPerformanceKeyboard(root, receiver, codes) {
         chain = chain.then(() => !disposed && receiver.invokeMethodAsync('ReleasePhysicalKeys')).catch(() => {});
     };
     const down = event => {
+        const stepKey = root.dataset.stepEntry === 'true' && ['Space', 'ArrowLeft', 'ArrowRight'].includes(event.code);
         if (!active() || excluded(event.target) || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey ||
-            !recognized.has(event.code)) return;
+            (!recognized.has(event.code) && !stepKey)) return;
         event.preventDefault();
         event.stopPropagation();
         if (event.repeat || held.has(event.code)) return;

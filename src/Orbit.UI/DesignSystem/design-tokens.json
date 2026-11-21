@@ -198,6 +198,11 @@
       "toolbar-button-block": "{primitive.space.input-block}",
       "toolbar-button-inline": "{primitive.space.md}"
     },
+    "pitch-pattern": {
+      "max-height": "18rem",
+      "numeric-width": "6rem",
+      "step-min-width": "4rem"
+    },
     "canvas": {
       "min-height": "15rem",
       "grid-spacing": "24px",

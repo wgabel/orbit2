@@ -14,6 +14,8 @@ public sealed record GraphParameterTelemetry(Guid GraphId, long Revision,
         = new Dictionary<Guid, IReadOnlyDictionary<Guid, EnvelopePlayhead>>();
     public IReadOnlyDictionary<Guid, IReadOnlyDictionary<Guid, double>> PitchOffsets { get; init; }
         = new Dictionary<Guid, IReadOnlyDictionary<Guid, double>>();
+    public IReadOnlyDictionary<Guid, IReadOnlyDictionary<Guid, int>> PitchSteps { get; init; }
+        = new Dictionary<Guid, IReadOnlyDictionary<Guid, int>>();
 
     public IReadOnlyDictionary<ParameterAddress, double> GetValues(Guid graphId) =>
         graphId == GraphId ? Values : ChildValues.TryGetValue(graphId, out var values)

@@ -50,6 +50,12 @@ public sealed class FaustGraphPlaybackServiceTests
         Assert.Empty(engine.Replacements);
         engine.Outputs = new() { ["/OrbitGraph/" + program.PitchMeters.Single().Name] = 12 };
         Assert.Equal(12, (await service.GetTelemetryAsync(snapshot.Id))!.PitchOffsets[child][sequencer.Id]);
+        session.Execute(new SetPitchPatternStepsCommand(child, sequencer.Id, [82, .. new int[63]]));
+        await service.UpdateAsync(session.Snapshot);
+        Assert.Equal(82, Assert.Single(engine.Patterns).Pattern.Steps[0]);
+        Assert.Empty(engine.Replacements);
+        engine.Outputs["/OrbitGraph/" + program.PitchMeters.Single().StepName] = 1;
+        Assert.Equal(1, (await service.GetTelemetryAsync(snapshot.Id))!.PitchSteps[child][sequencer.Id]);
         var shape = carrier.Parameters.Single(p => p.Definition.Key == "waveform");
         session.Execute(new SetParameterValueCommand(child, new(carrier.Id, shape.Id), 1));
         await service.UpdateAsync(session.Snapshot);
@@ -524,6 +530,12 @@ public sealed class FaustGraphPlaybackServiceTests
         public string? StoppedSound { get; private set; }
         public int PlayCount { get; private set; }
         public List<IReadOnlyDictionary<string, double>> Updates { get; } = [];
+        public List<PitchPatternUpdate> Patterns { get; } = [];
+        public Task<bool> SetGraphControlsAsync(string soundId, IReadOnlyDictionary<string, double> parameters, IReadOnlyList<PitchPatternUpdate> patterns)
+        {
+            Patterns.AddRange(patterns);
+            return SetParametersAsync(soundId, parameters);
+        }
         public List<PlaybackRequest> Replacements { get; } = [];
         public Dictionary<string, double>? Outputs { get; set; }
         public bool AcceptReplacement { get; set; } = true;

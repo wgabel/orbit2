@@ -20,5 +20,7 @@ public sealed class PerformanceKeyboardTests
         Assert.False(NoteSequencerGenerator.IsPlayable(8, 69));
         Assert.True(NoteSequencerGenerator.IsPlayable(9, 69));
         Assert.True(NoteSequencerGenerator.IsPlayable(127, 69));
+        Assert.Equal(9, PerformanceKeyboardLayout.ReferenceOctave(127));
+        Assert.True(PerformanceKeyboardLayout.IsAvailable(9, 127));
     }
 }

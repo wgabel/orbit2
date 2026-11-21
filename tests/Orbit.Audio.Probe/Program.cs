@@ -365,7 +365,9 @@ var keyboardProgram = FaustGraphCompiler.CreateBuiltIn().Compile(keyboardSession
 int KeyTap(GraphNodeSnapshot node) => keyboardProgram.SignalTaps.Channels[new(keyboardGraph, keyboardGraph, node.Id, node.Outputs.Single().Id, PortDirection.Output)];
 File.WriteAllText(Path.Combine(args[0], "keyboard-pitch.json"), JsonSerializer.Serialize(new {
     source = keyboardProgram.Source, values = keyboardProgram.InitialControlValues(), pitch = KeyTap(keyboardSequencer),
-    voices = keyboardVoices.Select(KeyTap).ToArray(), meter = keyboardProgram.PitchMeters.Single().Name
+    voices = keyboardVoices.Select(KeyTap).ToArray(), meter = keyboardProgram.PitchMeters.Single().Name,
+    stepMeter = keyboardProgram.PitchMeters.Single().StepName,
+    glide = keyboardProgram.Controls.Single(c => c.Address.ParameterId == keyboardSequencer.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.GlideKey).Id).Name
 }));
 
 // Direct signal fixture exercises the exact production state machine with sample-accurate

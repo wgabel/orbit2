@@ -22,4 +22,7 @@ public sealed record FaustGraphProgram(
 }
 
 public sealed record FaustEnvelopeMeter(Guid GraphId, Guid NodeId, string Name);
-public sealed record FaustPitchMeter(Guid GraphId, Guid NodeId, string Name);
+public sealed record FaustPitchMeter(Guid GraphId, Guid NodeId, string Name)
+{
+    public string StepName => Name.Replace("pitch_", "step_", StringComparison.Ordinal);
+}

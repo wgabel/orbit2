@@ -117,6 +117,10 @@ public sealed class PatchDocumentSerializer
                             ports.Add(leaf.Inputs.Single(p => p.Id == portId).Key, portId);
                     }
                 }
+                // The live-only sequencer had exactly two controls. New fixed-capacity slots default to Hold.
+                if (leaf is NoteSequencerGenerator && parameters.Count == 2 && parameters.ContainsKey(NoteSequencerGenerator.ReferenceKey) && parameters.ContainsKey(NoteSequencerGenerator.InitialPitchKey))
+                    foreach (var parameter in leaf.Parameters.Where(p => NoteSequencerGenerator.IsPatternParameter(p.Definition.Key)))
+                        parameters.Add(parameter.Definition.Key, (parameter.Id, parameter.BaseValue));
                 leaf.RestoreIdentity(ports, parameters);
                 graph.AddNode(leaf);
             }

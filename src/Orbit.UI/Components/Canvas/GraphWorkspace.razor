@@ -39,7 +39,7 @@ else
     </div>
     @if (PerformanceTarget is { } target)
     {
-        <PerformanceKeyboard @key="(workspaceGeneration, graphId, target.Id, performanceEpoch)" Node="@target" PatchId="@session.GraphId" GraphId="@graphId" Offset="@PerformanceOffset(target.Id)" />
+        <PerformanceKeyboard @key="(workspaceGeneration, graphId, target.Id, performanceEpoch)" Node="@target" PatchId="@session.GraphId" GraphId="@graphId" Offset="@PerformanceOffset(target.Id)" Playhead="@PerformanceStep(target.Id)" Tempo="@tempo" Edit="@(request => EditParameter(graphId, request))" ClearPattern="@(() => ClearPitchPattern(graphId, target.Id))" />
     }
     @if (Error is not null)
     {
