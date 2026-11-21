@@ -288,6 +288,33 @@ public partial class GraphCanvas : IAsyncDisposable
         FitMeasured();
     }
 
+    /// <summary>Measure at Add time, including resizes and scrolling not associated with graph edits.
+    /// The reservation is consumed by the next synchronous node-add commit on this canvas.</summary>
+    public async Task<IDisposable?> ReserveVisibleNodePlacementAsync()
+    {
+        if (module is null || disposed) return null;
+        var state = State;
+        var snapshot = state.Snapshot;
+        var result = await module.InvokeAsync<CanvasMeasurement>("measureCanvas", viewportElement, snapshot.Viewport.Zoom);
+        if (disposed || !ReferenceEquals(State, state) || snapshot != state.Snapshot) return null;
+
+        var screen = result.VisibleScreenBounds.IsValid ? result.VisibleScreenBounds :
+            new CanvasBounds(0, 0, result.Width, result.Height);
+        if (!screen.IsValid) return null;
+
+        // Keep a small screen-space inset even when zoomed in or on a narrow screen.
+        var padding = Math.Min(24, Math.Min(screen.Width, screen.Height) / 8);
+        var start = snapshot.Viewport.ScreenToWorld(new CanvasPoint(screen.Left + padding, screen.Top + padding));
+        var end = snapshot.Viewport.ScreenToWorld(new CanvasPoint(screen.Right - padding, screen.Bottom - padding));
+        var occupied = result.Nodes.Where(node => snapshot.NodePositions.ContainsKey(node.NodeId))
+            .Select(node =>
+            {
+                var position = snapshot.NodePositions[node.NodeId];
+                return new CanvasBounds(position.X, position.Y, position.X + node.Width, position.Y + node.Height);
+            });
+        return state.ReserveVisibleNodePlacement(new CanvasBounds(start.X, start.Y, end.X, end.Y), occupied);
+    }
+
     private void FitMeasured()
     {
         if (measurement is null || measurement.Width <= 0 || measurement.Height <= 0) return;

@@ -68,4 +68,39 @@ public sealed class CanvasViewportTests
             CanvasPoint.Zero, new CanvasPoint(100, 0)]));
         Assert.Equal(new CanvasPoint(0, 80), placement.FindPosition([new CanvasPoint(50, 0)]));
     }
+
+    [Theory]
+    [InlineData(-1800, -900, 0.5)]
+    [InlineData(1700, 800, 2)]
+    [InlineData(-4300, 3000, 4)]
+    public void PlacesInsideTheCurrentPannedZoomedView(double panX, double panY, double zoom)
+    {
+        var viewport = new CanvasViewport(new CanvasPoint(panX, panY), zoom);
+        var topLeft = viewport.ScreenToWorld(new CanvasPoint(24, 24));
+        var bottomRight = viewport.ScreenToWorld(new CanvasPoint(776, 576));
+        var visible = new CanvasBounds(topLeft.X, topLeft.Y, bottomRight.X, bottomRight.Y);
+        var policy = new GridNodePlacementPolicy(columnSpacing: 320, rowSpacing: 360);
+
+        var position = policy.FindVisiblePosition(visible, [new CanvasBounds(0, 0, 240, 320)]);
+        var screen = viewport.WorldToScreen(position);
+        Assert.InRange(screen.X, 24 - 1e-8, 776 + 1e-8);
+        Assert.InRange(screen.Y, 24 - 1e-8, 576 + 1e-8);
+        Assert.NotEqual(CanvasPoint.Zero, position);
+    }
+
+    [Fact]
+    public void VisiblePlacementPrefersFreeSpaceAndStaysVisibleWhenCrowded()
+    {
+        var policy = new GridNodePlacementPolicy(columnSpacing: 100, rowSpacing: 80);
+        var visible = new CanvasBounds(1000, 2000, 1400, 2240);
+        var center = policy.FindVisiblePosition(visible, []);
+        Assert.Equal(new CanvasPoint(1150, 2080), center);
+        var occupied = new CanvasBounds(center.X, center.Y, center.X + 100, center.Y + 80);
+        var next = policy.FindVisiblePosition(visible, [occupied]);
+        Assert.True(next.X + 100 <= occupied.Left || next.X >= occupied.Right ||
+            next.Y + 80 <= occupied.Top || next.Y >= occupied.Bottom);
+
+        var tiny = new CanvasBounds(-800, -600, -770, -570);
+        Assert.Equal(new CanvasPoint(tiny.Left, tiny.Top), policy.FindVisiblePosition(tiny, [tiny]));
+    }
 }

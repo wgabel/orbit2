@@ -637,6 +637,21 @@ The presentation-state library is `Orbit.Presentation` (a plain .NET class libra
 
 `CanvasStateService` subscribes to unfiltered patch `GraphChangeSet` notifications and resolves its own graph from the final immutable root snapshot. A configurable `INodePlacementPolicy` supplies initial positions (default: a three-column grid). Existing positions are preserved, removed nodes and their incident connections are cleared from selection, and each active canvas emits one update per patch commit. New placements and selection cleanup increment the layout revision; a parameter-only graph change does not. Removing an ancestor composite invalidates descendant canvases, which emit `GraphRemoved` and reject local edits while retaining their last read-only snapshot for navigation.
 
+**Interactive node placement.** The shared canvas measures its current visible screen rectangle (including page clipping) and existing frame sizes at Add time. `CanvasViewport.ScreenToWorld` converts that rectangle to world bounds; `GridNodePlacementPolicy.FindVisiblePosition` searches a bounded set of positions, minimizing overlap for an estimated grid-slot footprint and preferring the center on ties. If there is insufficient space or the zoomed node is larger than the viewport, its header begins inside the visible area and overlap is allowed. Initial/unmeasured layouts still use the deterministic origin grid. The active canvas reserves the proposed placement only for the synchronous `AddNodeCommand`; reconciliation consumes it for the matching `NodeAdded` fact, publishing the committed graph and position together. A rejected command or stale canvas measurement leaves no pending placement. Undo/redo uses existing removed-position restoration, and ordinary persistence stores the resulting world coordinates, not measurements or reservations. No browser geometry enters Domain, graph commands or audio; existing positions and viewport stay unchanged.
+
+~~~mermaid
+sequenceDiagram
+    participant W as Workspace
+    participant C as Canvas
+    participant L as Layout state
+    participant S as Patch session
+    W->>C: Measure visible area
+    C->>L: Reserve world position
+    W->>S: AddNodeCommand
+    S->>L: Committed NodeAdded
+    L-->>C: Snapshot with new position
+~~~
+
 ~~~mermaid
 flowchart TD
     Command["Graph command"] --> Commit["PatchSession commit"]

@@ -5,6 +5,7 @@ public interface ICanvasStateService : IDisposable
 {
     CanvasStateSnapshot Snapshot { get; }
     IDisposable Subscribe(Action<CanvasStateChange> handler);
+    IDisposable ReserveVisibleNodePlacement(CanvasBounds visibleBounds, IEnumerable<CanvasBounds> occupiedBounds);
     CanvasChangeResult MoveNode(Guid nodeId, CanvasPoint worldPosition);
     CanvasChangeResult MoveNodeByScreenDelta(Guid nodeId, CanvasPoint screenDelta);
     CanvasChangeResult SelectNode(Guid nodeId, bool additive = false);

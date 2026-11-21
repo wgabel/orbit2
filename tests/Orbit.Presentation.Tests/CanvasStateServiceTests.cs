@@ -46,6 +46,45 @@ public sealed class CanvasStateServiceTests
     }
 
     [Fact]
+    public void InteractivePlacementCommitsOnceAndUndoRedoRetainsThePosition()
+    {
+        using var session = NewSession();
+        var existing = AddNode(session, MasterOutput.NodeType);
+        using var canvas = new CanvasStateService(session);
+        canvas.PanBy(new CanvasPoint(-1000, -800));
+        var visible = new CanvasBounds(1000, 800, 1700, 1300);
+        var before = canvas.Snapshot;
+        var changes = new List<CanvasStateChange>();
+        using var observer = canvas.Subscribe(changes.Add);
+        GraphNodeSnapshot added;
+        using (canvas.ReserveVisibleNodePlacement(visible, []))
+            added = AddNode(session, OscillatorGenerator.NodeType);
+        var after = Assert.Single(changes).Snapshot;
+        Assert.Equal(before.LayoutRevision + 1, after.LayoutRevision);
+        Assert.Equal(before.Viewport, after.Viewport);
+        Assert.Equal(before.NodePositions[existing.Id], after.NodePositions[existing.Id]);
+        var position = after.NodePositions[added.Id];
+        Assert.InRange(position.X, visible.Left, visible.Right);
+        Assert.InRange(position.Y, visible.Top, visible.Bottom);
+
+        session.Undo();
+        canvas.PanBy(new CanvasPoint(4000, 4000));
+        session.Redo();
+        Assert.Equal(position, canvas.Snapshot.NodePositions[added.Id]);
+    }
+
+    [Fact]
+    public void RejectedAddDoesNotLeakItsReservedPlacementIntoLaterCommands()
+    {
+        using var session = NewSession();
+        using var canvas = new CanvasStateService(session);
+        using (canvas.ReserveVisibleNodePlacement(new CanvasBounds(2000, 3000, 2800, 3600), []))
+            Assert.Throws<KeyNotFoundException>(() => AddNode(session, "unknown"));
+        var added = AddNode(session, OscillatorGenerator.NodeType);
+        Assert.Equal(CanvasPoint.Zero, canvas.Snapshot.NodePositions[added.Id]);
+    }
+
+    [Fact]
     public void LayoutOnlyEditsNeverPublishGraphEventsOrChangeGraphRevision()
     {
         using var session = NewSession();

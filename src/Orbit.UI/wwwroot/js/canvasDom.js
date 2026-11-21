@@ -31,7 +31,18 @@ export function measureCanvas(viewport, zoom) {
             });
         }
     }
-    return { width: bounds.width, height: bounds.height, nodes, ports };
+    // Measure the part of the canvas actually on screen as well as its full
+    // size (the latter is still used for Fit). Coordinates are canvas-local.
+    const view = window.visualViewport;
+    const left = view?.offsetLeft ?? 0;
+    const top = view?.offsetTop ?? 0;
+    const visibleScreenBounds = {
+        left: Math.max(0, left - bounds.left),
+        top: Math.max(0, top - bounds.top),
+        right: Math.min(bounds.width, left + (view?.width ?? window.innerWidth) - bounds.left),
+        bottom: Math.min(bounds.height, top + (view?.height ?? window.innerHeight) - bounds.top)
+    };
+    return { width: bounds.width, height: bounds.height, nodes, ports, visibleScreenBounds };
 }
 
 export function findInputPortAt(viewport, clientX, clientY) {

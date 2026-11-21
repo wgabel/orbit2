@@ -677,6 +677,51 @@ try {
     assert.equal(await rootPreset.inputValue(), "");
     assert.ok(requests.has(`/_content/Orbit.Infrastructure/persistence-${version}/patchStorage.js`));
     assert.ok([...requests].every(path => !path.startsWith("/_content/Orbit.Infrastructure/persistence/")));
+    // Interactive additions use the current viewport, not the origin grid.
+    // Pan the real canvas far beyond the existing nodes on both graph levels.
+    const addInPannedView = async (type, delta) => {
+        const world = page.locator(".canvas-world");
+        const oldTransform = await world.getAttribute("style");
+        const view = await viewport.boundingBox();
+        const pointer = { pointerId: 77, pointerType: "mouse", button: 1, buttons: 4,
+            clientX: view.x + 30, clientY: view.y + 30 };
+        await viewport.dispatchEvent("pointerdown", pointer);
+        await viewport.dispatchEvent("pointermove", { ...pointer, clientX: pointer.clientX + delta, clientY: pointer.clientY + delta });
+        await viewport.dispatchEvent("pointerup", { ...pointer, buttons: 0 });
+        await page.waitForFunction(previous => document.querySelector(".canvas-world").getAttribute("style") !== previous, oldTransform);
+        await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+        await page.locator("#node-type").selectOption(type);
+        const transform = await world.getAttribute("style");
+        const existing = await articles.evaluateAll(nodes => Object.fromEntries(nodes.map(node => [node.dataset.nodeId, node.getAttribute("style")])));
+        const count = await articles.count();
+        await page.getByRole("button", { name: "Add", exact: true }).click();
+        const added = articles.nth(count);
+        await added.waitFor();
+        assert.equal(await world.getAttribute("style"), transform, "Adding must not pan or zoom the canvas");
+        const result = await added.evaluate(node => {
+            const header = node.querySelector(".node-header").getBoundingClientRect();
+            const canvas = node.closest(".canvas-viewport").getBoundingClientRect();
+            return { x: header.left, y: header.top, canvasLeft: Math.max(0, canvas.left), canvasTop: Math.max(0, canvas.top),
+                canvasRight: Math.min(innerWidth, canvas.right), canvasBottom: Math.min(innerHeight, canvas.bottom) };
+        });
+        assert.ok(result.x >= result.canvasLeft && result.x < result.canvasRight &&
+            result.y >= result.canvasTop && result.y < result.canvasBottom, `New node header outside view: ${JSON.stringify(result)}`);
+        assert.deepEqual(await articles.evaluateAll((nodes, ids) => Object.fromEntries(nodes.filter(node => ids.includes(node.dataset.nodeId))
+            .map(node => [node.dataset.nodeId, node.getAttribute("style")])), Object.keys(existing)), existing);
+        const id = await added.getAttribute("data-node-id");
+        const position = await added.getAttribute("style");
+        await undoButton.click();
+        await page.locator(`[data-node-id='${id}']`).waitFor({ state: "detached" });
+        await redoButton.click();
+        const restored = page.locator(`[data-node-id='${id}']`);
+        await restored.waitFor();
+        assert.equal(await restored.getAttribute("style"), position, "Redo restores the original world placement");
+        return restored;
+    };
+    const newDrone = await addInPannedView("composite.graph", -3200);
+    await newDrone.getByRole("button", { name: "Open Drone" }).click();
+    await viewport.getByText("4 nodes · 4 connections", { exact: true }).waitFor();
+    await addInPannedView("generator.noise", 3200);
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {
     await browser?.close();

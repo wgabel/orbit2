@@ -54,6 +54,7 @@ public partial class GraphWorkspace : IDisposable
     private GraphPlaybackControls? playbackControls;
     private long workspaceGeneration;
     private bool switchingWorkspace;
+    private bool addingNode;
     private static readonly GridNodePlacementPolicy Placement = new(columnSpacing: 320, rowSpacing: 360, columns: 4);
     private NodeRegistry catalog = default!;
     private IEnumerable<string> RegisteredTypes => catalog.RegisteredTypes.Where(type =>
@@ -289,7 +290,26 @@ public partial class GraphWorkspace : IDisposable
         return error;
     }
 
-    private void AddNode() => Execute(new AddNodeCommand(Canvas.Snapshot.GraphId, SelectedType));
+    private async Task AddNodeAsync()
+    {
+        if (switchingWorkspace || addingNode || canvasView is null) return;
+        var canvas = Canvas;
+        var type = SelectedType;
+        addingNode = true;
+        try
+        {
+            using var placement = await canvasView.ReserveVisibleNodePlacementAsync();
+            if (disposed || switchingWorkspace || !ReferenceEquals(Canvas, canvas)) return;
+            if (placement is null)
+            {
+                Error = "The canvas view changed. Try adding the node again.";
+                return;
+            }
+            Execute(new AddNodeCommand(canvas.Snapshot.GraphId, type));
+        }
+        catch (Exception exception) { Error = exception.Message; }
+        finally { addingNode = false; }
+    }
 
     private void Undo() => RestoreHistory(session.Undo);
     private void Redo() => RestoreHistory(session.Redo);

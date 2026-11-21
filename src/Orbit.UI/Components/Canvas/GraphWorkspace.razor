@@ -32,7 +32,7 @@ else
                 <option value="@type">@DescribeType(type)</option>
             }
         </select>
-        <button type="button" @onclick="AddNode">Add</button>
+        <button type="button" disabled="@(addingNode || switchingWorkspace)" @onclick="AddNodeAsync">Add</button>
         <button type="button" class="secondary" disabled="@(!HasSelection)" @onclick="DeleteSelection">Delete selected</button>
         </div>
         <GraphPlaybackControls @key="workspaceGeneration" @ref="playbackControls" Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" TempoChanged="OnTempoChanged" Disabled="switchingWorkspace" />

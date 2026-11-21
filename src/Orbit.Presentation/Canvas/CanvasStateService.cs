@@ -20,6 +20,7 @@ public sealed class CanvasStateService : ICanvasStateService
     private readonly IDisposable graphSubscription;
     private readonly Queue<CanvasStateChange> pendingNotifications = new();
     private readonly Dictionary<Guid, CanvasPoint> removedPositions = [];
+    private NodePlacementReservation? nextPlacement;
     private CanvasStateSnapshot snapshot;
     private bool publishing;
     private bool disposed;
@@ -57,6 +58,16 @@ public sealed class CanvasStateService : ICanvasStateService
     {
         ObjectDisposedException.ThrowIf(disposed, this);
         return notifications.Subscribe(handler);
+    }
+
+    /// <summary>Reserve one interactive addition's layout without coupling the graph command
+    /// to viewport geometry. Dispose the reservation even if the command is rejected.</summary>
+    public IDisposable ReserveVisibleNodePlacement(CanvasBounds visibleBounds, IEnumerable<CanvasBounds> occupiedBounds)
+    {
+        EnsureEditable();
+        if (nextPlacement is not null) throw new InvalidOperationException("A node placement is already reserved.");
+        return nextPlacement = new NodePlacementReservation(this,
+            placement.FindVisiblePosition(visibleBounds, occupiedBounds).RequireFinite("placement"));
     }
 
     public CanvasChangeResult MoveNode(Guid nodeId, CanvasPoint worldPosition)
@@ -147,7 +158,17 @@ public sealed class CanvasStateService : ICanvasStateService
         while (removedPositions.Count > 512) removedPositions.Remove(removedPositions.Keys.First());
         foreach (var node in graph.Nodes)
             if (!positions.ContainsKey(node.Id))
-                positions.Add(node.Id, removedPositions.Remove(node.Id, out var restored) ? restored : PlaceNode(positions));
+            {
+                if (removedPositions.Remove(node.Id, out var restored))
+                    positions.Add(node.Id, restored);
+                else if (nextPlacement is { } reserved && change.Events.OfType<NodeAdded>()
+                    .Any(added => added.GraphId == graph.Id && added.Node.Id == node.Id))
+                {
+                    positions.Add(node.Id, reserved.Position);
+                    nextPlacement = null;
+                }
+                else positions.Add(node.Id, PlaceNode(positions));
+            }
 
         var selectedNodes = snapshot.SelectedNodeIds.Where(nodeIds.Contains).ToArray();
         var selectedConnections = snapshot.SelectedConnectionIds.Where(connectionIds.Contains).ToArray();
@@ -233,6 +254,15 @@ public sealed class CanvasStateService : ICanvasStateService
 
     private CanvasPoint PlaceNode(Dictionary<Guid, CanvasPoint> positions) =>
         placement.FindPosition(positions.Values).RequireFinite("placement");
+
+    private sealed class NodePlacementReservation(CanvasStateService owner, CanvasPoint position) : IDisposable
+    {
+        public CanvasPoint Position { get; } = position;
+        public void Dispose()
+        {
+            if (ReferenceEquals(owner.nextPlacement, this)) owner.nextPlacement = null;
+        }
+    }
 
     private static IReadOnlyDictionary<Guid, CanvasPoint> Freeze(Dictionary<Guid, CanvasPoint> positions) =>
         new ReadOnlyDictionary<Guid, CanvasPoint>(positions);

@@ -371,7 +371,7 @@ flowchart TD
 | --- | --- |
 | `CanvasPoint` | Finite world/screen coordinate at the service boundary |
 | `CanvasViewport` | Pan, zoom, pointer-anchored coordinate conversion |
-| `INodePlacementPolicy` / `GridNodePlacementPolicy` | Initial nonoverlapping grid positions for new nodes |
+| `INodePlacementPolicy` / `GridNodePlacementPolicy` | Initial grid layout and visible-area placement for interactive node additions |
 | `ICanvasStateService` / `CanvasStateService` | Reconcile committed graph edits; manage layout and selection |
 | `CanvasStateSnapshot` | Immutable graph snapshot plus layout revision, positions, viewport and selection |
 | `CanvasStateChange` | Local notification with the consistent final presentation snapshot |
@@ -406,6 +406,7 @@ This foundation is tested independently of Blazor. The first visible graph edito
 The application opens a persistent editable patch session with the initial modulation topology (LFO → sine generator → gain → output). The editor uses the existing domain registry; add nodes, delete selected nodes or wires, and edit the base values using the shared ParameterSlider. These changes commit graph revisions, not audio events.
 
 - Drag a node header to move it. Drag empty background or middle-drag a node header to pan.
+- **Add** places the new node inside the current visible canvas, preferring an unoccupied area. It does not move other nodes or change the viewport; undo/redo restores the original placement. This also works in nested drone canvases and when zoomed in.
 - Wheel zoom is anchored at the pointer; the toolbar shows the current zoom, zoom buttons, reset and fit-to-content.
 - Begin from an output and drag to an input, or click the output then click an input. Escape cancels. The existing domain validation rejects incompatible, duplicate or cyclic edges.
 - Nodes use role-colored frames and typed port shapes. A generator feeding only modulation inputs is visually an LFO; no different DSP type is required.
