@@ -3,7 +3,7 @@
 <div class="signal-scope @(Compact ? "scope-compact" : "")" data-configured-mode="@Settings.Mode" @ref="root">
     <div class="scope-controls workspace-toolbar">
         <label>View
-            <select data-analysis-mode aria-label="Analysis view" value="@Settings.Mode" @onchange="ChangeMode">
+            <select data-analysis-mode aria-label="Analysis view" value="@Settings.Mode">
                 <option value="waveform">Waveform</option>
                 <option value="spectrum">Spectrum</option>
                 <option value="level">Level</option>
@@ -12,7 +12,7 @@
     </div>
     <div class="scope-controls workspace-toolbar" data-waveform-controls>
         <label>Timebase
-            <select data-timebase aria-label="Scope timebase" value="@Settings.Timebase" @onchange="ChangeTimebase">
+            <select data-timebase aria-label="Scope timebase" value="@Settings.Timebase">
                 <option value="0.005">5 ms</option>
                 <option value="0.02">20 ms</option>
                 <option value="0.05">50 ms</option>
@@ -22,7 +22,7 @@
             </select>
         </label>
         <label>Trigger
-            <select data-trigger aria-label="Scope trigger" value="@Settings.Trigger" @onchange="ChangeTrigger">
+            <select data-trigger aria-label="Scope trigger" value="@Settings.Trigger">
                 <option value="free">Free</option>
                 <option value="rising">Rising zero</option>
                 <option value="falling">Falling zero</option>
@@ -31,7 +31,7 @@
     </div>
     <div class="scope-controls workspace-toolbar" data-spectrum-controls hidden>
         <label>FFT
-            <select data-fft-size aria-label="FFT resolution" value="@Settings.FftSize" @onchange="ChangeFftSize">
+            <select data-fft-size aria-label="FFT resolution" value="@Settings.FftSize">
                 <option value="1024">1,024</option>
                 <option value="2048">2,048</option>
                 <option value="4096">4,096</option>
@@ -39,13 +39,13 @@
             </select>
         </label>
         <label>Window
-            <select data-fft-window aria-label="FFT window" value="@Settings.Window" @onchange="ChangeWindow">
+            <select data-fft-window aria-label="FFT window" value="@Settings.Window">
                 <option value="hann">Hann</option>
                 <option value="rectangular">Rectangular</option>
             </select>
         </label>
         <label>Smoothing
-            <select data-fft-smoothing aria-label="Spectrum smoothing" value="@Settings.Smoothing" @onchange="ChangeSmoothing">
+            <select data-fft-smoothing aria-label="Spectrum smoothing" value="@Settings.Smoothing">
                 <option value="0">Off</option>
                 <option value="0.15">Fast</option>
                 <option value="0.5">Slow</option>

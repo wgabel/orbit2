@@ -17,12 +17,15 @@ public partial class SignalScope : IAsyncDisposable
     [Parameter, EditorRequired] public NodeVisualizationSettings Settings { get; set; } = NodeVisualizationSettings.Default;
     [Parameter] public EventCallback<NodeVisualizationSettings> SettingsChanged { get; set; }
 
-    private Task ChangeMode(ChangeEventArgs args) => SettingsChanged.InvokeAsync(Settings with { Mode = args.Value?.ToString() ?? Settings.Mode });
-    private Task ChangeTimebase(ChangeEventArgs args) => SettingsChanged.InvokeAsync(Settings with { Timebase = args.Value?.ToString() ?? Settings.Timebase });
-    private Task ChangeTrigger(ChangeEventArgs args) => SettingsChanged.InvokeAsync(Settings with { Trigger = args.Value?.ToString() ?? Settings.Trigger });
-    private Task ChangeFftSize(ChangeEventArgs args) => SettingsChanged.InvokeAsync(Settings with { FftSize = args.Value?.ToString() ?? Settings.FftSize });
-    private Task ChangeWindow(ChangeEventArgs args) => SettingsChanged.InvokeAsync(Settings with { Window = args.Value?.ToString() ?? Settings.Window });
-    private Task ChangeSmoothing(ChangeEventArgs args) => SettingsChanged.InvokeAsync(Settings with { Smoothing = args.Value?.ToString() ?? Settings.Smoothing });
+    // The browser owns these native controls together with the live renderer.
+    // Forward edits explicitly rather than combining DOM-owned and Blazor-owned change handlers.
+    [JSInvokable]
+    public Task ChangeSettings(string mode, string timebase, string trigger, string fftSize, string window, string smoothing) =>
+        InvokeAsync(() => disposed ? Task.CompletedTask : SettingsChanged.InvokeAsync(Settings with
+        {
+            Mode = mode, Timebase = timebase, Trigger = trigger, FftSize = fftSize,
+            Window = window, Smoothing = smoothing
+        }));
 
     private ElementReference root;
     private IJSObjectReference? module;

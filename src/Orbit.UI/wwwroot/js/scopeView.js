@@ -44,7 +44,7 @@ class ScopeView {
         this.#fftSize.value = settings.fftSize;
         this.#fftWindow.value = settings.window;
         this.#fftSmoothing.value = settings.smoothing;
-        this.#mode.addEventListener("change", this.#modeChanged);
+        this.#root.addEventListener("change", this.#settingsChanged);
         this.#modeChanged();
         this.#observer = new IntersectionObserver(entries => {
             this.#visible = entries[0].isIntersecting;
@@ -54,6 +54,15 @@ class ScopeView {
         document.addEventListener("visibilitychange", this.#visibilityChanged);
         this.#visibilityChanged();
     }
+
+    #settingsChanged = event => {
+        if (event.target === this.#mode) this.#modeChanged();
+        else if (![this.#timebase, this.#trigger, this.#fftSize, this.#fftWindow, this.#fftSmoothing].includes(event.target)) return;
+        // One coherent configuration snapshot, including rapid consecutive changes.
+        this.#resolver.invokeMethodAsync("ChangeSettings", this.#mode.value, this.#timebase.value,
+            this.#trigger.value, this.#fftSize.value, this.#fftWindow.value, this.#fftSmoothing.value)
+            .catch(error => { if (!this.#disposed) console.error("Scope settings update failed", error); });
+    };
 
     #modeChanged = () => {
         const spectrum = this.#mode.value === "spectrum";
@@ -242,7 +251,7 @@ class ScopeView {
         this.#disposed = true;
         cancelAnimationFrame(this.#animation);
         this.#observer.disconnect();
-        this.#mode.removeEventListener("change", this.#modeChanged);
+        this.#root.removeEventListener("change", this.#settingsChanged);
         document.removeEventListener("visibilitychange", this.#visibilityChanged);
         this.#release();
     }
