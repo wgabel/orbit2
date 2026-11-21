@@ -456,14 +456,14 @@ try {
     await compact.getByRole("button", { name: "Hide plot" }).click();
     await compact.locator("canvas").waitFor({ state: "detached" });
     await page.getByRole("button", { name: "Fit", exact: true }).click();
-    // Select the existing modulation wire, edit depth and retain its identity.
+    // Select the existing modulation wire via its keyboard-accessible badge,
+    // even if a node covers it, then edit depth and retain its identity.
     const wire = page.locator(".connection-modulation .connection-hit");
-    await wire.scrollIntoViewIfNeeded();
-    const position = await wire.evaluate(path => {
-        const point = path.getPointAtLength(path.getTotalLength() / 2).matrixTransform(path.getScreenCTM());
-        return { x: point.x, y: point.y };
-    });
-    await page.mouse.click(position.x, position.y);
+    const labelMode = page.getByRole("combobox", { name: "Connection labels" });
+    const badges = page.locator(".connection-amount-badge");
+    assert.equal(await labelMode.inputValue(), "All");
+    await badges.filter({ hasText: /^\+100 Hz$/ }).press("Enter");
+    await page.locator(".connection-modulation.connection-selected").waitFor({ state: "attached" });
     const amountEditor = page.getByRole("region", { name: "Connection amount editor" });
     const amount = amountEditor.getByRole("spinbutton", { name: "Modulation depth (Hz)" });
     await amount.waitFor();
@@ -476,15 +476,18 @@ try {
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
     await predictedFrequency.filter({ hasText: "415–465 Hz" }).waitFor();
+    await badges.filter({ hasText: /^\+25 Hz$/ }).waitFor({ state: "attached" });
     // History is a fresh committed revision even while the worklet is running.
     await page.getByRole("button", { name: "Undo", exact: true }).click();
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
     await predictedFrequency.filter({ hasText: "340–540 Hz" }).waitFor();
+    await badges.filter({ hasText: /^\+100 Hz$/ }).waitFor({ state: "attached" });
     await page.getByRole("button", { name: "Redo", exact: true }).click();
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
     await predictedFrequency.filter({ hasText: "415–465 Hz" }).waitFor();
+    await badges.filter({ hasText: /^\+25 Hz$/ }).waitFor({ state: "attached" });
     await marker.waitFor({ timeout: 10000 });
     assert.equal(await wire.count(), 1);
     assert.equal(await play.isEnabled(), false);
@@ -533,6 +536,11 @@ try {
     // Unconnected nodes do not require a new worklet.
     await page.getByRole("button", { name: "Add", exact: true }).click();
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 2}$`) }).waitFor({ timeout: 10000 });
+    // With badges hidden, the cable itself must still be selectable. A badge
+    // may otherwise cover the only exposed part of a short wire.
+    await labelMode.selectOption("Off");
+    await badges.first().waitFor({ state: "detached" });
+    assert.equal(await status.innerText(), `Playing revision ${initialRevision + 2}`);
     // Wires run underneath node frames; viewport-aware placement may put a
     // frame over the midpoint without hiding other parts of the cable.
     const selectVisibleWire = async target => {
@@ -593,6 +601,8 @@ try {
     await drone.getByRole("button", { name: "Open Drone" }).click();
     const breadcrumbs = page.getByRole("navigation", { name: "Canvas path" });
     await breadcrumbs.getByText("Drone", { exact: true }).waitFor();
+    assert.equal(await labelMode.inputValue(), "All", "New nested canvas has its own label preference");
+    await labelMode.selectOption("Modified");
     assert.equal(await tempo.inputValue(), "90");
     await transportState.filter({ hasText: "Running" }).waitFor();
     assert.ok(Number(await beat.innerText()) >= Number(frozenBeat));
@@ -623,9 +633,11 @@ try {
     const childTransform = await page.locator(".canvas-world").getAttribute("style");
     await breadcrumbs.getByRole("button", { name: "Patch" }).click();
     await page.locator(".node-role-composite").getByRole("button", { name: "Open Drone" }).waitFor();
+    assert.equal(await labelMode.inputValue(), "Off", "Root label preference survives navigation");
     assert.equal(await page.locator(".canvas-world").getAttribute("style"), rootTransform);
     await page.locator(".node-role-composite").getByRole("button", { name: "Open Drone" }).click();
     await childFrequency.waitFor();
+    assert.equal(await labelMode.inputValue(), "Modified", "Child label preference survives navigation");
     assert.equal(await page.locator(".canvas-world").getAttribute("style"), childTransform);
     assert.equal(await childFrequency.inputValue(), "330");
     assert.equal(await play.isEnabled(), false);
@@ -745,6 +757,7 @@ try {
     assert.equal(await childFrequency.inputValue(), "330");
     assert.equal(await tempo.inputValue(), "90");
     assert.equal(await page.locator(".canvas-world").getAttribute("style"), savedTransform);
+    assert.equal(await labelMode.inputValue(), "Modified", "Child label preference survives reload");
     await rack.getByRole("button", { name: "Output: Cutoff (Modulation)" }).waitFor();
     assert.equal(await play.isEnabled(), true);
     // The same custom configuration remains available on reload and in a nested graph.

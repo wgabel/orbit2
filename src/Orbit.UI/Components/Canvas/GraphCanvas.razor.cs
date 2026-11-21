@@ -35,13 +35,16 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();
 
     private ElementReference viewportElement;
-    private ConnectionLabelMode labelMode = ConnectionLabelMode.All;
-    private ConnectionLabelMode LabelMode { get => labelMode; set => labelMode = value; }
-    private bool ShowBadge(ConnectionVisual wire) => labelMode switch
+    private Orbit.Application.Persistence.ConnectionLabelMode LabelMode
     {
-        ConnectionLabelMode.Off => false,
-        ConnectionLabelMode.Selected => wire.Selected,
-        ConnectionLabelMode.Modified => wire.Selected || wire.Amount != 1,
+        get => Snapshot.ConnectionLabels;
+        set => State.SetConnectionLabels(value);
+    }
+    private bool ShowBadge(ConnectionVisual wire) => LabelMode switch
+    {
+        Orbit.Application.Persistence.ConnectionLabelMode.Off => false,
+        Orbit.Application.Persistence.ConnectionLabelMode.Selected => wire.Selected,
+        Orbit.Application.Persistence.ConnectionLabelMode.Modified => wire.Selected || wire.Amount != 1,
         _ => true
     };
 

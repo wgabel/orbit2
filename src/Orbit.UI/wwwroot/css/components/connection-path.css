@@ -10,14 +10,13 @@
 .connection-selected .connection-line { stroke: var(--semantic-color-selected); stroke-width: var(--component-connection-selected-width); }
 .connection-draft { stroke: var(--semantic-color-selected); stroke-dasharray: var(--component-connection-draft-dash); }
 
-/* Badge lives in the transformed world; inverse scaling keeps text and hit targets readable. */
+/* Badge lives above its wire but below later-painted node frames; inverse scaling keeps text readable. */
 .connection-amount-badge {
     position: absolute;
-    z-index: 2;
     pointer-events: auto;
     transform-origin: center;
     white-space: nowrap;
-    max-width: 12rem;
+    max-width: var(--component-connection-badge-max-width);
     overflow: hidden;
     text-overflow: ellipsis;
     padding: var(--semantic-space-tight) var(--semantic-space-compact);
@@ -32,7 +31,7 @@
 .connection-amount-badge.is-selected { border-color: var(--semantic-color-selected); }
 .connection-amount-badge.is-zero, .connection-amount-badge.is-dormant { opacity: var(--semantic-opacity-disabled); }
 .connection-amount-badge:focus-visible { outline: var(--semantic-border-focus-width) solid var(--semantic-color-selected); }
-.connection-badge-inactive { font-size: 0.85em; }
+.connection-badge-inactive { font-size: var(--semantic-typography-caption); }
 .connection-label-control {
     position: absolute;
     z-index: 3;
@@ -46,5 +45,5 @@
     border-radius: var(--semantic-radius-control);
     font-size: var(--semantic-typography-caption);
 }
-.connection-label-control select { max-width: 7rem; }
+.connection-label-control select { max-width: var(--component-connection-label-select-max-width); }
 .connection-path.connection-zero .connection-line { opacity: var(--semantic-opacity-disabled); }

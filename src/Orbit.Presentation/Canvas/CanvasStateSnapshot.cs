@@ -14,6 +14,7 @@ public sealed record CanvasStateSnapshot(
     IReadOnlyList<Guid> SelectedNodeIds,
     IReadOnlyList<Guid> SelectedConnectionIds)
 {
+    public ConnectionLabelMode ConnectionLabels { get; init; } = ConnectionLabelMode.All;
     public Guid GraphId => Graph.Id;
     public long GraphRevision => Graph.Revision;
     public IReadOnlyDictionary<Guid, NodeVisualizationSettings> Visualizations { get; init; } =

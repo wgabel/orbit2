@@ -9,6 +9,7 @@ using Orbit.Domain.Nodes.Processors;
 using Orbit.Domain.Parameters;
 using Orbit.Domain.Ports;
 using Orbit.Presentation.Canvas;
+using Orbit.Application.Persistence;
 using Xunit;
 
 namespace Orbit.Presentation.Tests;
@@ -16,6 +17,26 @@ namespace Orbit.Presentation.Tests;
 /// <summary>Layout writes never mutate the graph, and graph commits reconcile presentation.</summary>
 public sealed class CanvasStateServiceTests
 {
+    [Fact]
+    public void ConnectionLabelPreferenceChangesOnlyLayoutAndRejectsInvalidValues()
+    {
+        using var session = NewSession();
+        using var canvas = new CanvasStateService(session);
+        var graph = session.Snapshot;
+        var changes = new List<CanvasStateChange>();
+        using var listener = canvas.Subscribe(changes.Add);
+
+        Assert.Equal(ConnectionLabelMode.All, canvas.Snapshot.ConnectionLabels);
+        canvas.SetConnectionLabels(ConnectionLabelMode.Modified);
+        canvas.SetConnectionLabels(ConnectionLabelMode.Modified);
+        Assert.Equal(ConnectionLabelMode.Modified, canvas.Snapshot.ConnectionLabels);
+        Assert.Equal(CanvasChangeKind.ConnectionLabelsChanged, Assert.Single(changes).Kind);
+        Assert.Equal(1, canvas.Snapshot.LayoutRevision);
+        Assert.Same(graph, session.Snapshot);
+        Assert.Throws<ArgumentOutOfRangeException>(() => canvas.SetConnectionLabels((ConnectionLabelMode)99));
+        Assert.Equal(ConnectionLabelMode.Modified, canvas.Snapshot.ConnectionLabels);
+    }
+
     [Fact]
     public void ProjectsInitialNodesAndKeepsPositionsAcrossParameterEdits()
     {

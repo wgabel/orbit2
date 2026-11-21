@@ -54,6 +54,7 @@ public sealed class CanvasStateService : ICanvasStateService
         snapshot = new CanvasStateSnapshot(graph, 0, viewport,
             Freeze(positions), Array.Empty<Guid>(), Array.Empty<Guid>())
         {
+            ConnectionLabels = saved?.ConnectionLabels ?? ConnectionLabelMode.All,
             Visualizations = FreezeVisualizations(visualizations),
             ExpandedVisualizationNodeId = ValidExpandedNode(graph, saved?.ExpandedVisualizationNodeId)
         };
@@ -78,6 +79,14 @@ public sealed class CanvasStateService : ICanvasStateService
         if (nextPlacement is not null) throw new InvalidOperationException("A node placement is already reserved.");
         return nextPlacement = new NodePlacementReservation(this,
             placement.FindVisiblePosition(visibleBounds, occupiedBounds).RequireFinite("placement"));
+    }
+
+    public CanvasChangeResult SetConnectionLabels(ConnectionLabelMode mode)
+    {
+        EnsureEditable();
+        if (!Enum.IsDefined(mode)) throw new ArgumentOutOfRangeException(nameof(mode));
+        return snapshot.ConnectionLabels == mode ? NoChange() :
+            CommitLayout(CanvasChangeKind.ConnectionLabelsChanged, snapshot with { ConnectionLabels = mode });
     }
 
     public CanvasChangeResult SetVisualization(Guid nodeId, NodeVisualizationSettings settings)
