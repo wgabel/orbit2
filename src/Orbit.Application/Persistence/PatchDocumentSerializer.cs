@@ -50,7 +50,7 @@ public sealed class PatchDocumentSerializer
                 node.Composite is { } composite ? new SavedComposite(node.Name, composite.InputRackId, composite.OutputRackId,
                     node.Inputs.Select(ToExposed).ToArray(),
                     composite.Graph.GetNode(composite.OutputRackId).Inputs.Select(ToExposed).ToArray(),
-                    CaptureGraph(composite.Graph)) : null)).ToArray(), graph.Connections.ToArray());
+                    CaptureGraph(composite.Graph)) : null) { IsMuted = node.IsMuted }).ToArray(), graph.Connections.ToArray());
 
     private static ExposedPort ToExposed(PortDefinition port) => new(port.Id, port.Name, port.SignalType, port.ChannelCount, port.FanIn);
 
@@ -76,6 +76,7 @@ public sealed class PatchDocumentSerializer
                     node.Parameters.ToDictionary(parameter => parameter.Key, parameter => (parameter.Id, parameter.BaseValue)));
                 graph.AddNode(leaf);
             }
+            if (node.IsMuted) graph.SetNodeMuted(node.Id, true);
         }
         foreach (var connection in saved.Connections) graph.AddConnection(connection);
     }

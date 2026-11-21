@@ -13,6 +13,8 @@ public sealed record GraphNodeSnapshot(
 {
     /// <summary>Present only on composite nodes; the snapshot contains no live graph reference.</summary>
     public CompositeSnapshot? Composite { get; init; }
+    public bool SupportsMute { get; init; }
+    public bool IsMuted { get; init; }
 
     /// <summary>Evaluate conditional parameter activity from the committed node snapshot.</summary>
     public bool IsParameterActive(ParameterSnapshot parameter) =>
@@ -30,6 +32,8 @@ public sealed record GraphNodeSnapshot(
         Array.AsReadOnly(node.Inputs.ToArray()),
         Array.AsReadOnly(node.Outputs.ToArray()))
         {
+            SupportsMute = node.SupportsMute,
+            IsMuted = node.IsMuted,
             Composite = node is ICompositeNode composite
                 ? new CompositeSnapshot(GraphSnapshot.Capture(composite.InternalGraph, revision),
                     composite.InputRack.Id, composite.OutputRack.Id)

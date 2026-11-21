@@ -90,14 +90,41 @@ public sealed class FaustGraphPlaybackServiceTests
         Assert.NotNull(engine.Request);
         Assert.Equal(expected.Source, engine.Request.Source);
         Assert.Equal("OrbitGraph", engine.Request.Processor);
-        Assert.Equal(expected.Controls.Count, engine.Request.Parameters.Count);
+        Assert.Equal(expected.Controls.Count + expected.MuteControls.Count, engine.Request.Parameters.Count);
         foreach (var control in expected.Controls)
+            Assert.Equal(control.InitialValue, engine.Request.Parameters[control.Name]);
+        foreach (var control in expected.MuteControls)
             Assert.Equal(control.InitialValue, engine.Request.Parameters[control.Name]);
         Assert.Equal(PlaybackState.Playing, await service.GetStateAsync(session.GraphId));
         await service.StopAsync(session.GraphId);
         await playing;
         Assert.Equal(engine.Request.SoundId, engine.StoppedSound);
         Assert.Equal(PlaybackState.Idle, await service.GetStateAsync(session.GraphId));
+    }
+
+    [Fact]
+    public async Task CompositeMuteUsesExistingVoiceAndRestoresWithUndo()
+    {
+        using var patch = new NestedFaustPatch();
+        var engine = new RecordingEngine();
+        var compiler = FaustGraphCompiler.CreateBuiltIn();
+        var service = new FaustGraphPlaybackService(compiler, engine);
+        var root = patch.Session.Snapshot;
+        var composite = root.Nodes.Single(node => node.Composite is not null);
+        var control = compiler.Compile(root).MuteControls.Single(control => control.NodeId == composite.Id);
+        patch.Session.Execute(new SetNodeMutedCommand(root.Id, composite.Id, true));
+        var playing = service.PlayAsync(patch.Session.Snapshot);
+        Assert.Equal(0, engine.Request!.Parameters[control.Name]);
+        patch.Session.Undo();
+        await service.UpdateAsync(patch.Session.Snapshot);
+        Assert.Equal(1, Assert.Single(engine.Updates)[control.Name]);
+        Assert.Empty(engine.Replacements);
+        patch.Session.Redo();
+        await service.UpdateAsync(patch.Session.Snapshot);
+        Assert.Equal(0, engine.Updates.Last()[control.Name]);
+        Assert.Empty(engine.Replacements);
+        await service.StopAsync(root.Id);
+        await playing;
     }
 
     [Fact]

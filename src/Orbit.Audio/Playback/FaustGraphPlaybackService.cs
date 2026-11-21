@@ -119,12 +119,12 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
 
     private static PlaybackRequest CreateRequest(FaustGraphProgram program, IReadOnlyDictionary<string, double>? values = null) =>
         new(SoundId(program.GraphId), "OrbitGraph", PlaybackVolume,
-            values ?? program.Controls.ToDictionary(control => control.Name, control => control.InitialValue),
+            values ?? program.InitialControlValues(),
             Source: program.Source, RequiresTransport: program.RequiresTransport);
 
     private static Dictionary<string, double> GetControlValues(GraphSnapshot graph, FaustGraphProgram program)
     {
-        return program.Controls.ToDictionary(control => control.Name, control =>
+        var values = program.Controls.ToDictionary(control => control.Name, control =>
         {
             var parameter = graph.GetGraph(control.GraphId).GetNode(control.Address.NodeId)
                 .Parameters.Single(p => p.Id == control.Address.ParameterId);
@@ -132,6 +132,9 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
                 throw new InvalidOperationException("Invalid base parameter value.");
             return parameter.BaseValue;
         });
+        foreach (var control in program.MuteControls)
+            values.Add(control.Name, graph.GetGraph(control.GraphId).GetNode(control.NodeId).IsMuted ? 0 : 1);
+        return values;
     }
 
     private static string SoundId(Guid graphId) => $"graph-{graphId:N}";

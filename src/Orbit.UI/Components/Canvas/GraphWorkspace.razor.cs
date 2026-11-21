@@ -287,6 +287,12 @@ public partial class GraphWorkspace : IDisposable
             Execute(new SetParameterValueCommand(graphId, request.Address, request.Value), request.GestureId);
     }
 
+    private void SetNodeMuted(Guid graphId, NodeMuteRequest request)
+    {
+        if (graphId == Canvas.Snapshot.GraphId)
+            Execute(new SetNodeMutedCommand(graphId, request.NodeId, request.Muted));
+    }
+
     private void CompleteParameterGesture(Guid graphId, Guid gestureId)
     {
         if (!switchingWorkspace && graphId == Canvas.Snapshot.GraphId)

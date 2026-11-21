@@ -22,6 +22,7 @@ const eq = JSON.parse(await readFile(resolve(directory, "eq.json"), "utf8"));
 const delays = JSON.parse(await readFile(resolve(directory, "delay.json"), "utf8"));
 const reverb = JSON.parse(await readFile(resolve(directory, "reverb.json"), "utf8"));
 const chorus = JSON.parse(await readFile(resolve(directory, "chorus.json"), "utf8"));
+const mute = JSON.parse(await readFile(resolve(directory, "mute.json"), "utf8"));
 const root = resolve("src/Orbit.Infrastructure/wwwroot/audio");
 const server = createServer(async (request, response) => {
     try {
@@ -534,6 +535,49 @@ try {
         assert.ok(result.dark.late.roughness < result.long.late.roughness * 0.5, "Damping must reduce late high-frequency energy");
         assert.ok(result.dry.late.rms < 1e-5, "Zero wet mix must remove the reverb tail");
         assert.ok(result.peak < 2);
+    }
+
+    const muteResults = await page.evaluate(async mute => {
+        const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
+        const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
+        const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
+        try {
+            const compiled = await compiler.compile(mute.source);
+            const results = [];
+            for (const sampleRate of [44100, 48000]) {
+                for (const target of [mute.composite, mute.leaf]) {
+                    const create = async (initial) => {
+                        const processor = await new FaustMonoDspGenerator().createOfflineProcessor(sampleRate, 128, { ...compiled, soundfiles: {} });
+                        const set = (name, value) => processor.setParamValue(processor.getParams().find(path => path.endsWith("/" + name)), value);
+                        for (const [name, value] of Object.entries(mute.values)) set(name, value);
+                        set(target, initial);
+                        return { processor, set };
+                    };
+                    const reference = await create(1), observed = await create(1), initiallyMuted = await create(0);
+                    const render = instance => instance.processor.render([], 4096)[0];
+                    const peak = samples => samples.reduce((max, sample) => Math.max(max, Math.abs(sample)), 0);
+                    render(reference); render(observed);
+                    const initialPeak = peak(render(initiallyMuted));
+                    observed.set(target, 0);
+                    const before = render(reference), transition = render(observed);
+                    const mutedPeak = peak(transition.slice(1024));
+                    const firstSampleError = Math.abs(transition[0] - before[0]);
+                    observed.set(target, 1);
+                    const expected = render(reference), actual = render(observed);
+                    let resumedError = 0;
+                    for (let i = 1024; i < actual.length; i++) resumedError = Math.max(resumedError, Math.abs(actual[i] - expected[i]));
+                    results.push({ sampleRate, target, initialPeak, mutedPeak, firstSampleError, resumedError, referencePeak: peak(expected) });
+                }
+            }
+            return results;
+        } finally { compiler.dispose(); }
+    }, mute);
+    for (const result of muteResults) {
+        console.log("Mute response", result);
+        assert.ok(result.referencePeak > 0.03, "Reference must contain audio");
+        assert.ok(result.initialPeak < 1e-7 && result.mutedPeak < 1e-7, "Initial and settled mute are silent");
+        assert.ok(result.firstSampleError < 0.001, "Mute starts with a ramp instead of a discontinuity");
+        assert.ok(result.resumedError < 1e-5, "Unmute preserves oscillator and modulation state");
     }
 
     const chorusResults = await page.evaluate(async chorus => {

@@ -11,8 +11,7 @@ internal sealed class ActiveGraphPlayback(GraphSnapshot snapshot, FaustGraphProg
     public GraphSnapshot Topology { get; private set; } = snapshot;
     public FaustGraphProgram Program { get; private set; } = program;
     public IReadOnlyList<FaustParameterControl> Controls => Program.Controls;
-    public Dictionary<string, double> Values { get; } =
-        program.Controls.ToDictionary(control => control.Name, control => control.InitialValue);
+    public Dictionary<string, double> Values { get; } = program.InitialControlValues();
     public SemaphoreSlim UpdateLock { get; } = new(1);
     private long requestedRevision = snapshot.Revision;
     public long RequestedRevision => Interlocked.Read(ref requestedRevision);

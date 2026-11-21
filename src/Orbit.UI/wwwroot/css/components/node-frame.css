@@ -31,6 +31,26 @@
 }
 .node-header:active { cursor: grabbing; }
 .node-role { color: var(--component-node-accent); font-size: var(--semantic-typography-caption); font-weight: normal; }
+.node-header-actions { display: flex; align-items: center; gap: var(--semantic-space-tight); flex-shrink: 0; }
+.node-header .node-audition-toggle {
+    display: grid;
+    place-items: center;
+    width: var(--component-node-audition-size);
+    height: var(--component-node-audition-size);
+    padding: 0;
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-input);
+    background: var(--semantic-color-surface);
+    color: var(--semantic-color-text);
+    font-size: var(--semantic-typography-caption);
+    cursor: pointer;
+}
+.node-header .node-audition-toggle[aria-pressed="true"] {
+    color: var(--component-node-audition-active-color);
+    border-color: var(--component-node-audition-active-color);
+    text-decoration: underline;
+}
+.node-muted .node-ports, .node-muted .node-parameters { opacity: var(--component-node-muted-opacity); }
 .node-ports { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--component-node-port-gap); padding-block: var(--component-node-padding); }
 .node-inputs, .node-outputs { display: grid; align-content: start; gap: var(--component-node-port-gap); min-width: 0; }
 .node-parameters { display: grid; gap: var(--component-node-parameter-gap); padding: var(--component-node-padding); border-top: var(--semantic-border-width) solid var(--semantic-color-border); }

@@ -6,4 +6,10 @@ public sealed record FaustGraphProgram(
     Guid GraphId, long Revision, string Source, IReadOnlyList<FaustParameterControl> Controls)
 {
     public bool RequiresTransport { get; init; }
+    public IReadOnlyList<FaustMuteControl> MuteControls { get; init; } = [];
+
+    public Dictionary<string, double> InitialControlValues() => Controls
+        .Select(control => (control.Name, control.InitialValue))
+        .Concat(MuteControls.Select(control => (control.Name, control.InitialValue)))
+        .ToDictionary(control => control.Name, control => control.InitialValue);
 }

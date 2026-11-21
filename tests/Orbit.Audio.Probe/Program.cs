@@ -55,6 +55,14 @@ File.WriteAllText(Path.Combine(args[0], "controls.json"), JsonSerializer.Seriali
     amplitude = amplitude.Name
 }));
 
+// Inspect a leaf and its containing composite using the same real graph.
+File.WriteAllText(Path.Combine(args[0], "mute.json"), JsonSerializer.Serialize(new
+{
+    source = program.Source, values = program.InitialControlValues(),
+    composite = program.MuteControls.Single(control => control.NodeId == drone.Id).Name,
+    leaf = program.MuteControls.Single(control => control.NodeId == gain.Id).Name
+}));
+
 // One root and one child tempo LFO share the same external beat signal. A
 // summed boundary lets the offline browser compare their phase to an oracle.
 var tempoRegistry = BuiltInNodes.CreateRegistry();

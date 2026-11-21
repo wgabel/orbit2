@@ -55,7 +55,13 @@ internal static class GraphFlattener
             var input = receiving with { Id = StableId("in", id), Key = "signal-in" };
             var output = receiving with { Id = StableId("out", id), Key = "signal-out",
                 Direction = PortDirection.Output, FanIn = FanInPolicy.Single };
-            Add(new GraphNodeSnapshot(id, BoundaryFaustEmitter.NodeType, outer.Name, [], [input], [output]));
+            var outputBoundary = outer.Direction == PortDirection.Output;
+            Add(new GraphNodeSnapshot(id, BoundaryFaustEmitter.NodeType, outer.Name, [], [input], [output])
+            {
+                SupportsMute = outputBoundary && composite.SupportsMute,
+                IsMuted = outputBoundary && composite.IsMuted
+            });
+            if (outputBoundary) origins.Add(id, new NodeOrigin(parent.Id, composite.Id));
             var inAddress = new PortAddress(id, input.Id);
             var outAddress = new PortAddress(id, output.Id);
             Map(parent.Id, composite.Id, outer.Id, outer.Direction == PortDirection.Input ? inAddress : outAddress);

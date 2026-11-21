@@ -124,6 +124,13 @@ public sealed class SignalGraph
         GetParameter(address).SetBaseValue(value);
     }
 
+    public void SetNodeMuted(Guid nodeId, bool muted)
+    {
+        if (GetNode(nodeId) is not SignalNode { SupportsMute: true } node)
+            throw new GraphValidationException("This node does not support mute.");
+        node.IsMuted = muted;
+    }
+
     // These operations are addressed to the child graph; the editor resolves
     // its attached owner and parent. Only that boundary may be changed.
     public BoundaryPortEditResult AddBoundaryPort(PortDirection direction, ExposedPort port) =>

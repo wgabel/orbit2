@@ -11,7 +11,16 @@
          @onpointerdown:stopPropagation="true">
     <header class="node-header" @onpointerdown="OnHeaderPointerDown">
         <span>@Node.Name</span>
-        <span class="node-role">@Role</span>
+        <div class="node-header-actions">
+            <span class="node-role">@Role</span>
+            @if (Node.SupportsMute)
+            {
+                <button type="button" class="node-audition-toggle" aria-label="Mute @Node.Name"
+                        aria-pressed="@(Node.IsMuted ? "true" : "false")" title="@(Node.IsMuted ? "Unmute node" : "Mute node")"
+                        @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true"
+                        @onclick="() => OnMute.InvokeAsync(new NodeMuteRequest(Node.Id, !Node.IsMuted))">M</button>
+            }
+        </div>
     </header>
     <div class="node-ports">
         <div class="node-inputs">

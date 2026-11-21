@@ -11,7 +11,10 @@ public sealed record PatchDocument(int SchemaVersion, Guid PatchId, SavedGraph R
 
 public sealed record SavedGraph(Guid Id, SavedNode[] Nodes, SignalConnection[] Connections);
 public sealed record SavedNode(Guid Id, string TypeKey, SavedParameter[] Parameters,
-    SavedPort[] Ports, SavedComposite? Composite);
+    SavedPort[] Ports, SavedComposite? Composite)
+{
+    public bool IsMuted { get; init; }
+}
 public sealed record SavedParameter(string Key, Guid Id, double BaseValue);
 public sealed record SavedPort(string Key, Guid Id);
 public sealed record SavedComposite(string Name, Guid InputRackId, Guid OutputRackId,

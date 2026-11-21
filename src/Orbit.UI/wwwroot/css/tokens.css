@@ -118,6 +118,9 @@
     --component-node-parameter-gap: var(--component-modulation-field-gap);
     --component-node-accent: var(--semantic-color-routing);
     --component-node-header-tint: 18%;
+    --component-node-audition-size: 24px;
+    --component-node-muted-opacity: var(--semantic-opacity-disabled);
+    --component-node-audition-active-color: var(--semantic-color-error);
     --component-port-size: 12px;
     --component-port-hit-size: 24px;
     --component-connection-width: 2px;

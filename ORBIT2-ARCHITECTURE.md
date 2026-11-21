@@ -782,7 +782,7 @@ flowchart TD
     S --> D[Existing Faust compiler]
 ~~~
 
-### Node mute and processor bypass (planned Phase 6.16)
+### Node mute and processor bypass (Phase 6.16)
 
 Provide fast, reversible auditioning without deleting nodes, rewiring a graph, changing base parameters or overwriting connection amounts. A compact **M** action in the shared node header mutes a node's complete outgoing signal; a **B** action on an eligible processor bypasses its processing and passes its input signal through. These are distinct operations.
 
@@ -819,6 +819,8 @@ flowchart TD
 **Live audio.** Extend graph lowering and runtime control manifests with stable graph-qualified host controls for mute gain and bypass blend. Do not encode the flags as structural Faust constants or treat their changes as topology changes. Preserve ordinary parameter controls, input routes, oscillator phase, delay/reverb state and shared transport; smoothly ramp mute toward silence and crossfade between dry and processed signals for bypass. Continue processing both paths initially, even while inaudible; CPU-saving suspension and state restoration are separate future features. Composite mute gates every flattened exposed output at the composite boundary (including modulation outputs), not each child node. Apply the gate before downstream fan-out. Effective modulation/range reporting must account for mute and bypass without pretending to know arbitrary wet signal bounds. Initial playback and crossfade replacements initialize from the current committed flags; stale runtime updates must not overwrite newer states.
 
 **Presentation.** Extend the reusable `NodeFrame` header with compact M/B toggle buttons, accessible names, pressed state, tooltips and visible active styling drawn from the JSON design tokens. Prevent button pointer actions from starting node drags; keep selection, navigation and cable geometry intact. The same controls work in root and nested canvases without DSP-specific Razor. Make muted nodes recognizable even without relying on color alone; retain their wires and parameter editors.
+
+**Implemented 6.16.1 — mute.** `SignalNode.SupportsMute` exposes the shared generator/processor/composite capability; `IsMuted` is a separate graph-owned flag. `SetNodeMutedCommand` validates the target and publishes `NodeMutedChanged` only on change; `GraphNodeSnapshot` captures both fields. Schema 1 `SavedNode.isMuted` is optional and missing flags restore as false. History uses the existing validated reconstruction path. `GraphFlattener` marks only composite output routes with their owning composite's mute state and origin. `FaustGraphCompiler` adds one `FaustMuteControl` per reachable eligible graph/node identity (shared across all its exposed output routes) independently of the ordinary parameter/meter manifest. The gate is downstream of the emitted expression and upstream of fan-out: the host initializes its target before playback and a sample-rate-aware 10 ms linear slew reaches exact silence/unity without recreating the voice. `GraphTopology` ignores mute state while playback resolves control targets from the latest accepted snapshot; topology replacements initialize from committed flags. Range estimation reports the settled muted output as zero even when the wet range was unknown; effective meters remain actual DSP observations during the ramp. The common M button has an accessible pressed state, underline and tokenized muted styling. Bypass remains planned for 6.16.2.
 
 **Deferred routing actions.** Do not implement mute buttons on individual connections, connection solo, global node solo or group mute/solo in this phase. An existing connection amount of zero can temporarily silence a single branch, while endpoint mute covers ordinary linear mixer lanes. Revisit dedicated edge mute only if preserving independent amounts or fan-out auditioning becomes a genuine requirement. If introduced later, edge state must be distinct from configured amount and use the same reversible, click-safe runtime-control approach. Solo scope and multi-output bypass routing require explicit contracts rather than implicit graph traversal.
 
@@ -1660,8 +1662,8 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented (6.13): mono feedback delay with free and synchronized timing, fractional delay, audio-rate modulation and live shared BPM.
 - Implemented (6.14): mono algorithmic reverb with audio-rate decay, damping and wet mix, bounded feedback combs and all-pass diffusion.
 - Implemented (6.15): two-voice mono chorus with modulatable rate, depth, base delay and wet mix; shared millisecond parameter unit and conservative output bounds.
-- Next: node mute and bypass; later add additional waveforms, sample-scheduled transport commands and rhythmic clock/trigger nodes.
-- Planned (6.16): node mute and processor bypass.
+- Implemented (6.16.1): reversible node mute with shared header control, persisted state, boundary-wide smooth gain and settled modulation range projection.
+- Next (6.16.2): processor bypass; later add additional waveforms, sample-scheduled transport commands and rhythmic clock/trigger nodes.
 - Planned (6.17): universal individual node presets, following node mute/bypass. See the incremental roadmap below.
 - Planned (6.18): shared signal observation and visualization, integrated node plots, processor response curves and passive analyzer sinks.
 - Deferred: deployment-version detection and safe workspace-save/reload prompt for long-lived tabs whose versioned lazy modules have been removed by a later Pages deployment.
@@ -1722,9 +1724,9 @@ flowchart TD
 
 Deliverable: several independently configurable drones from one reusable modular architecture.
 
-#### Phase 6.16 — Node audition actions (planned)
+#### Phase 6.16 — Node audition actions (in progress)
 
-- **6.16.1 — Node mute:** explicit model/snapshot state, validated command, backward-compatible persistence, history and click-safe live controls; support leaf and composite outputs and shared M header button.
+- **6.16.1 — Node mute (implemented):** explicit model/snapshot state, validated command, backward-compatible persistence, history and click-safe live controls; support leaf and composite outputs and shared M header button.
 - **6.16.2 — Processor bypass:** explicit eligible dry-path capability, independent state, validated command and smoothed blend; shared B header button, mute precedence and preserved wet processing state.
 - **Deferred:** connection mute and solo, global/group solo, composite bypass routing and CPU-saving branch suspension until separately justified.
 

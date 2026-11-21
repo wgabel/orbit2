@@ -12,6 +12,8 @@ public interface ISignalNode
     Guid Id { get; }
     string TypeKey { get; }
     string Name { get; }
+    bool SupportsMute { get; }
+    bool IsMuted { get; }
     IReadOnlyList<Parameter> Parameters { get; }
     IReadOnlyList<PortDefinition> Inputs { get; }
     IReadOnlyList<PortDefinition> Outputs { get; }

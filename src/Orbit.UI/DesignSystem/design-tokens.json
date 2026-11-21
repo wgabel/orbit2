@@ -157,7 +157,10 @@
       "port-gap": "{semantic.space.tight}",
       "parameter-gap": "{component.modulation.field-gap}",
       "accent": "{semantic.color.routing}",
-      "header-tint": "18%"
+      "header-tint": "18%",
+      "audition-size": "24px",
+      "muted-opacity": "{semantic.opacity.disabled}",
+      "audition-active-color": "{semantic.color.error}"
     },
     "port": {
       "size": "12px",

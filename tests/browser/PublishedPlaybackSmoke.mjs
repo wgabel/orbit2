@@ -81,6 +81,16 @@ try {
     await undoButton.click();
     assert.equal(await amplitudeInput.inputValue(), originalAmplitude);
     assert.equal(await undoButton.isEnabled(), false);
+    const muteSource = articles.nth(0).getByRole("button", { name: /^Mute / });
+    const beforeMuteTransform = await articles.nth(0).getAttribute("style");
+    await muteSource.click();
+    assert.equal(await muteSource.getAttribute("aria-pressed"), "true");
+    assert.equal(await articles.nth(0).getAttribute("style"), beforeMuteTransform);
+    await frequency.getByText("Modulation: 440–440 Hz").waitFor();
+    await undoButton.click();
+    assert.equal(await muteSource.getAttribute("aria-pressed"), "false");
+    await frequency.getByText("Modulation: 340–540 Hz").waitFor();
+    assert.equal(await articles.last().getByRole("button", { name: /^Mute / }).count(), 0);
     const transport = page.getByRole("region", { name: "Musical transport" });
     const tempo = transport.getByRole("spinbutton", { name: "Tempo (BPM)" });
     const beat = transport.getByTestId("transport-beat");
