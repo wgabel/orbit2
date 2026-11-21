@@ -48,6 +48,23 @@ var frequency = program.Controls.Single(control => control.Address == new Parame
 var amplitude = program.Controls.Single(control => control.Address == new ParameterAddress(oscillator.Id,
     oscillator.Parameters.Single(parameter => parameter.Definition.Key == "amplitude").Id));
 File.WriteAllText(Path.Combine(args[0], "program.dsp"), program.Source);
+var observed = FaustGraphCompiler.CreateBuiltIn().Compile(session.Snapshot, SignalTapManifest.MaxAuxiliaryChannels);
+File.WriteAllText(Path.Combine(args[0], "observation.json"), JsonSerializer.Serialize(new
+{
+    source = observed.Source, values = observed.InitialControlValues(), channels = observed.SignalTaps.ChannelCount,
+    drone = observed.SignalTaps.Channels[new Orbit.Application.Models.SignalObservationAddress(root, root,
+        drone.Id, drone.Outputs[0].Id, PortDirection.Output)],
+    gain = observed.SignalTaps.Channels[new Orbit.Application.Models.SignalObservationAddress(root, child,
+        gain.Id, gain.Outputs[0].Id, PortDirection.Output)],
+    carrier = observed.SignalTaps.Channels[new Orbit.Application.Models.SignalObservationAddress(root, child,
+        oscillator.Id, oscillator.Outputs[0].Id, PortDirection.Output)],
+    pitchRack = observed.SignalTaps.Channels[new Orbit.Application.Models.SignalObservationAddress(root, child,
+        composite.InputRackId, drone.Inputs[0].Id, PortDirection.Output)],
+    lfo = observed.SignalTaps.Channels[new Orbit.Application.Models.SignalObservationAddress(root, root,
+        lfo.Id, lfo.Outputs[0].Id, PortDirection.Output)],
+    mute = observed.AuditionControls.Single(control => control.NodeId == drone.Id && control.Kind == NodeAuditionKind.Mute).Name,
+    bypass = observed.AuditionControls.Single(control => control.NodeId == gain.Id && control.Kind == NodeAuditionKind.Bypass).Name
+}));
 File.WriteAllText(Path.Combine(args[0], "controls.json"), JsonSerializer.Serialize(new
 {
     values = program.Controls.ToDictionary(control => control.Name, control => control.InitialValue),

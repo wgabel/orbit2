@@ -10,6 +10,7 @@ internal sealed class ActiveGraphPlayback(GraphSnapshot snapshot, FaustGraphProg
 {
     public GraphSnapshot Topology { get; private set; } = snapshot;
     public FaustGraphProgram Program { get; private set; } = program;
+    public Guid Generation { get; private set; } = Guid.NewGuid();
     public IReadOnlyList<FaustParameterControl> Controls => Program.Controls;
     public Dictionary<string, double> Values { get; } = program.InitialControlValues();
     public SemaphoreSlim UpdateLock { get; } = new(1);
@@ -29,10 +30,12 @@ internal sealed class ActiveGraphPlayback(GraphSnapshot snapshot, FaustGraphProg
         return true;
     }
 
-    public GraphPlaybackUpdate Accept(GraphSnapshot graph, FaustGraphProgram compiled, IReadOnlyDictionary<string, double> values)
+    public GraphPlaybackUpdate Accept(GraphSnapshot graph, FaustGraphProgram compiled, IReadOnlyDictionary<string, double> values,
+        Guid? generation = null)
     {
         Topology = graph;
         Program = compiled;
+        if (generation is Guid next) Generation = next;
         Values.Clear();
         foreach (var value in values) Values.Add(value.Key, value.Value);
         return Result = new(graph.Revision, true);

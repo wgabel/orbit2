@@ -1,10 +1,11 @@
 using Orbit.Application.Graphs.Snapshots;
+using Orbit.Application.Models;
 using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Ports;
 
 namespace Orbit.Audio.Compilation;
 
-/// <summary>Compiles an immutable root patch (including child graphs) into one mono Faust program.
+/// <summary>Compiles an immutable root patch (including child graphs) into one Faust program with a mono master.
 /// It never loads a runtime or processes samples on the application thread.</summary>
 public sealed class FaustGraphCompiler
 {
@@ -17,8 +18,10 @@ public sealed class FaustGraphCompiler
     public static FaustGraphCompiler CreateBuiltIn() =>
         new(BuiltInFaustEmitters.Create());
 
-    public FaustGraphProgram Compile(GraphSnapshot graph)
+    public FaustGraphProgram Compile(GraphSnapshot graph, int auxiliaryChannels = 0)
     {
+        if (auxiliaryChannels < 0 || auxiliaryChannels > SignalTapManifest.MaxAuxiliaryChannels)
+            throw new ArgumentOutOfRangeException(nameof(auxiliaryChannels));
         var flattened = GraphFlattener.Flatten(graph);
         graph = flattened.Graph;
         var outputs = graph.Nodes.Where(node => node.TypeKey == MasterOutput.NodeType).ToArray();
@@ -28,6 +31,7 @@ public sealed class FaustGraphCompiler
         var ordered = GraphDependencyOrder.Get(graph, outputs[0].Id);
         var incoming = graph.Connections.ToLookup(edge => edge.Destination);
         var signals = new Dictionary<PortAddress, string>();
+        var inputSignals = new Dictionary<PortAddress, string>();
         var controls = new List<FaustParameterControl>();
         var definitions = new List<string>();
         var audition = new FaustAuditionControls(definitions);
@@ -38,6 +42,9 @@ public sealed class FaustGraphCompiler
         foreach (var node in ordered)
         {
             var context = new FaustNodeContext(node, incoming, signals, controls, definitions);
+            if (auxiliaryChannels > 0)
+                foreach (var port in node.Inputs.Where(port => node.IsInputActive(port.Id)))
+                    inputSignals.Add(new PortAddress(node.Id, port.Id), context.InputSignal(port.Id));
             if (node.Id == outputs[0].Id)
             {
                 outputExpression = context.Input("audio-in");
@@ -60,6 +67,36 @@ public sealed class FaustGraphCompiler
             signals.Add(new PortAddress(node.Id, node.Outputs[0].Id), name);
         }
 
+        var tapChannels = new Dictionary<SignalObservationAddress, int>();
+        var outputExpressions = new List<string> { outputExpression };
+        if (auxiliaryChannels > 0)
+        {
+            // Prefer reachable outputs, then weighted inputs; aliases share a channel.
+            var candidates = flattened.Endpoints.Select(pair =>
+            {
+                var isOutput = signals.TryGetValue(pair.Value, out var signal);
+                if (!isOutput) inputSignals.TryGetValue(pair.Value, out signal);
+                return (Address: new SignalObservationAddress(graph.Id, pair.Key.GraphId,
+                    pair.Key.Address.NodeId, pair.Key.Address.PortId,
+                    isOutput ? PortDirection.Output : PortDirection.Input), Signal: signal);
+            }).Where(candidate => candidate.Signal is not null)
+                .OrderByDescending(candidate => candidate.Address.Direction)
+                .ThenBy(candidate => candidate.Signal == "0.0")
+                .ThenBy(candidate => candidate.Address.GraphId).ThenBy(candidate => candidate.Address.NodeId)
+                .ThenBy(candidate => candidate.Address.PortId);
+            foreach (var candidate in candidates)
+            {
+                var channel = outputExpressions.IndexOf(candidate.Signal!);
+                if (channel < 0)
+                {
+                    if (outputExpressions.Count > auxiliaryChannels) continue;
+                    channel = outputExpressions.Count;
+                    outputExpressions.Add(candidate.Signal!);
+                }
+                tapChannels.Add(candidate.Address, channel);
+            }
+        }
+        outputExpression = string.Join(", ", outputExpressions);
         // Canonical order and invariant literals make source stable across base-only edits.
         // The formal parameter is shared by every nested definition; it is
         // exactly one audio input, not a separate input per LFO reference.
@@ -79,6 +116,7 @@ public sealed class FaustGraphCompiler
                 Address = control.Address with { NodeId = origin.NodeId } };
         }).ToArray();
         return new FaustGraphProgram(graph.Id, graph.Revision, source, Array.AsReadOnly(manifest))
-            { RequiresTransport = requiresTransportBeat || requiresTransportTempo, AuditionControls = audition.Manifest };
+            { RequiresTransport = requiresTransportBeat || requiresTransportTempo, AuditionControls = audition.Manifest,
+                SignalTaps = new SignalTapManifest(tapChannels, outputExpressions.Count) };
     }
 }

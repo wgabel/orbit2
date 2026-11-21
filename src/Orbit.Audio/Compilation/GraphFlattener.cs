@@ -13,7 +13,8 @@ namespace Orbit.Audio.Compilation;
 internal static class GraphFlattener
 {
     internal sealed record NodeOrigin(Guid GraphId, Guid NodeId);
-    internal sealed record Result(GraphSnapshot Graph, IReadOnlyDictionary<Guid, NodeOrigin> Origins);
+    internal sealed record Result(GraphSnapshot Graph, IReadOnlyDictionary<Guid, NodeOrigin> Origins,
+        IReadOnlyDictionary<(Guid GraphId, PortAddress Address), PortAddress> Endpoints);
 
     public static Result Flatten(GraphSnapshot root)
     {
@@ -121,7 +122,7 @@ internal static class GraphFlattener
         }
 
         Visit(root, null);
-        return new Result(new GraphSnapshot(root.Id, root.Revision, nodes.AsReadOnly(), edges.AsReadOnly()), origins);
+        return new Result(new GraphSnapshot(root.Id, root.Revision, nodes.AsReadOnly(), edges.AsReadOnly()), origins, endpoints);
     }
 
     private static PortDefinition Match(IReadOnlyList<PortDefinition> ports, Guid id) =>

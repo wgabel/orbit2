@@ -1,3 +1,5 @@
+import { SignalCapture } from "./Components/SignalCapture.js";
+
 // Coordinates logical playback lifetimes. A playback may have two voices
 // during a crossfade; DSP factories, voices and envelopes own their mechanics.
 export class AudioEngine {
@@ -103,6 +105,9 @@ export class AudioEngine {
             const old = playback.current;
             const transition = { startTime: playback.context.currentTime + 0.01, duration: 0.05 };
             playback.current = this.#startVoice(playback, node, request, transition);
+            // New reads belong exclusively to the accepted replacement.
+            for (const id of playback.subscriptions ?? []) old.voice.releaseSignal?.(id);
+            playback.subscriptions?.clear();
             playback.controlNames = new Set(Object.keys(request.parameters ?? {}));
             old.voice.stop(transition);
             await old.finished;
@@ -140,10 +145,29 @@ export class AudioEngine {
         return !playback || playback.cancelled ? null : playback.current?.monitor.getSnapshot() ?? null;
     }
 
+    readSignal(soundId, generation, subscription, channel) {
+        const playback = this.#active.get(soundId);
+        const current = playback?.current;
+        if (!current || playback.cancelled || current.generation !== generation) return null;
+        playback.subscriptions ??= new Set();
+        if (!playback.subscriptions.has(subscription) && playback.subscriptions.size >= SignalCapture.MaxLeases)
+            return null;
+        playback.subscriptions.add(subscription);
+        return current.voice.readSignal?.(subscription, channel, generation) ?? null;
+    }
+
+    releaseSignal(soundId, subscription) {
+        const playback = this.#active.get(soundId);
+        playback?.subscriptions?.delete(subscription);
+        playback?.current?.voice.releaseSignal?.(subscription);
+    }
+
     stop(soundId) {
         const playback = this.#active.get(soundId);
         if (playback) {
             playback.cancelled = true;
+            for (const id of playback.subscriptions ?? []) playback.current?.voice.releaseSignal?.(id);
+            playback.subscriptions?.clear();
             for (const instance of playback.voices) instance.voice.stop();
         }
     }
@@ -162,6 +186,8 @@ export class AudioEngine {
     async #createNode(context, request) {
         const node = await this.#nodeFactory.create(context, request.processor, request.parameters ?? {}, request.source);
         try {
+            if (typeof node.getNumOutputs === "function" && node.getNumOutputs() !== (request.outputChannels ?? 1))
+                throw new Error("Unexpected Faust output channel count.");
             if (request.requiresTransport) {
                 if (!this.#transport) throw new Error("Transport signal source is unavailable.");
                 await this.#transport.connect(context, node);
@@ -181,9 +207,9 @@ export class AudioEngine {
     #startVoice(playback, node, request, transition) {
         let voice, monitor;
         try {
-            voice = this.#output.createVoice(playback.context, node);
+            voice = this.#output.createVoice(playback.context, node, request.outputChannels ?? 1);
             monitor = this.#createMonitor(node);
-            const instance = { node, voice, monitor };
+            const instance = { node, voice, monitor, generation: request.generation };
             const lifetime = voice.play(request, transition);
             instance.finished = Promise.resolve(lifetime).finally(() => {
                 playback.voices.delete(instance);
@@ -210,6 +236,8 @@ export class AudioEngine {
         if (!request || typeof request.soundId !== "string" || !request.soundId ||
             typeof request.processor !== "string" || !request.processor ||
             !Number.isFinite(request.volume) || request.volume < 0 || request.volume > 1 ||
+            (request.outputChannels != null && (!Number.isInteger(request.outputChannels) ||
+                request.outputChannels < 1 || request.outputChannels > SignalCapture.MaxChannels)) ||
             (request.source != null && (typeof request.source !== "string" || !request.source.trim())) ||
             (request.parameters != null &&
                 (typeof request.parameters !== "object" || Array.isArray(request.parameters)))) {

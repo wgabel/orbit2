@@ -107,7 +107,7 @@ public sealed class FaustNodeContext
         return parameter.BaseValue;
     }
 
-    private string InputSignal(Guid portId)
+    internal string InputSignal(Guid portId)
     {
         var terms = incoming[new PortAddress(Node.Id, portId)].OrderBy(edge => edge.Id).Select(edge =>
         {

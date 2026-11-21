@@ -23,6 +23,7 @@ const delays = JSON.parse(await readFile(resolve(directory, "delay.json"), "utf8
 const reverb = JSON.parse(await readFile(resolve(directory, "reverb.json"), "utf8"));
 const chorus = JSON.parse(await readFile(resolve(directory, "chorus.json"), "utf8"));
 const mute = JSON.parse(await readFile(resolve(directory, "mute.json"), "utf8"));
+const observation = JSON.parse(await readFile(resolve(directory, "observation.json"), "utf8"));
 const root = resolve("src/Orbit.Infrastructure/wwwroot/audio");
 const server = createServer(async (request, response) => {
     try {
@@ -48,6 +49,93 @@ try {
     page.on("console", message => console.log("browser", message.type(), message.text()));
     page.on("pageerror", error => console.log("browser page error", error.message));
     await page.goto("http://127.0.0.1:" + server.address().port);
+    // Compare the same actual nested DSP with and without passive taps, then
+    // prove the browser splitter excludes a deliberately louder auxiliary channel.
+    const observationResults = await page.evaluate(async ({ source, observation }) => {
+        const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
+        const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
+        const { FaustNodeFactory } = await import("/Faust/FaustNodeFactory.js");
+        const { SignalCapture } = await import("/Components/SignalCapture.js");
+        const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
+        const results = [];
+        try {
+            const mono = await compiler.compile(source);
+            const tapped = await compiler.compile(observation.source);
+            const distinct = "process = 0.125, 0.8;";
+            for (const rate of [44100, 48000]) {
+                const render = async (compiled, overrides = {}) => {
+                    const dsp = await new FaustMonoDspGenerator().createOfflineProcessor(rate, 128, { ...compiled, soundfiles: {} });
+                    for (const [name, value] of Object.entries({ ...observation.values, ...overrides }))
+                        dsp.setParamValue(dsp.getParams().find(path => path.endsWith("/" + name)), value);
+                    const start = performance.now();
+                    const output = dsp.render([], rate);
+                    return { output, ms: performance.now() - start };
+                };
+                const plain = await render(mono);
+                const observed = await render(tapped);
+                const muted = await render(tapped, { [observation.mute]: 0 });
+                const bypassed = await render(tapped, { [observation.bypass]: 1 });
+                let difference = 0, boundaryDifference = 0, mutedPeak = 0, bypassError = 0, internalPeak = 0, weightedError = 0;
+                for (let i = 0; i < rate; i++) {
+                    difference = Math.max(difference, Math.abs(plain.output[0][i] - observed.output[0][i]));
+                    boundaryDifference = Math.max(boundaryDifference,
+                        Math.abs(observed.output[0][i] - observed.output[observation.drone][i]));
+                    weightedError = Math.max(weightedError, Math.abs(
+                        observed.output[observation.pitchRack][i] - 100 * observed.output[observation.lfo][i]));
+                    if (i > rate / 2) {
+                        mutedPeak = Math.max(mutedPeak, Math.abs(muted.output[observation.drone][i]));
+                        internalPeak = Math.max(internalPeak, Math.abs(muted.output[observation.gain][i]));
+                        bypassError = Math.max(bypassError, Math.abs(
+                            bypassed.output[observation.gain][i] - bypassed.output[observation.carrier][i]));
+                    }
+                }
+                const context = new OfflineAudioContext(1, 4096, rate);
+                const factory = new FaustNodeFactory(null, new Map(), () => new FaustMonoDspGenerator(), compiler);
+                const node = await factory.create(context, "Distinct", {}, distinct);
+                const capture = new SignalCapture(context, node, 2);
+                capture.connectMaster(context.destination);
+                capture.read("aux", 1, "offline");
+                const audio = (await context.startRendering()).getChannelData(0);
+                const leakage = Math.max(...audio.subarray(2048).map(sample => Math.abs(sample - 0.125)));
+                capture.dispose();
+                node.disconnect();
+                node.destroy();
+                results.push({ rate, difference, boundaryDifference, leakage, mutedPeak, internalPeak, bypassError, weightedError, channels: observed.output.length,
+                    monoMs: plain.ms, tappedMs: observed.ms });
+            }
+            const context = new AudioContext();
+            try {
+                await context.resume();
+                const factory = new FaustNodeFactory(null, new Map(), () => new FaustMonoDspGenerator(), compiler);
+                const node = await factory.create(context, "Distinct", {}, distinct);
+                const capture = new SignalCapture(context, node, 2);
+                capture.connectMaster(context.destination);
+                try {
+                    capture.read("live", 1, "live-generation");
+                    let frame;
+                    const deadline = performance.now() + 3000;
+                    do {
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                        frame = capture.read("live", 1, "live-generation");
+                    } while ((!frame || Math.abs(frame.samples.at(-1) - 0.8) > 1e-6) && performance.now() < deadline);
+                    if (!frame || frame.generation !== "live-generation" ||
+                        frame.samples.some(sample => Math.abs(sample - 0.8) > 1e-6))
+                        throw new Error("Actual auxiliary analyzer did not capture its channel");
+                } finally { capture.dispose(); node.disconnect(); node.destroy(); }
+            } finally { await context.close(); }
+            return results;
+        } finally { compiler.dispose(); }
+    }, { source, observation });
+    for (const result of observationResults) {
+        console.log("Observation fixture", result);
+        assert.equal(result.channels, observation.channels);
+        assert.ok(result.difference < 1e-7, "Passive taps changed the audible master");
+        assert.ok(result.boundaryDifference < 1e-7, "Nested output tap is not the routed master");
+        assert.ok(result.leakage < 1e-7, "Auxiliary audio leaked into master");
+        assert.ok(result.mutedPeak < 1e-7 && result.internalPeak > 0.03, "Composite mute tap placement is incorrect");
+        assert.ok(result.bypassError < 1e-6, "Bypass tap did not observe dry signal");
+        assert.ok(result.weightedError < 1e-5, "Rack tap did not observe weighted route");
+    }
     const result = await page.evaluate(async ({ source, manifest }) => {
         const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
         const { FaustNodeFactory } = await import("/Faust/FaustNodeFactory.js");

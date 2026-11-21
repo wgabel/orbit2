@@ -12,4 +12,6 @@ public sealed record PlaybackRequest(
     double Volume,
     IReadOnlyDictionary<string, double> Parameters,
     string? Source = null,
-    bool RequiresTransport = false);
+    bool RequiresTransport = false,
+    int OutputChannels = 1,
+    Guid Generation = default);

@@ -1318,7 +1318,20 @@ Base edits and modulation retain the active delay state; dry/wet mix is linear (
 
 The conservative signal range is the input range expanded to include zero (initially empty delay buffers). All combinations are convex weighted sums, so no extra gain occurs. Base edits retain the phase and delay states; high-speed modulation may deliberately pitch-shift the wet signal. Stereo widening, alternate voice counts and tempo-locked chorus are future extensions. Offline tests verify dry amplitude, fixed fractional delay at zero depth, sideband spacing controlled by rate, and bounded output under extreme modulation at 44.1/48 kHz.
 
-### Signal observation and analysis (planned Phase 6.18)
+### Signal observation and analysis (Phase 6.18)
+
+**Phase 6.18.1 implementation.** Live playback enables up to eight auxiliary channels; the compiler's default mono-only mode remains available for offline comparisons and engines without capture support. The master input maps to channel zero, before the playback gain/envelope. The immutable manifest is keyed by patch, owning graph, node, port, direction and channel. Flattened endpoint aliases reuse compiled expressions; output candidates precede inputs in deterministic identity order, identical expressions share a slot, and omitted addresses report unavailable. No new dependency roots are introduced. The fixed conservative cap (nine total channels) is a prototype limit, not a device-specific performance guarantee.
+
+The playback service also implements `ISignalAnalysisService`; both interfaces resolve to the same singleton. Each subscription lazily acquires a capture lease when read. Browser `SignalCapture` isolates master channel zero via a channel splitter for multichannel programs and allocates one analyser per requested channel, shared by at most 32 leases per voice. The diagnostic time-domain window is 1024 samples and is reusable in the browser; explicit reads copy a bounded window with sample rate and context time (not an exact sample-frame timestamp). Subsequent plot rendering will remain browser-side. Playback generation IDs change only on accepted voice replacement, not base edits or display subscriptions. Reads reject mismatched generations, warm-up is pending, and stop/replacement releases previous leases; a failed replacement leaves the last-good voice and manifest intact.
+
+~~~mermaid
+flowchart TD
+    F[Faust program] --> S[Channel splitter]
+    S -->|Channel zero| G[Voice envelope and gain]
+    G --> D[Audio destination]
+    S -->|Selected channels| A[Shared analyzers]
+    A --> L[Bounded capture leases]
+~~~
 
 The current compiler lowers the entire reachable, flattened patch to one Faust program with a mono master output. `FaustOutputMonitor` reads passive scalar bargraphs for effective parameters; those readings are throttled scalar telemetry, not consecutive samples suitable for waveform or FFT analysis. Do not split the graph into one AudioWorklet per node, reconstruct oscillator samples in Blazor, or infer a live waveform from parameter telemetry. Extend the shared compiler/runtime with passive signal taps that reference actual existing expressions, never independent copies of oscillator or effect state.
 
@@ -1828,7 +1841,7 @@ Deliverable: choose or create a grouped configuration for any eligible node with
 
 #### Phase 6.18 — Signal analysis and visualization (planned)
 
-- **6.18.1 — Observation infrastructure:** prototype bounded Faust output taps and explicit master-channel isolation; define graph-qualified observation addresses, tap manifest, accepted-runtime mapping, shared analysis subscription contracts and lifecycle. Verify identical audible samples, nested routing, mute/bypass semantics, no recompilation for view-only changes and resource limits.
+- **6.18.1 — Observation infrastructure (implemented):** bounded Faust output taps, explicit master-channel isolation, graph-qualified manifest, generation-aware capture leases and analysis contracts. Offline/worklet regression coverage for master equivalence, nested routing, mute/bypass, leakage and bounded resources. Device-scale profiling and long-history capture remain later analysis work.
 - **6.18.2 — Oscilloscope and level meter:** reusable time-domain sample display, peak/RMS, timebase, trigger and bounded slow-modulation history; validate known sine, clipped and low-rate modulation signals.
 - **6.18.3 — Spectrum analyzer:** reusable FFT display with frequency and dB axes, configurable window/resolution and smoothing, known fundamental/harmonic/noise tests, and shared capture with the oscilloscope.
 - **6.18.4 — Integrated and expanded views:** capability-driven shared `NodeVisualizationPanel`, compact collapsible plots, expand/mode/source controls, visible-only rendering, tokenized design and compatible per-graph layout persistence; no graph history or DSP restarts for display changes.

@@ -19,6 +19,44 @@ namespace Orbit.Domain.Tests;
 public sealed class FaustGraphPlaybackServiceTests
 {
     [Fact]
+    public async Task SignalSubscriptionsFollowAcceptedGenerationsWithoutRecompiling()
+    {
+        using var patch = new NestedFaustPatch();
+        var engine = new CapturingEngine();
+        var service = new FaustGraphPlaybackService(FaustGraphCompiler.CreateBuiltIn(), engine);
+        var graph = patch.Session.Snapshot;
+        var oscillator = graph.GetGraph(patch.ChildId).GetNode(patch.Frequency.NodeId);
+        var address = new SignalObservationAddress(graph.Id, patch.ChildId, oscillator.Id,
+            oscillator.Outputs[0].Id, PortDirection.Output);
+        await using var subscription = service.Subscribe(address);
+        Assert.Equal(SignalObservationAvailability.Inactive, (await subscription.ReadAsync()).Availability);
+        var playing = service.PlayAsync(graph);
+        var initial = Assert.IsType<PlaybackRequest>(engine.Request);
+        Assert.InRange(initial.OutputChannels, 2, 9);
+        Assert.Equal(initial.Generation, (await subscription.ReadAsync()).Frame!.Generation);
+        patch.Session.Execute(new SetParameterValueCommand(patch.ChildId, patch.Frequency, 330));
+        await service.UpdateAsync(patch.Session.Snapshot);
+        Assert.Equal(initial.Generation, (await subscription.ReadAsync()).Frame!.Generation);
+        Assert.Empty(engine.Replacements);
+        var waveform = oscillator.Parameters.Single(p => p.Definition.Key == "waveform");
+        patch.Session.Execute(new SetParameterValueCommand(patch.ChildId,
+            new ParameterAddress(oscillator.Id, waveform.Id), (int)OscillatorWaveform.Square));
+        engine.AcceptReplacement = false;
+        await service.UpdateAsync(patch.Session.Snapshot);
+        Assert.Equal(initial.Generation, (await subscription.ReadAsync()).Frame!.Generation);
+        engine.AcceptReplacement = true;
+        patch.Session.Execute(new SetParameterValueCommand(patch.ChildId,
+            new ParameterAddress(oscillator.Id, waveform.Id), (int)OscillatorWaveform.Triangle));
+        await service.UpdateAsync(patch.Session.Snapshot);
+        Assert.NotEqual(initial.Generation, (await subscription.ReadAsync()).Frame!.Generation);
+        await subscription.DisposeAsync();
+        Assert.Single(engine.Released);
+        await service.StopAsync(graph.Id);
+        await playing;
+        Assert.Equal(SignalObservationAvailability.Inactive, (await subscription.ReadAsync()).Availability);
+    }
+
+    [Fact]
     public async Task MultiParameterPresetUpdatesOneVoiceOrReplacesOnceForStructuralChanges()
     {
         using var patch = new NestedFaustPatch();
@@ -316,7 +354,7 @@ public sealed class FaustGraphPlaybackServiceTests
         await playing;
     }
 
-    private sealed class RecordingEngine : IAudioEngine
+    private class RecordingEngine : IAudioEngine
     {
         public bool Initialized { get; private set; }
         public PlaybackRequest? Request { get; private set; }
@@ -325,6 +363,7 @@ public sealed class FaustGraphPlaybackServiceTests
         public List<IReadOnlyDictionary<string, double>> Updates { get; } = [];
         public List<PlaybackRequest> Replacements { get; } = [];
         public Dictionary<string, double>? Outputs { get; set; }
+        public bool AcceptReplacement { get; set; } = true;
         private readonly TaskCompletionSource completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public Task InitializeAsync() { Initialized = true; return Task.CompletedTask; }
@@ -340,11 +379,23 @@ public sealed class FaustGraphPlaybackServiceTests
         public Task<bool> ReplaceAsync(PlaybackRequest request, long revision)
         {
             Replacements.Add(request);
-            return Task.FromResult(true);
+            return Task.FromResult(AcceptReplacement);
         }
         public Task<PlaybackState> GetPlaybackStateAsync(string soundId) =>
             Task.FromResult(Request?.SoundId == soundId && StoppedSound != soundId ? PlaybackState.Playing : PlaybackState.Idle);
         public Task<Dictionary<string, double>?> GetOutputValuesAsync(string soundId) =>
             Task.FromResult(Outputs);
+    }
+
+    private sealed class CapturingEngine : RecordingEngine, ISignalCapture
+    {
+        public List<Guid> Released { get; } = [];
+        public Task<SignalObservationFrame?> ReadSignalAsync(string soundId, Guid generation, Guid subscriptionId, int channel) =>
+            Task.FromResult<SignalObservationFrame?>(new(generation, 48000, 1, [0.1f]));
+        public Task ReleaseSignalAsync(string soundId, Guid subscriptionId)
+        {
+            Released.Add(subscriptionId);
+            return Task.CompletedTask;
+        }
     }
 }

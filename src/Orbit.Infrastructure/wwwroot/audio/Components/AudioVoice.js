@@ -7,13 +7,18 @@ export class AudioVoice {
     #envelope;
     #endTime;
     #disposed = false;
+    #capture;
 
-    constructor(context, node, gainNode, envelope) {
+    constructor(context, node, gainNode, envelope, capture) {
         this.#context = context;
         this.#node = node;
         this.#gainNode = gainNode;
         this.#envelope = envelope;
+        this.#capture = capture;
     }
+
+    readSignal(subscription, channel, generation) { return this.#capture?.read(subscription, channel, generation) ?? null; }
+    releaseSignal(subscription) { this.#capture?.release(subscription); }
 
     play(request, transition) {
         const startTime = transition?.startTime ?? this.#context.currentTime + 0.01;
@@ -60,6 +65,7 @@ export class AudioVoice {
 
         this.#disposed = true;
         try {
+            this.#capture?.dispose();
             this.#node.disconnect();
             this.#node.destroy?.();
         } finally {

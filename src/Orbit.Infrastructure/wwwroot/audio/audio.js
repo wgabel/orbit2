@@ -43,6 +43,8 @@ export const setParameters = (soundId, parameters) => engine.setParameters(sound
 export const markRevision = (soundId, revision) => engine.markRevision(soundId, revision);
 export const replace = (request, revision) => engine.replace(request, revision);
 export const getOutputValues = soundId => engine.getOutputValues(soundId);
+export const readSignal = (soundId, generation, subscription, channel) => engine.readSignal(soundId, generation, subscription, channel);
+export const releaseSignal = (soundId, subscription) => engine.releaseSignal(soundId, subscription);
 export async function dispose() {
     try { await engine.dispose(); }
     finally { compiler.dispose(); }

@@ -11,23 +11,25 @@ namespace Orbit.Audio.Playback;
 /// <summary>Maps a committed graph to an engine request. The compiler and
 /// engine are interchangeable dependencies; the UI knows neither Faust nor JS.</summary>
 public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudioEngine engine)
-    : IGraphPlaybackService
+    : IGraphPlaybackService, ISignalAnalysisService
 {
     // Leave headroom at the browser output in addition to graph-defined gain.
     private const double PlaybackVolume = 0.5;
     private readonly ConcurrentDictionary<Guid, ActiveGraphPlayback> active = new();
+    private int TapCapacity => engine is ISignalCapture ? SignalTapManifest.MaxAuxiliaryChannels : 0;
+    private ISignalCapture? Capture => engine as ISignalCapture;
 
     public Task InitializeAsync() => engine.InitializeAsync();
 
     public async Task PlayAsync(GraphSnapshot graph)
     {
-        var program = compiler.Compile(graph);
+        var program = compiler.Compile(graph, TapCapacity);
         var playback = new ActiveGraphPlayback(graph, program);
         if (!active.TryAdd(graph.Id, playback))
             throw new InvalidOperationException("Graph playback is already active.");
         try
         {
-            await engine.PlayAsync(CreateRequest(program));
+            await engine.PlayAsync(CreateRequest(program, playback.Generation));
         }
         finally { active.TryRemove(graph.Id, out _); }
     }
@@ -61,14 +63,15 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
             // Compiling a different topology can still produce identical DSP,
             // e.g. adding an unconnected node. Preserve the existing voice then.
             var program = GraphTopology.Matches(playback.Topology, graph)
-                ? playback.Program : compiler.Compile(graph);
+                ? playback.Program : compiler.Compile(graph, TapCapacity);
             var values = GetControlValues(graph, program);
             if (program.Source != playback.Program.Source)
             {
-                var request = CreateRequest(program, values);
+                var generation = Guid.NewGuid();
+                var request = CreateRequest(program, generation, values);
                 if (!await engine.ReplaceAsync(request, graph.Revision))
                     return playback.Result with { IsActive = !playback.Stopping };
-                return playback.Accept(graph, program, values);
+                return playback.Accept(graph, program, values, generation);
             }
 
             // Use the manifest captured at Play; do not compile source or touch
@@ -117,10 +120,66 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
         };
     }
 
-    private static PlaybackRequest CreateRequest(FaustGraphProgram program, IReadOnlyDictionary<string, double>? values = null) =>
+    public ISignalObservationSubscription Subscribe(SignalObservationAddress address) =>
+        new SignalSubscription(this, address);
+
+    private async Task<SignalObservationResult> ReadSignalAsync(SignalObservationAddress address, Guid subscriptionId)
+    {
+        if (engine is not ISignalCapture capture ||
+            !active.TryGetValue(address.PatchId, out var playback) || playback.Stopping)
+            return new(SignalObservationAvailability.Inactive);
+        var generation = playback.Generation;
+        var program = playback.Program;
+        if (!program.SignalTaps.Channels.TryGetValue(address, out var channel))
+        {
+            await capture.ReleaseSignalAsync(SoundId(address.PatchId), subscriptionId);
+            return new(SignalObservationAvailability.Unavailable);
+        }
+        var frame = await capture.ReadSignalAsync(SoundId(address.PatchId), generation, subscriptionId, channel);
+        if (frame is null || frame.Generation != generation || playback.Stopping ||
+            !active.TryGetValue(address.PatchId, out var current) || !ReferenceEquals(current, playback) ||
+            generation != playback.Generation || !ReferenceEquals(program, playback.Program))
+            return new(SignalObservationAvailability.Pending);
+        return new(SignalObservationAvailability.Available, frame);
+    }
+
+    private sealed class SignalSubscription(FaustGraphPlaybackService owner, SignalObservationAddress address)
+        : ISignalObservationSubscription
+    {
+        private readonly Guid id = Guid.NewGuid();
+        private readonly SemaphoreSlim gate = new(1);
+        private bool disposed;
+
+        public async Task<SignalObservationResult> ReadAsync()
+        {
+            await gate.WaitAsync();
+            try
+            {
+                return disposed ? new(SignalObservationAvailability.Inactive)
+                    : await owner.ReadSignalAsync(address, id);
+            }
+            finally { gate.Release(); }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await gate.WaitAsync();
+            try
+            {
+                if (disposed) return;
+                disposed = true;
+                if (owner.Capture is ISignalCapture capture)
+                    await capture.ReleaseSignalAsync(SoundId(address.PatchId), id);
+            }
+            finally { gate.Release(); }
+        }
+    }
+
+    private static PlaybackRequest CreateRequest(FaustGraphProgram program, Guid generation, IReadOnlyDictionary<string, double>? values = null) =>
         new(SoundId(program.GraphId), "OrbitGraph", PlaybackVolume,
             values ?? program.InitialControlValues(),
-            Source: program.Source, RequiresTransport: program.RequiresTransport);
+            Source: program.Source, RequiresTransport: program.RequiresTransport,
+            OutputChannels: program.SignalTaps.ChannelCount, Generation: generation);
 
     private static Dictionary<string, double> GetControlValues(GraphSnapshot graph, FaustGraphProgram program)
     {

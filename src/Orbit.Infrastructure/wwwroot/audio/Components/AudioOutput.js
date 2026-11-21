@@ -1,4 +1,5 @@
 import { AudioVoice } from "./AudioVoice.js";
+import { SignalCapture } from "./SignalCapture.js";
 
 // Owns the master output graph. Each playback receives a separate, initially
 // silent gain node so independent voices never alter each other's volume.
@@ -11,7 +12,7 @@ export class AudioOutput {
         this.#envelope = envelope;
     }
 
-    createVoice(context, sourceNode) {
+    createVoice(context, sourceNode, channels = 1) {
         if (this.#context !== context) {
             this.dispose();
             this.#context = context;
@@ -21,15 +22,18 @@ export class AudioOutput {
 
         const voiceGain = context.createGain();
         voiceGain.gain.value = 0;
+        let capture;
         try {
-            sourceNode.connect(voiceGain);
+            capture = new SignalCapture(context, sourceNode, channels);
+            capture.connectMaster(voiceGain);
             voiceGain.connect(this.#masterGain);
         } catch (error) {
+            capture?.dispose();
             voiceGain.disconnect();
             throw error;
         }
 
-        return new AudioVoice(context, sourceNode, voiceGain, this.#envelope);
+        return new AudioVoice(context, sourceNode, voiceGain, this.#envelope, capture);
     }
 
     dispose() {

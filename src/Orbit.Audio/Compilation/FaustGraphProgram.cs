@@ -6,6 +6,7 @@ public sealed record FaustGraphProgram(
     Guid GraphId, long Revision, string Source, IReadOnlyList<FaustParameterControl> Controls)
 {
     public bool RequiresTransport { get; init; }
+    public SignalTapManifest SignalTaps { get; init; } = SignalTapManifest.Empty;
     public IReadOnlyList<FaustAuditionControl> AuditionControls { get; init; } = [];
 
     public Dictionary<string, double> InitialControlValues() => Controls

@@ -24,6 +24,29 @@ public sealed class FaustGraphCompilerTests
     private readonly FaustGraphCompiler compiler = FaustGraphCompiler.CreateBuiltIn();
 
     [Fact]
+    public void BoundedTapsKeepMasterAndReachableNestedOutputsWithoutAddingDependencies()
+    {
+        using var patch = new NestedFaustPatch();
+        var graph = patch.Session.Snapshot;
+        var tapped = compiler.Compile(graph, SignalTapManifest.MaxAuxiliaryChannels);
+        var master = graph.Nodes.Single(n => n.TypeKey == MasterOutput.NodeType);
+        var leaf = graph.GetGraph(patch.ChildId).GetNode(patch.Frequency.NodeId);
+        var outer = graph.Nodes.Single(n => n.Composite is not null);
+        SignalObservationAddress Address(Guid graphId, Guid nodeId, Guid portId, PortDirection direction) =>
+            new(graph.Id, graphId, nodeId, portId, direction);
+        Assert.Equal(0, tapped.SignalTaps.Channels[Address(graph.Id, master.Id, master.Inputs[0].Id, PortDirection.Input)]);
+        Assert.Contains(Address(patch.ChildId, leaf.Id, leaf.Outputs[0].Id, PortDirection.Output), tapped.SignalTaps.Channels.Keys);
+        Assert.Contains(Address(graph.Id, outer.Id, outer.Outputs[0].Id, PortDirection.Output), tapped.SignalTaps.Channels.Keys);
+        Assert.InRange(tapped.SignalTaps.ChannelCount, 2, 9);
+        Assert.Equal(tapped.Source, compiler.Compile(graph, 8).Source);
+        Assert.Equal(2, compiler.Compile(graph, 1).SignalTaps.ChannelCount);
+        Assert.Throws<ArgumentOutOfRangeException>(() => compiler.Compile(graph, 9));
+        NestedFaustPatch.Add(patch.Session, graph.Id, OscillatorGenerator.NodeType);
+        Assert.Equal(tapped.Source, compiler.Compile(patch.Session.Snapshot, 8).Source);
+        Assert.Equal(compiler.Compile(graph).Controls, tapped.Controls);
+    }
+
+    [Fact]
     public void ChorusAllParametersAreLiveAndModulatable()
     {
         using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
