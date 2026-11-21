@@ -11,7 +11,7 @@
 @inject IJSRuntime JavaScript
 @inject Orbit.UI.Components.Analysis.ScopeBrowserAssets BrowserAssets
 
-<section class="performance-keyboard workspace-toolbar toolbar-group" aria-label="Performance keyboard" data-armed="@armed.ToString().ToLowerInvariant()" tabindex="0" @ref="root">
+<section class="performance-keyboard workspace-toolbar toolbar-group" aria-label="Performance keyboard" data-armed="@armed.ToString().ToLowerInvariant()" data-keyboard-ready="@((adapter is not null).ToString().ToLowerInvariant())" tabindex="0" @ref="root">
     <button type="button" class="secondary" aria-pressed="@armed.ToString().ToLowerInvariant()" @onclick="ToggleAsync">@(armed ? "Disarm keyboard" : "Arm keyboard")</button>
     <span class="workspace-notice">@Node.Name · Live continuous pitch</span>
     <output class="workspace-notice" data-live-pitch-offset="@(Offset?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "unavailable")">
@@ -90,6 +90,7 @@
             if (disposed) return;
             reference = DotNetObjectReference.Create(this);
             adapter = await module.InvokeAsync<IJSObjectReference>("mountPerformanceKeyboard", root, reference, PerformanceKeyboardLayout.Keys.Select(key => key.Code).ToArray());
+            if (!disposed) StateHasChanged();
         }
         catch (JSException) { notice = "Physical keyboard unavailable; use the on-screen keys."; if (!disposed) StateHasChanged(); }
     }

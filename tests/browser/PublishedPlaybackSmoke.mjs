@@ -915,6 +915,7 @@ try {
     // then verify the same plot consumes accepted modulation telemetry.
     const responsePage = await browser.newPage({ deviceScaleFactor: 2 });
     responsePage.on("pageerror", error => console.error(error.message));
+    responsePage.on("console", message => { if (message.type() === "error") console.error(message.text()); });
     await responsePage.goto("http://127.0.0.1:" + server.address().port);
     const responseStatus = responsePage.locator(".playback-toolbar").getByRole("status");
     await responseStatus.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
@@ -1085,13 +1086,21 @@ try {
     await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
     await sequencer.locator(".node-header > span").click();
     const performance = responsePage.getByRole("region", { name: "Performance keyboard" });
+    await responsePage.bringToFront();
+    await responsePage.locator('.performance-keyboard[data-keyboard-ready="true"]').waitFor();
     await performance.getByRole("button", { name: "Arm keyboard" }).click();
     await responsePage.getByRole("button", { name: "Play patch" }).click();
     await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
     const keyboardRevision = await responseStatus.innerText();
     await performance.locator('[data-live-pitch-offset="0"]').waitFor();
+    await performance.getByRole("button", { name: "Play C4 (A)" }).click();
+    await performance.locator('[data-live-pitch-offset="-9"]').waitFor();
+    await responsePage.locator('.performance-keyboard[data-armed="true"]').waitFor();
     await performance.focus();
+    assert.equal(await responsePage.evaluate(() => document.visibilityState), "visible");
+    assert.equal(await responsePage.evaluate(() => document.querySelector('[aria-modal="true"], [role="dialog"], .workspace-library-panel, .rack-editor, .connection-amount-editor')?.className ?? null), null, "A modal or editor is blocking performance capture");
     await responsePage.keyboard.press("x");
+    await performance.getByText("Octave 5 · reference A4", { exact: true }).waitFor();
     await responsePage.keyboard.down("h");
     await performance.locator('[data-live-pitch-offset="12"]').waitFor();
     await responsePage.keyboard.up("h");
