@@ -4,7 +4,7 @@ using Orbit.Domain.Ports;
 namespace Orbit.Domain.Nodes.Processors;
 
 /// <summary>Describes a mono gain stage with a modulatable linear gain parameter.</summary>
-public sealed class GainProcessor : SignalNode, IProcessor
+public sealed class GainProcessor : AudioEffectProcessor
 {
     public const string NodeType = "processor.gain";
 

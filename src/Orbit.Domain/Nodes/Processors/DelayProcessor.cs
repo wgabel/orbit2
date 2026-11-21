@@ -5,7 +5,7 @@ using Orbit.Domain.Timing;
 namespace Orbit.Domain.Nodes.Processors;
 
 /// <summary>Mono feedback delay with independent free and tempo-synchronized timing.</summary>
-public sealed class DelayProcessor : SignalNode, IProcessor
+public sealed class DelayProcessor : AudioEffectProcessor
 {
     public const string NodeType = "processor.delay";
     private static readonly ParameterDefinition TimeDefinition = new(

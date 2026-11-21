@@ -46,11 +46,14 @@
     cursor: pointer;
 }
 .node-header .node-audition-toggle[aria-pressed="true"] {
-    color: var(--component-node-audition-active-color);
-    border-color: var(--component-node-audition-active-color);
+    color: var(--audition-active-color);
+    border-color: var(--audition-active-color);
     text-decoration: underline;
 }
+.node-audition-mute { --audition-active-color: var(--component-node-mute-active-color); }
+.node-audition-bypass { --audition-active-color: var(--component-node-bypass-active-color); }
 .node-muted .node-ports, .node-muted .node-parameters { opacity: var(--component-node-muted-opacity); }
+.node-bypassed .node-parameters { opacity: var(--component-node-muted-opacity); }
 .node-ports { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--component-node-port-gap); padding-block: var(--component-node-padding); }
 .node-inputs, .node-outputs { display: grid; align-content: start; gap: var(--component-node-port-gap); min-width: 0; }
 .node-parameters { display: grid; gap: var(--component-node-parameter-gap); padding: var(--component-node-padding); border-top: var(--semantic-border-width) solid var(--semantic-color-border); }

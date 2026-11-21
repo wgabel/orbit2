@@ -4,7 +4,7 @@ using Orbit.Domain.Ports;
 namespace Orbit.Domain.Nodes.Processors;
 
 /// <summary>A mono resonant filter with sample-rate cutoff and resonance modulation.</summary>
-public sealed class FilterProcessor : SignalNode, IProcessor
+public sealed class FilterProcessor : AudioEffectProcessor
 {
     public const string NodeType = "processor.filter";
 

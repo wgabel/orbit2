@@ -2,6 +2,7 @@
 @using Orbit.Domain.Ports
 @using Orbit.Domain.Parameters
 @using Orbit.Domain.Nodes.Composites
+@using Orbit.Domain.Nodes
 @using Orbit.UI.Components.Parameters
 @using Microsoft.AspNetCore.Components.Web
 
@@ -15,10 +16,13 @@
             <span class="node-role">@Role</span>
             @if (Node.SupportsMute)
             {
-                <button type="button" class="node-audition-toggle" aria-label="Mute @Node.Name"
-                        aria-pressed="@(Node.IsMuted ? "true" : "false")" title="@(Node.IsMuted ? "Unmute node" : "Mute node")"
-                        @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true"
-                        @onclick="() => OnMute.InvokeAsync(new NodeMuteRequest(Node.Id, !Node.IsMuted))">M</button>
+                <NodeAuditionToggle NodeId="@Node.Id" NodeName="@Node.Name" Kind="NodeAuditionKind.Mute"
+                                    Active="@Node.IsMuted" OnToggle="OnAudition" />
+            }
+            @if (Node.BypassInputKey is not null)
+            {
+                <NodeAuditionToggle NodeId="@Node.Id" NodeName="@Node.Name" Kind="NodeAuditionKind.Bypass"
+                                    Active="@Node.IsBypassed" OnToggle="OnAudition" />
             }
         </div>
     </header>

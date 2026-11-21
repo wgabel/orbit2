@@ -4,7 +4,7 @@ using Orbit.Domain.Ports;
 namespace Orbit.Domain.Nodes.Processors;
 
 /// <summary>Mono chorus with two phase-offset modulated delay voices.</summary>
-public sealed class ChorusProcessor : SignalNode, IProcessor
+public sealed class ChorusProcessor : AudioEffectProcessor
 {
     public const string NodeType = "processor.chorus";
     private static readonly ParameterDefinition RateDefinition = new(

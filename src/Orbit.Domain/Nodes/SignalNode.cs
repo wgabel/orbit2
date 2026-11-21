@@ -46,6 +46,8 @@ public abstract class SignalNode : ISignalNode
     public string Name { get; }
     public virtual bool SupportsMute => this is IGenerator or IProcessor or Composites.ICompositeNode;
     public bool IsMuted { get; internal set; }
+    public virtual string? BypassInputKey => null;
+    public bool IsBypassed { get; internal set; }
     public IReadOnlyList<Parameter> Parameters { get; private set; }
     public IReadOnlyList<PortDefinition> Inputs { get; private set; }
     public IReadOnlyList<PortDefinition> Outputs { get; private set; }

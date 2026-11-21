@@ -14,6 +14,7 @@ public sealed record SavedNode(Guid Id, string TypeKey, SavedParameter[] Paramet
     SavedPort[] Ports, SavedComposite? Composite)
 {
     public bool IsMuted { get; init; }
+    public bool IsBypassed { get; init; }
 }
 public sealed record SavedParameter(string Key, Guid Id, double BaseValue);
 public sealed record SavedPort(string Key, Guid Id);

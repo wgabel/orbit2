@@ -29,8 +29,8 @@ public sealed class FaustGraphCompiler
         var incoming = graph.Connections.ToLookup(edge => edge.Destination);
         var signals = new Dictionary<PortAddress, string>();
         var controls = new List<FaustParameterControl>();
-        var muteControls = new Dictionary<(Guid GraphId, Guid NodeId), FaustMuteControl>();
         var definitions = new List<string>();
+        var audition = new FaustAuditionControls(definitions);
         var requiresTransportBeat = false;
         var requiresTransportTempo = false;
         var outputExpression = "0.0";
@@ -52,19 +52,8 @@ public sealed class FaustGraphCompiler
 
             var name = $"n_{node.Id:N}";
             var expression = emitter.Emit(context);
-            if (node.SupportsMute)
-            {
-                var origin = flattened.Origins[node.Id];
-                var address = (origin.GraphId, origin.NodeId);
-                if (!muteControls.TryGetValue(address, out var control))
-                {
-                    control = new FaustMuteControl(origin.GraphId, origin.NodeId,
-                        $"mute_{origin.GraphId:N}_{origin.NodeId:N}", node.IsMuted ? 0 : 1);
-                    muteControls.Add(address, control);
-                    definitions.Add($"{control.Name} = orbit_mute_ramp(hslider(\"{control.Name}\", 1, 0, 1, 1));");
-                }
-                expression = $"({expression}) * {control.Name}";
-            }
+            if (node.SupportsMute || node.BypassInputKey is not null)
+                expression = audition.Apply(node, flattened.Origins[node.Id], context, expression);
             requiresTransportBeat |= context.RequiresTransportBeat;
             requiresTransportTempo |= context.RequiresTransportTempo;
             definitions.Add($"{name} = {expression};");
@@ -76,10 +65,7 @@ public sealed class FaustGraphCompiler
         // exactly one audio input, not a separate input per LFO reference.
         if (requiresTransportTempo)
             definitions.Insert(0, "orbit_tempo = hslider(\"orbit_tempo\", 120, 20, 300, 0.001);");
-        // Start at the actual host value (including a restored mute), then
-        // linearly slew to later targets in 10 ms without resetting DSP state.
-        if (muteControls.Count > 0)
-            definitions.Insert(0, "orbit_mute_ramp(target) = step ~ _ with { delta = 1.0 / (0.01 * ma.SR); step(previous) = select2(1 - (1 : mem), previous + max(-delta, min(delta, target - previous)), target); };");
+        audition.AddRampDefinition();
         var body = requiresTransportBeat
             ? $"process(orbit_beat) = {outputExpression} with {{\n{string.Join("\n", definitions)}\n}};\n"
             : string.Join("\n", definitions.Append($"process = {outputExpression};")) + "\n";
@@ -93,6 +79,6 @@ public sealed class FaustGraphCompiler
                 Address = control.Address with { NodeId = origin.NodeId } };
         }).ToArray();
         return new FaustGraphProgram(graph.Id, graph.Revision, source, Array.AsReadOnly(manifest))
-            { RequiresTransport = requiresTransportBeat || requiresTransportTempo, MuteControls = Array.AsReadOnly(muteControls.Values.ToArray()) };
+            { RequiresTransport = requiresTransportBeat || requiresTransportTempo, AuditionControls = audition.Manifest };
     }
 }

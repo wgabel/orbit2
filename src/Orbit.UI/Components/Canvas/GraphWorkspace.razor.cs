@@ -7,6 +7,7 @@ using Orbit.Application.Models;
 using Orbit.Application.Services;
 using Orbit.Domain.Parameters;
 using Orbit.Domain.Graphs;
+using Orbit.Domain.Nodes;
 using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Nodes.Outputs;
@@ -287,10 +288,15 @@ public partial class GraphWorkspace : IDisposable
             Execute(new SetParameterValueCommand(graphId, request.Address, request.Value), request.GestureId);
     }
 
-    private void SetNodeMuted(Guid graphId, NodeMuteRequest request)
+    private void SetNodeAudition(Guid graphId, NodeAuditionRequest request)
     {
-        if (graphId == Canvas.Snapshot.GraphId)
-            Execute(new SetNodeMutedCommand(graphId, request.NodeId, request.Muted));
+        if (graphId != Canvas.Snapshot.GraphId) return;
+        Execute(request.Kind switch
+        {
+            NodeAuditionKind.Mute => new SetNodeMutedCommand(graphId, request.NodeId, request.Active),
+            NodeAuditionKind.Bypass => new SetNodeBypassedCommand(graphId, request.NodeId, request.Active),
+            _ => throw new ArgumentOutOfRangeException(nameof(request))
+        });
     }
 
     private void CompleteParameterGesture(Guid graphId, Guid gestureId)

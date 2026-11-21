@@ -36,8 +36,11 @@ public sealed class GraphModulationRangeEstimator(IEnumerable<IFaustNodeEmitter>
                 if (nodes.TryGetValue(address.NodeId, out var node) &&
                     node.Outputs.Count == 1 && node.Outputs[0].Id == address.PortId &&
                     rules.TryGetValue(node.TypeKey, out var rule))
-                    range = node.IsMuted ? new ParameterRange(0, 0) : rule.EstimateOutputRange(new SignalRangeContext(node,
-                        port => Input(new PortAddress(node.Id, port)), parameter => Effective(node, parameter)));
+                    range = node.IsMuted ? new ParameterRange(0, 0) :
+                        node.IsBypassed && node.BypassInputKey is { } key
+                            ? Input(new PortAddress(node.Id, node.Inputs.Single(port => port.Key == key).Id))
+                            : rule.EstimateOutputRange(new SignalRangeContext(node,
+                                port => Input(new PortAddress(node.Id, port)), parameter => Effective(node, parameter)));
                 return signals[address] = range;
             }
             finally { visiting.Remove(address); }

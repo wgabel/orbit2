@@ -4,7 +4,7 @@ using Orbit.Domain.Ports;
 namespace Orbit.Domain.Nodes.Processors;
 
 /// <summary>Single-band mono peaking equalizer with audio-rate modulation.</summary>
-public sealed class ParametricEqProcessor : SignalNode, IProcessor
+public sealed class ParametricEqProcessor : AudioEffectProcessor
 {
     public const string NodeType = "processor.parametric-eq";
 

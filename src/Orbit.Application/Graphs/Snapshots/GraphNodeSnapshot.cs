@@ -15,6 +15,8 @@ public sealed record GraphNodeSnapshot(
     public CompositeSnapshot? Composite { get; init; }
     public bool SupportsMute { get; init; }
     public bool IsMuted { get; init; }
+    public string? BypassInputKey { get; init; }
+    public bool IsBypassed { get; init; }
 
     /// <summary>Evaluate conditional parameter activity from the committed node snapshot.</summary>
     public bool IsParameterActive(ParameterSnapshot parameter) =>
@@ -34,6 +36,8 @@ public sealed record GraphNodeSnapshot(
         {
             SupportsMute = node.SupportsMute,
             IsMuted = node.IsMuted,
+            BypassInputKey = node.BypassInputKey,
+            IsBypassed = node.IsBypassed,
             Composite = node is ICompositeNode composite
                 ? new CompositeSnapshot(GraphSnapshot.Capture(composite.InternalGraph, revision),
                     composite.InputRack.Id, composite.OutputRack.Id)

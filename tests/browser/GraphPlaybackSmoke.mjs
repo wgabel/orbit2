@@ -580,6 +580,66 @@ try {
         assert.ok(result.resumedError < 1e-5, "Unmute preserves oscillator and modulation state");
     }
 
+    // Reverb keeps its feedback state while bypassed. Compare three identical
+    // engines at the same sample frames: always-wet, always-dry, and auditioned.
+    const bypassResults = await page.evaluate(async reverb => {
+        const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
+        const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
+        const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
+        try {
+            const compiled = await compiler.compile(reverb.source);
+            const results = [];
+            for (const sampleRate of [44100, 48000]) {
+                const create = async (mix, bypass = 0) => {
+                    const processor = await new FaustMonoDspGenerator().createOfflineProcessor(sampleRate, 128, { ...compiled, soundfiles: {} });
+                    const set = (name, value) => processor.setParamValue(processor.getParams().find(path => path.endsWith("/" + name)), value);
+                    for (const [name, value] of Object.entries(reverb.values)) set(name, value);
+                    set(reverb.mix, mix); set(reverb.bypass, bypass); set(reverb.amplitude, 0.2);
+                    return { processor, set };
+                };
+                const wet = await create(1), dry = await create(0), actual = await create(1), initialBypass = await create(1, 1);
+                const render = instance => instance.processor.render([], 8192)[0];
+                const maxError = (left, right, start = 0) => {
+                    let error = 0;
+                    for (let i = start; i < left.length; i++) error = Math.max(error, Math.abs(left[i] - right[i]));
+                    return error;
+                };
+                const peak = samples => samples.reduce((max, value) => Math.max(max, Math.abs(value)), 0);
+                const initialError = maxError(render(initialBypass), render(dry));
+                render(wet); render(actual);
+                actual.set(reverb.bypass, 1);
+                const wetBlock = render(wet), dryBlock = render(dry), first = render(actual);
+                const rampError = Math.abs(first[0] - wetBlock[0]);
+                const dryError = maxError(first, dryBlock, 1024);
+                const audibleDifference = maxError(wetBlock, dryBlock, 1024);
+                // Both independent switches can be set; mute must still win.
+                actual.set(reverb.mute, 0);
+                render(wet); render(dry);
+                const mutedPeak = peak(render(actual).slice(1024));
+                actual.set(reverb.mute, 1);
+                render(wet);
+                const unmutedDryError = maxError(render(actual), render(dry), 1024);
+                // Cut the excitation while bypassed, then re-enable the effect.
+                // Its remaining tail must equal the continuously running wet path.
+                for (const instance of [wet, dry, actual]) instance.set(reverb.amplitude, 0);
+                render(wet); render(dry); render(actual);
+                actual.set(reverb.bypass, 0);
+                const tail = render(wet), resumed = render(actual);
+                const tailPeak = peak(tail.slice(1024));
+                const tailError = maxError(resumed, tail, 1024);
+                results.push({ sampleRate, initialError, rampError, dryError, audibleDifference, mutedPeak, unmutedDryError, tailPeak, tailError });
+            }
+            return results;
+        } finally { compiler.dispose(); }
+    }, reverb);
+    for (const result of bypassResults) {
+        console.log("Bypass response", result);
+        assert.ok(result.initialError < 1e-6 && result.dryError < 1e-6, "Bypass passes the dry signal unchanged");
+        assert.ok(result.audibleDifference > 0.03 && result.rampError < 0.002, "Bypass smoothly transitions from processed audio");
+        assert.ok(result.mutedPeak < 1e-7 && result.unmutedDryError < 1e-6, "Mute takes precedence and unmute retains bypass");
+        assert.ok(result.tailPeak > 1e-4 && result.tailError < 1e-6, "Bypass retains running wet DSP state");
+    }
+
     const chorusResults = await page.evaluate(async chorus => {
         const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
         const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");

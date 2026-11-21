@@ -120,7 +120,8 @@
     --component-node-header-tint: 18%;
     --component-node-audition-size: 24px;
     --component-node-muted-opacity: var(--semantic-opacity-disabled);
-    --component-node-audition-active-color: var(--semantic-color-error);
+    --component-node-mute-active-color: var(--semantic-color-error);
+    --component-node-bypass-active-color: var(--semantic-color-selected);
     --component-port-size: 12px;
     --component-port-hit-size: 24px;
     --component-connection-width: 2px;

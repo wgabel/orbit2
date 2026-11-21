@@ -23,6 +23,7 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
             SetConnectionAmountCommand amount => SetConnectionAmount(graph, amount),
             SetParameterValueCommand set => SetParameterValue(graph, set),
             SetNodeMutedCommand mute => SetNodeMuted(graph, mute),
+            SetNodeBypassedCommand bypass => SetNodeBypassed(graph, bypass),
             AddBoundaryPortCommand add => BoundaryFacts(graph.Id, graph.AddBoundaryPort(add.Direction,
                 new ExposedPort(Guid.NewGuid(), add.Name, add.SignalType, add.ChannelCount, add.FanIn))),
             RenameBoundaryPortCommand rename => BoundaryFacts(graph.Id,
@@ -105,5 +106,12 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
         var previous = graph.GetNode(command.NodeId).IsMuted;
         graph.SetNodeMuted(command.NodeId, command.Muted);
         return previous == command.Muted ? [] : [new NodeMutedChanged(graph.Id, command.NodeId, previous, command.Muted)];
+    }
+
+    private static IReadOnlyList<IGraphEvent> SetNodeBypassed(SignalGraph graph, SetNodeBypassedCommand command)
+    {
+        var previous = graph.GetNode(command.NodeId).IsBypassed;
+        graph.SetNodeBypassed(command.NodeId, command.Bypassed);
+        return previous == command.Bypassed ? [] : [new NodeBypassedChanged(graph.Id, command.NodeId, previous, command.Bypassed)];
     }
 }

@@ -4,7 +4,7 @@ using Orbit.Domain.Ports;
 namespace Orbit.Domain.Nodes.Processors;
 
 /// <summary>Mono algorithmic reverb with modulatable decay, damping and wet mix.</summary>
-public sealed class ReverbProcessor : SignalNode, IProcessor
+public sealed class ReverbProcessor : AudioEffectProcessor
 {
     public const string NodeType = "processor.reverb";
     private static readonly ParameterDefinition DecayDefinition = new(

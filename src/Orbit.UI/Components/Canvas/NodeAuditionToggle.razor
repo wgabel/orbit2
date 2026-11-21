@@ -1,0 +1,23 @@
+@namespace Orbit.UI.Components.Canvas
+@using Orbit.Domain.Nodes
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+
+<button type="button" class="node-audition-toggle @ActionClass" aria-label="@($"{Kind} {NodeName}")"
+        aria-pressed="@(Active ? "true" : "false")" title="@Tooltip"
+        @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true"
+        @onclick="() => OnToggle.InvokeAsync(new NodeAuditionRequest(NodeId, Kind, !Active))">@Letter</button>
+
+@code {
+    [Parameter, EditorRequired] public Guid NodeId { get; set; }
+    [Parameter, EditorRequired] public string NodeName { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public NodeAuditionKind Kind { get; set; }
+    [Parameter] public bool Active { get; set; }
+    [Parameter] public EventCallback<NodeAuditionRequest> OnToggle { get; set; }
+
+    private string ActionClass => Kind == NodeAuditionKind.Mute ? "node-audition-mute" : "node-audition-bypass";
+    private string Letter => Kind == NodeAuditionKind.Mute ? "M" : "B";
+    private string Tooltip => Kind == NodeAuditionKind.Mute
+        ? Active ? "Unmute node" : "Mute node"
+        : Active ? "Enable processing" : "Bypass processing";
+}

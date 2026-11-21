@@ -160,7 +160,8 @@
       "header-tint": "18%",
       "audition-size": "24px",
       "muted-opacity": "{semantic.opacity.disabled}",
-      "audition-active-color": "{semantic.color.error}"
+      "mute-active-color": "{semantic.color.error}",
+      "bypass-active-color": "{semantic.color.selected}"
     },
     "port": {
       "size": "12px",

@@ -6,6 +6,7 @@ using Orbit.Application.Graphs.Sessions;
 using Orbit.Application.Graphs.Snapshots;
 using Orbit.Audio.Compilation;
 using Orbit.Domain.Nodes.Composites;
+using Orbit.Domain.Nodes;
 using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Nodes.Processors;
@@ -59,8 +60,8 @@ File.WriteAllText(Path.Combine(args[0], "controls.json"), JsonSerializer.Seriali
 File.WriteAllText(Path.Combine(args[0], "mute.json"), JsonSerializer.Serialize(new
 {
     source = program.Source, values = program.InitialControlValues(),
-    composite = program.MuteControls.Single(control => control.NodeId == drone.Id).Name,
-    leaf = program.MuteControls.Single(control => control.NodeId == gain.Id).Name
+    composite = program.AuditionControls.Single(control => control.NodeId == drone.Id && control.Kind == NodeAuditionKind.Mute).Name,
+    leaf = program.AuditionControls.Single(control => control.NodeId == gain.Id && control.Kind == NodeAuditionKind.Mute).Name
 }));
 
 // One root and one child tempo LFO share the same external beat signal. A
@@ -243,7 +244,9 @@ var reverbProgram = FaustGraphCompiler.CreateBuiltIn().Compile(filterSession.Sna
 string ReverbControl(GraphNodeSnapshot node, string key) => reverbProgram.Controls.Single(c => c.Address == Address(node, key)).Name;
 File.WriteAllText(Path.Combine(args[0], "reverb.json"), JsonSerializer.Serialize(new
 {
-    source = reverbProgram.Source, values = reverbProgram.Controls.ToDictionary(c => c.Name, c => c.InitialValue),
+    source = reverbProgram.Source, values = reverbProgram.InitialControlValues(),
+    bypass = reverbProgram.AuditionControls.Single(control => control.NodeId == reverb.Id && control.Kind == NodeAuditionKind.Bypass).Name,
+    mute = reverbProgram.AuditionControls.Single(control => control.NodeId == reverb.Id && control.Kind == NodeAuditionKind.Mute).Name,
     amplitude = ReverbControl(excitation, "amplitude"), decay = ReverbControl(reverb, "decay"),
     damping = ReverbControl(reverb, "damping"), mix = ReverbControl(reverb, "mix"), modulation = ReverbControl(modulation, "amplitude")
 }));

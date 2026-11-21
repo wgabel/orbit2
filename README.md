@@ -581,7 +581,11 @@ Changing an existing port's signal type, channel count or fan-in, and undo are f
 
 ### Node mute (Phase 6.16.1)
 
-Use **M** in an oscillator, processor or composite node header to silence all of its outgoing signals (including modulation). Click it again to restore output. Mute preserves wiring, parameters and running DSP state; it ramps the output gain over 10 ms without recompiling the graph. Muting the final effect of a lane also silences that effect's tail; muting an earlier generator does not immediately remove downstream reverb or delay tails. The muted state survives reload and is undoable/redoable. Racks and the master output do not offer M. Processor bypass is a separate upcoming feature.
+Use **M** in an oscillator, processor or composite node header to silence all of its outgoing signals (including modulation). Click it again to restore output. Mute preserves wiring, parameters and running DSP state; it ramps the output gain over 10 ms without recompiling the graph. Muting the final effect of a lane also silences that effect's tail; muting an earlier generator does not immediately remove downstream reverb or delay tails. The muted state survives reload and is undoable/redoable. Racks and the master output do not offer M.
+
+### Processor bypass (Phase 6.16.2)
+
+Use **B** on Gain, Filter, Parametric EQ, Delay, Reverb or Chorus to hear the unprocessed audio input. Click again to restore processing. The shared audition control crossfades over 10 ms between the dry input and normal effect output without recompilation; the wet path continues running, preserving its delay buffers, reverb tail and modulation. B is independent of M: if both are active, the output is silent, and unmuting restores the bypassed signal. Bypass preserves wiring and parameters and is undoable and persisted. Mixers, generators, composites and racks do not have a defined bypass path. Keep headroom when bypassing attenuation such as a Gain node: the incoming level passes through unchanged.
 
 ### Chorus (Phase 6.15)
 

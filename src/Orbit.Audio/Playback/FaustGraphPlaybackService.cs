@@ -132,8 +132,8 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
                 throw new InvalidOperationException("Invalid base parameter value.");
             return parameter.BaseValue;
         });
-        foreach (var control in program.MuteControls)
-            values.Add(control.Name, graph.GetGraph(control.GraphId).GetNode(control.NodeId).IsMuted ? 0 : 1);
+        foreach (var control in program.AuditionControls)
+            values.Add(control.Name, FaustAuditionControl.Target(control.Kind, graph.GetGraph(control.GraphId).GetNode(control.NodeId)));
         return values;
     }
 

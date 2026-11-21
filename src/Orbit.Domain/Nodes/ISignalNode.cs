@@ -14,6 +14,8 @@ public interface ISignalNode
     string Name { get; }
     bool SupportsMute { get; }
     bool IsMuted { get; }
+    string? BypassInputKey { get; }
+    bool IsBypassed { get; }
     IReadOnlyList<Parameter> Parameters { get; }
     IReadOnlyList<PortDefinition> Inputs { get; }
     IReadOnlyList<PortDefinition> Outputs { get; }

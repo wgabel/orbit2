@@ -15,6 +15,7 @@ internal static class GraphTopology
         var nodes = current.Nodes.ToDictionary(node => node.Id);
         return original.Nodes.All(node => nodes.TryGetValue(node.Id, out var candidate) &&
             node.TypeKey == candidate.TypeKey && node.Name == candidate.Name && node.SupportsMute == candidate.SupportsMute &&
+            node.BypassInputKey == candidate.BypassInputKey &&
             node.Inputs.OrderBy(port => port.Id).SequenceEqual(candidate.Inputs.OrderBy(port => port.Id)) &&
             node.Outputs.OrderBy(port => port.Id).SequenceEqual(candidate.Outputs.OrderBy(port => port.Id)) &&
             node.Parameters.OrderBy(parameter => parameter.Id).Select(Structure)

@@ -6,6 +6,7 @@ using Orbit.Application.Persistence;
 using Orbit.Audio.Analysis;
 using Orbit.Audio.Compilation;
 using Orbit.Domain.Graphs;
+using Orbit.Domain.Nodes;
 using Orbit.Domain.Parameters;
 using Xunit;
 
@@ -31,7 +32,7 @@ public sealed class NodeMuteTests
         Assert.False(session.Execute(new SetNodeMutedCommand(original.Id, source.Id, true)).Changed);
         var muted = compiler.Compile(session.Snapshot);
         Assert.Equal(before.Source, muted.Source);
-        Assert.Equal(0, muted.MuteControls.Single(control => control.NodeId == source.Id).InitialValue);
+        Assert.Equal(0, muted.AuditionControls.Single(control => control.NodeId == source.Id && control.Kind == NodeAuditionKind.Mute).InitialValue);
         var estimator = new GraphModulationRangeEstimator(BuiltInFaustEmitters.Create());
         Assert.Equal(new ParameterRange(440, 440), estimator.Estimate(session.Snapshot)[new ParameterAddress(carrier.Id, carrier.Parameters[0].Id)]!.Value);
         session.Undo();

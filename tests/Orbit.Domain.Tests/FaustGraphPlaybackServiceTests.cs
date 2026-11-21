@@ -5,6 +5,8 @@ using Orbit.Application.Models;
 using Orbit.Audio.Compilation;
 using Orbit.Audio.Playback;
 using Orbit.Domain.Parameters;
+using Orbit.Domain.Nodes;
+using Orbit.Domain.Nodes.Processors;
 using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Ports;
 using Xunit;
@@ -90,10 +92,10 @@ public sealed class FaustGraphPlaybackServiceTests
         Assert.NotNull(engine.Request);
         Assert.Equal(expected.Source, engine.Request.Source);
         Assert.Equal("OrbitGraph", engine.Request.Processor);
-        Assert.Equal(expected.Controls.Count + expected.MuteControls.Count, engine.Request.Parameters.Count);
+        Assert.Equal(expected.Controls.Count + expected.AuditionControls.Count, engine.Request.Parameters.Count);
         foreach (var control in expected.Controls)
             Assert.Equal(control.InitialValue, engine.Request.Parameters[control.Name]);
-        foreach (var control in expected.MuteControls)
+        foreach (var control in expected.AuditionControls)
             Assert.Equal(control.InitialValue, engine.Request.Parameters[control.Name]);
         Assert.Equal(PlaybackState.Playing, await service.GetStateAsync(session.GraphId));
         await service.StopAsync(session.GraphId);
@@ -111,7 +113,7 @@ public sealed class FaustGraphPlaybackServiceTests
         var service = new FaustGraphPlaybackService(compiler, engine);
         var root = patch.Session.Snapshot;
         var composite = root.Nodes.Single(node => node.Composite is not null);
-        var control = compiler.Compile(root).MuteControls.Single(control => control.NodeId == composite.Id);
+        var control = compiler.Compile(root).AuditionControls.Single(control => control.NodeId == composite.Id && control.Kind == NodeAuditionKind.Mute);
         patch.Session.Execute(new SetNodeMutedCommand(root.Id, composite.Id, true));
         var playing = service.PlayAsync(patch.Session.Snapshot);
         Assert.Equal(0, engine.Request!.Parameters[control.Name]);
@@ -124,6 +126,37 @@ public sealed class FaustGraphPlaybackServiceTests
         Assert.Equal(0, engine.Updates.Last()[control.Name]);
         Assert.Empty(engine.Replacements);
         await service.StopAsync(root.Id);
+        await playing;
+    }
+
+    [Fact]
+    public async Task BypassAndMuteUpdateIndependentControlsWithoutReplacingVoice()
+    {
+        using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings());
+        var compiler = FaustGraphCompiler.CreateBuiltIn();
+        var engine = new RecordingEngine();
+        var service = new FaustGraphPlaybackService(compiler, engine);
+        var graph = session.Snapshot;
+        var gain = graph.Nodes.Single(node => node.TypeKey == GainProcessor.NodeType);
+        var controls = compiler.Compile(graph).AuditionControls.Where(control => control.NodeId == gain.Id).ToArray();
+        var bypass = controls.Single(control => control.Kind == NodeAuditionKind.Bypass);
+        var mute = controls.Single(control => control.Kind == NodeAuditionKind.Mute);
+        session.Execute(new SetNodeBypassedCommand(graph.Id, gain.Id, true));
+        var playing = service.PlayAsync(session.Snapshot);
+        Assert.Equal(1, engine.Request!.Parameters[bypass.Name]);
+        session.Execute(new SetNodeMutedCommand(graph.Id, gain.Id, true));
+        await service.UpdateAsync(session.Snapshot);
+        Assert.Equal(0, Assert.Single(engine.Updates)[mute.Name]);
+        session.Execute(new SetNodeMutedCommand(graph.Id, gain.Id, false));
+        await service.UpdateAsync(session.Snapshot);
+        Assert.Equal(1, Assert.Single(engine.Updates.Last()).Value);
+        Assert.True(session.Snapshot.GetNode(gain.Id).IsBypassed);
+        session.Execute(new SetNodeBypassedCommand(graph.Id, gain.Id, false));
+        await service.UpdateAsync(session.Snapshot);
+        Assert.Equal(0, Assert.Single(engine.Updates.Last()).Value);
+        Assert.Equal(bypass.Name, Assert.Single(engine.Updates.Last()).Key);
+        Assert.Empty(engine.Replacements);
+        await service.StopAsync(graph.Id);
         await playing;
     }
 

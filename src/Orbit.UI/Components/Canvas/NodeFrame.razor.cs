@@ -20,7 +20,7 @@ public partial class NodeFrame
     [Parameter] public EventCallback<PortAddress> OnPortActivate { get; set; }
     [Parameter] public EventCallback<PortPointerStart> OnOutputPointerDown { get; set; }
     [Parameter] public EventCallback<ParameterEditRequest> OnParameterEdit { get; set; }
-    [Parameter] public EventCallback<NodeMuteRequest> OnMute { get; set; }
+    [Parameter] public EventCallback<NodeAuditionRequest> OnAudition { get; set; }
     [Parameter] public EventCallback<Guid> OnParameterGestureEnded { get; set; }
     [Parameter] public EventCallback<Guid> OnOpenComposite { get; set; }
     [Parameter] public EventCallback<Guid> OnEditRack { get; set; }
@@ -31,6 +31,6 @@ public partial class NodeFrame
     private ParameterRange? GetRange(Guid id) => ModulationRanges.GetValueOrDefault(new ParameterAddress(Node.Id, id));
     private double? GetEffective(Guid id) => EffectiveValues.TryGetValue(new ParameterAddress(Node.Id, id), out var value) ? value : null;
 
-    private string FrameClass => $"node-frame node-role-{Role.ToString().ToLowerInvariant()}{(Selected ? " node-selected" : "")}{(Node.IsMuted ? " node-muted" : "")}";
+    private string FrameClass => $"node-frame node-role-{Role.ToString().ToLowerInvariant()}{(Selected ? " node-selected" : "")}{(Node.IsMuted ? " node-muted" : "")}{(Node.IsBypassed ? " node-bypassed" : "")}";
     private string PositionStyle => FormattableString.Invariant($"left:{Position.X}px;top:{Position.Y}px;");
 }

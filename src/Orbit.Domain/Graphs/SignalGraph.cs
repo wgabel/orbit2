@@ -131,6 +131,13 @@ public sealed class SignalGraph
         node.IsMuted = muted;
     }
 
+    public void SetNodeBypassed(Guid nodeId, bool bypassed)
+    {
+        if (GetNode(nodeId) is not SignalNode { BypassInputKey: not null } node)
+            throw new GraphValidationException("This node does not support bypass.");
+        node.IsBypassed = bypassed;
+    }
+
     // These operations are addressed to the child graph; the editor resolves
     // its attached owner and parent. Only that boundary may be changed.
     public BoundaryPortEditResult AddBoundaryPort(PortDirection direction, ExposedPort port) =>
