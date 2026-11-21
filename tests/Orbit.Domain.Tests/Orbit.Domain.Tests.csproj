@@ -14,5 +14,6 @@
     <ProjectReference Include="../../src/Orbit.Domain/Orbit.Domain.csproj" />
     <ProjectReference Include="../../src/Orbit.Application/Orbit.Application.csproj" />
     <ProjectReference Include="../../src/Orbit.Audio/Orbit.Audio.csproj" />
+    <ProjectReference Include="../../src/Orbit.Infrastructure/Orbit.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

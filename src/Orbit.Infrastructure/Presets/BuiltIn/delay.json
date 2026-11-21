@@ -1,0 +1,11 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "delay-quarter-note",
+    "nodeType": "processor.delay",
+    "name": "Quarter Note",
+    "group": "Rhythmic",
+    "description": "Tempo-synchronized echoes with moderate feedback.",
+    "parameters": { "time": 0.3, "feedback": 0.35, "mix": 0.3, "timing": 1, "division": 2 }
+  }
+]

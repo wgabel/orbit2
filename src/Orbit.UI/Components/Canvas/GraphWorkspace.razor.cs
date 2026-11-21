@@ -25,6 +25,7 @@ public partial class GraphWorkspace : IDisposable
     [Inject] private PatchDocumentSerializer Serializer { get; set; } = default!;
     [Inject] private PatchPersistenceService Persistence { get; set; } = default!;
     [Inject] private IMusicalTransportService Transport { get; set; } = default!;
+    [Inject] private NodeRegistry Registry { get; set; } = default!;
     private bool initialized;
     private bool autosaveEnabled = true;
     private bool disposed;
@@ -65,7 +66,7 @@ public partial class GraphWorkspace : IDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        var registry = BuiltInNodes.CreateEditorRegistry();
+        var registry = Registry;
         catalog = registry;
         SelectedType = OscillatorGenerator.NodeType;
         try

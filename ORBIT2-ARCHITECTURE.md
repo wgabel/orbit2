@@ -826,7 +826,7 @@ flowchart TD
 
 **Deferred routing actions.** Do not implement mute buttons on individual connections, connection solo, global node solo or group mute/solo in this phase. An existing connection amount of zero can temporarily silence a single branch, while endpoint mute covers ordinary linear mixer lanes. Revisit dedicated edge mute only if preserving independent amounts or fan-out auditioning becomes a genuine requirement. If introduced later, edge state must be distinct from configured amount and use the same reversible, click-safe runtime-control approach. Solo scope and multi-output bypass routing require explicit contracts rather than implicit graph traversal.
 
-### Individual node presets (planned Phase 6.17)
+### Individual node presets (Phase 6.17, in progress)
 
 A node preset is a reusable immutable configuration of an existing registered node type, not a new node type, a factory, a DSP implementation, a patch or a live link to another node. Initially support leaf generators and processors with editable parameters; racks, master output without editable parameters, and composite graph definitions are not individual preset targets. Custom composite definitions remain a separate graph-template feature.
 
@@ -845,6 +845,17 @@ Use a versioned data-only `NodePreset` containing a stable preset ID, node type 
 ~~~
 
 **Catalog and responsibilities.** Put the immutable model, catalog, validator and `NodePresetService` in `Orbit.Application/Presets`. Keep factory registration in `NodeRegistry`; use its stable type keys and parameter definitions to validate preset compatibility. Ship built-in presets as versioned JSON resources per node type, loaded by infrastructure through an application-facing catalog contract. Adding another built-in configuration must not require changes to C#, Faust or Razor. The service merges read-only built-ins with the custom library, groups by usage label and sorts consistently. Reserve the `Custom` group for user-created presets; do not allow imported content to impersonate built-ins. Use stable IDs rather than display names as selection keys; validate names, group labels, schema, duplicate IDs and finite in-range values. Explicitly reject incompatible or incomplete configurations unless a versioned migration supplies missing values.
+
+**Implemented 6.17.1.** `NodePreset` defensively copies its complete stable-key parameter dictionary and validates version and metadata. `NodePresetValidator` derives eligible leaf types and parameter definitions from the composed `NodeRegistry` (generators/processors with editable parameters, excluding composites and catalog aliases). The same `ParameterDefinition.IsValidBaseValue` contract validates continuous values and discrete choices, including inactive settings. `NodePresetJsonReader` rejects unknown fields, duplicate JSON keys and malformed configurations without reflection-based deserialization. `EmbeddedNodePresetCatalog` discovers the per-type JSON arrays in `Orbit.Infrastructure/Presets/BuiltIn/` via `INodePresetCatalog`; the resources ship inside the assembly, avoiding independent downloads or stale catalog caches. `NodePresetService` validates the complete set at initialization, rejects globally duplicate stable IDs and the reserved Custom group, and returns read-only groups ordered by label and preset name with ordinal ID tie-breaking. Every eligible type has an empty Custom group ready for the future library. The composition root shares one registry between the editor and validator and eagerly verifies the catalog at startup. Ten initial examples cover all eight eligible types; application, selector and broader content follow in separate steps. No graph or DSP mutation is introduced here.
+
+~~~mermaid
+flowchart TD
+    J[Embedded JSON resources] --> C[INodePresetCatalog]
+    C --> S[NodePresetService]
+    R[NodeRegistry] --> V[NodePresetValidator]
+    V --> S
+    S --> G[Immutable usage groups]
+~~~
 
 | Node | Example usage groups | Example presets |
 |---|---|---|
@@ -1666,7 +1677,7 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented (6.15): two-voice mono chorus with modulatable rate, depth, base delay and wet mix; shared millisecond parameter unit and conservative output bounds.
 - Implemented (6.16.1): reversible node mute with shared header control, persisted state, boundary-wide smooth gain and settled modulation range projection.
 - Implemented (6.16.2): explicit effect bypass capability, independent persisted state, shared click-safe audition controls, dry range projection and continuously running wet DSP.
-- Next (6.17): universal individual node presets. See the incremental roadmap below; later add additional waveforms, sample-scheduled transport commands and rhythmic clock/trigger nodes.
+- Implemented (6.17.1): immutable versioned individual node preset model, registry-derived validation and grouped embedded JSON catalog; atomic application and selector are next.
 - Planned (6.18): shared signal observation and visualization, integrated node plots, processor response curves and passive analyzer sinks.
 - Deferred: deployment-version detection and safe workspace-save/reload prompt for long-lived tabs whose versioned lazy modules have been removed by a later Pages deployment.
 - Add copies/preset reuse with independent instances.
@@ -1734,9 +1745,9 @@ Deliverable: several independently configurable drones from one reusable modular
 
 Deliverable: audition or silence entire linear lanes by muting their final node, and compare effects with their dry input without deleting or rewiring anything, including during playback.
 
-#### Phase 6.17 — Individual node presets (planned)
+#### Phase 6.17 — Individual node presets (in progress)
 
-- **6.17.1 — Model and catalog:** define versioned immutable parameter configurations, stable IDs and type/key validation; load grouped built-in JSON definitions independently of node factories.
+- **6.17.1 — Model and catalog (implemented):** versioned immutable parameter configurations, stable IDs, registry-derived type/key validation and grouped embedded JSON resources with starter examples for all eligible node types.
 - **6.17.2 — Atomic application:** validated multi-parameter graph operation and `ApplyNodePresetCommand`, one committed revision and undo entry; verify nested nodes, dormant connections and live DSP behavior.
 - **6.17.3 — Shared selector:** compact grouped `NodePresetSelector`, descriptions, matching/modified state, existing design tokens and accessibility; no node-specific UI.
 - **6.17.4 — Built-in content:** meaningful usage groups and example presets for all eligible existing generators and processors, including chorus; validate all shipped data in CI.

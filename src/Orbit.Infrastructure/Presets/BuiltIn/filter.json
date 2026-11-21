@@ -1,0 +1,11 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "filter-warm-low-pass",
+    "nodeType": "processor.filter",
+    "name": "Warm Low-pass",
+    "group": "Tone shaping",
+    "description": "Soften upper harmonics without a pronounced resonant peak.",
+    "parameters": { "mode": 0, "cutoff": 700, "resonance": 0.707 }
+  }
+]

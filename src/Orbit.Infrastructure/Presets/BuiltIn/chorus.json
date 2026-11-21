@@ -1,0 +1,11 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "chorus-gentle",
+    "nodeType": "processor.chorus",
+    "name": "Gentle Chorus",
+    "group": "Thickening",
+    "description": "Slow, shallow pitch movement for sustained tones.",
+    "parameters": { "rate": 0.35, "depth": 2, "delay": 15, "mix": 0.3 }
+  }
+]

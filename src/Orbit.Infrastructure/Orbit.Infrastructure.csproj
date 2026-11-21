@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.15" />
     <ProjectReference Include="../Orbit.Application/Orbit.Application.csproj" />
+    <EmbeddedResource Include="Presets/BuiltIn/*.json" />
   </ItemGroup>
   <!-- CI sets this to the commit SHA and publishes the matching module tree. -->
   <ItemGroup Condition="'$(OrbitBrowserAssetVersion)' != ''">

@@ -1,0 +1,11 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "eq-remove-muddiness",
+    "nodeType": "processor.parametric-eq",
+    "name": "Remove Muddiness",
+    "group": "Corrective",
+    "description": "A moderate broad cut in the low-mid region of a layered sound.",
+    "parameters": { "frequency": 300, "gain": -3, "q": 0.8 }
+  }
+]

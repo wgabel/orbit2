@@ -1,0 +1,11 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "noise-soft-pink",
+    "nodeType": "generator.noise",
+    "name": "Soft Pink",
+    "group": "Atmosphere",
+    "description": "Quiet pink noise for adding texture behind a drone.",
+    "parameters": { "color": 1, "amplitude": 0.08 }
+  }
+]

@@ -9,6 +9,9 @@ using Orbit.Audio.Playback;
 using Orbit.Audio.Analysis;
 using Orbit.Application.Persistence;
 using Orbit.Infrastructure.Persistence;
+using Orbit.Application.Graphs;
+using Orbit.Application.Presets;
+using Orbit.Infrastructure.Presets;
 
 // Application entry point and composition root. Blazor's browser bootstrap
 // script loads the .NET runtime, then runs these top-level C# statements.
@@ -34,6 +37,13 @@ builder.Services.AddSingleton<IPatchLibraryStorage>(services => services.GetRequ
 builder.Services.AddSingleton<PatchLibraryService>();
 builder.Services.AddSingleton<PatchDocumentSerializer>();
 builder.Services.AddTransient<PatchPersistenceService>();
+builder.Services.AddSingleton(BuiltInNodes.CreateEditorRegistry());
+builder.Services.AddSingleton<INodePresetCatalog, EmbeddedNodePresetCatalog>();
+builder.Services.AddSingleton<NodePresetValidator>();
+builder.Services.AddSingleton<NodePresetService>();
 
 // Start the host, resolve dependencies and render the registered root component.
-await builder.Build().RunAsync();
+var host = builder.Build();
+// Validate the shipped catalog before rendering, even before the selector is introduced.
+_ = host.Services.GetRequiredService<NodePresetService>();
+await host.RunAsync();

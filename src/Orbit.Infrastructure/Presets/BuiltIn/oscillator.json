@@ -1,0 +1,29 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "oscillator-deep-sine",
+    "nodeType": "generator.oscillator",
+    "name": "Deep Sine",
+    "group": "Drones",
+    "description": "A low, pure tone with headroom for layering.",
+    "parameters": { "frequency": 110, "amplitude": 0.2, "phase": 0, "waveform": 0, "timing": 0, "division": 2 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "oscillator-slow-lfo",
+    "nodeType": "generator.oscillator",
+    "name": "Slow LFO",
+    "group": "Modulation",
+    "description": "A full-range bipolar sine for slowly modulating another node.",
+    "parameters": { "frequency": 0.1, "amplitude": 1, "phase": 0, "waveform": 0, "timing": 0, "division": 2 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "oscillator-quarter-pulse",
+    "nodeType": "generator.oscillator",
+    "name": "Quarter Pulse",
+    "group": "Modulation",
+    "description": "A square-wave modulation source locked to quarter notes.",
+    "parameters": { "frequency": 1, "amplitude": 1, "phase": 0, "waveform": 2, "timing": 1, "division": 2 }
+  }
+]

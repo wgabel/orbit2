@@ -1,0 +1,11 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "gain-half-level",
+    "nodeType": "processor.gain",
+    "name": "Half Level",
+    "group": "Gain staging",
+    "description": "Halve the input amplitude to leave headroom for mixing.",
+    "parameters": { "gain": 0.5 }
+  }
+]

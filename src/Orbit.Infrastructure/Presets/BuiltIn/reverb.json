@@ -1,0 +1,11 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "reverb-dark-ambient",
+    "nodeType": "processor.reverb",
+    "name": "Dark Ambient",
+    "group": "Atmospheric",
+    "description": "Long, dark reverb for evolving drones.",
+    "parameters": { "decay": 8.0, "damping": 0.8, "mix": 0.65 }
+  }
+]
