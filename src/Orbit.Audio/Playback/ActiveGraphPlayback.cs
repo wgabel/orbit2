@@ -14,6 +14,9 @@ internal sealed class ActiveGraphPlayback(GraphSnapshot snapshot, FaustGraphProg
     public IReadOnlyList<FaustParameterControl> Controls => Program.Controls;
     public Dictionary<string, double> Values { get; } = program.InitialControlValues();
     public SemaphoreSlim UpdateLock { get; } = new(1);
+    // Access only under UpdateLock. Accepted transient input is carried across
+    // compatible voice replacements, never into saved graph parameters.
+    public Dictionary<(Guid GraphId, Guid NodeId), int> LatchedPitchActions { get; } = [];
     private long requestedRevision = snapshot.Revision;
     public long RequestedRevision => Interlocked.Read(ref requestedRevision);
     public GraphPlaybackUpdate Result { get; private set; } = new(snapshot.Revision, true);

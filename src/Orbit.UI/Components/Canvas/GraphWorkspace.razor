@@ -1,6 +1,7 @@
 @namespace Orbit.UI.Components.Canvas
 @using Microsoft.AspNetCore.Components.Web
 @using Orbit.UI.Components.Analysis
+@using Orbit.Domain.Nodes.Composites
 
 @* One patch session and playback controller, with a reusable active canvas. *@
 @if (!initialized)
@@ -24,6 +25,10 @@ else
         <CanvasToolbar ZoomPercentage="@Canvas.Snapshot.Viewport.ZoomPercentage"
                        ZoomIn="@(() => canvasView!.ZoomIn())" ZoomOut="@(() => canvasView!.ZoomOut())"
                        Reset="@(() => canvasView!.ResetViewport())" Fit="@(() => canvasView!.FitAsync())" />
+        @if (Canvas.Snapshot.Graph.Nodes.FirstOrDefault(node => node.TypeKey == OutputRack.NodeType) is { } outputRack)
+        {
+            <button type="button" class="secondary" @onclick="() => canvasView!.FocusNodeAsync(outputRack.Id)">Locate output rack</button>
+        }
         <div class="workspace-toolbar toolbar-group">
         <label for="node-type">Add node</label>
         <select id="node-type" @bind="SelectedType">
@@ -35,8 +40,12 @@ else
         <button type="button" disabled="@(addingNode || switchingWorkspace)" @onclick="AddNodeAsync">Add</button>
         <button type="button" class="secondary" disabled="@(!HasSelection)" @onclick="DeleteSelection">Delete selected</button>
         </div>
-        <GraphPlaybackControls @key="workspaceGeneration" @ref="playbackControls" Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" TempoChanged="OnTempoChanged" SampleRateChanged="OnSampleRateChanged" Disabled="switchingWorkspace" />
+        <GraphPlaybackControls @key="workspaceGeneration" @ref="playbackControls" Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" TempoChanged="OnTempoChanged" SampleRateChanged="OnSampleRateChanged" PlaybackStopped="DisarmPerformance" Disabled="switchingWorkspace" />
     </div>
+    @if (PerformanceTarget is { } target)
+    {
+        <PerformanceKeyboard @key="(workspaceGeneration, graphId, target.Id, performanceEpoch)" Node="@target" PatchId="@session.GraphId" GraphId="@graphId" Offset="@PerformanceOffset(target.Id)" Playhead="@PerformanceStep(target.Id)" Tempo="@tempo" Edit="@(request => EditParameter(graphId, request))" ClearPattern="@(() => ClearPitchPattern(graphId, target.Id))" />
+    }
     @if (Error is not null)
     {
         <p class="parameter-error workspace-error" role="alert">@Error</p>

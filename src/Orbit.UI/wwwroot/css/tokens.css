@@ -149,6 +149,9 @@
     --component-workspace-overlay-layer: 10;
     --component-workspace-toolbar-button-block: var(--primitive-space-input-block);
     --component-workspace-toolbar-button-inline: var(--primitive-space-md);
+    --component-pitch-pattern-max-height: 18rem;
+    --component-pitch-pattern-numeric-width: 6rem;
+    --component-pitch-pattern-step-min-width: 4rem;
     --component-canvas-min-height: 15rem;
     --component-canvas-grid-spacing: 24px;
     --component-canvas-grid-dot: 1px;

@@ -321,6 +321,20 @@ public partial class GraphCanvas : IAsyncDisposable
         FitMeasured();
     }
 
+    public async Task FocusNodeAsync(Guid nodeId)
+    {
+        var state = State;
+        await MeasureAsync();
+        if (disposed || !ReferenceEquals(state, State) || measurement is null ||
+            !Snapshot.NodePositions.TryGetValue(nodeId, out var position)) return;
+        var node = measurement.Nodes.FirstOrDefault(item => item.NodeId == nodeId);
+        if (node is null) return;
+        var bounds = new CanvasBounds(position.X, position.Y, position.X + node.Width, position.Y + node.Height);
+        if (!bounds.IsValid || measurement.Width <= 0 || measurement.Height <= 0) return;
+        State.SelectNode(nodeId);
+        State.FitToBounds(bounds, measurement.Width, measurement.Height, 32);
+    }
+
     /// <summary>Measure at Add time, including resizes and scrolling not associated with graph edits.
     /// The reservation is consumed by the next synchronous node-add commit on this canvas.</summary>
     public async Task<IDisposable?> ReserveVisibleNodePlacementAsync()

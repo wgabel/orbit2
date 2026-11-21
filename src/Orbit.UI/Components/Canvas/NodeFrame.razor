@@ -3,6 +3,7 @@
 @using Orbit.Domain.Parameters
 @using Orbit.Domain.Nodes.Composites
 @using Orbit.Domain.Nodes
+@using Orbit.Domain.Nodes.Generators
 @using Orbit.UI.Components.Parameters
 @using Orbit.UI.Components.Analysis
 @using Orbit.Presentation.Canvas
@@ -28,6 +29,14 @@
             }
         </div>
     </header>
+    @if (Node.TypeKey == OutputRack.NodeType)
+    {
+        <div class="node-boundary-description">To parent graph · exposed outputs</div>
+    }
+    else if (Node.TypeKey == InputRack.NodeType)
+    {
+        <div class="node-boundary-description">From parent graph · exposed inputs</div>
+    }
     <NodePresetSelector Node="@Node" OnApply="OnPresetApply" OnManage="OnManagePresets" CatalogRevision="@PresetCatalogRevision" />
     <RhythmicActionPanel Node="@Node" PatchId="@PatchId" GraphId="@GraphId" />
     <div class="node-ports">
@@ -64,7 +73,7 @@
     @if (Node.Parameters.Count > 0)
     {
         <div class="node-parameters">
-            @foreach (var parameter in Node.Parameters.Where(Node.IsParameterActive).OrderByDescending(parameter => parameter.Definition.Choices is not null))
+            @foreach (var parameter in Node.Parameters.Where(Node.IsParameterActive).Where(p => Node.TypeKey != NoteSequencerGenerator.NodeType || !NoteSequencerGenerator.IsPatternParameter(p.Definition.Key)).OrderByDescending(parameter => parameter.Definition.Choices is not null))
             {
                 @if (parameter.Definition.Choices is not null)
                 {

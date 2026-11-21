@@ -5,13 +5,14 @@ using Orbit.Application.Services;
 using Orbit.Audio.Compilation;
 using System.Collections.Concurrent;
 using Orbit.Domain.Parameters;
+using Orbit.Domain.Nodes.Generators;
 
 namespace Orbit.Audio.Playback;
 
 /// <summary>Maps a committed graph to an engine request. The compiler and
 /// engine are interchangeable dependencies; the UI knows neither Faust nor JS.</summary>
 public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudioEngine engine)
-    : IGraphPlaybackService, ISignalAnalysisService, IRhythmicActionService
+    : IGraphPlaybackService, ISignalAnalysisService, IRhythmicActionService, IPerformanceNoteService
 {
     // Leave headroom at the browser output in addition to graph-defined gain.
     private const double PlaybackVolume = 0.5;
@@ -68,9 +69,11 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
             if (program.Source != playback.Program.Source)
             {
                 var generation = Guid.NewGuid();
-                var request = CreateRequest(program, generation, values);
+                var request = CreateRequest(program, generation, values, playback.LatchedPitchActions);
                 if (!await engine.ReplaceAsync(request, graph.Revision))
                     return playback.Result with { IsActive = !playback.Stopping };
+                foreach (var target in playback.LatchedPitchActions.Keys.Where(key => !program.RhythmicInputs.Any(input =>
+                    input.IsPitch && (input.GraphId, input.NodeId) == key)).ToArray()) playback.LatchedPitchActions.Remove(target);
                 return playback.Accept(graph, program, values, generation);
             }
 
@@ -78,7 +81,11 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
             // oscillator state when a validated base value changes.
             var changes = values.Where(value => !playback.Values.TryGetValue(value.Key, out var previous) || previous != value.Value)
                 .ToDictionary(value => value.Key, value => value.Value);
-            if (changes.Count > 0 && !await engine.SetParametersAsync(SoundId(graph.Id), changes))
+            var patterns = program.RhythmicInputs.Select((input, index) => (input, index)).Where(entry => entry.input.IsPitch)
+                .Select(entry => (entry.index, Previous: PitchPattern.FromNode(playback.Topology.GetGraph(entry.input.GraphId).GetNode(entry.input.NodeId)),
+                    Current: PitchPattern.FromNode(graph.GetGraph(entry.input.GraphId).GetNode(entry.input.NodeId))))
+                .Where(entry => !entry.Current.Matches(entry.Previous)).Select(entry => new PitchPatternUpdate(entry.index, entry.Current)).ToArray();
+            if ((changes.Count > 0 || patterns.Length > 0) && !await engine.SetGraphControlsAsync(SoundId(graph.Id), changes, patterns))
                 return playback.Result with { IsActive = false };
             return playback.Accept(graph, program, values);
         }
@@ -96,10 +103,36 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
         for (var index = 0; index < inputs.Count; index++)
         {
             var input = inputs[index];
-            if (input.GraphId == graphId && input.NodeId == nodeId && (action == RhythmicAction.Fire || input.AllowClose))
+            if (!input.IsPitch && input.GraphId == graphId && input.NodeId == nodeId && (action == RhythmicAction.Fire || input.AllowClose))
                 return sink.SendRhythmicActionAsync(SoundId(patchId), generation, index, action);
         }
         return Task.FromResult(false);
+    }
+
+    public async Task<bool> SendAsync(Guid patchId, Guid graphId, Guid nodeId, PerformanceNoteAction action)
+    {
+        if (!action.IsValid || engine is not IPerformanceNoteSink sink || !active.TryGetValue(patchId, out var playback) ||
+            !await playback.UpdateLock.WaitAsync(0)) return false;
+        try
+        {
+            if (playback.Stopping || playback.RequestedRevision != playback.Result.AppliedRevision ||
+                !active.TryGetValue(patchId, out var current) || !ReferenceEquals(current, playback)) return false;
+            var inputs = playback.Program.RhythmicInputs;
+            for (var index = 0; index < inputs.Count; index++)
+            {
+                var input = inputs[index];
+                if (!input.IsPitch || input.GraphId != graphId || input.NodeId != nodeId) continue;
+                var reference = (int)playback.Topology.GetGraph(graphId).GetNode(nodeId).Parameters
+                    .Single(parameter => parameter.Definition.Key == NoteSequencerGenerator.ReferenceKey).BaseValue;
+                if (action.Kind == PerformanceNoteKind.NoteOff) return true; // Continuous mode never releases pitch.
+                if (action.Kind == PerformanceNoteKind.NoteOn && !NoteSequencerGenerator.IsPlayable(action.Note, reference)) return false;
+                if (!await sink.SendPerformanceNoteAsync(SoundId(patchId), playback.Generation, index, action.Code)) return false;
+                playback.LatchedPitchActions[(graphId, nodeId)] = action.Code;
+                return true;
+            }
+            return false;
+        }
+        finally { playback.UpdateLock.Release(); }
     }
 
     public async Task<GraphParameterTelemetry?> GetTelemetryAsync(Guid graphId)
@@ -109,8 +142,9 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
         var revision = playback.Result.AppliedRevision;
         var controls = playback.Controls;
         var envelopeMeters = playback.Program.EnvelopeMeters;
+        var pitchMeters = playback.Program.PitchMeters;
         var generation = playback.Generation;
-        if (!controls.Any(control => control.MeterName is not null) && envelopeMeters.Count == 0) return null;
+        if (!controls.Any(control => control.MeterName is not null) && envelopeMeters.Count == 0 && pitchMeters.Count == 0) return null;
         var outputs = await engine.GetOutputValuesAsync(SoundId(graphId));
         // Do not attach values from an old or crossfading worklet to a new graph.
         if (outputs is null || playback.Stopping || !active.TryGetValue(graphId, out var current) ||
@@ -121,6 +155,10 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
         var values = new Dictionary<Guid, Dictionary<ParameterAddress, double>>();
         var envelopeAddresses = envelopeMeters.ToDictionary(meter => meter.Name, StringComparer.Ordinal);
         var playheads = new Dictionary<Guid, Dictionary<Guid, EnvelopePlayhead>>();
+        var pitchAddresses = pitchMeters.ToDictionary(meter => meter.Name, StringComparer.Ordinal);
+        var stepAddresses = pitchMeters.ToDictionary(meter => meter.StepName, StringComparer.Ordinal);
+        var pitchOffsets = new Dictionary<Guid, Dictionary<Guid, double>>();
+        var pitchSteps = new Dictionary<Guid, Dictionary<Guid, int>>();
         foreach (var (path, value) in outputs)
         {
             var name = path[(path.LastIndexOf('/') + 1)..];
@@ -136,14 +174,26 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
                     playheads.Add(meter.GraphId, local = new Dictionary<Guid, EnvelopePlayhead>());
                 local[meter.NodeId] = playhead;
             }
+            else if (pitchAddresses.TryGetValue(name, out var pitch) && double.IsFinite(value) && Math.Abs(value) <= NoteSequencerGenerator.MaximumOffset)
+            {
+                if (!pitchOffsets.TryGetValue(pitch.GraphId, out var local)) pitchOffsets.Add(pitch.GraphId, local = []);
+                local[pitch.NodeId] = value;
+            }
+            else if (stepAddresses.TryGetValue(name, out var step) && value is >= 0 and <= 64 && value == Math.Truncate(value))
+            {
+                if (!pitchSteps.TryGetValue(step.GraphId, out var local)) pitchSteps.Add(step.GraphId, local = []);
+                local[step.NodeId] = (int)value;
+            }
         }
-        return values.Count == 0 && playheads.Count == 0 ? null : new(graphId, revision,
+        return values.Count == 0 && playheads.Count == 0 && pitchOffsets.Count == 0 ? null : new(graphId, revision,
             values.Remove(graphId, out var rootValues) ? rootValues : new Dictionary<ParameterAddress, double>())
         {
             ChildValues = values.ToDictionary(pair => pair.Key,
                 pair => (IReadOnlyDictionary<ParameterAddress, double>)pair.Value),
             EnvelopePlayheads = playheads.ToDictionary(pair => pair.Key,
-                pair => (IReadOnlyDictionary<Guid, EnvelopePlayhead>)pair.Value)
+                pair => (IReadOnlyDictionary<Guid, EnvelopePlayhead>)pair.Value),
+            PitchOffsets = pitchOffsets.ToDictionary(pair => pair.Key, pair => (IReadOnlyDictionary<Guid, double>)pair.Value),
+            PitchSteps = pitchSteps.ToDictionary(pair => pair.Key, pair => (IReadOnlyDictionary<Guid, int>)pair.Value)
         };
     }
 
@@ -212,12 +262,14 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
         }
     }
 
-    private static PlaybackRequest CreateRequest(FaustGraphProgram program, Guid generation, IReadOnlyDictionary<string, double>? values = null) =>
+    private static PlaybackRequest CreateRequest(FaustGraphProgram program, Guid generation, IReadOnlyDictionary<string, double>? values = null,
+        IReadOnlyDictionary<(Guid GraphId, Guid NodeId), int>? pitchActions = null) =>
         new(SoundId(program.GraphId), "OrbitGraph", PlaybackVolume,
             values ?? program.InitialControlValues(),
             Source: program.Source, RequiresTransport: program.RequiresTransport,
             OutputChannels: program.SignalTaps.ChannelCount, Generation: generation,
-            TransportInputChannels: program.TransportInputChannels, RhythmicInputs: program.RhythmicInputs);
+            TransportInputChannels: program.TransportInputChannels, RhythmicInputs: program.RhythmicInputs.Select(input => input.IsPitch && pitchActions is not null &&
+                pitchActions.TryGetValue((input.GraphId, input.NodeId), out var code) ? input with { InitialAction = code } : input).ToArray());
 
     private static Dictionary<string, double> GetControlValues(GraphSnapshot graph, FaustGraphProgram program)
     {

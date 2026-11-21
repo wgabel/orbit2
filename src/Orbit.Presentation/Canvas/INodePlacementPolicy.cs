@@ -4,5 +4,6 @@ namespace Orbit.Presentation.Canvas;
 public interface INodePlacementPolicy
 {
     CanvasPoint FindPosition(IEnumerable<CanvasPoint> occupiedPositions);
+    CanvasPoint FindOutputRackPosition(IEnumerable<CanvasPoint> occupiedPositions);
     CanvasPoint FindVisiblePosition(CanvasBounds visibleBounds, IEnumerable<CanvasBounds> occupiedBounds);
 }

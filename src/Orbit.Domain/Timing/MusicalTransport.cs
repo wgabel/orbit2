@@ -11,6 +11,7 @@ public sealed class MusicalTransport
     public const double MaximumTempo = 300;
     public const double DefaultTempo = 120;
     private double anchorBeat;
+    private double anchorSeconds;
     private long anchorSample;
     private int anchorSampleRate;
 
@@ -37,6 +38,7 @@ public sealed class MusicalTransport
     public void Stop(AudioClockSnapshot clock)
     {
         anchorBeat = GetBeatPosition(clock);
+        anchorSeconds = GetElapsedSeconds(clock);
         IsPlaying = false;
     }
 
@@ -44,6 +46,7 @@ public sealed class MusicalTransport
     {
         ValidateTempo(beatsPerMinute);
         anchorBeat = GetBeatPosition(clock);
+        anchorSeconds = GetElapsedSeconds(clock);
         if (clock is not null)
         {
             anchorSample = clock.CurrentSample;
@@ -57,6 +60,7 @@ public sealed class MusicalTransport
     {
         GetBeatPosition(clock); // Validate the current clock before changing anything.
         anchorBeat = 0;
+        anchorSeconds = 0;
         if (clock is not null)
         {
             anchorSample = clock.CurrentSample;
@@ -76,6 +80,12 @@ public sealed class MusicalTransport
 
         var elapsedSeconds = (clock.CurrentSample - anchorSample) / (double)anchorSampleRate;
         return anchorBeat + elapsedSeconds * BeatsPerMinute / 60;
+    }
+
+    public double GetElapsedSeconds(AudioClockSnapshot? clock = null)
+    {
+        GetBeatPosition(clock); // share the same clock validation and freeze contract
+        return anchorSeconds + (IsPlaying ? (clock!.CurrentSample - anchorSample) / (double)anchorSampleRate : 0);
     }
 
     /// <summary>Converts a musical cycle length, in beats, to a frequency in Hz.</summary>

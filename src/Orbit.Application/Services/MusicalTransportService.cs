@@ -71,7 +71,7 @@ public sealed class MusicalTransportService(IAudioClock clock, ITransportSignalS
         {
             await operation();
             var snapshot = new TransportSnapshot(transport.BeatsPerMinute,
-                transport.GetBeatPosition(lastClock), transport.IsPlaying, lastClock) { ResetGeneration = resetGeneration };
+                transport.GetBeatPosition(lastClock), transport.IsPlaying, lastClock) { ResetGeneration = resetGeneration, ElapsedSeconds = transport.GetElapsedSeconds(lastClock) };
             if (signalDirty && sink is not null)
             {
                 await sink.SetTransportAsync(snapshot);

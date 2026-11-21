@@ -343,6 +343,34 @@ File.WriteAllText(Path.Combine(args[0], "pitch.json"), JsonSerializer.Serialize(
 }));
 
 // Direct signal fixture exercises the exact production state machine with sample-accurate
+// Live keyboard actions share one pitch lane across a continuously running bank.
+using var keyboardSession = new PatchSession(registry);
+var keyboardGraph = keyboardSession.GraphId;
+GraphNodeSnapshot KeyAdd(string type) => keyboardSession.Execute(new AddNodeCommand(keyboardGraph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+void KeySet(GraphNodeSnapshot node, string key, double value) => keyboardSession.Execute(new SetParameterValueCommand(keyboardGraph, Address(node, key), value));
+void KeyWire(GraphNodeSnapshot from, GraphNodeSnapshot to, string port) => keyboardSession.Execute(new ConnectNodesCommand(keyboardGraph,
+    new(from.Id, from.Outputs.Single().Id), new(to.Id, to.Inputs.Single(p => p.Key == port).Id)));
+var keyboardSequencer = KeyAdd(NoteSequencerGenerator.NodeType);
+KeySet(keyboardSequencer, NoteSequencerGenerator.ReferenceKey, 45);
+var keyboardMixer = KeyAdd(MixerProcessor.NodeType);
+var keyboardMaster = KeyAdd(MasterOutput.NodeType);
+var keyboardVoices = new[] {110d, 165d}.Select(hz => {
+    var voice = KeyAdd(OscillatorGenerator.NodeType);
+    KeySet(voice, "frequency", hz); KeySet(voice, "amplitude", 0.1); KeySet(voice, OscillatorGenerator.PitchTrackingKey, 1);
+    KeyWire(keyboardSequencer, voice, OscillatorGenerator.PitchPortKey); KeyWire(voice, keyboardMixer, "audio-in");
+    return voice;
+}).ToArray();
+KeyWire(keyboardMixer, keyboardMaster, "audio-in");
+var keyboardProgram = FaustGraphCompiler.CreateBuiltIn().Compile(keyboardSession.Snapshot, SignalTapManifest.MaxAuxiliaryChannels);
+int KeyTap(GraphNodeSnapshot node) => keyboardProgram.SignalTaps.Channels[new(keyboardGraph, keyboardGraph, node.Id, node.Outputs.Single().Id, PortDirection.Output)];
+File.WriteAllText(Path.Combine(args[0], "keyboard-pitch.json"), JsonSerializer.Serialize(new {
+    source = keyboardProgram.Source, values = keyboardProgram.InitialControlValues(), pitch = KeyTap(keyboardSequencer),
+    voices = keyboardVoices.Select(KeyTap).ToArray(), meter = keyboardProgram.PitchMeters.Single().Name,
+    stepMeter = keyboardProgram.PitchMeters.Single().StepName,
+    glide = keyboardProgram.Controls.Single(c => c.Address.ParameterId == keyboardSequencer.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.GlideKey).Id).Name
+}));
+
+// Direct signal fixture exercises the exact production state machine with sample-accurate
 // arbitrary edges and controls. The impact fixture exercises normal nested graph routing.
 var ad = FaustEnvelopeSegments.EmitAd(FaustSchmittEdge.Emit("signal"), "a", "d", "ac", "dc");
 using var impactSession = new PatchSession(BuiltInNodes.CreateEditorRegistry());

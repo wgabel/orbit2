@@ -13,6 +13,7 @@ public sealed record FaustGraphProgram(
     public SignalTapManifest SignalTaps { get; init; } = SignalTapManifest.Empty;
     public IReadOnlyList<FaustAuditionControl> AuditionControls { get; init; } = [];
     public IReadOnlyList<FaustEnvelopeMeter> EnvelopeMeters { get; init; } = [];
+    public IReadOnlyList<FaustPitchMeter> PitchMeters { get; init; } = [];
 
     public Dictionary<string, double> InitialControlValues() => Controls
         .Select(control => (control.Name, control.InitialValue))
@@ -21,3 +22,7 @@ public sealed record FaustGraphProgram(
 }
 
 public sealed record FaustEnvelopeMeter(Guid GraphId, Guid NodeId, string Name);
+public sealed record FaustPitchMeter(Guid GraphId, Guid NodeId, string Name)
+{
+    public string StepName => Name.Replace("pitch_", "step_", StringComparison.Ordinal);
+}

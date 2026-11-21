@@ -5,6 +5,7 @@ public sealed record TransportSnapshot(double BeatsPerMinute, double BeatPositio
 {
     public static TransportSnapshot Initial { get; } = new(MusicalTransport.DefaultTempo, 0, false, null);
     public long ResetGeneration { get; init; }
+    public double ElapsedSeconds { get; init; }
 
     public double GetFrequency(MusicalDivision division) =>
         MusicalTime.GetFrequency(BeatsPerMinute, MusicalTime.GetBeats(division));

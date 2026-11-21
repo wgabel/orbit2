@@ -40,9 +40,11 @@ public sealed class MusicalTransportServiceTests
         Assert.Equal(2, (await service.SynchronizeAsync(true)).BeatPosition);
         var changed = await service.SetTempoAsync(60);
         Assert.Equal(2, changed.BeatPosition);
+        Assert.Equal(1, changed.ElapsedSeconds);
         Assert.Equal(sampleRate, changed.Clock!.SampleRate);
         clock.Set(3L * sampleRate, sampleRate);
         Assert.Equal(3, (await service.SynchronizeAsync(false)).BeatPosition);
+        Assert.Equal(2, (await service.SynchronizeAsync(false)).ElapsedSeconds);
         clock.Set(5L * sampleRate, sampleRate);
         Assert.Equal(3, (await service.SynchronizeAsync(false)).BeatPosition);
         Assert.Equal(3, (await service.SynchronizeAsync(true)).BeatPosition);
@@ -51,6 +53,7 @@ public sealed class MusicalTransportServiceTests
         var reset = await service.ResetAsync();
         Assert.True(reset.IsPlaying);
         Assert.Equal(0, reset.BeatPosition);
+        Assert.Equal(0, reset.ElapsedSeconds);
         clock.Set(7L * sampleRate, sampleRate);
         Assert.Equal(1, (await service.SynchronizeAsync(true)).BeatPosition);
     }

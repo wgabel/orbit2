@@ -639,6 +639,13 @@ try {
     assert.ok(Number(await beat.innerText()) >= Number(frozenBeat));
     assert.equal(await page.locator("#node-type option[value='output.master']").count(), 0);
     assert.equal(await articles.count(), 4);
+    const outputRack = articles.filter({ has: page.locator(".node-header > span", { hasText: /^Output Rack$/ }) });
+    await outputRack.getByText("To parent graph · exposed outputs").waitFor();
+    await outputRack.getByRole("button", { name: "Input: Audio (Audio)" }).waitFor();
+    await page.getByRole("button", { name: "Locate output rack" }).click();
+    await outputRack.and(page.locator(".node-selected")).waitFor();
+    assert.match(await outputRack.getAttribute("class"), /node-selected/);
+    await page.getByRole("button", { name: "Fit", exact: true }).click();
     const rack = articles.filter({ hasText: "Input Parameters Rack" });
     await rack.getByRole("button", { name: "Output: Pitch (Modulation)" }).waitFor();
     const childFrequency = page.getByRole("spinbutton", { name: "Frequency (Hz)" });
@@ -868,10 +875,13 @@ try {
         await page.locator("#node-type").selectOption(type);
         const transform = await world.getAttribute("style");
         const existing = await articles.evaluateAll(nodes => Object.fromEntries(nodes.map(node => [node.dataset.nodeId, node.getAttribute("style")])));
-        const count = await articles.count();
         await page.getByRole("button", { name: "Add", exact: true }).click();
-        const added = articles.nth(count);
+        // Boundary racks paint above ordinary nodes, so DOM order no longer
+        // matches addition order in nested canvases. Identify the new node by ID.
+        const added = page.locator("article[data-node-id]" + Object.keys(existing)
+            .map(id => `:not([data-node-id='${id}'])`).join(""));
         await added.waitFor();
+        assert.equal(await added.count(), 1);
         assert.equal(await world.getAttribute("style"), transform, "Adding must not pan or zoom the canvas");
         const result = await added.evaluate(node => {
             const header = node.querySelector(".node-header").getBoundingClientRect();
@@ -915,6 +925,7 @@ try {
     // then verify the same plot consumes accepted modulation telemetry.
     const responsePage = await browser.newPage({ deviceScaleFactor: 2 });
     responsePage.on("pageerror", error => console.error(error.message));
+    responsePage.on("console", message => { if (message.type() === "error") console.error(message.text()); });
     await responsePage.goto("http://127.0.0.1:" + server.address().port);
     const responseStatus = responsePage.locator(".playback-toolbar").getByRole("status");
     await responseStatus.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
@@ -1074,6 +1085,75 @@ try {
     assert.match(await responseStatus.innerText(), /^Playing revision \d+$/);
     await responsePage.getByRole("button", { name: "Stop", exact: true }).click();
     await responseStatus.filter({ hasText: /Ready/ }).waitFor();
+
+    // The live keyboard latches pitch across release and does not edit the graph.
+    await transpose.fill("0");
+    const sequencer = await addResponseNode("generator.note-sequencer");
+    for (const voice of [pitchA, pitchB]) {
+        await sequencer.getByRole("button", { name: "Output: Pitch (Modulation)" }).press("Enter");
+        await voice.getByRole("button", { name: "Input: Pitch (Modulation)" }).press("Enter");
+    }
+    await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
+    await sequencer.locator(".node-header > span").click();
+    const performance = responsePage.getByRole("region", { name: "Performance keyboard" });
+    await responsePage.bringToFront();
+    await responsePage.locator('.performance-keyboard[data-keyboard-ready="true"]').waitFor();
+    await performance.getByRole("button", { name: "Arm keyboard" }).click();
+    await performance.getByRole("button", { name: "Disarm keyboard" }).waitFor();
+    await responsePage.getByRole("button", { name: "Play patch" }).click();
+    await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
+    const keyboardRevision = await responseStatus.innerText();
+    await performance.locator('[data-live-pitch-offset="0"]').waitFor();
+    assert.equal(await performance.getAttribute("data-armed"), "true", await performance.innerText());
+    const middleC = performance.locator('[data-midi-note="60"]');
+    assert.equal(await middleC.getAttribute("aria-label"), "Play C4 (A)");
+    await middleC.click();
+    await performance.locator('[data-live-pitch-offset="-9"]').waitFor();
+    await responsePage.locator('.performance-keyboard[data-armed="true"]').waitFor();
+    await performance.focus();
+    assert.equal(await responsePage.evaluate(() => document.visibilityState), "visible");
+    assert.equal(await responsePage.evaluate(() => document.querySelector('[aria-modal="true"], [role="dialog"], .workspace-library-panel, .rack-editor, .connection-amount-editor')?.className ?? null), null, "A modal or editor is blocking performance capture");
+    await responsePage.keyboard.press("x");
+    await performance.getByText("Octave 5 · reference A4", { exact: true }).waitFor();
+    await responsePage.keyboard.down("h");
+    await performance.locator('[data-live-pitch-offset="12"]').waitFor();
+    await responsePage.keyboard.up("h");
+    await waitForLiveHz(pitchA, 220);
+    await waitForLiveHz(pitchB, 330);
+    await frequencyA.focus();
+    await responsePage.keyboard.press("a"); // editing focus must not capture
+    assert.equal(await performance.locator('[data-live-pitch-offset]').getAttribute('data-live-pitch-offset'), "12");
+    await performance.getByRole("button", { name: "Play C5 (A)" }).click();
+    await performance.locator('[data-live-pitch-offset="3"]').waitFor();
+    await performance.getByRole("button", { name: "Reset pitch" }).click();
+    await performance.locator('[data-live-pitch-offset="0"]').waitFor();
+    assert.equal(await responseStatus.innerText(), keyboardRevision);
+    await performance.getByRole("button", { name: "Edit pattern", exact: true }).click();
+    const pattern = performance.getByRole("region", { name: "Pitch pattern" });
+    await pattern.getByRole("combobox", { name: "Step count" }).selectOption("2");
+    await pattern.getByRole("combobox", { name: "Timing", exact: true }).selectOption("1");
+    await pattern.getByRole("spinbutton", { name: "Step seconds" }).fill("1");
+    await pattern.getByRole("spinbutton", { name: "Step seconds" }).press("Tab");
+    const stepEntry = pattern.getByRole("checkbox", { name: "Step entry (arm keyboard)" });
+    await stepEntry.check();
+    await performance.focus();
+    await responsePage.keyboard.press("h"); // octave 5, A5; edit instead of live pitch
+    await pattern.getByRole("button", { name: "Step 1: A5", exact: true }).waitFor();
+    await pattern.locator('[data-step="2"][aria-pressed="true"]').waitFor();
+    await stepEntry.uncheck();
+    await pattern.getByRole("combobox", { name: "Step note" }).selectOption("70");
+    await pattern.getByRole("combobox", { name: "Pattern mode" }).selectOption("1");
+    await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
+    await responsePage.getByRole("button", { name: "Reset transport", exact: true }).click();
+    await pattern.locator('[data-sequence-playhead="1"]').waitFor();
+    await performance.locator('[data-live-pitch-offset="12"]').waitFor();
+    await pattern.locator('[data-sequence-playhead="2"]').waitFor();
+    await performance.locator('[data-live-pitch-offset="0"]').waitFor();
+    await pattern.getByRole("combobox", { name: "Pattern mode" }).selectOption("0");
+    await pattern.locator('[data-sequence-playhead="none"]').waitFor();
+    await responsePage.getByRole("button", { name: "Stop", exact: true }).click();
+    await responseStatus.filter({ hasText: /Ready/ }).waitFor();
+    await performance.getByRole("button", { name: "Arm keyboard" }).waitFor();
 
     // The AD generator uses the normal canvas, preset, range and live-control paths.
     await responsePage.getByRole("button", { name: "Patches", exact: true }).click();

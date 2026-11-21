@@ -31,6 +31,14 @@ public sealed class FaustNodeContext
     public bool RequiresTransportTempo { get; private set; }
     public bool RequiresTransportReset { get; private set; }
     public bool? ManualRhythmicInput { get; private set; }
+    public bool ManualPitchInput { get; private set; }
+    public string? PitchMeterName { get; private set; }
+    public string PitchMeter() => PitchMeterName = $"pitch_{Node.Id:N}";
+    public string PerformancePitchInput()
+    {
+        ManualPitchInput = true;
+        return $"action_{Node.Id:N}";
+    }
     public string? EnvelopeMeterName { get; private set; }
 
     public string EnvelopeMeter() => EnvelopeMeterName = $"e_{Node.Id:N}";
@@ -73,7 +81,7 @@ public sealed class FaustNodeContext
         return InputSignal(port.Id);
     }
 
-    public string Parameter(string key, string? signalMaximum = null, string? baseMultiplier = null, bool initializeAtTarget = false)
+    public string Parameter(string key, string? signalMaximum = null, string? baseMultiplier = null, bool initializeAtTarget = false, bool unsmoothed = false)
     {
         var parameter = Node.Parameters.SingleOrDefault(parameter => parameter.Definition.Key == key)
             ?? throw new FaustCompilationException($"Node {Node.TypeKey} has no parameter '{key}'.");
@@ -102,7 +110,7 @@ public sealed class FaustNodeContext
             var slider = $"hslider(\"{name}\", {initial}, {minimum}, {maximum}, {step})";
             // Start a time-sensitive control at the actual initialized target,
             // not a zero-valued smoother. Subsequent edits use the same si.smoo.
-            var expression = definition.Choices is not null ? slider : initializeAtTarget
+            var expression = definition.Choices is not null || unsmoothed ? slider : initializeAtTarget
                 ? $"first + ((value - first) : si.smoo) with {{ value = {slider}; first = ((select2(1 - (1 : mem), _, value)) ~ _); }}"
                 : slider + " : si.smoo";
             definitions.Add($"{name} = {expression};");

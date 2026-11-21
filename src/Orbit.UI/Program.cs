@@ -35,6 +35,7 @@ builder.Services.AddSingleton<IProcessorResponseAnalyzer, ProcessorResponseAnaly
 builder.Services.AddSingleton<FaustGraphPlaybackService>();
 builder.Services.AddSingleton<IGraphPlaybackService>(services => services.GetRequiredService<FaustGraphPlaybackService>());
 builder.Services.AddSingleton<IRhythmicActionService>(services => services.GetRequiredService<FaustGraphPlaybackService>());
+builder.Services.AddSingleton<IPerformanceNoteService>(services => services.GetRequiredService<FaustGraphPlaybackService>());
 builder.Services.AddSingleton<ISignalAnalysisService>(services => services.GetRequiredService<FaustGraphPlaybackService>());
 builder.Services.AddSingleton(new ScopeBrowserAssets(BrowserAudioEngine.AudioModulePath));
 builder.Services.AddSingleton<BrowserPatchStorage>();

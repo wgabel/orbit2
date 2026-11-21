@@ -46,6 +46,9 @@ public sealed class NodePreset
         if (nodeType == EnvelopeGenerator.NodeType && values.Count == 5 && EnvelopeGenerator.LegacyAdParameterKeys.All(values.ContainsKey))
             foreach (var definition in EnvelopeGenerator.ModeExtensionDefinitions)
                 values.Add(definition.Key, definition.DefaultValue);
+        if (nodeType == NoteSequencerGenerator.NodeType && values.Count == 2 && values.ContainsKey(NoteSequencerGenerator.ReferenceKey) && values.ContainsKey(NoteSequencerGenerator.InitialPitchKey))
+            foreach (var definition in NoteSequencerGenerator.PatternDefinitions)
+                values.Add(definition.Key, definition.DefaultValue);
         Parameters = new ReadOnlyDictionary<string, double>(values);
     }
 

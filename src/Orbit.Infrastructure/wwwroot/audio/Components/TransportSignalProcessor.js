@@ -20,8 +20,22 @@ class TransportSignalProcessor extends AudioWorkletProcessor {
         if (!channel) return true;
         const anchor = this.anchor.sampleRate === sampleRate
             ? this.anchor : { ...this.anchor, isPlaying: false };
-        for (let i = 0; i < channel.length; i++)
+        for (let i = 0; i < channel.length; i++) {
             channel[i] = beatAtFrame(anchor, currentFrame + i, sampleRate);
+            // Separate whole/fraction channels preserve fractional precision
+            // across long loops; only the action adapter consumes these.
+            const elapsed = anchor.isPlaying ? Math.max(0, currentFrame + i - anchor.frame) / sampleRate : 0;
+            const beat = (anchor.absoluteBeat ?? anchor.beat) + elapsed * anchor.beatsPerMinute / 60;
+            const seconds = (anchor.seconds ?? 0) + elapsed;
+            if (outputs[0][2]) {
+                const wholeBeat = Math.floor(beat), wholeSeconds = Math.floor(seconds);
+                outputs[0][2][i] = wholeBeat;
+                outputs[0][3][i] = beat - wholeBeat;
+                outputs[0][4][i] = wholeSeconds;
+                outputs[0][5][i] = seconds - wholeSeconds;
+                outputs[0][6][i] = anchor.resetGeneration;
+            }
+        }
         if (reset) {
             reset.fill(0);
             if (this.resetPending) reset[0] = 1;

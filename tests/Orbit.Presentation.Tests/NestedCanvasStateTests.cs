@@ -3,6 +3,7 @@ using Orbit.Application.Graphs.Commands;
 using Orbit.Application.Graphs.Events;
 using Orbit.Application.Graphs.Sessions;
 using Orbit.Application.Graphs.Snapshots;
+using Orbit.Application.Persistence;
 using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Ports;
@@ -14,6 +15,32 @@ namespace Orbit.Presentation.Tests;
 /// <summary>Independent canvas state for multiple graphs of the same patch.</summary>
 public sealed class NestedCanvasStateTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ImpactOutputRackStartsInItsOwnColumnAndSavedPositionsArePreserved(bool useCustomPlacement)
+    {
+        using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+        var impact = Add(session, session.GraphId, ImpactTemplate.PresetKey);
+        var composite = impact.Composite!;
+        var graph = composite.Graph;
+        // Exercise both the normal navigation path (default policy) and an injected policy.
+        var placement = useCustomPlacement ? new GridNodePlacementPolicy(columnSpacing: 480, rowSpacing: 360, columns: 4) : null;
+        var columnSpacing = useCustomPlacement ? 480 : 320;
+        using var canvas = new CanvasStateService(session, graph.Id, placement);
+        var rack = canvas.Snapshot.NodePositions[composite.OutputRackId];
+        Assert.All(canvas.Snapshot.NodePositions.Where(pair => pair.Key != composite.OutputRackId),
+            pair => Assert.True(rack.X >= pair.Value.X + columnSpacing));
+        var output = Assert.Single(graph.GetNode(composite.OutputRackId).Inputs);
+        Assert.Equal("Audio", output.Name);
+        Assert.Contains(graph.Connections, edge => edge.Destination == new PortAddress(composite.OutputRackId, output.Id));
+
+        var saved = new SavedCanvas(graph.Id, 10, 20, 1,
+            [new SavedNodePosition(composite.OutputRackId, 13, 27)]);
+        using var restored = new CanvasStateService(session, graph.Id, placement, saved);
+        Assert.Equal(new CanvasPoint(13, 27), restored.Snapshot.NodePositions[composite.OutputRackId]);
+    }
+
     [Fact]
     public void RootAndChildCanvasesObserveOnePatchRevisionAndKeepSeparateLayouts()
     {
