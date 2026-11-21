@@ -142,7 +142,7 @@ try {
     assert.equal(await undoButton.isEnabled(), false);
     const periodInput = frequency.getByRole("spinbutton", { name: "Period (s)" });
     await periodInput.fill("5");
-    await periodInput.press("Tab");
+    await frequency.getByRole("button", { name: "Apply period" }).click();
     await frequency.getByLabel("Cycle duration", { exact: true }).filter({ hasText: /^5 s$/ }).waitFor();
     assert.equal(await frequencyInput.inputValue(), "0.2");
     await undoButton.click();

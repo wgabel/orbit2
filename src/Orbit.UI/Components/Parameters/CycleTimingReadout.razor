@@ -1,6 +1,7 @@
 @namespace Orbit.UI.Components.Parameters
 @using System.Globalization
 @using Orbit.Presentation.Canvas
+@using Microsoft.AspNetCore.Components.Web
 
 <div class="cycle-timing" aria-label="Configured cycle timing" title="Nominal timing at the configured rate and pulse width; modulation may change it. Negative does not mean silent.">
     <div class="parameter-modulation-reading"><span>Cycle</span><output aria-label="Cycle duration" title="@CycleTiming.FormatDuration(Timing.Seconds)">@CycleTiming.FormatDuration(Timing.Seconds)</output></div>
@@ -13,10 +14,12 @@
 }
 @if (HertzChanged.HasDelegate)
 {
-    <div class="parameter-heading">
+    <div class="parameter-heading cycle-period-editor">
         <label for="@inputId">Period (s)</label>
         <input id="@inputId" type="number" min="@Format(MinSeconds)" max="@Format(MaxSeconds)" step="any" value="@draft"
-               @onchange="Commit" aria-invalid="@(error is not null ? "true" : "false")" />
+               @oninput="EditDraft" @onkeydown="CommitOnEnter" @onkeydown:stopPropagation="true"
+               aria-invalid="@(error is not null ? "true" : "false")" aria-describedby="@($"{inputId}-error")" />
+        <button type="button" class="secondary" aria-label="Apply period" @onclick="Commit">Apply</button>
     </div>
     <ValidationMessage Message="@error" MessageId="@($"{inputId}-error")" />
 }
@@ -42,9 +45,16 @@
         error = null;
     }
 
-    private async Task Commit(ChangeEventArgs args)
+    private void EditDraft(ChangeEventArgs args)
     {
         draft = args.Value?.ToString() ?? "";
+        error = null;
+    }
+
+    private Task CommitOnEnter(KeyboardEventArgs args) => args.Key == "Enter" ? Commit() : Task.CompletedTask;
+
+    private async Task Commit()
+    {
         if (!double.TryParse(draft, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds) ||
             !double.IsFinite(seconds) || seconds < MinSeconds || seconds > MaxSeconds || seconds <= 0)
         {

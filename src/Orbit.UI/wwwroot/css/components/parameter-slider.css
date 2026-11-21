@@ -113,6 +113,8 @@
 }
 .cycle-live { color: var(--component-slider-modulation-color); font-variant-numeric: tabular-nums; }
 .cycle-live > output { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cycle-period-editor input { min-width: 0; }
+.cycle-period-editor button { font-size: var(--semantic-typography-caption); padding: var(--semantic-space-tight) var(--semantic-space-compact); }
 @media (prefers-reduced-motion: reduce) {
     .parameter-effective-marker { transition: none; }
 }
