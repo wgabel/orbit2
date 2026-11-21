@@ -112,7 +112,10 @@ try {
     await presetManager.getByLabel("Preset name").fill("My carrier");
     await presetManager.getByLabel("Description (optional, for new presets)").fill("A reusable test configuration");
     await presetManager.getByRole("button", { name: "Save as" }).click();
-    await presetManager.getByText("Saved My carrier.", { exact: true }).waitFor();
+    await presetManager.getByText("Saved My carrier.", { exact: true }).waitFor({ timeout: 10000 }).catch(async error => {
+        console.error("Custom preset save panel:", await presetManager.innerText());
+        throw error;
+    });
     const customId = await presetManager.getByLabel("Saved custom preset").inputValue();
     assert.ok(customId);
     assert.equal(await rootPreset.inputValue(), customId);
