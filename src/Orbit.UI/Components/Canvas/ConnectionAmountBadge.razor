@@ -1,0 +1,20 @@
+@namespace Orbit.UI.Components.Canvas
+@using Microsoft.AspNetCore.Components.Web
+
+<button type="button" class="connection-amount-badge @(Wire.Selected ? "is-selected" : "") @(Wire.Dormant ? "is-dormant" : "") @(Wire.Zero ? "is-zero" : "")"
+        style="@($"left:{Wire.BadgeX.ToString(System.Globalization.CultureInfo.InvariantCulture)}px;top:{Wire.BadgeY.ToString(System.Globalization.CultureInfo.InvariantCulture)}px;transform:translate(-50%,-50%) scale({(1 / Zoom).ToString(System.Globalization.CultureInfo.InvariantCulture)})")"
+        title="@Wire.Description" aria-label="@Wire.Description"
+        @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true" @onclick="Select">
+    <span>@Wire.Label</span>
+    @if (Wire.Dormant)
+    {
+        <span class="connection-badge-inactive"> inactive</span>
+    }
+</button>
+
+@code {
+    [Parameter, EditorRequired] public ConnectionVisual Wire { get; set; } = default!;
+    [Parameter] public double Zoom { get; set; } = 1;
+    [Parameter] public EventCallback<Guid> OnSelect { get; set; }
+    private Task Select() => OnSelect.InvokeAsync(Wire.Id);
+}

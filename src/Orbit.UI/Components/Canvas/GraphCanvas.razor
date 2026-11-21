@@ -11,6 +11,10 @@
          @onwheel="OnWheelAsync" @onwheel:preventDefault="true" @onkeydown="KeyDown">
         <div class="canvas-world" style="@WorldStyle">
             <ConnectionLayer Wires="@Wires" DraftPath="@DraftPath" OnSelect="SelectConnection" />
+            @foreach (var wire in Wires.Where(ShowBadge))
+            {
+                <ConnectionAmountBadge @key="wire.Id" Wire="@wire" Zoom="@Snapshot.Viewport.Zoom" OnSelect="SelectConnection" />
+            }
             @foreach (var node in Snapshot.Graph.Nodes)
             {
                 <NodeFrame @key="node.Id" Node="@node" Position="@Snapshot.NodePositions[node.Id]" PatchId="@PatchId" GraphId="@Snapshot.GraphId"
@@ -27,6 +31,15 @@
                            OnPresetApply="OnPresetApply" OnManagePresets="OnManagePresets" PresetCatalogRevision="@PresetCatalogRevision"
                            OnParameterEdit="OnParameterEdit" OnParameterGestureEnded="OnParameterGestureEnded" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" BeatsPerMinute="@BeatsPerMinute" />
             }
+        </div>
+        <div class="connection-label-control" @onpointerdown:stopPropagation="true">
+            <label for="connection-label-mode">Connection labels</label>
+            <select id="connection-label-mode" @bind="LabelMode" aria-label="Connection labels">
+                @foreach (var mode in Enum.GetValues<ConnectionLabelMode>())
+                {
+                    <option value="@mode">@mode</option>
+                }
+            </select>
         </div>
         <span class="canvas-count">@($"{Snapshot.Graph.Nodes.Count} nodes · {Snapshot.Graph.Connections.Count} connections")</span>
         @if (CanShowScope)

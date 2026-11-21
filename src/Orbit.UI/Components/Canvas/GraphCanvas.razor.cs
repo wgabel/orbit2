@@ -35,6 +35,16 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();
 
     private ElementReference viewportElement;
+    private ConnectionLabelMode labelMode = ConnectionLabelMode.All;
+    private ConnectionLabelMode LabelMode { get => labelMode; set => labelMode = value; }
+    private bool ShowBadge(ConnectionVisual wire) => labelMode switch
+    {
+        ConnectionLabelMode.Off => false,
+        ConnectionLabelMode.Selected => wire.Selected,
+        ConnectionLabelMode.Modified => wire.Selected || wire.Amount != 1,
+        _ => true
+    };
+
     private IJSObjectReference? module;
     private ICanvasStateService? subscribedState;
     private IDisposable? subscription;
@@ -136,9 +146,13 @@ public partial class GraphCanvas : IAsyncDisposable
                 var destination = Snapshot.Graph.GetNode(edge.Destination.NodeId);
                 var kind = destination.Inputs
                     .Single(port => port.Id == edge.Destination.PortId).SignalType;
+                var curve = BezierConnection.Between(start, end);
+                var center = curve.At(0.5);
                 result.Add(new ConnectionVisual(edge.Id, PathBetween(start, end), kind,
                     Snapshot.SelectedConnectionIds.Contains(edge.Id),
-                    !destination.IsInputActive(edge.Destination.PortId)));
+                    !destination.IsInputActive(edge.Destination.PortId), edge.Amount,
+                    ConnectionBadgeText.Format(Snapshot.Graph, edge),
+                    ConnectionBadgeText.Describe(Snapshot.Graph, edge), center.X, center.Y));
             }
             return result;
         }
