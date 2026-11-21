@@ -11,6 +11,7 @@ public sealed class MusicalTransportService(IAudioClock clock, ITransportSignalS
     private readonly SemaphoreSlim gate = new(1, 1);
     private AudioClockSnapshot? lastClock;
     private bool signalDirty;
+    private long resetGeneration;
 
     public Task<TransportSnapshot> SynchronizeAsync(bool audioPlaying) => ExecuteAsync(async () =>
     {
@@ -31,6 +32,7 @@ public sealed class MusicalTransportService(IAudioClock clock, ITransportSignalS
     {
         if (transport.IsPlaying) Observe(await clock.GetSnapshotAsync(), true);
         transport.Reset(lastClock);
+        resetGeneration++;
         signalDirty = true;
     });
 
@@ -69,7 +71,7 @@ public sealed class MusicalTransportService(IAudioClock clock, ITransportSignalS
         {
             await operation();
             var snapshot = new TransportSnapshot(transport.BeatsPerMinute,
-                transport.GetBeatPosition(lastClock), transport.IsPlaying, lastClock);
+                transport.GetBeatPosition(lastClock), transport.IsPlaying, lastClock) { ResetGeneration = resetGeneration };
             if (signalDirty && sink is not null)
             {
                 await sink.SetTransportAsync(snapshot);

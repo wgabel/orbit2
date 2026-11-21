@@ -37,6 +37,8 @@ public sealed class FaustGraphCompiler
         var audition = new FaustAuditionControls(definitions);
         var requiresTransportBeat = false;
         var requiresTransportTempo = false;
+        var requiresTransportReset = false;
+        var actionInputs = new List<(string Name, RhythmicInput Input)>();
         var outputExpression = "0.0";
 
         foreach (var node in ordered)
@@ -63,6 +65,13 @@ public sealed class FaustGraphCompiler
                 expression = audition.Apply(node, flattened.Origins[node.Id], context, expression);
             requiresTransportBeat |= context.RequiresTransportBeat;
             requiresTransportTempo |= context.RequiresTransportTempo;
+            requiresTransportReset |= context.RequiresTransportReset;
+            if (context.ManualRhythmicInput is bool allowClose)
+            {
+                var origin = flattened.Origins[node.Id];
+                actionInputs.Add(($"action_{node.Id:N}", new(origin.GraphId, origin.NodeId, allowClose)));
+                if (actionInputs.Count > 30) throw new FaustCompilationException("A patch supports at most 30 reachable manual rhythmic sources.");
+            }
             definitions.Add($"{name} = {expression};");
             signals.Add(new PortAddress(node.Id, node.Outputs[0].Id), name);
         }
@@ -103,8 +112,13 @@ public sealed class FaustGraphCompiler
         if (requiresTransportTempo)
             definitions.Insert(0, "orbit_tempo = hslider(\"orbit_tempo\", 120, 20, 300, 0.001);");
         audition.AddRampDefinition();
-        var body = requiresTransportBeat
-            ? $"process(orbit_beat) = {outputExpression} with {{\n{string.Join("\n", definitions)}\n}};\n"
+        var inputNames = new List<string>();
+        if (requiresTransportBeat) inputNames.Add("orbit_beat");
+        if (requiresTransportReset) inputNames.Add("orbit_reset");
+        var transportChannels = inputNames.Count;
+        inputNames.AddRange(actionInputs.Select(input => input.Name));
+        var body = inputNames.Count > 0
+            ? $"process({string.Join(",", inputNames)}) = {outputExpression} with {{\n{string.Join("\n", definitions)}\n}};\n"
             : string.Join("\n", definitions.Append($"process = {outputExpression};")) + "\n";
         var source = "import(\"stdfaust.lib\");\ndeclare name \"OrbitGraph\";\n" + body;
         // Faust uses qualified backend identities; the manifest points back to
@@ -116,7 +130,8 @@ public sealed class FaustGraphCompiler
                 Address = control.Address with { NodeId = origin.NodeId } };
         }).ToArray();
         return new FaustGraphProgram(graph.Id, graph.Revision, source, Array.AsReadOnly(manifest))
-            { RequiresTransport = requiresTransportBeat || requiresTransportTempo, AuditionControls = audition.Manifest,
+            { RequiresTransport = requiresTransportBeat || requiresTransportTempo, TransportInputChannels = transportChannels,
+                RhythmicInputs = actionInputs.Select(input => input.Input).ToArray(), AuditionControls = audition.Manifest,
                 SignalTaps = new SignalTapManifest(tapChannels, outputExpressions.Count) };
     }
 }

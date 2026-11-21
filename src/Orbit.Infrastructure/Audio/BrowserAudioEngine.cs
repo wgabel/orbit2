@@ -9,7 +9,7 @@ namespace Orbit.Infrastructure.Audio;
 /// Infrastructure adapter implementing the framework-neutral engine port.
 /// Owns C# to JavaScript interop, but no audio graph or playback policy.
 /// </summary>
-public sealed class BrowserAudioEngine(IJSRuntime javaScriptRuntime) : IAudioEngine, ISignalCapture, IAudioClock, ITransportSignalSink, IAsyncDisposable
+public sealed class BrowserAudioEngine(IJSRuntime javaScriptRuntime) : IAudioEngine, ISignalCapture, IAudioClock, ITransportSignalSink, IRhythmicActionSink, IAsyncDisposable
 {
     // Deployments publish the entire relative-import tree under a unique URL.
     // An entry-only cache buster would still allow stale transitive imports.
@@ -62,6 +62,9 @@ public sealed class BrowserAudioEngine(IJSRuntime javaScriptRuntime) : IAudioEng
 
     public async Task<bool> ReplaceAsync(PlaybackRequest request, long revision) =>
         await GetAudioModule().InvokeAsync<bool>("replace", request, revision);
+
+    public async Task<bool> SendRhythmicActionAsync(string soundId, Guid generation, int index, RhythmicAction action) =>
+        await GetAudioModule().InvokeAsync<bool>("sendRhythmicAction", soundId, generation, index, (int)action);
 
     public async Task<AudioClockSnapshot?> GetSnapshotAsync() =>
         await GetAudioModule().InvokeAsync<AudioClockSnapshot?>("getClockSnapshot");

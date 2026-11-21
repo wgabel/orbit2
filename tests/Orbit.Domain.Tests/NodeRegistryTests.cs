@@ -14,11 +14,11 @@ namespace Orbit.Domain.Tests;
 public sealed class NodeRegistryTests
 {
     [Fact]
-    public void CreatesFourteenBuiltInNodeTypes()
+    public void CreatesSeventeenBuiltInNodeTypes()
     {
         var registry = BuiltInNodes.CreateRegistry();
 
-        Assert.Equal(14, registry.RegisteredTypes.Count);
+        Assert.Equal(17, registry.RegisteredTypes.Count);
         Assert.IsType<SignalToTriggerGenerator>(registry.Create(SignalToTriggerGenerator.NodeType));
         Assert.IsType<SignalToGateGenerator>(registry.Create(SignalToGateGenerator.NodeType));
         Assert.IsType<EnvelopeGenerator>(registry.Create(EnvelopeGenerator.NodeType));

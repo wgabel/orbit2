@@ -29,6 +29,7 @@
         </div>
     </header>
     <NodePresetSelector Node="@Node" OnApply="OnPresetApply" OnManage="OnManagePresets" CatalogRevision="@PresetCatalogRevision" />
+    <RhythmicActionPanel Node="@Node" PatchId="@PatchId" GraphId="@GraphId" />
     <div class="node-ports">
         <div class="node-inputs">
             @foreach (var port in Node.Inputs)

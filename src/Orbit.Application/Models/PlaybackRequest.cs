@@ -14,4 +14,6 @@ public sealed record PlaybackRequest(
     string? Source = null,
     bool RequiresTransport = false,
     int OutputChannels = 1,
-    Guid Generation = default);
+    Guid Generation = default,
+    int TransportInputChannels = 0,
+    IReadOnlyList<RhythmicInput>? RhythmicInputs = null);

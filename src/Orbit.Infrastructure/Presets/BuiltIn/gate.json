@@ -1,0 +1,7 @@
+[
+  { "schemaVersion": 1, "id": "gate-manual-tap", "nodeType": "generator.gate", "name": "Manual tap", "group": "Manual", "description": "Open the gate for a short articulation.", "parameters": { "source": 0, "duration": 100 } },
+  { "schemaVersion": 1, "id": "gate-manual-swell", "nodeType": "generator.gate", "name": "Manual swell", "group": "Manual", "description": "Open the gate for a two-second hold.", "parameters": { "source": 0, "duration": 2000 } },
+  { "schemaVersion": 1, "id": "gate-clock-short", "nodeType": "generator.gate", "name": "Short rhythmic gate", "group": "Triggered", "description": "Ten millisecond gate on each incoming pulse.", "parameters": { "source": 1, "duration": 10 } },
+  { "schemaVersion": 1, "id": "gate-clock-medium", "nodeType": "generator.gate", "name": "Percussion gate", "group": "Triggered", "description": "Hundred millisecond gate on each incoming pulse.", "parameters": { "source": 1, "duration": 100 } },
+  { "schemaVersion": 1, "id": "gate-clock-long", "nodeType": "generator.gate", "name": "Long rhythmic gate", "group": "Triggered", "description": "Half-second gate on each incoming pulse.", "parameters": { "source": 1, "duration": 500 } }
+]

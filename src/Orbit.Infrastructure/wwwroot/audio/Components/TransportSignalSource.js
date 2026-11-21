@@ -6,7 +6,7 @@ export class TransportSignalSource {
     #context;
     #node;
     #loading;
-    #targets = new Set();
+    #targets = new Map();
     #tempoControls = new Map();
     #anchor = toTransportAnchor({ beatsPerMinute: 120, beatPosition: 0, isPlaying: false });
 
@@ -19,7 +19,7 @@ export class TransportSignalSource {
                 target.setParamValue(path, this.#anchor.beatsPerMinute);
     }
 
-    async connect(context, target) {
+    async connect(context, target, beatTarget = target, phaseChannels = target.numberOfInputs > 0 ? 1 : 0) {
         if (this.#context !== context) {
             this.dispose();
             this.#context = context;
@@ -27,7 +27,7 @@ export class TransportSignalSource {
         // Tempo-aware effects need the absolute BPM, not the derivative of a
         // wrapped Float32 beat signal. Only phase consumers need the worklet.
         const tempoPath = target.getParams().find(path => path.endsWith("/orbit_tempo"));
-        if (target.numberOfInputs === 0) {
+        if (phaseChannels === 0) {
             if (tempoPath) {
                 target.setParamValue(tempoPath, this.#anchor.beatsPerMinute);
                 this.#tempoControls.set(target, tempoPath);
@@ -41,7 +41,7 @@ export class TransportSignalSource {
                 await loading;
                 if (this.#context !== context) throw new Error("Transport context changed.");
                 this.#node ??= new AudioWorkletNode(context, "orbit-transport-signal", {
-                    numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [1],
+                    numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2],
                     processorOptions: { anchor: this.#anchor }
                 });
             } catch (error) {
@@ -49,8 +49,9 @@ export class TransportSignalSource {
                 throw error;
             }
         }
-        this.#node.connect(target);
-        this.#targets.add(target);
+        beatTarget.channelInterpretation = 'discrete';
+        this.#node.connect(beatTarget);
+        this.#targets.set(target, beatTarget);
         if (tempoPath) {
             target.setParamValue(tempoPath, this.#anchor.beatsPerMinute);
             this.#tempoControls.set(target, tempoPath);
@@ -59,7 +60,8 @@ export class TransportSignalSource {
 
     disconnect(target) {
         this.#tempoControls.delete(target);
-        if (this.#targets.delete(target)) this.#node?.disconnect(target);
+        const beatTarget = this.#targets.get(target);
+        if (this.#targets.delete(target)) this.#node?.disconnect(beatTarget);
     }
 
     dispose() {

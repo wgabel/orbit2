@@ -21,6 +21,7 @@ export function toTransportAnchor(snapshot) {
         frame: snapshot.clock?.currentSample ?? 0,
         sampleRate: snapshot.clock?.sampleRate ?? null,
         beatsPerMinute: snapshot.beatsPerMinute,
-        isPlaying: snapshot.isPlaying
+        isPlaying: snapshot.isPlaying,
+        resetGeneration: snapshot.resetGeneration ?? 0
     };
 }
