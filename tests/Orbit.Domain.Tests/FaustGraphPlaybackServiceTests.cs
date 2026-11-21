@@ -19,6 +19,60 @@ namespace Orbit.Domain.Tests;
 public sealed class FaustGraphPlaybackServiceTests
 {
     [Fact]
+    public async Task PerformanceNotesAreGraphQualifiedLatchedAndReseedCompatibleReplacement()
+    {
+        using var patch = new NestedFaustPatch();
+        var session = patch.Session;
+        var child = patch.ChildId;
+        var carrier = session.Snapshot.GetGraph(child).GetNode(patch.Frequency.NodeId);
+        var sequencer = NestedFaustPatch.Add(session, child, NoteSequencerGenerator.NodeType);
+        var orphan = NestedFaustPatch.Add(session, child, NoteSequencerGenerator.NodeType);
+        session.Execute(new SetParameterValueCommand(child, new(carrier.Id, carrier.Parameters.Single(p => p.Definition.Key == OscillatorGenerator.PitchTrackingKey).Id), 1));
+        session.Execute(new ConnectNodesCommand(child, new(sequencer.Id, sequencer.Outputs.Single().Id), new(carrier.Id, carrier.Inputs.Single(p => p.Key == OscillatorGenerator.PitchPortKey).Id)));
+        var compiler = FaustGraphCompiler.CreateBuiltIn();
+        var engine = new PitchEngine();
+        var service = new FaustGraphPlaybackService(compiler, engine);
+        var snapshot = session.Snapshot;
+        var playing = service.PlayAsync(snapshot);
+        var program = compiler.Compile(snapshot);
+        var lane = Assert.Single(program.RhythmicInputs);
+        Assert.True(lane.IsPitch);
+        Assert.Equal(child, lane.GraphId);
+        Assert.Equal(sequencer.Id, lane.NodeId);
+        Assert.False(await service.SendAsync(snapshot.Id, snapshot.Id, sequencer.Id, new PerformanceNoteAction(PerformanceNoteKind.NoteOn, 81)));
+        Assert.False(await service.SendAsync(snapshot.Id, child, orphan.Id, new PerformanceNoteAction(PerformanceNoteKind.NoteOn, 81)));
+        Assert.False(await service.SendAsync(snapshot.Id, child, sequencer.Id, new PerformanceNoteAction(PerformanceNoteKind.NoteOn, 0)));
+        Assert.True(await service.SendAsync(snapshot.Id, child, sequencer.Id, new PerformanceNoteAction(PerformanceNoteKind.NoteOn, 81)));
+        Assert.True(await service.SendAsync(snapshot.Id, child, sequencer.Id, new PerformanceNoteAction(PerformanceNoteKind.NoteOff, 81)));
+        Assert.Equal(82, Assert.Single(engine.Notes).Code);
+        Assert.Same(snapshot, session.Snapshot);
+        Assert.Empty(engine.Updates);
+        Assert.Empty(engine.Replacements);
+        engine.Outputs = new() { ["/OrbitGraph/" + program.PitchMeters.Single().Name] = 12 };
+        Assert.Equal(12, (await service.GetTelemetryAsync(snapshot.Id))!.PitchOffsets[child][sequencer.Id]);
+        var shape = carrier.Parameters.Single(p => p.Definition.Key == "waveform");
+        session.Execute(new SetParameterValueCommand(child, new(carrier.Id, shape.Id), 1));
+        await service.UpdateAsync(session.Snapshot);
+        Assert.Equal(82, Assert.Single(Assert.Single(engine.Replacements).RhythmicInputs!).InitialAction);
+        Assert.True(await service.SendAsync(snapshot.Id, child, sequencer.Id, new PerformanceNoteAction(PerformanceNoteKind.Reset)));
+        Assert.Equal(129, engine.Notes.Last().Code);
+        Assert.NotEqual(engine.Notes[0].Generation, engine.Notes[1].Generation);
+        await service.StopAsync(snapshot.Id);
+        await playing;
+        Assert.False(await service.SendAsync(snapshot.Id, child, sequencer.Id, new PerformanceNoteAction(PerformanceNoteKind.NoteOn, 81)));
+    }
+
+    private sealed class PitchEngine : RecordingEngine, IPerformanceNoteSink
+    {
+        public List<(Guid Generation, int Index, int Code)> Notes { get; } = [];
+        public Task<bool> SendPerformanceNoteAsync(string soundId, Guid generation, int index, int code)
+        {
+            Notes.Add((generation, index, code));
+            return Task.FromResult(true);
+        }
+    }
+
+    [Fact]
     public async Task EnvelopePlayheadIsQualifiedByOwningGraphAndClearedOnStop()
     {
         using var patch = new NestedFaustPatch();

@@ -7,6 +7,10 @@ public static class MusicalPitch
     public const int ReferenceMidiNote = 69;
     public const int SemitonesPerOctave = 12;
     public const int CentsPerSemitone = 100;
+    private static readonly string[] NoteNames = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
+
+    public static string NoteName(int note) => note is >= 0 and <= 127
+        ? $"{NoteNames[note % 12]}{note / 12 - 1}" : throw new ArgumentOutOfRangeException(nameof(note));
 
     public static double Semitones(double semitones, double cents) => semitones + cents / CentsPerSemitone;
     public static double Ratio(double semitones) => Math.Pow(2, semitones / SemitonesPerOctave);

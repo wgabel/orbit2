@@ -16,6 +16,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
     [Parameter] public EventCallback<GraphParameterTelemetry?> TelemetryChanged { get; set; }
     [Parameter] public EventCallback<double> TempoChanged { get; set; }
     [Parameter] public EventCallback<int?> SampleRateChanged { get; set; }
+    [Parameter] public EventCallback PlaybackStopped { get; set; }
     [Parameter] public bool Disabled { get; set; }
     public bool CanReplaceWorkspace => !IsActive;
 
@@ -116,6 +117,10 @@ public partial class GraphPlaybackControls : IAsyncDisposable
             cancellation.Cancel();
             await observer;
             await SynchronizeTransportAsync(false);
+            // Disarm natural completion/failure before exposing Ready. Explicit
+            // Stop already disarmed synchronously; a second notification could
+            // invalidate a newly armed target after the previous lifetime.
+            if (!disposed && !IsStopping) await PlaybackStopped.InvokeAsync();
             IsActive = false;
             IsStopping = false;
             state = PlaybackState.Idle;
@@ -170,6 +175,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
     {
         if (!IsActive || IsStopping) return;
         IsStopping = true;
+        await PlaybackStopped.InvokeAsync();
         await SynchronizeTransportAsync(false);
         await PublishTelemetryAsync(null);
         try { await Playback.StopAsync(activeGraph); }

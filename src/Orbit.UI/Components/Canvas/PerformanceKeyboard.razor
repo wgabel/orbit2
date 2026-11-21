@@ -1,0 +1,141 @@
+@namespace Orbit.UI.Components.Canvas
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@using Orbit.Application.Graphs.Snapshots
+@using Orbit.Application.Models
+@using Orbit.Application.Services
+@using Orbit.Domain.Nodes.Generators
+@using Orbit.Domain.Timing
+@using Orbit.Presentation.Canvas
+@implements IAsyncDisposable
+@inject IPerformanceNoteService Performance
+@inject IJSRuntime JavaScript
+@inject Orbit.UI.Components.Analysis.ScopeBrowserAssets BrowserAssets
+
+<section class="performance-keyboard workspace-toolbar toolbar-group" aria-label="Performance keyboard" data-armed="@armed.ToString().ToLowerInvariant()" data-keyboard-ready="@((adapter is not null).ToString().ToLowerInvariant())" tabindex="0" @ref="root">
+    <button type="button" class="secondary" aria-pressed="@armed.ToString().ToLowerInvariant()" @onclick="ToggleAsync">@(armed ? "Disarm keyboard" : "Arm keyboard")</button>
+    <span class="workspace-notice">@Node.Name · Live continuous pitch</span>
+    <output class="workspace-notice" data-live-pitch-offset="@(Offset?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "unavailable")">
+        @(Offset is double offset ? $"Live: {offset:+0.##;-0.##;0} st" : "Play connected patch")
+    </output>
+    @if (armed)
+    {
+        <div class="workspace-toolbar">
+            <button type="button" class="secondary" disabled="@(!PerformanceKeyboardLayout.IsAvailable(octave - 1, Reference))" @onclick="() => ChangeOctave(-1)">Octave − (Z)</button>
+            <span>Octave @octave · reference @MusicalPitch.NoteName(Reference)</span>
+            <button type="button" class="secondary" disabled="@(!PerformanceKeyboardLayout.IsAvailable(octave + 1, Reference))" @onclick="() => ChangeOctave(1)">Octave + (X)</button>
+            <button type="button" class="secondary" @onclick="ResetAsync">Reset pitch</button>
+        </div>
+        <div class="performance-piano" role="group" aria-label="On-screen piano">
+            @foreach (var pianoKey in PerformanceKeyboardLayout.Keys)
+            {
+                var note = PerformanceKeyboardLayout.Note(octave, pianoKey);
+                <button @key="pianoKey.Code" type="button" class="@(pianoKey.Black ? "performance-black-key" : "performance-white-key")"
+                        data-midi-note="@note" aria-label="@($"Play {MusicalPitch.NoteName(note)} ({pianoKey.Hint})")"
+                        disabled="@(!NoteSequencerGenerator.IsPlayable(note, Reference))" @onclick="() => SendAsync(new(PerformanceNoteKind.NoteOn, note))">
+                    <span>@MusicalPitch.NoteName(note)</span><small>@pianoKey.Hint</small>
+                </button>
+            }
+        </div>
+        <small class="workspace-notice">Keys A–K / W E T Y U · release holds pitch · select another node to disarm</small>
+        @if (notice is not null) { <span class="workspace-notice" role="status">@notice</span> }
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public GraphNodeSnapshot Node { get; set; } = default!;
+    [Parameter] public Guid PatchId { get; set; }
+    [Parameter] public Guid GraphId { get; set; }
+    [Parameter] public double? Offset { get; set; }
+    private ElementReference root;
+    private IJSObjectReference? module, adapter;
+    private DotNetObjectReference<PerformanceKeyboard>? reference;
+    private Task? mounting;
+    private bool disposed, armed, focusRequested;
+    private int octave = 4;
+    private int previousReference = -1;
+    private string? notice;
+    private readonly Dictionary<string, int> held = [];
+    private int Reference => (int)Node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.ReferenceKey).BaseValue;
+
+    protected override void OnParametersSet()
+    {
+        if (previousReference < 0 || !PerformanceKeyboardLayout.IsAvailable(octave, Reference)) octave = PerformanceKeyboardLayout.ReferenceOctave(Reference);
+        previousReference = Reference;
+    }
+
+    private async Task ToggleAsync()
+    {
+        armed = !armed;
+        held.Clear();
+        notice = null;
+        focusRequested = armed;
+        if (adapter is not null) await adapter.InvokeVoidAsync("clear");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await (mounting = MountAsync());
+        if (focusRequested && armed && !disposed && adapter is not null)
+        {
+            focusRequested = false;
+            await adapter.InvokeVoidAsync("focus");
+        }
+    }
+
+    private async Task MountAsync()
+    {
+        try
+        {
+            module = await JavaScript.InvokeAsync<IJSObjectReference>("import", $"./js/performanceKeyboard.js?v={Uri.EscapeDataString(BrowserAssets.AudioModulePath)}");
+            if (disposed) return;
+            reference = DotNetObjectReference.Create(this);
+            adapter = await module.InvokeAsync<IJSObjectReference>("mountPerformanceKeyboard", root, reference, PerformanceKeyboardLayout.Keys.Select(key => key.Code).ToArray());
+            if (!disposed) StateHasChanged();
+        }
+        catch (JSException) { notice = "Physical keyboard unavailable; use the on-screen keys."; if (!disposed) StateHasChanged(); }
+    }
+
+    private void ChangeOctave(int delta)
+    {
+        if (PerformanceKeyboardLayout.IsAvailable(octave + delta, Reference)) octave += delta;
+    }
+
+    [JSInvokable] public Task PhysicalKey(string code, bool down) => InvokeAsync(async () =>
+    {
+        if (!armed || disposed) return;
+        if (!down)
+        {
+            if (held.Remove(code, out var released)) await SendAsync(new(PerformanceNoteKind.NoteOff, released));
+            return;
+        }
+        if (code is "KeyZ" or "KeyX") { ChangeOctave(code == "KeyZ" ? -1 : 1); StateHasChanged(); return; }
+        var key = PerformanceKeyboardLayout.Keys.SingleOrDefault(key => key.Code == code);
+        if (key is null || held.ContainsKey(code)) return;
+        var note = PerformanceKeyboardLayout.Note(octave, key);
+        if (!NoteSequencerGenerator.IsPlayable(note, Reference)) return;
+        held.Add(code, note);
+        await SendAsync(new(PerformanceNoteKind.NoteOn, note));
+        StateHasChanged();
+    });
+
+    [JSInvokable] public Task ReleasePhysicalKeys() => InvokeAsync(() => held.Clear());
+
+    private Task ResetAsync() => SendAsync(new(PerformanceNoteKind.Reset));
+    private async Task SendAsync(PerformanceNoteAction action)
+    {
+        if (!armed || disposed) return;
+        try { notice = await Performance.SendAsync(PatchId, GraphId, Node.Id, action) ? null : "Play a connected patch; retry if updating or busy."; }
+        catch (Exception exception) { notice = $"Performance unavailable: {exception.Message}"; }
+        if (!disposed) StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        disposed = true;
+        held.Clear();
+        if (mounting is not null) await mounting;
+        try { if (adapter is not null) { await adapter.InvokeVoidAsync("dispose"); await adapter.DisposeAsync(); } }
+        finally { reference?.Dispose(); if (module is not null) await module.DisposeAsync(); }
+    }
+}

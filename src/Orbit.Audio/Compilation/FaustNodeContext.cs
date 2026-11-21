@@ -31,6 +31,14 @@ public sealed class FaustNodeContext
     public bool RequiresTransportTempo { get; private set; }
     public bool RequiresTransportReset { get; private set; }
     public bool? ManualRhythmicInput { get; private set; }
+    public bool ManualPitchInput { get; private set; }
+    public string? PitchMeterName { get; private set; }
+    public string PitchMeter() => PitchMeterName = $"pitch_{Node.Id:N}";
+    public string PerformancePitchInput()
+    {
+        ManualPitchInput = true;
+        return $"action_{Node.Id:N}";
+    }
     public string? EnvelopeMeterName { get; private set; }
 
     public string EnvelopeMeter() => EnvelopeMeterName = $"e_{Node.Id:N}";

@@ -1,0 +1,7 @@
+[
+  { "schemaVersion": 1, "id": "note-sequencer-a4", "nodeType": "generator.note-sequencer", "name": "A4 reference", "group": "References", "description": "Concert A4 is zero transposition; play other keys to retune the oscillator bank.", "parameters": { "reference-note": 69, "initial-pitch": 0 } },
+  { "schemaVersion": 1, "id": "note-sequencer-a2", "nodeType": "generator.note-sequencer", "name": "A2 drone reference", "group": "References", "description": "Reference A2 (110 Hz) for a drone bank already tuned around A2.", "parameters": { "reference-note": 45, "initial-pitch": 0 } },
+  { "schemaVersion": 1, "id": "note-sequencer-c3", "nodeType": "generator.note-sequencer", "name": "C3 reference", "group": "References", "description": "C3 is unison; other keys transpose relative to that note.", "parameters": { "reference-note": 48, "initial-pitch": 0 } },
+  { "schemaVersion": 1, "id": "note-sequencer-start-fifth", "nodeType": "generator.note-sequencer", "name": "Start a fifth up", "group": "Starting offsets", "description": "Begin seven semitones above the base tuning until the first key; reset returns here.", "parameters": { "reference-note": 69, "initial-pitch": 7 } },
+  { "schemaVersion": 1, "id": "note-sequencer-start-octave", "nodeType": "generator.note-sequencer", "name": "Start an octave down", "group": "Starting offsets", "description": "Begin twelve semitones below base tuning; live keys latch their own offset.", "parameters": { "reference-note": 69, "initial-pitch": -12 } }
+]
