@@ -9,3 +9,42 @@
 .connection-dormant .connection-line { stroke: var(--semantic-color-muted); stroke-dasharray: var(--component-connection-draft-dash); }
 .connection-selected .connection-line { stroke: var(--semantic-color-selected); stroke-width: var(--component-connection-selected-width); }
 .connection-draft { stroke: var(--semantic-color-selected); stroke-dasharray: var(--component-connection-draft-dash); }
+
+/* Badge lives in the transformed world; inverse scaling keeps text and hit targets readable. */
+.connection-amount-badge {
+    position: absolute;
+    z-index: 2;
+    pointer-events: auto;
+    transform-origin: center;
+    white-space: nowrap;
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: var(--semantic-space-tight) var(--semantic-space-compact);
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-control);
+    background: var(--semantic-color-surface);
+    color: var(--semantic-color-text);
+    font-size: var(--semantic-typography-caption);
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+}
+.connection-amount-badge.is-selected { border-color: var(--semantic-color-selected); }
+.connection-amount-badge.is-zero, .connection-amount-badge.is-dormant { opacity: var(--semantic-opacity-disabled); }
+.connection-amount-badge:focus-visible { outline: var(--semantic-border-focus-width) solid var(--semantic-color-selected); }
+.connection-badge-inactive { font-size: 0.85em; }
+.connection-label-control {
+    position: absolute;
+    z-index: 3;
+    inset-block-start: var(--semantic-space-compact);
+    inset-inline-start: var(--semantic-space-compact);
+    display: flex;
+    align-items: center;
+    gap: var(--semantic-space-tight);
+    padding: var(--semantic-space-tight);
+    background: var(--semantic-color-surface);
+    border-radius: var(--semantic-radius-control);
+    font-size: var(--semantic-typography-caption);
+}
+.connection-label-control select { max-width: 7rem; }
+.connection-path.connection-zero .connection-line { opacity: var(--semantic-opacity-disabled); }
