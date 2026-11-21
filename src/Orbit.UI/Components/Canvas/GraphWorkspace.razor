@@ -63,8 +63,8 @@ else
         <RackPortEditor @key="(graphId, rack.Id)" GraphId="@graphId" Rack="@rack"
                         Dispatch="@DispatchRackCommand" OnClose="CloseRackEditor" />
     }
-    <GraphCanvas @key="(workspaceGeneration, graphId)" @ref="canvasView" State="@Canvas" AutoFitOnFirstRender="@Navigation.IsFirstVisit"
-                 CanShowScope="@(ScopeNode is not null)" ScopeOpen="@scopeOpen" OnToggleScope="ToggleScope"
+    <GraphCanvas @key="(workspaceGeneration, graphId)" @ref="canvasView" State="@Canvas" PatchId="@session.GraphId" AutoFitOnFirstRender="@Navigation.IsFirstVisit"
+                 CanShowScope="@(ScopeSelection is not null || ScopeOpen)" ScopeOpen="@ScopeOpen" OnToggleScope="ToggleScope"
                  OnConnect="@(request => Connect(graphId, request))" OnParameterEdit="@(request => EditParameter(graphId, request))"
                  OnParameterGestureEnded="@(id => CompleteParameterGesture(graphId, id))"
                  OnAudition="@(request => SetNodeAudition(graphId, request))"
@@ -73,10 +73,11 @@ else
                  OnOpenComposite="@(nodeId => OpenComposite(graphId, nodeId))"
                  OnEditRack="@(nodeId => OpenRackEditor(graphId, nodeId))"
                  ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" BeatsPerMinute="@tempo" />
-    @if (scopeOpen && ScopeNode is { } scopeNode)
+    @if (ScopeNode is { } scopeNode)
     {
-        <SignalScopePanel @key="(workspaceGeneration, graphId, scopeNode.Id)" PatchId="@session.GraphId"
-                          GraphId="@graphId" Node="@scopeNode" OnClose="CloseScope" />
+        <NodeVisualizationPanel @key="(workspaceGeneration, graphId, scopeNode.Id)" PatchId="@session.GraphId"
+                          GraphId="@graphId" Node="@scopeNode" Expanded="true" Settings="@Canvas.Snapshot.VisualizationFor(scopeNode.Id)"
+                          SettingsChanged="@(settings => UpdateScopeSettings(graphId, scopeNode.Id, settings))" OnExpand="CloseScope" />
     }
 </section>
 }

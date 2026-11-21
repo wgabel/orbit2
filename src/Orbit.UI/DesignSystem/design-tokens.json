@@ -152,6 +152,7 @@
     "scope": {
       "width": "28rem",
       "plot-height": "8rem",
+      "compact-plot-height": "72px",
       "level-height": "0.5rem"
     },
     "node": {

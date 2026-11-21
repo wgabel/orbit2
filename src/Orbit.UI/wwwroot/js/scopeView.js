@@ -16,7 +16,7 @@ class ScopeView {
     #spectrum = null; #spectrumKey = null;
     #status; #peak; #rms; #peakMeter; #rmsMeter; #scale; #history = new MinMaxHistory();
     #binding = null; #lastBinding = -Infinity; #lastDraw = -Infinity;
-    #animation = 0; #disposed = false; #visible = true; #observer;
+    #animation = 0; #disposed = false; #visible = false; #observer;
     #resolving = false;
     #lastClear = null;
 
@@ -38,6 +38,7 @@ class ScopeView {
         this.#rmsMeter = root.querySelector("[data-rms-meter]");
         this.#scale = root.querySelector("[data-scale]");
         this.#mode.addEventListener("change", this.#modeChanged);
+        this.#modeChanged();
         this.#observer = new IntersectionObserver(entries => {
             this.#visible = entries[0].isIntersecting;
             this.#visibilityChanged();
@@ -49,8 +50,11 @@ class ScopeView {
 
     #modeChanged = () => {
         const spectrum = this.#mode.value === "spectrum";
-        this.#waveformControls.hidden = spectrum;
+        const level = this.#mode.value === "level";
+        this.#root.dataset.viewMode = this.#mode.value;
+        this.#waveformControls.hidden = spectrum || level;
         this.#spectrumControls.hidden = !spectrum;
+        this.#canvas.hidden = level;
         this.#canvas.setAttribute("aria-label", spectrum ? "Live signal spectrum" : "Live signal waveform");
         this.#history.clear();
         this.#resetSpectrum();
@@ -113,7 +117,7 @@ class ScopeView {
         const binding = this.#binding;
         if (!binding || binding.availability !== 3) {
             this.#clear(binding?.availability === 0 ? "Playback stopped" :
-                binding?.availability === 1 ? "Tap unavailable" : "Waiting for signal");
+                binding?.availability === 1 ? "Tap unavailable · unrouted or capacity limit" : "Waiting for signal");
             return;
         }
         let frame;
@@ -132,6 +136,11 @@ class ScopeView {
         this.#rmsMeter.value = Math.max(-60, Math.min(0, toDecibels(levels.rms)));
         this.#peak.classList.toggle("scope-over", levels.peak >= 1);
         this.#lastClear = null;
+        if (this.#mode.value === "level") {
+            this.#status.textContent = "Live · level meter";
+            this.#scale.textContent = "20 ms";
+            return;
+        }
         if (this.#mode.value === "spectrum") {
             this.#renderSpectrum(frame);
             return;
@@ -219,7 +228,7 @@ class ScopeView {
         this.#scale.textContent = "—";
         this.#peak.classList.remove("scope-over");
         if (this.#mode.value === "spectrum") drawSpectrum(this.#canvas, this.#root, null);
-        else this.#prepare();
+        else if (this.#mode.value !== "level") this.#prepare();
     }
 
     dispose() {

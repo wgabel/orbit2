@@ -1,11 +1,15 @@
 namespace Orbit.Presentation.Canvas;
 
+using Orbit.Application.Persistence;
+
 /// <summary>One graph's presentation state and local editing operations.</summary>
 public interface ICanvasStateService : IDisposable
 {
     CanvasStateSnapshot Snapshot { get; }
     IDisposable Subscribe(Action<CanvasStateChange> handler);
     IDisposable ReserveVisibleNodePlacement(CanvasBounds visibleBounds, IEnumerable<CanvasBounds> occupiedBounds);
+    CanvasChangeResult SetVisualization(Guid nodeId, NodeVisualizationSettings settings);
+    CanvasChangeResult SetExpandedVisualization(Guid? nodeId);
     CanvasChangeResult MoveNode(Guid nodeId, CanvasPoint worldPosition);
     CanvasChangeResult MoveNodeByScreenDelta(Guid nodeId, CanvasPoint screenDelta);
     CanvasChangeResult SelectNode(Guid nodeId, bool additive = false);

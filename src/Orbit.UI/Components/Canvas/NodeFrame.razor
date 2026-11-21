@@ -4,6 +4,7 @@
 @using Orbit.Domain.Nodes.Composites
 @using Orbit.Domain.Nodes
 @using Orbit.UI.Components.Parameters
+@using Orbit.UI.Components.Analysis
 @using Orbit.Presentation.Canvas
 @using Microsoft.AspNetCore.Components.Web
 
@@ -80,4 +81,6 @@
             }
         </div>
     }
+    <NodeVisualizationPanel PatchId="@PatchId" GraphId="@GraphId" Node="@Node" Settings="@Visualization"
+                            ExpandedElsewhere="@VisualizationExpanded" SettingsChanged="OnVisualizationChange" OnExpand="OnExpandVisualization" />
 </article>

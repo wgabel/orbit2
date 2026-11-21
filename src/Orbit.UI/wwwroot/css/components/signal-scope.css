@@ -25,6 +25,30 @@
     justify-content: space-between;
     gap: var(--semantic-space-compact);
 }
+.node-visualization-panel {
+    display: grid;
+    gap: var(--semantic-space-tight);
+    padding: var(--component-node-padding);
+    border-top: var(--semantic-border-width) solid var(--semantic-color-border);
+}
+.node-visualization-panel .scope-header button {
+    font-size: var(--semantic-typography-caption);
+    padding: var(--semantic-space-tight) var(--semantic-space-compact);
+}
+.scope-source, .scope-controls label {
+    display: flex;
+    align-items: center;
+    gap: var(--semantic-space-tight);
+    font-size: var(--semantic-typography-caption);
+}
+.scope-source select, .scope-compact .scope-controls select { min-width: 0; flex: 1; }
+.scope-compact [data-waveform-controls], .scope-compact [data-spectrum-controls] { display: none; }
+.scope-compact .scope-waveform { height: var(--component-scope-compact-plot-height); }
+.scope-compact .scope-readouts > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scope-compact .scope-readouts > span:last-child { flex-shrink: 0; }
+.scope-compact:not([data-view-mode="level"]) .scope-levels { grid-template-columns: 1fr 1fr; }
+.scope-compact:not([data-view-mode="level"]) .scope-levels > div { grid-template-columns: auto 1fr; }
+.scope-compact:not([data-view-mode="level"]) .scope-levels meter, .scope-compact .scope-levels small { display: none; }
 .signal-scope { display: grid; gap: var(--semantic-space-tight); }
 .signal-scope [hidden] { display: none; }
 .scope-spectrum-note { color: var(--semantic-color-muted); font-size: var(--semantic-typography-caption); }

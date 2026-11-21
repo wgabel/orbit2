@@ -65,6 +65,17 @@ try {
     await toolbar.getByRole("button", { name: "Add", exact: true }).waitFor();
     await toolbar.getByRole("button", { name: "Play patch" }).waitFor();
     const viewport = page.locator(".canvas-viewport");
+    const panCanvas = async delta => {
+        const world = page.locator(".canvas-world");
+        const previous = await world.getAttribute("style");
+        const view = await viewport.boundingBox();
+        const pointer = { pointerId: 77, pointerType: "mouse", button: 1, buttons: 4,
+            clientX: view.x + 30, clientY: view.y + 30 };
+        await viewport.dispatchEvent("pointerdown", pointer);
+        await viewport.dispatchEvent("pointermove", { ...pointer, clientX: pointer.clientX + delta, clientY: pointer.clientY + delta });
+        await viewport.dispatchEvent("pointerup", { ...pointer, buttons: 0 });
+        await page.waitForFunction(old => document.querySelector(".canvas-world").getAttribute("style") !== old, previous);
+    };
     await viewport.getByText("4 nodes · 3 connections", { exact: true }).waitFor();
     const canvasBounds = await viewport.boundingBox();
     assert.ok(canvasBounds.height >= page.viewportSize().height * 0.75, "Canvas must fill most of the viewport");
@@ -285,8 +296,22 @@ try {
     assert.ok(moved, "Live frequency marker did not move");
     // The shared scope renders actual browser capture without changing graph revision.
     await articles.nth(1).locator(".node-header > span").click();
-    await page.getByRole("button", { name: "Show scope", exact: true }).click();
+    const compact = articles.nth(1).locator(".node-visualization-panel");
+    await compact.getByRole("button", { name: "Show plot" }).click();
+    await page.getByRole("button", { name: "Fit", exact: true }).click();
+    await compact.locator("[data-scope-status]").filter({ hasText: /Live/ }).waitFor({ timeout: 15000 });
+    await panCanvas(4000);
+    await compact.locator("[data-scope-status]").filter({ hasText: "Paused" }).waitFor();
+    await panCanvas(-4000);
+    await compact.locator("[data-scope-status]").filter({ hasText: /Live/ }).waitFor({ timeout: 15000 });
+    await compact.getByRole("combobox", { name: "Analysis view" }).selectOption("spectrum");
+    await compact.locator("[data-scope-status]").filter({ hasText: /Spectrum · peak bin/ }).waitFor();
+    await compact.getByRole("button", { name: "Expand plot" }).click();
     const scope = page.getByRole("region", { name: "Signal scope", exact: true });
+    await scope.waitFor();
+    assert.equal(await compact.locator("canvas").count(), 0, "Expanded plot must replace its compact renderer");
+    assert.equal(await scope.getByRole("combobox", { name: "Analysis view" }).inputValue(), "spectrum");
+    await scope.getByRole("combobox", { name: "Analysis view" }).selectOption("waveform");
     await scope.locator("[data-scope-status]").filter({ hasText: /Live/ }).waitFor({ timeout: 15000 });
     const peakText = await scope.locator("[data-peak]").innerText();
     assert.match(peakText, /-?\d+\.\d dBFS/);
@@ -332,6 +357,17 @@ try {
     assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
     await scope.getByRole("button", { name: "Close scope" }).click();
     await scope.waitFor({ state: "detached" });
+    await compact.locator("[data-scope-status]").filter({ hasText: /Live/ }).waitFor({ timeout: 15000 });
+    await compact.getByRole("combobox", { name: "Analysis view" }).selectOption("level");
+    await compact.locator("[data-scope-status]").filter({ hasText: "Live · level meter" }).waitFor();
+    assert.equal(await compact.locator("canvas").isVisible(), false);
+    const compactSource = compact.getByRole("combobox", { name: "Scope signal" });
+    await compactSource.selectOption({ label: "Input: Frequency" });
+    const savedScopeSource = await compactSource.inputValue();
+    assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
+    await compact.getByRole("button", { name: "Hide plot" }).click();
+    await compact.locator("canvas").waitFor({ state: "detached" });
+    await page.getByRole("button", { name: "Fit", exact: true }).click();
     // Select the existing modulation wire, edit depth and retain its identity.
     const wire = page.locator(".connection-modulation .connection-hit");
     await wire.scrollIntoViewIfNeeded();
@@ -529,6 +565,10 @@ try {
     assert.equal(await play.isEnabled(), false);
     await breadcrumbs.getByRole("button", { name: "Patch" }).click();
     await drone.getByRole("button", { name: "Input: Cutoff (Modulation)" }).waitFor();
+    await compact.getByRole("button", { name: "Show plot" }).click();
+    assert.equal(await compact.getByRole("combobox", { name: "Analysis view" }).inputValue(), "level", "Plot mode survives reload and nested navigation");
+    assert.equal(await compact.getByRole("combobox", { name: "Scope signal" }).inputValue(), savedScopeSource, "Plot source survives reload and nested navigation");
+    await compact.getByRole("button", { name: "Hide plot" }).click();
     assert.equal(await drone.getByRole("button", { name: "Input: Sweep (Modulation)" }).count(), 0);
     assert.equal(await page.getByRole("alert").count(), 0);
     await page.getByRole("button", { name: "Stop", exact: true }).click();
@@ -689,14 +729,7 @@ try {
     // Pan the real canvas far beyond the existing nodes on both graph levels.
     const addInPannedView = async (type, delta) => {
         const world = page.locator(".canvas-world");
-        const oldTransform = await world.getAttribute("style");
-        const view = await viewport.boundingBox();
-        const pointer = { pointerId: 77, pointerType: "mouse", button: 1, buttons: 4,
-            clientX: view.x + 30, clientY: view.y + 30 };
-        await viewport.dispatchEvent("pointerdown", pointer);
-        await viewport.dispatchEvent("pointermove", { ...pointer, clientX: pointer.clientX + delta, clientY: pointer.clientY + delta });
-        await viewport.dispatchEvent("pointerup", { ...pointer, buttons: 0 });
-        await page.waitForFunction(previous => document.querySelector(".canvas-world").getAttribute("style") !== previous, oldTransform);
+        await panCanvas(delta);
         await page.getByRole("button", { name: "Zoom in", exact: true }).click();
         await page.locator("#node-type").selectOption(type);
         const transform = await world.getAttribute("style");

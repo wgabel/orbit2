@@ -48,7 +48,11 @@ public sealed class CanvasNavigationService : IDisposable
 
     private static SavedCanvas CaptureLayout(CanvasStateSnapshot snapshot) => new(snapshot.GraphId,
             snapshot.Viewport.Pan.X, snapshot.Viewport.Pan.Y, snapshot.Viewport.Zoom,
-            snapshot.NodePositions.Select(pair => new SavedNodePosition(pair.Key, pair.Value.X, pair.Value.Y)).ToArray());
+            snapshot.NodePositions.Select(pair => new SavedNodePosition(pair.Key, pair.Value.X, pair.Value.Y)).ToArray())
+        {
+            Visualizations = snapshot.Visualizations.Select(pair => new SavedNodeVisualization(pair.Key, pair.Value)).ToArray(),
+            ExpandedVisualizationNodeId = snapshot.ExpandedVisualizationNodeId
+        };
 
     private static bool TryFindPath(GraphSnapshot graph, Guid target, out List<CanvasBreadcrumb> path)
     {

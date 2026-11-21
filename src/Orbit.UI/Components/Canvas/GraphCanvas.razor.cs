@@ -16,6 +16,7 @@ public partial class GraphCanvas : IAsyncDisposable
 {
     [Inject] private IJSRuntime JavaScript { get; set; } = default!;
     [Parameter, EditorRequired] public ICanvasStateService State { get; set; } = default!;
+    [Parameter] public Guid PatchId { get; set; }
     [Parameter] public EventCallback<PortConnectionRequest> OnConnect { get; set; }
     [Parameter] public EventCallback<ParameterEditRequest> OnParameterEdit { get; set; }
     [Parameter] public EventCallback<NodeAuditionRequest> OnAudition { get; set; }
@@ -40,6 +41,8 @@ public partial class GraphCanvas : IAsyncDisposable
     private CanvasMeasurement? measurement;
     private readonly Dictionary<PortAddress, CanvasPoint> portOffsets = [];
     private long measuredRevision = -1;
+    private long visualizationGeometryGeneration;
+    private long measuredVisualizationGeneration = -1;
     private bool initialFit;
     private bool disposed;
     private long? gesturePointer;
@@ -69,6 +72,7 @@ public partial class GraphCanvas : IAsyncDisposable
         EndGesture();
         subscription = State.Subscribe(change =>
         {
+            if (change.Kind == CanvasChangeKind.VisualizationChanged) visualizationGeometryGeneration++;
             if (pendingSource is PortAddress source &&
                 !Snapshot.Graph.Nodes.Any(node => node.Id == source.NodeId &&
                     node.Outputs.Any(port => port.Id == source.PortId)))
@@ -89,7 +93,7 @@ public partial class GraphCanvas : IAsyncDisposable
 
         // Node offsets are invariant under pan and zoom. Re-measure after a
         // committed graph edit, or explicitly before fitting measured bounds.
-        if (measuredRevision != Snapshot.GraphRevision)
+        if (measuredRevision != Snapshot.GraphRevision || measuredVisualizationGeneration != visualizationGeometryGeneration)
         {
             await MeasureAsync();
             if (!initialFit && measurement is not null && measurement.Nodes.Length > 0)
@@ -105,13 +109,15 @@ public partial class GraphCanvas : IAsyncDisposable
     {
         if (module is null || disposed) return;
         var revision = Snapshot.GraphRevision;
+        var generation = visualizationGeometryGeneration;
         var result = await module.InvokeAsync<CanvasMeasurement>("measureCanvas", viewportElement, Snapshot.Viewport.Zoom);
-        if (disposed || revision != Snapshot.GraphRevision) return;
+        if (disposed || revision != Snapshot.GraphRevision || generation != visualizationGeometryGeneration) return;
         measurement = result;
         portOffsets.Clear();
         foreach (var anchor in result.Ports)
             portOffsets[new PortAddress(anchor.NodeId, anchor.PortId)] = new CanvasPoint(anchor.X, anchor.Y);
         measuredRevision = revision;
+        measuredVisualizationGeneration = generation;
     }
 
     private CanvasPoint? PortPoint(PortAddress address) =>

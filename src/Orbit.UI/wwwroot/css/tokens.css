@@ -112,6 +112,7 @@
     --component-slider-marker-easing: var(--semantic-motion-meter-easing);
     --component-scope-width: 28rem;
     --component-scope-plot-height: 8rem;
+    --component-scope-compact-plot-height: 72px;
     --component-scope-level-height: 0.5rem;
     --component-node-min-width: 240px;
     --component-node-border-radius: 6px;

@@ -64,12 +64,18 @@ public partial class GraphWorkspace : IDisposable
     private (Guid GraphId, Guid NodeId)? editingRack;
     private GraphNodeSnapshot? EditingRack => editingRack is { } address && address.GraphId == Canvas.Snapshot.GraphId
         ? Canvas.Snapshot.Graph.Nodes.SingleOrDefault(node => node.Id == address.NodeId) : null;
-    private bool scopeOpen;
-    private GraphNodeSnapshot? ScopeNode => Canvas.Snapshot.SelectedNodeIds.Count == 1
+    private bool ScopeOpen => Canvas.Snapshot.ExpandedVisualizationNodeId is not null;
+    private GraphNodeSnapshot? ScopeSelection => Canvas.Snapshot.SelectedNodeIds.Count == 1
         ? Canvas.Snapshot.Graph.Nodes.SingleOrDefault(node => node.Id == Canvas.Snapshot.SelectedNodeIds[0] &&
-            Orbit.UI.Components.Analysis.SignalScopePanel.EligiblePorts(node).Any()) : null;
-    private void ToggleScope() => scopeOpen = !scopeOpen;
-    private void CloseScope() => scopeOpen = false;
+            NodeVisualizationCapabilities.EligiblePorts(node).Any()) : null;
+    private GraphNodeSnapshot? ScopeNode => Canvas.Snapshot.Graph.Nodes.SingleOrDefault(node => node.Id == Canvas.Snapshot.ExpandedVisualizationNodeId);
+    private void ToggleScope() => Canvas.SetExpandedVisualization(ScopeOpen ? null : ScopeSelection?.Id);
+    private void CloseScope() => Canvas.SetExpandedVisualization(null);
+    private void UpdateScopeSettings(Guid graphId, Guid nodeId, NodeVisualizationSettings settings)
+    {
+        if (Canvas.Snapshot.GraphId == graphId && Canvas.Snapshot.ExpandedVisualizationNodeId == nodeId)
+            Canvas.SetVisualization(nodeId, settings);
+    }
     private bool HasSelection => DeletableNodes.Any() ||
         Canvas.Snapshot.SelectedConnectionIds.Count > 0;
     private SignalConnection? SelectedConnection => Canvas.Snapshot.SelectedConnectionIds.Count == 1

@@ -20,6 +20,7 @@ public sealed class CanvasStateService : ICanvasStateService
     private readonly IDisposable graphSubscription;
     private readonly Queue<CanvasStateChange> pendingNotifications = new();
     private readonly Dictionary<Guid, CanvasPoint> removedPositions = [];
+    private readonly Dictionary<Guid, NodeVisualizationSettings> removedVisualizations = [];
     private NodePlacementReservation? nextPlacement;
     private CanvasStateSnapshot snapshot;
     private bool publishing;
@@ -45,8 +46,17 @@ public sealed class CanvasStateService : ICanvasStateService
         foreach (var node in graph.Nodes.OrderBy(node => node.TypeKey == OutputRack.NodeType ? 1 : 0))
             if (!positions.ContainsKey(node.Id)) positions.Add(node.Id, PlaceNode(positions));
 
+        var visualizations = new Dictionary<Guid, NodeVisualizationSettings>();
+        foreach (var preference in saved?.Visualizations ?? [])
+            if (preference is not null && graph.Nodes.FirstOrDefault(node => node.Id == preference.NodeId) is { } node &&
+                NodeVisualizationCapabilities.EligiblePorts(node).Any())
+                visualizations[node.Id] = NodeVisualizationCapabilities.Normalize(node, preference.Settings);
         snapshot = new CanvasStateSnapshot(graph, 0, viewport,
-            Freeze(positions), Array.Empty<Guid>(), Array.Empty<Guid>());
+            Freeze(positions), Array.Empty<Guid>(), Array.Empty<Guid>())
+        {
+            Visualizations = FreezeVisualizations(visualizations),
+            ExpandedVisualizationNodeId = ValidExpandedNode(graph, saved?.ExpandedVisualizationNodeId)
+        };
         // Observe patch commits, including edits of descendants and deletion of
         // the composite that owns this canvas. Each local projection has its own layout.
         graphSubscription = session.Subscribe(OnGraphChanged);
@@ -68,6 +78,25 @@ public sealed class CanvasStateService : ICanvasStateService
         if (nextPlacement is not null) throw new InvalidOperationException("A node placement is already reserved.");
         return nextPlacement = new NodePlacementReservation(this,
             placement.FindVisiblePosition(visibleBounds, occupiedBounds).RequireFinite("placement"));
+    }
+
+    public CanvasChangeResult SetVisualization(Guid nodeId, NodeVisualizationSettings settings)
+    {
+        EnsureEditable();
+        var node = snapshot.Graph.GetNode(nodeId);
+        if (!NodeVisualizationCapabilities.EligiblePorts(node).Any()) return NoChange();
+        var normalized = NodeVisualizationCapabilities.Normalize(node, settings);
+        if (normalized == snapshot.VisualizationFor(nodeId)) return NoChange();
+        var preferences = new Dictionary<Guid, NodeVisualizationSettings>(snapshot.Visualizations) { [nodeId] = normalized };
+        return CommitLayout(CanvasChangeKind.VisualizationChanged, snapshot with { Visualizations = FreezeVisualizations(preferences) });
+    }
+
+    public CanvasChangeResult SetExpandedVisualization(Guid? nodeId)
+    {
+        EnsureEditable();
+        var valid = ValidExpandedNode(snapshot.Graph, nodeId);
+        if (valid == snapshot.ExpandedVisualizationNodeId) return NoChange();
+        return CommitLayout(CanvasChangeKind.VisualizationChanged, snapshot with { ExpandedVisualizationNodeId = valid });
     }
 
     public CanvasChangeResult MoveNode(Guid nodeId, CanvasPoint worldPosition)
@@ -172,9 +201,19 @@ public sealed class CanvasStateService : ICanvasStateService
 
         var selectedNodes = snapshot.SelectedNodeIds.Where(nodeIds.Contains).ToArray();
         var selectedConnections = snapshot.SelectedConnectionIds.Where(connectionIds.Contains).ToArray();
+        foreach (var pair in snapshot.Visualizations.Where(pair => !nodeIds.Contains(pair.Key)))
+            removedVisualizations[pair.Key] = pair.Value;
+        while (removedVisualizations.Count > 512) removedVisualizations.Remove(removedVisualizations.Keys.First());
+        var visualizations = new Dictionary<Guid, NodeVisualizationSettings>();
+        foreach (var node in graph.Nodes)
+            if (snapshot.Visualizations.TryGetValue(node.Id, out var settings) || removedVisualizations.Remove(node.Id, out settings))
+                visualizations[node.Id] = NodeVisualizationCapabilities.Normalize(node, settings);
+        var expanded = ValidExpandedNode(graph, snapshot.ExpandedVisualizationNodeId);
         var layoutChanged = !positions.Keys.ToHashSet().SetEquals(snapshot.NodePositions.Keys) ||
             selectedNodes.Length != snapshot.SelectedNodeIds.Count ||
-            selectedConnections.Length != snapshot.SelectedConnectionIds.Count;
+            selectedConnections.Length != snapshot.SelectedConnectionIds.Count ||
+            expanded != snapshot.ExpandedVisualizationNodeId ||
+            !visualizations.OrderBy(pair => pair.Key).SequenceEqual(snapshot.Visualizations.OrderBy(pair => pair.Key));
 
         snapshot = snapshot with
         {
@@ -182,7 +221,9 @@ public sealed class CanvasStateService : ICanvasStateService
             LayoutRevision = layoutChanged ? checked(snapshot.LayoutRevision + 1) : snapshot.LayoutRevision,
             NodePositions = Freeze(positions),
             SelectedNodeIds = Array.AsReadOnly(selectedNodes),
-            SelectedConnectionIds = Array.AsReadOnly(selectedConnections)
+            SelectedConnectionIds = Array.AsReadOnly(selectedConnections),
+            Visualizations = FreezeVisualizations(visualizations),
+            ExpandedVisualizationNodeId = expanded
         };
 
         ReportSubscriberErrors(Publish(new CanvasStateChange(CanvasChangeKind.GraphCommitted, snapshot)));
@@ -266,6 +307,12 @@ public sealed class CanvasStateService : ICanvasStateService
 
     private static IReadOnlyDictionary<Guid, CanvasPoint> Freeze(Dictionary<Guid, CanvasPoint> positions) =>
         new ReadOnlyDictionary<Guid, CanvasPoint>(positions);
+
+    private static IReadOnlyDictionary<Guid, NodeVisualizationSettings> FreezeVisualizations(Dictionary<Guid, NodeVisualizationSettings> settings) =>
+        new ReadOnlyDictionary<Guid, NodeVisualizationSettings>(settings);
+
+    private static Guid? ValidExpandedNode(GraphSnapshot graph, Guid? id) =>
+        graph.Nodes.Any(node => node.Id == id && NodeVisualizationCapabilities.EligiblePorts(node).Any()) ? id : null;
 
     private static CanvasChangeResult NoChange() => new(null, Array.Empty<Exception>());
 

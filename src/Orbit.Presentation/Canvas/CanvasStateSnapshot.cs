@@ -1,4 +1,6 @@
 using Orbit.Application.Graphs.Snapshots;
+using Orbit.Application.Persistence;
+using System.Collections.ObjectModel;
 
 namespace Orbit.Presentation.Canvas;
 
@@ -14,6 +16,11 @@ public sealed record CanvasStateSnapshot(
 {
     public Guid GraphId => Graph.Id;
     public long GraphRevision => Graph.Revision;
+    public IReadOnlyDictionary<Guid, NodeVisualizationSettings> Visualizations { get; init; } =
+        new ReadOnlyDictionary<Guid, NodeVisualizationSettings>(new Dictionary<Guid, NodeVisualizationSettings>());
+    public Guid? ExpandedVisualizationNodeId { get; init; }
+    public NodeVisualizationSettings VisualizationFor(Guid nodeId) =>
+        Visualizations.GetValueOrDefault(nodeId, NodeVisualizationSettings.Default);
     /// <summary>False once the owning composite disappears. The last graph is retained read-only.</summary>
     public bool IsAvailable { get; init; } = true;
 }

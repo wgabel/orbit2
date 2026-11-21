@@ -20,5 +20,9 @@ public sealed record SavedParameter(string Key, Guid Id, double BaseValue);
 public sealed record SavedPort(string Key, Guid Id);
 public sealed record SavedComposite(string Name, Guid InputRackId, Guid OutputRackId,
     ExposedPort[] Inputs, ExposedPort[] Outputs, SavedGraph Graph);
-public sealed record SavedCanvas(Guid GraphId, double PanX, double PanY, double Zoom, SavedNodePosition[] Positions);
+public sealed record SavedCanvas(Guid GraphId, double PanX, double PanY, double Zoom, SavedNodePosition[] Positions)
+{
+    public SavedNodeVisualization[] Visualizations { get; init; } = [];
+    public Guid? ExpandedVisualizationNodeId { get; init; }
+}
 public sealed record SavedNodePosition(Guid NodeId, double X, double Y);

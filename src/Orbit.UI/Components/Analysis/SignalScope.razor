@@ -1,19 +1,20 @@
 @namespace Orbit.UI.Components.Analysis
 
-<div class="signal-scope" @ref="root">
+<div class="signal-scope @(Compact ? "scope-compact" : "")" @ref="root">
     <div class="scope-controls workspace-toolbar">
         <label>View
-            <select data-analysis-mode aria-label="Analysis view">
-                <option value="waveform" selected>Waveform</option>
+            <select data-analysis-mode aria-label="Analysis view" @bind:get="Settings.Mode" @bind:set="ChangeMode">
+                <option value="waveform">Waveform</option>
                 <option value="spectrum">Spectrum</option>
+                <option value="level">Level</option>
             </select>
         </label>
     </div>
     <div class="scope-controls workspace-toolbar" data-waveform-controls>
         <label>Timebase
-            <select data-timebase aria-label="Scope timebase">
+            <select data-timebase aria-label="Scope timebase" @bind:get="Settings.Timebase" @bind:set="ChangeTimebase">
                 <option value="0.005">5 ms</option>
-                <option value="0.02" selected>20 ms</option>
+                <option value="0.02">20 ms</option>
                 <option value="0.05">50 ms</option>
                 <option value="1">1 s</option>
                 <option value="5">5 s</option>
@@ -21,32 +22,32 @@
             </select>
         </label>
         <label>Trigger
-            <select data-trigger aria-label="Scope trigger">
+            <select data-trigger aria-label="Scope trigger" @bind:get="Settings.Trigger" @bind:set="ChangeTrigger">
                 <option value="free">Free</option>
-                <option value="rising" selected>Rising zero</option>
+                <option value="rising">Rising zero</option>
                 <option value="falling">Falling zero</option>
             </select>
         </label>
     </div>
     <div class="scope-controls workspace-toolbar" data-spectrum-controls hidden>
         <label>FFT
-            <select data-fft-size aria-label="FFT resolution">
+            <select data-fft-size aria-label="FFT resolution" @bind:get="Settings.FftSize" @bind:set="ChangeFftSize">
                 <option value="1024">1,024</option>
                 <option value="2048">2,048</option>
                 <option value="4096">4,096</option>
-                <option value="8192" selected>8,192</option>
+                <option value="8192">8,192</option>
             </select>
         </label>
         <label>Window
-            <select data-fft-window aria-label="FFT window">
-                <option value="hann" selected>Hann</option>
+            <select data-fft-window aria-label="FFT window" @bind:get="Settings.Window" @bind:set="ChangeWindow">
+                <option value="hann">Hann</option>
                 <option value="rectangular">Rectangular</option>
             </select>
         </label>
         <label>Smoothing
-            <select data-fft-smoothing aria-label="Spectrum smoothing">
+            <select data-fft-smoothing aria-label="Spectrum smoothing" @bind:get="Settings.Smoothing" @bind:set="ChangeSmoothing">
                 <option value="0">Off</option>
-                <option value="0.15" selected>Fast</option>
+                <option value="0.15">Fast</option>
                 <option value="0.5">Slow</option>
             </select>
         </label>

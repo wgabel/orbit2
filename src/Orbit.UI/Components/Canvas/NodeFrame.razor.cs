@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Orbit.Application.Graphs.Snapshots;
+using Orbit.Application.Persistence;
 using Orbit.Domain.Ports;
 using Orbit.Domain.Parameters;
 using Orbit.Domain.Timing;
@@ -13,6 +14,12 @@ namespace Orbit.UI.Components.Canvas;
 public partial class NodeFrame
 {
     [Parameter, EditorRequired] public GraphNodeSnapshot Node { get; set; } = default!;
+    [Parameter] public Guid PatchId { get; set; }
+    [Parameter] public Guid GraphId { get; set; }
+    [Parameter] public NodeVisualizationSettings Visualization { get; set; } = NodeVisualizationSettings.Default;
+    [Parameter] public bool VisualizationExpanded { get; set; }
+    [Parameter] public EventCallback<NodeVisualizationSettings> OnVisualizationChange { get; set; }
+    [Parameter] public EventCallback OnExpandVisualization { get; set; }
     [Parameter] public CanvasPoint Position { get; set; }
     [Parameter] public NodeVisualRole Role { get; set; }
     [Parameter] public bool Selected { get; set; }

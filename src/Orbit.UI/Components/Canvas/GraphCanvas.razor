@@ -13,7 +13,10 @@
             <ConnectionLayer Wires="@Wires" DraftPath="@DraftPath" OnSelect="SelectConnection" />
             @foreach (var node in Snapshot.Graph.Nodes)
             {
-                <NodeFrame @key="node.Id" Node="@node" Position="@Snapshot.NodePositions[node.Id]"
+                <NodeFrame @key="node.Id" Node="@node" Position="@Snapshot.NodePositions[node.Id]" PatchId="@PatchId" GraphId="@Snapshot.GraphId"
+                           Visualization="@Snapshot.VisualizationFor(node.Id)" VisualizationExpanded="@(Snapshot.ExpandedVisualizationNodeId == node.Id)"
+                           OnVisualizationChange="@(settings => { State.SetVisualization(node.Id, settings); })"
+                           OnExpandVisualization="@(() => { State.SetExpandedVisualization(Snapshot.ExpandedVisualizationNodeId == node.Id ? null : node.Id); })"
                            Role="@NodeRoleClassifier.Classify(Snapshot.Graph, node)"
                            Selected="@Snapshot.SelectedNodeIds.Contains(node.Id)" PendingSource="@pendingSource"
                            OnHeaderPointerDown="@(args => BeginNode(node.Id, args))"

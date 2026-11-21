@@ -7,5 +7,6 @@ public enum CanvasChangeKind
     NodeMoved,
     SelectionChanged,
     ViewportChanged,
-    GraphRemoved
+    GraphRemoved,
+    VisualizationChanged
 }

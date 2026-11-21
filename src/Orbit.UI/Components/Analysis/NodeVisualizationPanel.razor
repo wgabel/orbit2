@@ -1,0 +1,59 @@
+@namespace Orbit.UI.Components.Analysis
+@using Orbit.Application.Graphs.Snapshots
+@using Orbit.Application.Models
+@using Orbit.Application.Persistence
+@using Orbit.Presentation.Canvas
+@using Microsoft.AspNetCore.Components.Web
+
+@if (NodeVisualizationCapabilities.ResolvePort(Node, Settings.PortId) is { } selected)
+{
+    <section class="@(Expanded ? "signal-scope-panel" : "node-visualization-panel")"
+             aria-label="@(Expanded ? "Signal scope" : $"Visualization for {Node.Name}")"
+             @onpointerdown:stopPropagation="true" @onwheel:stopPropagation="true">
+        <div class="scope-header">
+            @if (Expanded)
+            {
+                <strong>@Node.Name · Scope</strong>
+                <button type="button" class="secondary" @onclick="OnExpand">Close scope</button>
+            }
+            else
+            {
+                <button type="button" class="secondary plot-toggle" aria-expanded="@Settings.Visible.ToString().ToLowerInvariant()"
+                        @onclick="Toggle">@(Settings.Visible ? "Hide plot" : "Show plot")</button>
+                @if (Settings.Visible || ExpandedElsewhere)
+                {
+                    <button type="button" class="secondary plot-expand" @onclick="OnExpand"
+                            aria-label="@(ExpandedElsewhere ? "Close expanded plot" : "Expand plot")">@(ExpandedElsewhere ? "Expanded" : "Expand")</button>
+                }
+            }
+        </div>
+        @if (Expanded || Settings.Visible && !ExpandedElsewhere)
+        {
+            <label class="scope-source">
+                Signal
+                <select aria-label="Scope signal" @bind:get="selected.Id" @bind:set="ChangePort">
+                    @foreach (var port in NodeVisualizationCapabilities.EligiblePorts(Node))
+                    {
+                        <option value="@port.Id">@port.Direction: @port.Name</option>
+                    }
+                </select>
+            </label>
+            var address = new SignalObservationAddress(PatchId, GraphId, Node.Id, selected.Id, selected.Direction);
+            <SignalScope @key="address" Address="@address" Compact="@(!Expanded)" Settings="@Settings" SettingsChanged="SettingsChanged" />
+        }
+    </section>
+}
+
+@code {
+    [Parameter, EditorRequired] public Guid PatchId { get; set; }
+    [Parameter, EditorRequired] public Guid GraphId { get; set; }
+    [Parameter, EditorRequired] public GraphNodeSnapshot Node { get; set; } = default!;
+    [Parameter, EditorRequired] public NodeVisualizationSettings Settings { get; set; } = NodeVisualizationSettings.Default;
+    [Parameter] public bool Expanded { get; set; }
+    [Parameter] public bool ExpandedElsewhere { get; set; }
+    [Parameter] public EventCallback<NodeVisualizationSettings> SettingsChanged { get; set; }
+    [Parameter] public EventCallback OnExpand { get; set; }
+
+    private Task Toggle() => SettingsChanged.InvokeAsync(Settings with { Visible = !Settings.Visible });
+    private Task ChangePort(Guid portId) => SettingsChanged.InvokeAsync(Settings with { PortId = portId });
+}

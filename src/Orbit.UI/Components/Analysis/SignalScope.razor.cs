@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using Orbit.Application.Models;
+using Orbit.Application.Persistence;
 using Orbit.Application.Services;
 
 namespace Orbit.UI.Components.Analysis;
@@ -12,6 +13,16 @@ public partial class SignalScope : IAsyncDisposable
     [Inject] private ISignalAnalysisService Analysis { get; set; } = default!;
     [Inject] private ScopeBrowserAssets BrowserAssets { get; set; } = default!;
     [Parameter, EditorRequired] public SignalObservationAddress Address { get; set; }
+    [Parameter] public bool Compact { get; set; }
+    [Parameter, EditorRequired] public NodeVisualizationSettings Settings { get; set; } = NodeVisualizationSettings.Default;
+    [Parameter] public EventCallback<NodeVisualizationSettings> SettingsChanged { get; set; }
+
+    private Task ChangeMode(string value) => SettingsChanged.InvokeAsync(Settings with { Mode = value });
+    private Task ChangeTimebase(string value) => SettingsChanged.InvokeAsync(Settings with { Timebase = value });
+    private Task ChangeTrigger(string value) => SettingsChanged.InvokeAsync(Settings with { Trigger = value });
+    private Task ChangeFftSize(string value) => SettingsChanged.InvokeAsync(Settings with { FftSize = value });
+    private Task ChangeWindow(string value) => SettingsChanged.InvokeAsync(Settings with { Window = value });
+    private Task ChangeSmoothing(string value) => SettingsChanged.InvokeAsync(Settings with { Smoothing = value });
 
     private ElementReference root;
     private IJSObjectReference? module;
