@@ -352,7 +352,7 @@ var result = session.Execute(new AddNodeCommand(session.GraphId, OscillatorGener
 - Layout events and DSP telemetry are separate from graph commands. Audio and canvas projections will subscribe to committed changes when the dynamic editor/compiler are introduced.
 - The existing fixed demo now constructs its graph with these commands and derives its playback request from the final snapshot. Its precompiled regression DSP remains independent of the live graph.
 
-See [the architecture document](ORBIT2-ARCHITECTURE.md#9-commands-events-and-transaction-boundaries) for the transaction boundary, event flow, and future nested-graph requirements.
+See [the architecture document](docs/core/commands-and-events.md#9-commands-events-and-transaction-boundaries) for the transaction boundary, event flow, and future nested-graph requirements.
 
 ## Canvas presentation state (Phase 3 foundation)
 
@@ -442,7 +442,7 @@ For a unit-amplitude bipolar sine, depth 100 into a 440 Hz frequency gives 340�
 
 `SignalGraph.SetConnectionAmount` replaces the immutable edge in place, retaining ID, endpoints and order. The session commits one revision and publishes `ConnectionAmountChanged` with the before/after records. Invalid or unchanged values do not commit. The canvas retains the selection; range estimation and playback receive the new snapshot. As amounts are presently source literals, a reachable changed amount recompiles and crossfades while playing. Explicit Apply avoids recompiling each intermediate keystroke.
 
-**Planned Phase 6.19.5:** compact badges on cables will display committed amounts in destination units (e.g. `+100 Hz`, `−0.3`, `×0.5`), distinguish zero and dormant connections, and support All/Modified/Selected/Off with automatic zoom/overlap handling. Selecting a badge will reuse the existing amount editor, later as an anchored floating panel with optional predicted individual contribution. Display changes are layout-only; edits still require explicit Apply. See the [connection visualization design](ORBIT2-ARCHITECTURE.md#connection-amount-badges-and-inline-editing-planned-phase-6195).
+**Planned Phase 6.19.5:** compact badges on cables will display committed amounts in destination units (e.g. `+100 Hz`, `−0.3`, `×0.5`), distinguish zero and dormant connections, and support All/Modified/Selected/Off with automatic zoom/overlap handling. Selecting a badge will reuse the existing amount editor, later as an anchored floating panel with optional predicted individual contribution. Display changes are layout-only; edits still require explicit Apply. See the [connection visualization design](docs/editor/annotations-and-connections.md#connection-amount-badges-and-inline-editing-planned-phase-6195).
 
 ## Faust graph compiler (Phase 4)
 
@@ -498,7 +498,7 @@ The editable thumb and numeric input stay at the base value. A colored band show
 
 The separate moving marker and Live label reflect actual Faust bargraph readings at 25 Hz, not a simulated LFO. Meter names map to stable node/parameter addresses. Frames are accepted only for the applied graph revision, and markers disappear while stopped or while a new graph is pending. The estimated band remains visible when stopped. Telemetry never changes the base parameter or emits graph commands.
 
-Future root and nested canvases share the same viewport, node frame, port connector and Bézier connection components. Their interaction and visual contracts are defined in [the architecture document](ORBIT2-ARCHITECTURE.md#shared-canvas-and-component-standards).
+Future root and nested canvases share the same viewport, node frame, port connector and Bézier connection components. Their interaction and visual contracts are defined in [the architecture document](docs/editor/design-system.md#shared-canvas-and-component-standards).
 
 ### Frequency control design note
 
@@ -663,15 +663,15 @@ Eligible nodes now have **Show plot** at the bottom of the shared node frame. Op
 
 ### Patch documentation and canvas annotations (planned Phase 6.19)
 
-Add **Note** to place a titled, editable, resizable and collapsible text card in the current root or nested canvas. Notes use named theme accents and are saved and exported with their owning layout. They have no signal ports or DSP and can be edited while playing without changing the audible patch. Subsequent steps add node aliases and attached descriptions, wire labels, named visual groups (not composites), and a patch overview with instructions and searchable tags. These features are planned, not yet available in the application. See the [architecture and phased plan](ORBIT2-ARCHITECTURE.md#patch-documentation-and-canvas-annotations-planned-phase-619).
+Add **Note** to place a titled, editable, resizable and collapsible text card in the current root or nested canvas. Notes use named theme accents and are saved and exported with their owning layout. They have no signal ports or DSP and can be edited while playing without changing the audible patch. Subsequent steps add node aliases and attached descriptions, wire labels, named visual groups (not composites), and a patch overview with instructions and searchable tags. These features are planned, not yet available in the application. See the [architecture and phased plan](docs/editor/annotations-and-connections.md#patch-documentation-and-canvas-annotations-planned-phase-619).
 
 ### Envelopes and rhythmic triggering (planned Phase 7.1)
 
-The first AD (attack/decay) Envelope Generator will accept rising edges from an existing free-running or BPM-synchronized oscillator. Its 0–1 output will modulate ordinary parameters, so a shared oscillator can drive independent pitch, amplitude and noise envelopes for impacts or rhythmic textures. Dedicated Trigger, Gate and Clock nodes, AR/ADSR/Loop modes, live curve previews, presets and custom multi-point shapes are subsequent steps. See the [architecture and phased implementation plan](ORBIT2-ARCHITECTURE.md#envelope-generators-and-rhythmic-triggers-planned-phase-71). These are planned features, not controls available in the current build.
+The first AD (attack/decay) Envelope Generator will accept rising edges from an existing free-running or BPM-synchronized oscillator. Its 0–1 output will modulate ordinary parameters, so a shared oscillator can drive independent pitch, amplitude and noise envelopes for impacts or rhythmic textures. Dedicated Trigger, Gate and Clock nodes, AR/ADSR/Loop modes, live curve previews, presets and custom multi-point shapes are subsequent steps. See the [architecture and phased implementation plan](docs/audio/envelopes.md#envelope-generators-and-rhythmic-triggers-planned-phase-71). These are planned features, not controls available in the current build.
 
 ### Musical instrument synthesis (planned Phase 7.2)
 
-Orbit2 can already approximate sustained organs, flutes, brass, strings and didgeridoo-like drones by mixing oscillators, filtered noise and effects. Phase 7.2 adds editable instrument templates, interval-preserving pitch tracking, a note source with pitch/gate/trigger/velocity, and a reusable damped resonator processor. Several independently tuned resonators excited by a short noise burst form a modal instrument for handpan-like, bell, gong and wood sounds. Envelope articulation, optional MIDI and bounded polyphony follow the shared event/voice architecture; no hardcoded instrument-specific node or DSP engine is required. See the [architecture and phased plan](ORBIT2-ARCHITECTURE.md#musical-instrument-synthesis-and-physical-modelling-planned-phase-72). Note control and resonators are planned, not currently available.
+Orbit2 can already approximate sustained organs, flutes, brass, strings and didgeridoo-like drones by mixing oscillators, filtered noise and effects. Phase 7.2 adds editable instrument templates, interval-preserving pitch tracking, a note source with pitch/gate/trigger/velocity, and a reusable damped resonator processor. Several independently tuned resonators excited by a short noise burst form a modal instrument for handpan-like, bell, gong and wood sounds. Envelope articulation, optional MIDI and bounded polyphony follow the shared event/voice architecture; no hardcoded instrument-specific node or DSP engine is required. See the [architecture and phased plan](docs/examples/instrument-recipes.md#musical-instrument-synthesis-and-physical-modelling-planned-phase-72). Note control and resonators are planned, not currently available.
 
 ### Chorus (Phase 6.15)
 
