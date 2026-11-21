@@ -782,7 +782,47 @@ flowchart TD
     S --> D[Existing Faust compiler]
 ~~~
 
-### Individual node presets (planned Phase 6.16)
+### Node mute and processor bypass (planned Phase 6.16)
+
+Provide fast, reversible auditioning without deleting nodes, rewiring a graph, changing base parameters or overwriting connection amounts. A compact **M** action in the shared node header mutes a node's complete outgoing signal; a **B** action on an eligible processor bypasses its processing and passes its input signal through. These are distinct operations.
+
+| Node category | Mute (M) | Bypass (B) |
+|---|---|---|
+| Generators and modulation sources | Silence all outputs | Not applicable (no dry input) |
+| Eligible audio processors | Silence all outputs | Pass the original audio input unchanged |
+| Composite drones and other composites | Silence all exposed outputs | Deferred until explicit dry routing is defined |
+| Boundary racks and master output | Not applicable initially | Not applicable initially |
+
+Bypass eligibility is an explicit reusable node capability, not a UI type switch or an assumption that every `IProcessor` has a meaningful dry path. Initially enable B for effects with one unambiguous compatible audio input/output. Only audio input passes through; modulation inputs continue controlling the inactive wet computation. Nodes can retain both states; mute takes precedence over bypass, and unmuting restores the prior bypass state.
+
+~~~mermaid
+flowchart TD
+    I[Audio input] --> P[Processor DSP]
+    I --> B[Smoothed bypass blend]
+    P --> B
+    B --> M[Smoothed mute gain]
+    M --> O[Audio output]
+~~~
+
+For a linear lane ending at a mixer, muting its final node silences the entire lane's contribution, including effect tails, while the other lanes remain audible. This also works when the lane ends at a composite output. Muting an earlier node does not necessarily silence downstream delay or reverb tails immediately. Muting a source affects every outgoing branch, including modulation connections, so a fan-out graph is not equivalent to independently muting a single edge.
+
+~~~mermaid
+flowchart TD
+    A[Oscillator A] --> E[Effects A] --> X[Mixer]
+    B[Oscillator B] --> F[Muted last effect] -.-> X
+    C[Oscillator C] --> G[Effects C] --> X
+    X --> O[Audio output]
+~~~
+
+**Domain and application.** Model `IsMuted` and, where supported, `IsBypassed` as explicit node state separate from `ParameterDefinition` and layout; they are not numeric modulation targets. Introduce validated `SetNodeMutedCommand` and `SetNodeBypassedCommand` with graph/node IDs and desired state, plus typed before/after facts. Unsupported targets and no-op edits must not create revisions or history entries. Commit each action once through `PatchSession`; snapshots, history restoration, nested-graph routing, range projection and autosave observe the same committed state. Both operations are undoable and persisted. Update the patch schema compatibly so legacy patches restore unmuted and unbypassed; explicit states round-trip through named saves, recovery and export. Individual parameter presets do not include these audition switches.
+
+**Live audio.** Extend graph lowering and runtime control manifests with stable graph-qualified host controls for mute gain and bypass blend. Do not encode the flags as structural Faust constants or treat their changes as topology changes. Preserve ordinary parameter controls, input routes, oscillator phase, delay/reverb state and shared transport; smoothly ramp mute toward silence and crossfade between dry and processed signals for bypass. Continue processing both paths initially, even while inaudible; CPU-saving suspension and state restoration are separate future features. Composite mute gates every flattened exposed output at the composite boundary (including modulation outputs), not each child node. Apply the gate before downstream fan-out. Effective modulation/range reporting must account for mute and bypass without pretending to know arbitrary wet signal bounds. Initial playback and crossfade replacements initialize from the current committed flags; stale runtime updates must not overwrite newer states.
+
+**Presentation.** Extend the reusable `NodeFrame` header with compact M/B toggle buttons, accessible names, pressed state, tooltips and visible active styling drawn from the JSON design tokens. Prevent button pointer actions from starting node drags; keep selection, navigation and cable geometry intact. The same controls work in root and nested canvases without DSP-specific Razor. Make muted nodes recognizable even without relying on color alone; retain their wires and parameter editors.
+
+**Deferred routing actions.** Do not implement mute buttons on individual connections, connection solo, global node solo or group mute/solo in this phase. An existing connection amount of zero can temporarily silence a single branch, while endpoint mute covers ordinary linear mixer lanes. Revisit dedicated edge mute only if preserving independent amounts or fan-out auditioning becomes a genuine requirement. If introduced later, edge state must be distinct from configured amount and use the same reversible, click-safe runtime-control approach. Solo scope and multi-output bypass routing require explicit contracts rather than implicit graph traversal.
+
+### Individual node presets (planned Phase 6.17)
 
 A node preset is a reusable immutable configuration of an existing registered node type, not a new node type, a factory, a DSP implementation, a patch or a live link to another node. Initially support leaf generators and processors with editable parameters; racks, master output without editable parameters, and composite graph definitions are not individual preset targets. Custom composite definitions remain a separate graph-template feature.
 
@@ -1540,7 +1580,8 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented (6.13): mono feedback delay with free and synchronized timing, fractional delay, audio-rate modulation and live shared BPM.
 - Implemented (6.14): mono algorithmic reverb with audio-rate decay, damping and wet mix, bounded feedback combs and all-pass diffusion.
 - Next: chorus; later add additional waveforms, sample-scheduled transport commands and rhythmic clock/trigger nodes.
-- Planned (6.16): universal individual node presets, following the chorus processor. See the incremental preset roadmap below.
+- Planned (6.16): node mute and processor bypass, following the chorus processor.
+- Planned (6.17): universal individual node presets, following node mute/bypass. See the incremental roadmap below.
 - Deferred: deployment-version detection and safe workspace-save/reload prompt for long-lived tabs whose versioned lazy modules have been removed by a later Pages deployment.
 - Add copies/preset reuse with independent instances.
 
@@ -1599,14 +1640,22 @@ flowchart TD
 
 Deliverable: several independently configurable drones from one reusable modular architecture.
 
-#### Phase 6.16 — Individual node presets (planned)
+#### Phase 6.16 — Node audition actions (planned)
 
-- **6.16.1 — Model and catalog:** define versioned immutable parameter configurations, stable IDs and type/key validation; load grouped built-in JSON definitions independently of node factories.
-- **6.16.2 — Atomic application:** validated multi-parameter graph operation and `ApplyNodePresetCommand`, one committed revision and undo entry; verify nested nodes, dormant connections and live DSP behavior.
-- **6.16.3 — Shared selector:** compact grouped `NodePresetSelector`, descriptions, matching/modified state, existing design tokens and accessibility; no node-specific UI.
-- **6.16.4 — Built-in content:** meaningful usage groups and example presets for all eligible existing generators and processors, including chorus; validate all shipped data in CI.
-- **6.16.5 — Custom library:** persistent `Custom` group for every eligible node type, save as, explicit overwrite, rename/delete and independent instances; IndexedDB reload and workspace-switch coverage.
-- **6.16.6 — Portable node presets:** versioned JSON import/export with transactional validation, conflict handling and backwards compatibility.
+- **6.16.1 — Node mute:** explicit model/snapshot state, validated command, backward-compatible persistence, history and click-safe live controls; support leaf and composite outputs and shared M header button.
+- **6.16.2 — Processor bypass:** explicit eligible dry-path capability, independent state, validated command and smoothed blend; shared B header button, mute precedence and preserved wet processing state.
+- **Deferred:** connection mute and solo, global/group solo, composite bypass routing and CPU-saving branch suspension until separately justified.
+
+Deliverable: audition or silence entire linear lanes by muting their final node, and compare effects with their dry input without deleting or rewiring anything, including during playback.
+
+#### Phase 6.17 — Individual node presets (planned)
+
+- **6.17.1 — Model and catalog:** define versioned immutable parameter configurations, stable IDs and type/key validation; load grouped built-in JSON definitions independently of node factories.
+- **6.17.2 — Atomic application:** validated multi-parameter graph operation and `ApplyNodePresetCommand`, one committed revision and undo entry; verify nested nodes, dormant connections and live DSP behavior.
+- **6.17.3 — Shared selector:** compact grouped `NodePresetSelector`, descriptions, matching/modified state, existing design tokens and accessibility; no node-specific UI.
+- **6.17.4 — Built-in content:** meaningful usage groups and example presets for all eligible existing generators and processors, including chorus; validate all shipped data in CI.
+- **6.17.5 — Custom library:** persistent `Custom` group for every eligible node type, save as, explicit overwrite, rename/delete and independent instances; IndexedDB reload and workspace-switch coverage.
+- **6.17.6 — Portable node presets:** versioned JSON import/export with transactional validation, conflict handling and backwards compatibility.
 
 Deliverable: choose or create a grouped configuration for any eligible node without changing its identity or wiring; apply in one undoable operation during playback and reuse across patches. Custom composite graph templates (including internal wiring and exposed racks) remain separate Phase 7 work, with a consistent catalog experience.
 
@@ -1656,6 +1705,7 @@ The core model should be independently unit testable without a browser or Faust.
 | Compile revisions | Stale results cannot replace a newer successful runtime. |
 | DSP failure | Last valid runtime remains active; error is displayed to the user. |
 | Presets | Two instances have independent parameters and DSP state. |
+| Node audition (planned) | Mute last node in one mixer lane while preserving other lanes; mute fan-out including composite and modulation outputs; bypass eligible effects with unchanged dry signal; retain DSP state, parameters and wiring, verify smooth transitions without recompilation, mute precedence, undo/redo and compatible persistence. |
 | Individual node presets (planned) | Validate every shipped configuration; reject invalid batch without mutation; application preserves identities and wiring, emits one revision and undo entry; base-only updates avoid recompilation; custom groups survive reload and library edits do not alter existing nodes. |
 | Output safety | Controlled master gain, no unexpected discontinuity when changing base values. |
 | Persistence | Save/load nested graph and layout with stable IDs and equivalent connectivity. |
