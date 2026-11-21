@@ -872,6 +872,39 @@ flowchart TD
 
 **Custom persistence.** Define `INodePresetStorage` separately from `IPatchLibraryStorage`, with a browser adapter using the existing versioned IndexedDB interop and a dedicated logical store/namespace. Reuse validated serialization, transaction and error patterns where appropriate; never mix node presets with recovery records or named complete patches. Persist versioned data by stable ID, enforce unique names per node type (case-insensitive) and explicit overwrite semantics, and report storage failure without changing the current node. Custom presets survive reload and patch switching; eventually support portable individual JSON import/export with validation and conflict handling. Future audio-asset-valued configurations need explicit references and portability rules from Phase 8; scalar parameter presets do not embed recordings.
 
+### Signal analysis and visualization (planned Phase 6.18)
+
+Visualization is a shared observation system, not a DSP effect or a second audio engine. Distinguish actual live samples from a calculated/configured response. An oscillator's ideal shape is useful before playback; its live output can differ substantially due to modulation, anti-aliasing, mute and processing. Do not present a theoretical preview as measured audio.
+
+| Visualization mode | Data | Typical use |
+| --- | --- | --- |
+| Oscilloscope | Audio-rate samples against elapsed time; adjustable timebase and optional trigger | Oscillator waveforms, LFOs, modulation and processed signals |
+| Spectrum analyzer | FFT magnitude in dB versus frequency (logarithmic Hz axis for audio) | Harmonics, noise colors and effect output |
+| Level meter | Peak and RMS over an explicit time window | Mixers, gain staging and clipping diagnosis |
+| Frequency response | Calculated gain in dB versus frequency, based on processor configuration and sample rate | Parametric EQ and resonant filters |
+| Spectrogram (later) | History of spectra versus time | Evolving drones and textures |
+| Envelope preview (future envelope nodes) | Defined amplitude/control trajectory versus time or phase | Envelope generators and automation |
+
+**Integrated UI.** Extend the reusable `NodeFrame` content with an optional `NodeVisualizationPanel` for eligible nodes. Use a small collapsible plot (initially 60–80 px high at normal zoom, design-token controlled), compact mode selector (waveform/spectrum/level/response as supported), input/output selector for eligible signals, and an accessible expand button. The expanded view can offer adjustable timebase, amplitude scaling, spectrum resolution, axes, cursor readout and comparisons without permanently increasing canvas height. Use the same plot components for compact and expanded views, root and nested canvases. Header and plot controls must not initiate node drags; layout changes must update measured port geometry. Indicate live, stopped, unavailable, preview and limited-capacity states explicitly, not only with color. An unconnected node that is not executing may display a labelled ideal preview if one is supported, otherwise report no live signal. Do not start audio merely to populate a preview.
+
+**Reusable components and capability discovery.** Resolve supported modes and default observation targets through a registry keyed by node type/port capability, rather than a switch over DSP node names in Razor. `OscilloscopeView`, `SpectrumAnalyzerView`, `LevelMeterView` and `FrequencyResponseView` consume analysis/response data, not domain objects with browser handles. Reuse axes, scaling, plot viewport and controls where practical. Static styling (height, grid colors, traces, typography, spacing, focus and expanded-panel surfaces) uses existing JSON design tokens. Presentation settings such as visibility, mode, selected port and timebase belong to graph-qualified canvas layout preferences; extend the versioned workspace layout with backward-compatible defaults. Do not store live samples, FFT buffers, response caches or per-frame readings in patches or graph history. Toggling visibility, expanding, switching analysis modes and ordinary analysis subscriptions produce no graph command, undo entry, audio restart or graph compilation.
+
+**Processor response.** A frequency response plot is not a waveform, spectrum or amplitude envelope. For parametric EQ, frequency is the bell center, gain is the boost/cut and Q controls bandwidth. For filters, the same plot renders low-pass, high-pass, band-pass or notch responses. Define a pure numerical response contract/registry in `Orbit.Audio` for eligible DSP implementations. Derive frozen-coefficient transfer functions from the actual `FaustStateVariableFilter` algorithm, including its sample-rate frequency clamp, prewarping and gain-dependent damping; share coefficient definitions where feasible and test analytical predictions against offline Faust measurements. Do not substitute an unrelated browser biquad approximation. Use a logarithmic frequency axis up to Nyquist and a dB magnitude axis. Show the base-parameter response when stopped using a declared reference sample rate if no actual context exists; during playback use the active sample rate and optionally overlay the response at the latest effective parameter values from existing parameter telemetry. Time-varying modulation is not a stationary transfer function: label effective curves as instantaneous estimates, not exact spectral measurements. Mute/bypass state should be visible; distinguish the configured wet response from the currently passing signal. Later overlay measured input/output spectra on the same axis, keeping relative transfer gain and absolute signal magnitude clearly distinguished.
+
+**Dedicated analyzer node.** Integrated plots provide quick inspection without adding cables. A separate passive `Analyzer` sink can later be connected to any compatible audio or continuous modulation source, independently positioned and resized, with the same plot components. It adds no audible output, no delay to existing paths, and no DSP effect. Its input is an explicit observation root alongside the master sink, with ordinary validated graph commands, nested graph identity, persistence and undo/redo. Only the master remains the audible sink. A source connected solely to an analyzer may be evaluated for observation during playback; do not silently connect it to the master. Initial analyzer input is mono, with multi-channel selection deferred to the channel model.
+
+~~~mermaid
+flowchart TD
+    A[Oscillator] --> M[Mixer]
+    B[Noise] --> M
+    M --> R[Reverb]
+    R --> O[Master output]
+    M --> V[Analyzer sink]
+    M -. implicit observation .-> P[Integrated mixer plot]
+~~~
+
+The runtime signal tap design is described in [Faust and real-time execution](#signal-observation-and-analysis-planned-phase-618). Both forms consume the same backend; an integrated visualization remains preferable for routine inspection, while dedicated analyzers support comparison and arbitrary routing without cluttering every node.
+
 ## 8. Input and output racks
 
 The user's proposed solution is the standard interface between canvases: a special internal Input Rack node with named ports that automatically appear as input sockets on the composite node in the parent canvas. The corresponding internal sockets are outputs, allowing external signals to be routed to any compatible internal node.
@@ -1204,6 +1237,47 @@ Base edits and modulation retain the active delay state; dry/wet mix is linear (
 `ChorusProcessor` is a mono effect with rate (0.05–5 Hz), depth (0–10 ms), base delay (5–40 ms) and wet mix (0–1), all audio-rate modulatable. Milliseconds are a new shared parameter unit; append it to the unit enum and render it through the common unit formatter. Defaults are 0.6 Hz, 3 ms, 15 ms and 0.5. `ChorusFaustEmitter` uses an integrated free-running phase and two sine-modulated fractional delay taps separated by one-third of a cycle. The time excursion is limited to `min(depth, baseDelay - 1 ms)`; taps use actual sample rate and fixed buffers bounded to 50 ms at 192 kHz. Linear interpolation and equal averaging form the wet signal, which is blended linearly with dry input. No feedback, new audio clock, structural constants or special UI are required.
 
 The conservative signal range is the input range expanded to include zero (initially empty delay buffers). All combinations are convex weighted sums, so no extra gain occurs. Base edits retain the phase and delay states; high-speed modulation may deliberately pitch-shift the wet signal. Stereo widening, alternate voice counts and tempo-locked chorus are future extensions. Offline tests verify dry amplitude, fixed fractional delay at zero depth, sideband spacing controlled by rate, and bounded output under extreme modulation at 44.1/48 kHz.
+
+### Signal observation and analysis (planned Phase 6.18)
+
+The current compiler lowers the entire reachable, flattened patch to one Faust program with a mono master output. `FaustOutputMonitor` reads passive scalar bargraphs for effective parameters; those readings are throttled scalar telemetry, not consecutive samples suitable for waveform or FFT analysis. Do not split the graph into one AudioWorklet per node, reconstruct oscillator samples in Blazor, or infer a live waveform from parameter telemetry. Extend the shared compiler/runtime with passive signal taps that reference actual existing expressions, never independent copies of oscillator or effect state.
+
+**Addresses and manifest.** Use an immutable graph-qualified `SignalObservationAddress` (patch/graph/node/port identity plus direction and channel, where appropriate). An input observation reads the actual weighted/routed input expression; an output observation reads the emitted signal including mute/bypass gates, not the raw pre-gate expression. Resolve composite/rack boundary ports through `GraphFlattener` origins and routing mappings so parent and child views refer to the correct real signal. Return a `SignalTapManifest` alongside the existing Faust control manifest: map stable observation addresses to backend channels/slots and associate them with the accepted program/playback generation. Do not expose generated Faust identifiers as durable graph identities. The master output tap must have an explicit documented placement relative to the shared playback envelope/master gain.
+
+**Initial backend strategy.** Prototype a bounded set of host-only observation channels in the compiled Faust output, in addition to channel zero carrying the existing mono master. Faust parallel composition can return multiple signals without introducing additional audible paths. The browser audio adapter must explicitly split/select the master channel before the existing gain/envelope/output path; observation channels must never be implicitly downmixed, connected to speakers or treated as user-facing multichannel ports. Prove the pinned FaustWasm worklet's output/channel configuration, browser limits and offline equivalence before integrating this strategy. Expose a bounded set of reachable observation addresses per compiled topology; support live slot selection with precompiled routing or a bounded set of fixed channels as practical, measuring the cost of evaluating selectors. Pick the strategy/capacity by profiling and expose an unavailable/capacity state for addresses that cannot be observed. Opening/collapsing a plot, changing modes or inspecting an available tap must not trigger a structural rebuild; avoid unbounded per-node auxiliary channels. Only intentional graph edits (such as adding a dedicated analyzer or changing its input) follow existing compilation/replacement policy. Keep optional observation failures isolated from the last good audio runtime.
+
+~~~mermaid
+flowchart TD
+    F[Flattened Faust program] --> S[Channel splitter and tap manifest]
+    S --> M[Master channel only]
+    S --> T[Observation channels]
+    M --> E[Existing gain and envelope]
+    E --> O[Audio destination]
+    T --> A[Shared analysis service]
+    A --> W[Waveform and level]
+    A --> P[Spectrum]
+~~~
+
+**Analysis lifecycle.** Define application-facing `ISignalAnalysisService`/subscription contracts that address signals without browser or Faust types and identify the accepted playback, sample rate, sample frame/time where available and availability. Keep latest observation data outside graph revisions; the runtime owns buffers and view lifetimes. `Orbit.Audio` compiles tap manifests and owns pure response math; `Orbit.Infrastructure` manages Web Audio channel isolation, `AnalyserNode` or bounded sample capture, FFT/level acquisition and disposal. Native `AnalyserNode` provides time-domain and frequency-domain buffers without altering its input; allocate reusable typed arrays and share analysis for multiple views of the same tap. Use a bounded decimated/min-max history for slow LFOs and long timebases rather than a huge FFT or unbounded history; preserve peaks when downsampling. Use coherent time windows and clearly labelled dBFS/reference levels. Render live Canvas plots on the browser side, with Blazor supplying sparse configuration and subscriptions, not sending sample-rate arrays or triggering render-tree updates per frame. Response curves are computed on parameter changes or throttled effective-value updates, independent of live audio capture.
+
+~~~mermaid
+sequenceDiagram
+    participant V as Visualization panel
+    participant S as Analysis service
+    participant R as Active audio runtime
+    V->>S: Subscribe by signal address
+    S->>R: Resolve active tap
+    loop Visible view refresh
+        R-->>S: Latest bounded buffer
+        S-->>V: Waveform or spectrum
+    end
+    V->>S: Hide, navigate or dispose
+    S->>R: Release unused subscription
+~~~
+
+Keep analysis subscriptions reference-counted and restricted to visible compact/expanded plots; prioritize explicitly expanded/selected targets when capacity is reached. Suspend drawing and unnecessary analysis off-screen, in hidden tabs and on stopped playback; throttle visible refresh to a configurable target around 30 Hz. Bound memory, analyzer count, sample window and frequency-bin count. Avoid allocations, locks, blocking operations, FFT/UI drawing or message flooding in the audio rendering callback. Measure CPU and memory with representative nested drone patches at 44.1/48 kHz and establish device-appropriate limits. A shared analyser/tap must not create extra audible routing, change peak level, phase, timing, or transport, even while a graph is crossfading.
+
+Rebind subscriptions atomically to the latest accepted runtime and manifest on graph replacement, discard stale frames/callbacks, and label a brief transition or missing tap rather than showing old-node data under a new identity. Failed replacement retains last-good audio and its corresponding analysis; Stop, workspace replacement and node removal release buffers and browser handles. Preserve the existing effective-parameter meter path independently. Analyzer-only graph branches, if added, are explicit reachability roots; ordinary visual preferences do not change graph reachability. Use deterministic offline fixtures to prove identical audible master samples with observations enabled/disabled, correct root/nested mapping, known sample and FFT/level results, and no output leakage even when taps contain a distinct louder signal.
 
 ### Sample-based synthesis and audio assets (planned Phase 8)
 
@@ -1589,6 +1663,7 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Next: node mute and bypass; later add additional waveforms, sample-scheduled transport commands and rhythmic clock/trigger nodes.
 - Planned (6.16): node mute and processor bypass.
 - Planned (6.17): universal individual node presets, following node mute/bypass. See the incremental roadmap below.
+- Planned (6.18): shared signal observation and visualization, integrated node plots, processor response curves and passive analyzer sinks.
 - Deferred: deployment-version detection and safe workspace-save/reload prompt for long-lived tabs whose versioned lazy modules have been removed by a later Pages deployment.
 - Add copies/preset reuse with independent instances.
 
@@ -1666,11 +1741,23 @@ Deliverable: audition or silence entire linear lanes by muting their final node,
 
 Deliverable: choose or create a grouped configuration for any eligible node without changing its identity or wiring; apply in one undoable operation during playback and reuse across patches. Custom composite graph templates (including internal wiring and exposed racks) remain separate Phase 7 work, with a consistent catalog experience.
 
+#### Phase 6.18 — Signal analysis and visualization (planned)
+
+- **6.18.1 — Observation infrastructure:** prototype bounded Faust output taps and explicit master-channel isolation; define graph-qualified observation addresses, tap manifest, accepted-runtime mapping, shared analysis subscription contracts and lifecycle. Verify identical audible samples, nested routing, mute/bypass semantics, no recompilation for view-only changes and resource limits.
+- **6.18.2 — Oscilloscope and level meter:** reusable time-domain sample display, peak/RMS, timebase, trigger and bounded slow-modulation history; validate known sine, clipped and low-rate modulation signals.
+- **6.18.3 — Spectrum analyzer:** reusable FFT display with frequency and dB axes, configurable window/resolution and smoothing, known fundamental/harmonic/noise tests, and shared capture with the oscilloscope.
+- **6.18.4 — Integrated and expanded views:** capability-driven shared `NodeVisualizationPanel`, compact collapsible plots, expand/mode/source controls, visible-only rendering, tokenized design and compatible per-graph layout persistence; no graph history or DSP restarts for display changes.
+- **6.18.5 — Processor response curves:** pure tested response providers matching the actual parametric EQ and filter DSP, base and instantaneous effective parameter response, sample-rate-aware frequency axis and stopped previews.
+- **6.18.6 — Dedicated analyzer sink:** validated passive mono observation node for any compatible signal, reusable visualization panels, independent placement/resizing, analyzer-only reachability, nested graph persistence and undo/redo; prove audible master isolation.
+- **6.18.7 — Advanced analysis:** synchronized input/output spectral comparisons, bounded spectrogram history and profiling of multi-drone workloads; reuse chart infrastructure for future envelopes, automation and sample-based nodes.
+
+Deliverable: inspect an oscillator waveform, harmonics, modulation and levels directly on the node; expand the same visualization without changing playback; see an EQ/filter's configured response when stopped and effective response during playback; attach an independent analyzer anywhere in a patch without changing its audible path.
+
 ### Phase 7 — Advanced functionality and performance
 
 - More filters, EQ, delay, chorus, flanger, compression and reverb.
 - Envelopes, random, step sequencers, automation, explicit feedback.
-- Additional routing adapters, channel handling and signal visualization.
+- Additional routing adapters and channel handling; extend Phase 6.18 observation infrastructure to multichannel signals and future node types.
 - Group/ungroup nodes; versioned reusable graph definitions.
 - Improve graph swap continuity, compile cache and performance profiling.
 - Validate original Orbit's clicking/underrun concerns with large patches.
@@ -1714,6 +1801,9 @@ The core model should be independently unit testable without a browser or Faust.
 | Presets | Two instances have independent parameters and DSP state. |
 | Node audition (planned) | Mute last node in one mixer lane while preserving other lanes; mute fan-out including composite and modulation outputs; bypass eligible effects with unchanged dry signal; retain DSP state, parameters and wiring, verify smooth transitions without recompilation, mute precedence, undo/redo and compatible persistence. |
 | Individual node presets (planned) | Validate every shipped configuration; reject invalid batch without mutation; application preserves identities and wiring, emits one revision and undo entry; base-only updates avoid recompilation; custom groups survive reload and library edits do not alter existing nodes. |
+| Signal analysis (planned) | Compare master samples with taps on/off; no observation-channel leakage, phase reset or graph compile on view changes; verify root/nested port mapping, weighted input and post-mute/bypass output, known waveform/FFT/peak/RMS, slow LFO history, stale-frame rejection, hidden-view cleanup and bounded resources. |
+| Processor response (planned) | EQ center gain, Q bandwidth, filter modes and Nyquist limits match offline Faust measurements at 44.1/48 kHz; distinguish base/effective estimates, live spectra and stopped previews. |
+| Analyzer sink (planned) | Analyzer-only branches are observable but silent at the master; explicit graph edits round-trip with undo and persistence; visualization preferences restore without changing graph topology or audio. |
 | Output safety | Controlled master gain, no unexpected discontinuity when changing base values. |
 | Persistence | Save/load nested graph and layout with stable IDs and equivalent connectivity. |
 | Audio assets (planned) | Import and reload binary recordings, share immutable data across nodes, preserve IDs through undo/redo, handle quota and missing assets without corrupting patches. |
@@ -1740,6 +1830,7 @@ Use OfflineAudioContext or an appropriate offline DSP renderer for deterministic
 - Use validated commands and graph/patch-level events with node identification.
 - Publish changes only after complete validated transactions.
 - Prefer combined/flattened Faust processing for the long term; verify initial simpler execution first.
+- Observe actual graph signals through bounded passive taps and shared analysis subscriptions; keep live telemetry and chart settings separate from DSP graph state. Use response calculations matching the real DSP rather than simulated live audio.
 
 ### To decide during implementation
 
@@ -1756,6 +1847,7 @@ Use OfflineAudioContext or an appropriate offline DSP renderer for deterministic
 | Preset templates | Independent copies initially; linked/versioned definitions later. |
 | Undo history | Store reversible commands/change sets, including multi-graph operations. |
 | Discrete parameters | Distinct configuration contract where continuous modulation is inappropriate. |
+| Signal tap capacity | Prototype fixed channels versus precompiled selectable slots with explicit master isolation; profile before choosing a bounded capacity, never recompile for ordinary plot mode/visibility changes. |
 
 ## 16. References and glossary
 
@@ -1770,6 +1862,8 @@ Use OfflineAudioContext or an appropriate offline DSP renderer for deterministic
 - [Faust soundfile support](https://faustdoc.grame.fr/manual/soundfiles/) — indexed access to externally supplied audio data.
 - [Web Audio decoding](https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/decodeAudioData) — asynchronous decoding and sample-rate conversion.
 - [Web Audio API specification](https://www.w3.org/TR/webaudio/) — AudioContext, AudioWorklet, sample rate, current frame/time and render quanta.
+- [Faust parallel composition](https://faustdoc.grame.fr/manual/syntax/) — returning multiple signals from a compiled program.
+- [Web Audio AnalyserNode](https://www.w3.org/TR/webaudio-1.0/#AnalyserNode) — time-domain and frequency-domain observation.
 
 ### Glossary
 
@@ -1787,6 +1881,9 @@ Use OfflineAudioContext or an appropriate offline DSP renderer for deterministic
 - **Composite:** A node encapsulating a nested graph.
 - **Boundary port:** A public input/output of a composite represented internally by a rack socket.
 - **Domain event:** A notification describing a successfully committed domain change.
+- **Signal tap:** A passive observation of an existing DSP signal, not an audible routing edge or an independent DSP instance.
+- **FFT:** Fast Fourier transform, used to estimate frequency content from a finite time-domain buffer.
+- **Frequency response:** Gain versus frequency of a system with fixed coefficients; distinct from the spectrum of a particular input/output signal.
 
 ---
 
