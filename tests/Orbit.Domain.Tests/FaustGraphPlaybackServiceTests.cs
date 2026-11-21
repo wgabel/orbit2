@@ -2,6 +2,7 @@ using Orbit.Application.Graphs;
 using Orbit.Application.Graphs.Commands;
 using Orbit.Application.Interfaces;
 using Orbit.Application.Models;
+using Orbit.Application.Presets;
 using Orbit.Audio.Compilation;
 using Orbit.Audio.Playback;
 using Orbit.Domain.Parameters;
@@ -9,6 +10,7 @@ using Orbit.Domain.Nodes;
 using Orbit.Domain.Nodes.Processors;
 using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Ports;
+using Orbit.Infrastructure.Presets;
 using Xunit;
 
 namespace Orbit.Domain.Tests;
@@ -16,6 +18,46 @@ namespace Orbit.Domain.Tests;
 /// <summary>The playback use case translates the exact immutable snapshot to engine input.</summary>
 public sealed class FaustGraphPlaybackServiceTests
 {
+    [Fact]
+    public async Task MultiParameterPresetUpdatesOneVoiceOrReplacesOnceForStructuralChanges()
+    {
+        using var patch = new NestedFaustPatch();
+        var session = patch.Session;
+        var engine = new RecordingEngine();
+        var compiler = FaustGraphCompiler.CreateBuiltIn();
+        var service = new FaustGraphPlaybackService(compiler, engine);
+        var original = session.Snapshot;
+        var nodeId = patch.Frequency.NodeId;
+        var catalog = new NodePresetService(new EmbeddedNodePresetCatalog(), new NodePresetValidator(BuiltInNodes.CreateRegistry()));
+        var playing = service.PlayAsync(original);
+        var basePreset = catalog.GetPreset("oscillator-deep-sine");
+        session.Execute(new ApplyNodePresetCommand(patch.ChildId, nodeId, basePreset));
+        var applied = session.Snapshot;
+        Assert.Equal(new GraphPlaybackUpdate(applied.Revision, true), await service.UpdateAsync(applied));
+        var updates = Assert.Single(engine.Updates);
+        var nodeControls = compiler.Compile(applied).Controls.Where(control => control.GraphId == patch.ChildId && control.Address.NodeId == nodeId).ToArray();
+        var frequency = nodeControls.Single(control => control.Address == patch.Frequency);
+        Assert.Equal(110, updates[frequency.Name]);
+        Assert.Equal(2, updates.Count); // Frequency and amplitude; shape and timing remain unchanged.
+        Assert.Contains(0.2, updates.Values);
+        Assert.Empty(engine.Replacements);
+
+        var structuralPreset = catalog.GetPreset("oscillator-quarter-pulse");
+        session.Execute(new ApplyNodePresetCommand(patch.ChildId, nodeId, structuralPreset));
+        var structural = session.Snapshot;
+        Assert.Equal(new GraphPlaybackUpdate(structural.Revision, true), await service.UpdateAsync(structural));
+        var replacement = Assert.Single(engine.Replacements);
+        var expected = compiler.Compile(structural);
+        Assert.Equal(expected.Source, replacement.Source);
+        Assert.NotEqual(engine.Request!.Source, replacement.Source);
+        Assert.Single(engine.Updates);
+        foreach (var control in expected.Controls)
+            Assert.Equal(control.InitialValue, replacement.Parameters[control.Name]);
+        Assert.Equal(1, engine.PlayCount);
+        await service.StopAsync(session.GraphId);
+        await playing;
+    }
+
     [Fact]
     public async Task WaveformChoiceReplacesOnlyTheProgramAndKeepsLiveControls()
     {

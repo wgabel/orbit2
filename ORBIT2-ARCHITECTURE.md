@@ -871,6 +871,19 @@ Examples describe intended usage, not a guarantee of a particular sound without 
 
 **Atomic application.** Introduce `ApplyNodePresetCommand` targeting a graph ID and node ID with a validated type-key/value configuration. A domain batch parameter operation resolves and validates every key, value and target before mutating anything, including structural choices and stored inactive values. A failed or unchanged configuration produces no revision. A successful application preserves node, parameter and port IDs, connections and layout; publishes one `GraphChangeSet` with the individual `ParameterChanged` facts; records one undo entry; and triggers existing audio, range projection and autosave subscribers once. Do not loop through separate session commands. Topology comparison already distinguishes base-only changes from structural changes, so ordinary presets update active controls and structural choices use the existing crossfade policy. No preset-specific logic belongs in DSP or audio infrastructure. Existing pending slider history is finalized before a distinct preset application.
 
+**Implemented 6.17.2.** `ApplyNodePresetCommand` carries an immutable `NodePreset` and the target graph/node IDs. `GraphCommandHandler` uses the registry-derived `NodePresetValidator` before calling `SignalGraph.SetNodeParameterValues`. The domain operation independently checks the actual node type, resolves the complete ordinal key set, validates every value through the same parameter validation as individual edits, and prepares all changed `ParameterValueChange` records before mutation. It returns only changed values in parameter definition order. The handler maps these to the existing `ParameterChanged` facts; `PatchSession` commits one root snapshot, one revision and one history entry. Only `SetParameterValueCommand` can participate in slider gesture grouping, so even a single-value preset remains a distinct operation. Rejected and identical configurations have no notification or history entry. Nested parameter and port IDs, dormant wires, audit flags and layouts stay intact; history restoration and patch serialization already carry all base settings. Playback consumes the final committed snapshot through its unchanged topology comparison and control manifest, so one live batch or one structural replacement is sufficient. Tests exercise invalid late values, no-ops, nested and root targets, undo/redo, audition state, and running playback updates.
+
+~~~mermaid
+flowchart TD
+    C[ApplyNodePresetCommand] --> V[Registry compatibility validation]
+    V --> G[SignalGraph: preflight all keys and values]
+    G --> P[Apply changed base values]
+    P --> E[One committed change set]
+    E --> H[History and autosave]
+    E --> D[Existing playback update]
+    E --> U[Canvas projection]
+~~~
+
 ~~~mermaid
 flowchart TD
     B[Built-in JSON catalog] --> S[Node preset service]
@@ -1677,7 +1690,8 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented (6.15): two-voice mono chorus with modulatable rate, depth, base delay and wet mix; shared millisecond parameter unit and conservative output bounds.
 - Implemented (6.16.1): reversible node mute with shared header control, persisted state, boundary-wide smooth gain and settled modulation range projection.
 - Implemented (6.16.2): explicit effect bypass capability, independent persisted state, shared click-safe audition controls, dry range projection and continuously running wet DSP.
-- Implemented (6.17.1): immutable versioned individual node preset model, registry-derived validation and grouped embedded JSON catalog; atomic application and selector are next.
+- Implemented (6.17.1): immutable versioned individual node preset model, registry-derived validation and grouped embedded JSON catalog.
+- Implemented (6.17.2): atomic preset application through validated batch parameter changes, one revision/undo entry, and existing live playback; shared selector next.
 - Planned (6.18): shared signal observation and visualization, integrated node plots, processor response curves and passive analyzer sinks.
 - Deferred: deployment-version detection and safe workspace-save/reload prompt for long-lived tabs whose versioned lazy modules have been removed by a later Pages deployment.
 - Add copies/preset reuse with independent instances.
@@ -1748,7 +1762,7 @@ Deliverable: audition or silence entire linear lanes by muting their final node,
 #### Phase 6.17 — Individual node presets (in progress)
 
 - **6.17.1 — Model and catalog (implemented):** versioned immutable parameter configurations, stable IDs, registry-derived type/key validation and grouped embedded JSON resources with starter examples for all eligible node types.
-- **6.17.2 — Atomic application:** validated multi-parameter graph operation and `ApplyNodePresetCommand`, one committed revision and undo entry; verify nested nodes, dormant connections and live DSP behavior.
+- **6.17.2 — Atomic application (implemented):** validated multi-parameter graph operation and `ApplyNodePresetCommand`, one committed revision and undo entry; tested nested nodes, dormant connections, audition state and live playback updates/replacements.
 - **6.17.3 — Shared selector:** compact grouped `NodePresetSelector`, descriptions, matching/modified state, existing design tokens and accessibility; no node-specific UI.
 - **6.17.4 — Built-in content:** meaningful usage groups and example presets for all eligible existing generators and processors, including chorus; validate all shipped data in CI.
 - **6.17.5 — Custom library:** persistent `Custom` group for every eligible node type, save as, explicit overwrite, rename/delete and independent instances; IndexedDB reload and workspace-switch coverage.

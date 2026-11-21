@@ -1,5 +1,6 @@
 using Orbit.Application.Graphs.Events;
 using Orbit.Application.Graphs.Snapshots;
+using Orbit.Application.Presets;
 using Orbit.Domain.Graphs;
 using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Ports;
@@ -13,6 +14,8 @@ namespace Orbit.Application.Graphs.Commands;
 /// </summary>
 internal sealed class GraphCommandHandler(NodeRegistry registry)
 {
+    private readonly Lazy<NodePresetValidator> presetValidator = new(() => new NodePresetValidator(registry));
+
     public IReadOnlyList<IGraphEvent> Execute(SignalGraph graph, IGraphCommand command, long revision) =>
         command switch
         {
@@ -22,6 +25,7 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
             RemoveConnectionCommand disconnect => RemoveConnection(graph, disconnect),
             SetConnectionAmountCommand amount => SetConnectionAmount(graph, amount),
             SetParameterValueCommand set => SetParameterValue(graph, set),
+            ApplyNodePresetCommand apply => ApplyNodePreset(graph, apply),
             SetNodeMutedCommand mute => SetNodeMuted(graph, mute),
             SetNodeBypassedCommand bypass => SetNodeBypassed(graph, bypass),
             AddBoundaryPortCommand add => BoundaryFacts(graph.Id, graph.AddBoundaryPort(add.Direction,
@@ -92,6 +96,14 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
 
         graph.SetParameterValue(command.Address, command.Value);
         return [new ParameterChanged(graph.Id, command.Address, previous, command.Value)];
+    }
+
+    private IReadOnlyList<IGraphEvent> ApplyNodePreset(SignalGraph graph, ApplyNodePresetCommand command)
+    {
+        presetValidator.Value.Validate(command.Preset);
+        return graph.SetNodeParameterValues(command.NodeId, command.Preset.NodeType, command.Preset.Parameters)
+            .Select(change => (IGraphEvent)new ParameterChanged(graph.Id, change.Address,
+                change.PreviousValue, change.CurrentValue)).ToArray();
     }
 
     private static IReadOnlyList<IGraphEvent> SetConnectionAmount(SignalGraph graph, SetConnectionAmountCommand command)

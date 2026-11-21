@@ -3,6 +3,7 @@ using Orbit.Application.Graphs.Commands;
 using Orbit.Application.Graphs.Events;
 using Orbit.Application.Graphs.Sessions;
 using Orbit.Application.Persistence;
+using Orbit.Application.Presets;
 using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Parameters;
@@ -14,6 +15,41 @@ namespace Orbit.Presentation.Tests;
 
 public sealed class PatchPersistenceTests
 {
+    [Fact]
+    public void AppliedPresetPersistsActualValuesAndKeepsCanvasLayout()
+    {
+        var registry = BuiltInNodes.CreateEditorRegistry();
+        using var session = new PatchSession(registry);
+        var oscillator = session.Execute(new AddNodeCommand(session.GraphId, OscillatorGenerator.NodeType))
+            .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        using var navigation = new CanvasNavigationService(session);
+        var canvas = navigation.ActiveCanvas;
+        canvas.MoveNode(oscillator.Id, new CanvasPoint(123, 456));
+        canvas.ZoomAt(0.8, CanvasPoint.Zero);
+        var before = canvas.Snapshot;
+        var changes = new List<CanvasStateChange>();
+        using var observer = canvas.Subscribe(changes.Add);
+        var values = oscillator.Parameters.ToDictionary(parameter => parameter.Definition.Key, parameter => parameter.BaseValue);
+        values["frequency"] = 220;
+        values["amplitude"] = 0.5;
+        var preset = new NodePreset(1, "test-preset", oscillator.TypeKey, "Test", "Test", null, values);
+        session.Execute(new ApplyNodePresetCommand(session.GraphId, oscillator.Id, preset));
+        Assert.Equal(CanvasChangeKind.GraphCommitted, Assert.Single(changes).Kind);
+        Assert.Equal(before.LayoutRevision, canvas.Snapshot.LayoutRevision);
+        Assert.Equal(before.NodePositions[oscillator.Id], canvas.Snapshot.NodePositions[oscillator.Id]);
+        Assert.Equal(before.Viewport, canvas.Snapshot.Viewport);
+
+        var serializer = new PatchDocumentSerializer();
+        var json = serializer.Serialize(serializer.Capture(session, 120, session.GraphId, navigation.CaptureLayouts()));
+        Assert.DoesNotContain(preset.Id, json);
+        using var restored = serializer.Restore(serializer.Deserialize(json), registry);
+        foreach (var parameter in restored.Snapshot.GetNode(oscillator.Id).Parameters)
+        {
+            Assert.Equal(values[parameter.Definition.Key], parameter.BaseValue);
+            Assert.Equal(oscillator.Parameters.Single(p => p.Definition.Key == parameter.Definition.Key).Id, parameter.Id);
+        }
+    }
+
     [Fact]
     public void RoundTripPreservesNestedIdentitiesValuesBoundariesAndViewports()
     {

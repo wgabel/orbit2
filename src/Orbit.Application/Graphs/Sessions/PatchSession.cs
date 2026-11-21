@@ -75,7 +75,8 @@ public sealed class PatchSession : IPatchSession
 
                 var before = snapshot;
                 snapshot = GraphSnapshot.Capture(graph, nextRevision);
-                if (historyGestureId is Guid gestureId && events.Count == 1 && events[0] is ParameterChanged parameter)
+                if (command is SetParameterValueCommand && historyGestureId is Guid gestureId &&
+                    events.Count == 1 && events[0] is ParameterChanged parameter)
                     history.RecordParameterGesture(gestureId, before, snapshot, parameter);
                 else
                     history.Record(before, snapshot, events.Select(fact => fact.GraphId).Append(targetGraph.Id).Distinct().ToArray());

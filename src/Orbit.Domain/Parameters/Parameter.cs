@@ -58,12 +58,16 @@ public sealed class Parameter
     // Graph operations own all parameter edits; callers cannot bypass validation.
     internal void SetBaseValue(double value)
     {
+        ValidateBaseValue(value);
+        BaseValue = value;
+    }
+
+    internal void ValidateBaseValue(double value)
+    {
         if (!Definition.IsValidBaseValue(value))
             throw new ArgumentOutOfRangeException(nameof(value), value,
                 Definition.Choices is null
                     ? $"Value must be finite and between {Definition.Minimum} and {Definition.Maximum}."
                     : "Value must be one of the defined choices.");
-
-        BaseValue = value;
     }
 }

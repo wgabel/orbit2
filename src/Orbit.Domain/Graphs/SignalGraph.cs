@@ -124,6 +124,38 @@ public sealed class SignalGraph
         GetParameter(address).SetBaseValue(value);
     }
 
+    /// <summary>Apply a complete type-keyed base configuration without changing identities or routing.</summary>
+    public IReadOnlyList<ParameterValueChange> SetNodeParameterValues(Guid nodeId, string nodeType,
+        IReadOnlyDictionary<string, double> values)
+    {
+        ArgumentNullException.ThrowIfNull(values);
+        var node = GetNode(nodeId);
+        if (!string.Equals(node.TypeKey, nodeType, StringComparison.Ordinal))
+            throw new GraphValidationException("The configuration does not match the target node type.");
+
+        // Resolve exact stable keys and validate all values, including inactive parameters,
+        // before mutating any parameter. Preserve definition order for change facts.
+        var configuration = values.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        if (configuration.Count != node.Parameters.Count)
+            throw new GraphValidationException("The configuration must contain all node parameter keys.");
+
+        var changes = new List<(Parameter Parameter, ParameterValueChange Change)>();
+        foreach (var parameter in node.Parameters)
+        {
+            if (!configuration.TryGetValue(parameter.Definition.Key, out var value))
+                throw new GraphValidationException($"Missing parameter key '{parameter.Definition.Key}'.");
+            parameter.ValidateBaseValue(value);
+            if (parameter.BaseValue != value)
+                changes.Add((parameter, new ParameterValueChange(new ParameterAddress(nodeId, parameter.Id),
+                    parameter.BaseValue, value)));
+        }
+
+        var result = Array.AsReadOnly(changes.Select(entry => entry.Change).ToArray());
+        foreach (var entry in changes)
+            entry.Parameter.SetBaseValue(entry.Change.CurrentValue);
+        return result;
+    }
+
     public void SetNodeMuted(Guid nodeId, bool muted)
     {
         if (GetNode(nodeId) is not SignalNode { SupportsMute: true } node)

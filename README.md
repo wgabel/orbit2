@@ -589,7 +589,16 @@ Use **B** on Gain, Filter, Parametric EQ, Delay, Reverb or Chorus to hear the un
 
 ### Individual node preset foundation (Phase 6.17.1)
 
-The application now has a read-only `NodePresetService` catalog of versioned, complete base parameter configurations keyed by stable node type and preset ID. Built-ins are grouped by usage and stored in embedded JSON arrays in `src/Orbit.Infrastructure/Presets/BuiltIn/`. Ten initial configurations cover oscillator, noise, gain, filter, EQ, delay, reverb and chorus, with a reserved empty Custom group per eligible type. Configurations include discrete and dormant values, but no instance identities, wiring, mute/bypass state, layout or live samples. `NodePresetValidator` uses the registered parameter definitions to reject incomplete, invalid or incompatible presets. The complete catalog is validated by unit tests and at app startup. Add data to the appropriate JSON resource without registering a new node or changing DSP. Atomic preset application and the shared visible selector are the next steps; custom saving and portable presets follow later.
+The application now has a read-only `NodePresetService` catalog of versioned, complete base parameter configurations keyed by stable node type and preset ID. Built-ins are grouped by usage and stored in embedded JSON arrays in `src/Orbit.Infrastructure/Presets/BuiltIn/`. Ten initial configurations cover oscillator, noise, gain, filter, EQ, delay, reverb and chorus, with a reserved empty Custom group per eligible type. Configurations include discrete and dormant values, but no instance identities, wiring, mute/bypass state, layout or live samples. `NodePresetValidator` uses the registered parameter definitions to reject incomplete, invalid or incompatible presets. The complete catalog is validated by unit tests and at app startup. Add data to the appropriate JSON resource without registering a new node or changing DSP.
+
+### Atomic node preset application (Phase 6.17.2)
+
+The application can apply any compatible preset to a root or nested node through one `ApplyNodePresetCommand`. The graph validates every stable parameter key and value before changing anything. It retains node, parameter and port identities, wiring, mute/bypass state and layout, including dormant modulation routes that reactivate when a preset switches the node back to the relevant mode. One committed revision contains all changed `ParameterChanged` facts and is one undoable action; invalid or identical presets do not commit. Slider gesture history remains independent. Ordinary base-value changes update the existing DSP voice and structural changes use its existing replacement/crossfade path. Saved patches retain actual values, not a reference to the preset. The shared visible selector is next in Phase 6.17.3; custom saving and portable presets follow later.
+
+~~~csharp
+session.Execute(new ApplyNodePresetCommand(graphId, nodeId,
+    nodePresetService.GetPreset("oscillator-deep-sine")));
+~~~
 
 ### Chorus (Phase 6.15)
 
