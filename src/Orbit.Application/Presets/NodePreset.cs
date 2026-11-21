@@ -34,6 +34,12 @@ public sealed class NodePreset
         if (nodeType == OscillatorGenerator.NodeType && values.Count == 6 &&
             new[] { "frequency", "amplitude", "phase", "waveform", "timing", "division" }.All(values.ContainsKey))
             values.Add(OscillatorGenerator.PulseWidthKey, OscillatorGenerator.DefaultPulseWidth);
+        if (nodeType == OscillatorGenerator.NodeType && values.Count == 7 &&
+            new[] { "frequency", "amplitude", "phase", "waveform", "timing", "division", OscillatorGenerator.PulseWidthKey }.All(values.ContainsKey))
+        {
+            values.Add(OscillatorGenerator.PitchTrackingKey, 0);
+            values.Add(OscillatorGenerator.PitchKey, 0);
+        }
         Parameters = new ReadOnlyDictionary<string, double>(values);
     }
 

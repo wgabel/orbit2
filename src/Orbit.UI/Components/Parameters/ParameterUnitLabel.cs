@@ -12,6 +12,7 @@ public static class ParameterUnitLabel
         ParameterUnit.Seconds => "s",
         ParameterUnit.Milliseconds => "ms",
         ParameterUnit.Cents => "cent",
+        ParameterUnit.Semitones => "st",
         ParameterUnit.Degrees => "°",
         ParameterUnit.BeatsPerMinute => "BPM",
         ParameterUnit.Ratio => "ratio",

@@ -96,7 +96,7 @@ public partial class ParameterSlider
         return EditAsync(Format(value), gestureId);
     }
     private Task EditNumberAsync(ChangeEventArgs args) => EditAsync(args.Value?.ToString() ?? "", null);
-    private Task EditHertzAsync(double hertz) => EditAsync(Format(hertz), null);
+    private Task EditHertzAsync(double hertz) => EditAsync(Format(Math.Clamp(hertz / (Timing?.BaseRatio ?? 1), Definition.Minimum, Definition.Maximum)), null);
 
     private async Task EditAsync(string input, Guid? editGestureId)
     {

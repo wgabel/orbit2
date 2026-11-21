@@ -23,8 +23,8 @@ public sealed class OscillatorPulseWidthTests
         var document = serializer.Capture(session, 120, session.GraphId, []);
         var saved = document.RootGraph.Nodes.Single();
         var legacy = saved with {
-            Parameters = saved.Parameters.Where(p => p.Key != OscillatorGenerator.PulseWidthKey).ToArray(),
-            Ports = saved.Ports.Where(p => p.Key != OscillatorGenerator.PulseWidthPortKey).ToArray()
+            Parameters = saved.Parameters.Where(p => p.Key is not (OscillatorGenerator.PulseWidthKey or OscillatorGenerator.PitchKey or OscillatorGenerator.PitchTrackingKey)).ToArray(),
+            Ports = saved.Ports.Where(p => p.Key is not (OscillatorGenerator.PulseWidthPortKey or OscillatorGenerator.PitchPortKey)).ToArray()
         };
         var oldDocument = document with { RootGraph = document.RootGraph with { Nodes = [legacy] } };
         using var restored = serializer.Restore(serializer.Deserialize(serializer.Serialize(oldDocument)), registry);

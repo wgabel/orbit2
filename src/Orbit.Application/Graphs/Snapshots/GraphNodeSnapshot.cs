@@ -21,8 +21,8 @@ public sealed record GraphNodeSnapshot(
     /// <summary>Evaluate conditional parameter activity from the committed node snapshot.</summary>
     public bool IsParameterActive(ParameterSnapshot parameter) =>
         parameter.Definition.ActiveWhen is not { } condition ||
-        Parameters.Any(selector => selector.Definition.Key == condition.SelectorKey &&
-            selector.BaseValue == condition.EqualsValue);
+        condition.Conditions().All(required => Parameters.Any(selector => selector.Definition.Key == required.SelectorKey &&
+            selector.BaseValue == required.EqualsValue));
 
     /// <summary>Ordinary signal inputs stay active; modulation inputs follow their parameter.</summary>
     public bool IsInputActive(Guid portId) =>

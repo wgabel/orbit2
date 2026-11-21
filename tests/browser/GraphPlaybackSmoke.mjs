@@ -24,6 +24,7 @@ const reverb = JSON.parse(await readFile(resolve(directory, "reverb.json"), "utf
 const chorus = JSON.parse(await readFile(resolve(directory, "chorus.json"), "utf8"));
 const mute = JSON.parse(await readFile(resolve(directory, "mute.json"), "utf8"));
 const observation = JSON.parse(await readFile(resolve(directory, "observation.json"), "utf8"));
+const pitch = JSON.parse(await readFile(resolve(directory, "pitch.json"), "utf8"));
 const root = resolve("src/Orbit.Infrastructure/wwwroot/audio");
 const server = createServer(async (request, response) => {
     try {
@@ -893,6 +894,47 @@ try {
         console.log("Shared transport offline render", sampleRate, synchronized);
         assert.equal(synchronized.inputs, 1);
         assert.ok(synchronized.peak > 0.95 && synchronized.rms < 0.035, "Synchronized phase differs from sample-clock oracle");
+    }
+    const pitchResults = await page.evaluate(async pitch => {
+        const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
+        const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
+        const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
+        try {
+            const compiled = await compiler.compile(pitch.source);
+            const results = [];
+            for (const rate of [44100, 48000]) {
+                const processor = await new FaustMonoDspGenerator().createOfflineProcessor(rate, 128, { ...compiled, soundfiles: {} });
+                const set = (name, value) => processor.setParamValue(processor.getParams().find(path => path.endsWith("/" + name)), value);
+                for (const [name, value] of Object.entries(pitch.values)) set(name, value);
+                let previous = null;
+                for (const [semitones, cents] of [[0, 0], [12, 0], [-12, 0], [7, 50]]) {
+                    set(pitch.transpose, semitones);
+                    set(pitch.cents, cents);
+                    // Render complete DSP blocks; otherwise OfflineProcessor discards
+                    // padding samples and the next call is not sample-contiguous.
+                    const [audio] = processor.render([], Math.ceil(rate * 2 / 128) * 128);
+                    const ratio = Math.pow(2, (semitones + cents / 100) / 12);
+                    const magnitudes = pitch.frequencies.map(hz => {
+                        let real = 0, imaginary = 0;
+                        for (let i = audio.length - rate; i < audio.length; i++) {
+                            const phase = 2 * Math.PI * hz * ratio * i / rate;
+                            real += audio[i] * Math.cos(phase);
+                            imaginary += audio[i] * Math.sin(phase);
+                        }
+                        return 2 * Math.hypot(real, imaginary) / rate;
+                    });
+                    const discontinuity = previous === null ? 0 : Math.abs(audio[0] - previous);
+                    previous = audio.at(-1);
+                    results.push({ rate, semitones, cents, magnitudes, discontinuity });
+                }
+            }
+            return results;
+        } finally { compiler.dispose(); }
+    }, pitch);
+    for (const result of pitchResults) {
+        console.log("Shared musical pitch", result);
+        assert.ok(result.magnitudes.every(value => Math.abs(value - 0.1) < 0.01), "All three tones must follow one pitch ratio");
+        assert.ok(result.discontinuity < 0.04, "Live pitch changes preserve the existing oscillator phase");
     }
 } finally {
     await browser?.close();

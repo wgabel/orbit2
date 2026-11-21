@@ -83,6 +83,17 @@ public sealed class PatchDocumentSerializer
                     ports.Add(OscillatorGenerator.PulseWidthPortKey, pulse.ModulationPortId!.Value);
                     parameters.Add(OscillatorGenerator.PulseWidthKey, (pulse.Id, pulse.BaseValue));
                 }
+                // The complete pre-pitch schema gets an opt-in tracking mode and a dormant socket.
+                if (leaf is OscillatorGenerator && ports.Count == 5 && parameters.Count == 7 &&
+                    !ports.ContainsKey(OscillatorGenerator.PitchPortKey) &&
+                    !parameters.ContainsKey(OscillatorGenerator.PitchTrackingKey) && !parameters.ContainsKey(OscillatorGenerator.PitchKey))
+                {
+                    var pitch = leaf.Parameters.Single(p => p.Definition.Key == OscillatorGenerator.PitchKey);
+                    var tracking = leaf.Parameters.Single(p => p.Definition.Key == OscillatorGenerator.PitchTrackingKey);
+                    ports.Add(OscillatorGenerator.PitchPortKey, pitch.ModulationPortId!.Value);
+                    parameters.Add(OscillatorGenerator.PitchKey, (pitch.Id, pitch.BaseValue));
+                    parameters.Add(OscillatorGenerator.PitchTrackingKey, (tracking.Id, tracking.BaseValue));
+                }
                 leaf.RestoreIdentity(ports, parameters);
                 graph.AddNode(leaf);
             }

@@ -542,7 +542,7 @@ try {
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 1}$`) }).waitFor({ timeout: 15000 });
     assert.equal(await wire.count(), 1);
     assert.equal(await page.locator(".connection-dormant").count(), 1);
-    assert.equal(await articles.nth(1).locator(".port-dormant").count(), 1);
+    assert.match(await articles.nth(1).getByRole("button", { name: "Input: Frequency (Modulation)" }).getAttribute("class"), /port-dormant/);
     assert.equal(await frequency.count(), 0);
     assert.equal(await articles.nth(1).getByLabel("Musical division").inputValue(), "2");
     const synchronizedFrequency = articles.nth(1).locator("output[aria-label='Synchronized frequency']");
@@ -1014,6 +1014,55 @@ try {
     await responseStatus.filter({ hasText: /Ready/ }).waitFor({ timeout: 10000 });
     await filterPlot.locator(".response-effective").waitFor({ state: "detached" });
     await filterCurve.waitFor();
+
+    // Manual pitch control: shared semitones transpose a whole oscillator bank
+    // without changing the base Hz fields or recompiling on live control edits.
+    await responsePage.getByRole("button", { name: "Patches", exact: true }).click();
+    await responseManager.getByRole("button", { name: "New patch" }).click();
+    await responseManager.getByText("New workspace created.", { exact: true }).waitFor();
+    await responseManager.getByRole("button", { name: "Close", exact: true }).click();
+    await responsePage.locator(".canvas-count").filter({ hasText: "1 nodes · 0 connections" }).waitFor();
+    const pitchControl = await addResponseNode("generator.pitch-control");
+    const pitchA = await addResponseNode("generator.oscillator");
+    const pitchB = await addResponseNode("generator.oscillator");
+    const pitchMixer = await addResponseNode("processor.mixer");
+    const frequencyA = pitchA.getByRole("spinbutton", { name: "Frequency (Hz)" });
+    const frequencyB = pitchB.getByRole("spinbutton", { name: "Frequency (Hz)" });
+    await frequencyA.fill("110");
+    await frequencyB.fill("165");
+    for (const voice of [pitchA, pitchB]) {
+        await voice.getByRole("combobox", { name: "Pitch tracking (free)" }).selectOption("1");
+        await pitchControl.getByRole("button", { name: "Output: Pitch (Modulation)" }).press("Enter");
+        await voice.getByRole("button", { name: "Input: Pitch (Modulation)" }).press("Enter");
+        await voice.getByRole("button", { name: "Output: Signal (Audio)" }).press("Enter");
+        await pitchMixer.getByRole("button", { name: "Input: Audio (Audio)" }).press("Enter");
+    }
+    await pitchMixer.getByRole("button", { name: "Output: Audio (Audio)" }).press("Enter");
+    await master.getByRole("button", { name: "Input: Audio (Audio)" }).press("Enter");
+    await responsePage.locator(".canvas-count").filter({ hasText: "5 nodes · 5 connections" }).waitFor();
+    const transpose = pitchControl.getByRole("spinbutton", { name: "Transpose (st)" });
+    const freqSliderA = pitchA.locator(".parameter-slider").filter({ has: responsePage.getByRole("spinbutton", { name: "Frequency (Hz)" }) });
+    const freqSliderB = pitchB.locator(".parameter-slider").filter({ has: responsePage.getByRole("spinbutton", { name: "Frequency (Hz)" }) });
+    const rangeA = freqSliderA.getByLabel("Predicted modulation range");
+    const rangeB = freqSliderB.getByLabel("Predicted modulation range");
+    await transpose.fill("12");
+    await rangeA.filter({ hasText: "220–220 Hz" }).waitFor();
+    await rangeB.filter({ hasText: "330–330 Hz" }).waitFor();
+    assert.equal(await frequencyA.inputValue(), "110");
+    assert.equal(await frequencyB.inputValue(), "165");
+    await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
+    await responsePage.getByRole("button", { name: "Play patch" }).click();
+    await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
+    await freqSliderA.getByLabel("Live effective value").filter({ hasText: /^220 Hz$/ }).waitFor();
+    await freqSliderB.getByLabel("Live effective value").filter({ hasText: /^330 Hz$/ }).waitFor();
+    await transpose.fill("-12");
+    await rangeA.filter({ hasText: "55–55 Hz" }).waitFor();
+    await rangeB.filter({ hasText: "82.5–82.5 Hz" }).waitFor();
+    await freqSliderA.getByLabel("Live effective value").filter({ hasText: /^55 Hz$/ }).waitFor();
+    await freqSliderB.getByLabel("Live effective value").filter({ hasText: /^82.5 Hz$/ }).waitFor();
+    assert.match(await responseStatus.innerText(), /^Playing revision \d+$/);
+    await responsePage.getByRole("button", { name: "Stop", exact: true }).click();
+    await responseStatus.filter({ hasText: /Ready/ }).waitFor();
     await responsePage.close();
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {

@@ -33,11 +33,14 @@ public abstract class SignalNode : ISignalNode
         foreach (var parameter in Parameters)
         {
             if (parameter.Definition.ActiveWhen is not { } activation) continue;
-            var selector = Parameters.SingleOrDefault(candidate => candidate.Definition.Key == activation.SelectorKey);
-            if (selector is null || selector.Definition.ActiveWhen is not null ||
-                !selector.Definition.RequiresRecompile || selector.Definition.Choices is null ||
-                !selector.Definition.IsValidBaseValue(activation.EqualsValue))
-                throw new ArgumentException("Parameter activation requires a valid unconditional structural choice.", nameof(parameters));
+            foreach (var condition in activation.Conditions())
+            {
+                var selector = Parameters.SingleOrDefault(candidate => candidate.Definition.Key == condition.SelectorKey);
+                if (selector is null || selector.Definition.ActiveWhen is not null ||
+                    !selector.Definition.RequiresRecompile || selector.Definition.Choices is null ||
+                    !selector.Definition.IsValidBaseValue(condition.EqualsValue))
+                    throw new ArgumentException("Parameter activation requires a valid unconditional structural choice.", nameof(parameters));
+            }
         }
     }
 

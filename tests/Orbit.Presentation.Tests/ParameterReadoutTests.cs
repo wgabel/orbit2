@@ -14,6 +14,29 @@ namespace Orbit.Presentation.Tests;
 public sealed class ParameterReadoutTests
 {
     [Fact]
+    public void ConfiguredCycleUsesPitchRatioOnlyWhenTrackingIsActive()
+    {
+        using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+        var node = session.Execute(new AddNodeCommand(session.GraphId, OscillatorGenerator.NodeType))
+            .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        void Set(string key, double value) => session.Execute(new SetParameterValueCommand(session.GraphId,
+            new ParameterAddress(node.Id, node.Parameters.Single(p => p.Definition.Key == key).Id), value));
+        Set("frequency", 110);
+        Set(OscillatorGenerator.PitchKey, 12);
+        Assert.Equal(110, CycleTiming.ForNode(session.Snapshot.GetNode(node.Id), 120)!.Hertz);
+        Set(OscillatorGenerator.PitchTrackingKey, 1);
+        var tracked = CycleTiming.ForNode(session.Snapshot.GetNode(node.Id), 120)!;
+        Assert.Equal(220, tracked.Hertz);
+        Assert.Equal(2, tracked.BaseRatio);
+        Assert.Equal(1d / 220, tracked.Seconds);
+        Set("timing", (int)OscillatorTimingMode.Synchronized);
+        Assert.Equal(2, CycleTiming.ForNode(session.Snapshot.GetNode(node.Id), 120)!.Hertz);
+        var source = session.Execute(new AddNodeCommand(session.GraphId, PitchControlGenerator.NodeType))
+            .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        Assert.Equal(NodeVisualRole.Modulator, NodeRoleClassifier.Classify(session.Snapshot, source));
+    }
+
+    [Fact]
     public void CycleTimingReflectsRateAndSquarePulseWidthWithoutEditingGraph()
     {
         using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());

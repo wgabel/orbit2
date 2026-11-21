@@ -57,7 +57,7 @@ public sealed class FaustNodeContext
         return InputSignal(port.Id);
     }
 
-    public string Parameter(string key, string? signalMaximum = null)
+    public string Parameter(string key, string? signalMaximum = null, string? baseMultiplier = null)
     {
         var parameter = Node.Parameters.SingleOrDefault(parameter => parameter.Definition.Key == key)
             ?? throw new FaustCompilationException($"Node {Node.TypeKey} has no parameter '{key}'.");
@@ -76,7 +76,7 @@ public sealed class FaustNodeContext
         var minimum = FaustNumber.Format(definition.Minimum);
         var maximum = FaustNumber.Format(definition.Maximum);
         var initial = FaustNumber.Format(definition.DefaultValue);
-        var meter = parameter.ModulationPortId is Guid modulationPort &&
+        var meter = baseMultiplier is not null || parameter.ModulationPortId is Guid modulationPort &&
             incoming[new PortAddress(Node.Id, modulationPort)].Any()
             ? $"m_{Node.Id:N}_{parameter.Id:N}" : null;
         if (!controls.Any(control => control.Name == name))
@@ -88,11 +88,13 @@ public sealed class FaustNodeContext
         }
 
         var modulation = parameter.ModulationPortId is Guid portId ? InputSignal(portId) : "0.0";
-        var effective = $"max({minimum}, min({maximum}, {name} + {modulation}))";
+        var baseExpression = baseMultiplier is null ? name : $"({name} * ({baseMultiplier}))";
+        var effective = $"max({minimum}, min({maximum}, {baseExpression} + {modulation}))";
         if (signalMaximum is not null)
             effective = $"min({signalMaximum}, {effective})";
         // A passive bargraph passes its input unchanged and reports the actual
-        // clamped sample value. Only connected modulation needs a live meter.
+        // clamped sample value. Connected modulation and a transformed base
+        // (e.g. pitch-tracked Hz) need a live meter.
         return meter is null ? effective : $"({effective} : hbargraph(\"{meter}\", {minimum}, {maximum}))";
     }
 

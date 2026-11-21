@@ -15,6 +15,7 @@ public static class BuiltInNodes
     {
         var registry = new NodeRegistry();
         registry.Register(OscillatorGenerator.NodeType, id => new OscillatorGenerator(id), "Oscillator");
+        registry.Register(PitchControlGenerator.NodeType, id => new PitchControlGenerator(id), "Pitch Control");
         registry.Register(NoiseGenerator.NodeType, id => new NoiseGenerator(id), "Noise");
         registry.Register(GainProcessor.NodeType, id => new GainProcessor(id), "Gain");
         registry.Register(MixerProcessor.NodeType, id => new MixerProcessor(id), "Mixer");
