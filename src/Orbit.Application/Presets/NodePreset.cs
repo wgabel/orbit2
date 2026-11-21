@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Orbit.Domain.Nodes.Generators;
 
 namespace Orbit.Application.Presets;
 
@@ -28,8 +29,12 @@ public sealed class NodePreset
         Name = name;
         Group = group;
         Description = description;
-        Parameters = new ReadOnlyDictionary<string, double>(
-            parameters.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal));
+        var values = parameters.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        // Schema-1 oscillator presets written before pulse width retain their original sound.
+        if (nodeType == OscillatorGenerator.NodeType && values.Count == 6 &&
+            new[] { "frequency", "amplitude", "phase", "waveform", "timing", "division" }.All(values.ContainsKey))
+            values.Add(OscillatorGenerator.PulseWidthKey, OscillatorGenerator.DefaultPulseWidth);
+        Parameters = new ReadOnlyDictionary<string, double>(values);
     }
 
     public int SchemaVersion { get; }

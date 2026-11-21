@@ -56,7 +56,7 @@
 .scope-compact [data-waveform-controls], .scope-compact [data-spectrum-controls] { display: none; }
 .scope-compact .scope-waveform { height: var(--component-scope-compact-plot-height); }
 .scope-compact .scope-readouts > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.scope-compact .scope-readouts > span:last-child { flex-shrink: 0; }
+.scope-compact .scope-readouts > span:last-child { min-width: 0; flex-shrink: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .scope-compact:not([data-view-mode="level"]) .scope-levels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .scope-compact:not([data-view-mode="level"]) .scope-levels > div { grid-template-columns: auto minmax(0, 1fr); gap: var(--semantic-space-tight); }
 .scope-compact:not([data-view-mode="level"]) .scope-levels meter, .scope-compact .scope-levels small { display: none; }

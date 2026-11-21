@@ -233,10 +233,11 @@ try {
             for (const wave of waveforms.filter(wave => wave.timing === "Free")) {
                 const compiled = await compiler.compile(wave.source);
                 for (const rate of [44100, 48000]) {
-                    const render = async (frequency, phase = 0) => {
+                    const render = async (frequency, phase = 0, width = 0.5) => {
                         const processor = await new FaustMonoDspGenerator().createOfflineProcessor(
                             rate, 128, { ...compiled, soundfiles: {} });
                         const values = { ...wave.values, [wave.rateControl]: frequency, [wave.phase]: phase };
+                        if (wave.pulseWidth) values[wave.pulseWidth] = width;
                         for (const [name, value] of Object.entries(values)) {
                             const path = processor.getParams().find(path => path.endsWith("/" + name));
                             if (!path) throw new Error("Missing waveform control " + name);
@@ -286,6 +287,11 @@ try {
                         }
                         results.push({ waveform: wave.waveform, rate, aliasLevel: 2 * Math.hypot(cosine, sine) / samples.length });
                     }
+                    if (wave.pulseWidth) {
+                        const samples = await render(2, 0, 0.2);
+                        const fraction = samples.filter(sample => sample > 0).length / samples.length;
+                        results.push({ waveform: wave.waveform, rate, positiveFraction: fraction });
+                    }
                 }
             }
             return results;
@@ -293,7 +299,9 @@ try {
     }, waveforms);
     for (const result of renderedWaveforms) {
         console.log("Oscillator waveform", result);
-        if ("phaseError" in result) {
+        if ("positiveFraction" in result) {
+            assert.ok(Math.abs(result.positiveFraction - 0.2) < 0.01, "Incorrect pulse width");
+        } else if ("phaseError" in result) {
             // At 44.1k, a quarter period is not an integer sample. Permit the
             // resulting sub-sample error, especially for square/saw edges.
             assert.ok(result.phaseError < 0.09, "Incorrect phase offset");

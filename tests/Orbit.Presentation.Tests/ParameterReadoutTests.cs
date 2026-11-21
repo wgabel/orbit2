@@ -13,6 +13,33 @@ namespace Orbit.Presentation.Tests;
 
 public sealed class ParameterReadoutTests
 {
+    [Fact]
+    public void CycleTimingReflectsRateAndSquarePulseWidthWithoutEditingGraph()
+    {
+        using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+        var node = session.Execute(new AddNodeCommand(session.GraphId, OscillatorGenerator.NodeType))
+            .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        void Set(string key, double value) => session.Execute(new SetParameterValueCommand(session.GraphId,
+            new ParameterAddress(node.Id, node.Parameters.Single(p => p.Definition.Key == key).Id), value));
+        Set("frequency", 0.2);
+        Set("waveform", (int)OscillatorWaveform.Square);
+        Set(OscillatorGenerator.PulseWidthKey, 0.2);
+        var current = session.Snapshot.GetNode(node.Id);
+        var timing = CycleTiming.ForNode(current, 120)!;
+        Assert.Equal(5, timing.Seconds);
+        Assert.Equal(1, timing.PositiveSeconds);
+        Assert.Equal(4, timing.NegativeSeconds);
+        Assert.Equal("5 s", CycleTiming.FormatDuration(timing.Seconds));
+        Assert.Equal("2.5 ms", CycleTiming.FormatDuration(0.0025));
+        Assert.Equal("50 µs", CycleTiming.FormatDuration(0.00005));
+        Assert.True(NodeVisualizationCapabilities.SupportsCycle(current, current.Outputs.Single().Id));
+        Assert.False(NodeVisualizationCapabilities.SupportsCycle(current, current.Inputs.First().Id));
+        Set("timing", (int)OscillatorTimingMode.Synchronized);
+        Set("division", (int)MusicalDivision.QuarterNote);
+        Assert.Equal(0.5, CycleTiming.ForNode(session.Snapshot.GetNode(node.Id), 120)!.Seconds);
+        Set("waveform", (int)OscillatorWaveform.Sine);
+        Assert.Equal(0.25, CycleTiming.ForNode(session.Snapshot.GetNode(node.Id), 120)!.PositiveSeconds);
+    }
     [Theory]
     [InlineData(120, MusicalDivision.QuarterNote, 2)]
     [InlineData(90, MusicalDivision.WholeNote, 0.375)]

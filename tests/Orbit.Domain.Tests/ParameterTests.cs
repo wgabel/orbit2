@@ -31,8 +31,8 @@ public sealed class ParameterTests
     {
         var node = new OscillatorGenerator(Guid.NewGuid());
 
-        Assert.Equal(6, node.Parameters.Count);
-        Assert.Equal(3, node.Inputs.Count);
+        Assert.Equal(7, node.Parameters.Count);
+        Assert.Equal(4, node.Inputs.Count);
         foreach (var parameter in node.Parameters.Where(parameter => parameter.Definition.CanModulate))
         {
             Assert.True(parameter.Definition.CanModulate);
@@ -48,6 +48,10 @@ public sealed class ParameterTests
         Assert.True(waveform.Definition.RequiresRecompile);
         Assert.Equal(4, waveform.Definition.Choices!.Count);
         Assert.Null(waveform.ModulationPortId);
+        var pulse = node.Parameters.Single(parameter => parameter.Definition.Key == OscillatorGenerator.PulseWidthKey);
+        Assert.Equal(0.5, pulse.BaseValue);
+        Assert.Equal("waveform", pulse.Definition.ActiveWhen!.SelectorKey);
+        Assert.False(pulse.Definition.RequiresRecompile);
     }
 
     [Fact]

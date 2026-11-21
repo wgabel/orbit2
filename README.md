@@ -147,6 +147,7 @@ The service compares the new snapshot to the last accepted playback topology, in
 The independent domain model describes topology without generating samples. It has no browser or Faust dependency. Signal nodes expose read-only port and parameter collections; SignalGraph owns validated connection and parameter edits.
 
 - One Oscillator generator supports sine, triangle, square and sawtooth. Frequency, amplitude and phase offset have modulation inputs; waveform is a discrete choice. The node can be an audible oscillator or an LFO.
+- Oscillators display configured cycle, positive and negative durations in seconds, milliseconds or microseconds. In Free mode edit Period (s) directly to set the same frequency; in synchronized mode timing follows division and BPM. Square exposes modulatable pulse width (ratio 0.01–0.99; 0.5 is equal halves). For example, 5 s and width 0.2 produce 1 s positive and 4 s negative. Negative is not silence unless a downstream mapping or clamp makes it so.
 - A gain processor has a mono audio input, gain modulation input and audio output; master output is a terminal mono input.
 - Typed ports allow one output to feed several inputs, and modulatable parameters accept multiple sources. Connection amounts represent audio gain or target-specific modulation depth.
 - Graph validation rejects missing or reversed endpoints, incompatible types/channels, duplicate edges, single-input conflicts and cycles (including modulation cycles).
@@ -649,6 +650,8 @@ The audio runtime now compiles up to eight host-only auxiliary observation chann
 ### Oscilloscope and level meter (Phase 6.18.2)
 
 Select a node by its header, then choose **Show scope** at the upper left of the canvas. Choose a mono input or output (output is preferred by default). Start playback to inspect actual DSP samples. The scope provides 5/20/50 ms waveform windows with free-running or rising/falling zero-crossing trigger, and 1/5/10 s history for slow modulation. The history preserves min/max peaks in 10 ms buckets and displays gaps where samples were not captured. Peak and RMS meters report the latest 20 ms in dBFS (±1 is 0 dBFS); signals at or above full scale are highlighted. The waveform scales automatically to accommodate modulation outside ±1. Close the view to release its capture; changing source or display controls never edits the graph. Unavailable taps and stopped playback are shown explicitly.
+
+On an oscillator's output, select **One configured cycle** in the expanded scope to set the timebase from its configured frequency or tempo/division. It automatically follows those settings, using the sample window for short cycles and up to 100 s of bounded min/max history for long ones. Allow history to fill after opening the scope. Modulated frequency changes actual cycle lengths; the configured window is a reference, not a phase-locked measurement.
 
 ### Spectrum analyzer (Phase 6.18.3)
 

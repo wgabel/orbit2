@@ -39,7 +39,8 @@
                 </select>
             </label>
             var address = new SignalObservationAddress(PatchId, GraphId, Node.Id, selected.Id, selected.Direction);
-            <SignalScope @key="address" Address="@address" Compact="@(!Expanded)" Settings="@Settings" SettingsChanged="SettingsChanged" />
+            <SignalScope @key="address" Address="@address" Compact="@(!Expanded)" Settings="@Settings" SettingsChanged="SettingsChanged"
+                CycleSeconds="@(NodeVisualizationCapabilities.SupportsCycle(Node, selected.Id) ? CycleTiming.ForNode(Node, BeatsPerMinute)?.Seconds : null)" />
         }
     </section>
 }
@@ -51,6 +52,7 @@
     [Parameter, EditorRequired] public NodeVisualizationSettings Settings { get; set; } = NodeVisualizationSettings.Default;
     [Parameter] public bool Expanded { get; set; }
     [Parameter] public bool ExpandedElsewhere { get; set; }
+    [Parameter] public double BeatsPerMinute { get; set; } = 120;
     [Parameter] public EventCallback<NodeVisualizationSettings> SettingsChanged { get; set; }
     [Parameter] public EventCallback OnExpand { get; set; }
 

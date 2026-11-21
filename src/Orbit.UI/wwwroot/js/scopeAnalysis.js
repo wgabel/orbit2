@@ -36,7 +36,7 @@ export function scopeWindow(samples, sampleRate, seconds, trigger) {
 // Preserve both extrema rather than averaging away brief modulation peaks.
 export class MinMaxHistory {
     static BucketSeconds = 0.01;
-    static Capacity = 1000;
+    static Capacity = 10000;
     #keys = new Float64Array(MinMaxHistory.Capacity).fill(NaN);
     #minimum = new Float32Array(MinMaxHistory.Capacity);
     #maximum = new Float32Array(MinMaxHistory.Capacity);

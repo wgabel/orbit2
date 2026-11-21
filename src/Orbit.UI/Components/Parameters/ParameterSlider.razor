@@ -61,4 +61,9 @@
             </div>
         </div>
     }
+    @if (Timing is { } timing)
+    {
+        <CycleTimingReadout Timing="@timing" LiveHertz="@EffectiveValue" ShowLive="@(IsModulated || ModulationRange.HasValue)"
+                            MinSeconds="@(1 / Definition.Maximum)" MaxSeconds="@(1 / Definition.Minimum)" HertzChanged="EditHertzAsync" />
+    }
 </div>

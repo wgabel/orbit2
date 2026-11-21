@@ -6,7 +6,7 @@
     "name": "Deep Sine",
     "group": "Drones",
     "description": "A low, pure tone with headroom for layering.",
-    "parameters": { "frequency": 110, "amplitude": 0.2, "phase": 0, "waveform": 0, "timing": 0, "division": 2 }
+    "parameters": { "frequency": 110, "amplitude": 0.2, "phase": 0, "waveform": 0, "timing": 0, "division": 2, "pulse-width": 0.5 }
   },
   {
     "schemaVersion": 1,
@@ -15,7 +15,7 @@
     "name": "Slow LFO",
     "group": "Modulation",
     "description": "A full-range bipolar sine for slowly modulating another node.",
-    "parameters": { "frequency": 0.1, "amplitude": 1, "phase": 0, "waveform": 0, "timing": 0, "division": 2 }
+    "parameters": { "frequency": 0.1, "amplitude": 1, "phase": 0, "waveform": 0, "timing": 0, "division": 2, "pulse-width": 0.5 }
   },
   {
     "schemaVersion": 1,
@@ -24,7 +24,7 @@
     "name": "Quarter Pulse",
     "group": "Modulation",
     "description": "A square-wave modulation source locked to quarter notes.",
-    "parameters": { "frequency": 1, "amplitude": 1, "phase": 0, "waveform": 2, "timing": 1, "division": 2 }
+    "parameters": { "frequency": 1, "amplitude": 1, "phase": 0, "waveform": 2, "timing": 1, "division": 2, "pulse-width": 0.5 }
   },
   {
     "schemaVersion": 1,
@@ -33,7 +33,7 @@
     "name": "Sub Bass",
     "group": "Bass",
     "description": "A clean 55 Hz sine fundamental for a low drone layer.",
-    "parameters": { "frequency": 55, "amplitude": 0.28, "phase": 0, "waveform": 0, "timing": 0, "division": 2 }
+    "parameters": { "frequency": 55, "amplitude": 0.28, "phase": 0, "waveform": 0, "timing": 0, "division": 2, "pulse-width": 0.5 }
   },
   {
     "schemaVersion": 1,
@@ -42,7 +42,7 @@
     "name": "Square Bass",
     "group": "Bass",
     "description": "A low square wave rich in odd harmonics; try a low-pass filter.",
-    "parameters": { "frequency": 55, "amplitude": 0.14, "phase": 0, "waveform": 2, "timing": 0, "division": 2 }
+    "parameters": { "frequency": 55, "amplitude": 0.14, "phase": 0, "waveform": 2, "timing": 0, "division": 2, "pulse-width": 0.5 }
   },
   {
     "schemaVersion": 1,
@@ -51,7 +51,7 @@
     "name": "Warm Triangle",
     "group": "Drones",
     "description": "A 110 Hz triangle with gentle upper harmonics and room for other layers.",
-    "parameters": { "frequency": 110, "amplitude": 0.23, "phase": 0, "waveform": 1, "timing": 0, "division": 2 }
+    "parameters": { "frequency": 110, "amplitude": 0.23, "phase": 0, "waveform": 1, "timing": 0, "division": 2, "pulse-width": 0.5 }
   },
   {
     "schemaVersion": 1,
@@ -60,7 +60,7 @@
     "name": "Detuned Companion",
     "group": "Drones",
     "description": "Layer with Deep Sine for a slow 0.35 Hz beating pattern.",
-    "parameters": { "frequency": 110.35, "amplitude": 0.16, "phase": 0, "waveform": 0, "timing": 0, "division": 2 }
+    "parameters": { "frequency": 110.35, "amplitude": 0.16, "phase": 0, "waveform": 0, "timing": 0, "division": 2, "pulse-width": 0.5 }
   },
   {
     "schemaVersion": 1,
@@ -69,7 +69,7 @@
     "name": "Bright Saw",
     "group": "Harmonic layers",
     "description": "A harmonically rich sawtooth at 220 Hz for filtering and layering.",
-    "parameters": { "frequency": 220, "amplitude": 0.16, "phase": 0, "waveform": 3, "timing": 0, "division": 2 }
+    "parameters": { "frequency": 220, "amplitude": 0.16, "phase": 0, "waveform": 3, "timing": 0, "division": 2, "pulse-width": 0.5 }
   },
   {
     "schemaVersion": 1,
@@ -78,7 +78,7 @@
     "name": "Octave Air",
     "group": "Harmonic layers",
     "description": "Quiet 440 Hz sine overtone for a drone rooted at 110 or 220 Hz.",
-    "parameters": { "frequency": 440, "amplitude": 0.08, "phase": 0, "waveform": 0, "timing": 0, "division": 2 }
+    "parameters": { "frequency": 440, "amplitude": 0.08, "phase": 0, "waveform": 0, "timing": 0, "division": 2, "pulse-width": 0.5 }
   },
   {
     "schemaVersion": 1,
@@ -87,7 +87,7 @@
     "name": "Slow Drift",
     "group": "Modulation",
     "description": "A sine cycle every 40 seconds for gradual drone movement.",
-    "parameters": { "frequency": 0.025, "amplitude": 1, "phase": 0, "waveform": 0, "timing": 0, "division": 2 }
+    "parameters": { "frequency": 0.025, "amplitude": 1, "phase": 0, "waveform": 0, "timing": 0, "division": 2, "pulse-width": 0.5 }
   },
   {
     "schemaVersion": 1,
@@ -96,7 +96,7 @@
     "name": "Triangle Sweep",
     "group": "Modulation",
     "description": "A four-second triangular sweep for steady filter or pitch movement.",
-    "parameters": { "frequency": 0.25, "amplitude": 1, "phase": 0, "waveform": 1, "timing": 0, "division": 2 }
+    "parameters": { "frequency": 0.25, "amplitude": 1, "phase": 0, "waveform": 1, "timing": 0, "division": 2, "pulse-width": 0.5 }
   },
   {
     "schemaVersion": 1,
@@ -105,7 +105,7 @@
     "name": "Bar Swell",
     "group": "Rhythmic modulation",
     "description": "One smooth sine modulation cycle per four-beat bar.",
-    "parameters": { "frequency": 0.5, "amplitude": 1, "phase": 0, "waveform": 0, "timing": 1, "division": 4 }
+    "parameters": { "frequency": 0.5, "amplitude": 1, "phase": 0, "waveform": 0, "timing": 1, "division": 4, "pulse-width": 0.5 }
   },
   {
     "schemaVersion": 1,
@@ -114,7 +114,7 @@
     "name": "Eighth Pulse",
     "group": "Rhythmic modulation",
     "description": "A synchronized square signal for stepped eighth-note modulation.",
-    "parameters": { "frequency": 2, "amplitude": 1, "phase": 0, "waveform": 2, "timing": 1, "division": 1 }
+    "parameters": { "frequency": 2, "amplitude": 1, "phase": 0, "waveform": 2, "timing": 1, "division": 1, "pulse-width": 0.5 }
   },
   {
     "schemaVersion": 1,
@@ -123,6 +123,6 @@
     "name": "Triplet Ramp",
     "group": "Rhythmic modulation",
     "description": "A repeating sawtooth ramp at quarter-note triplet intervals.",
-    "parameters": { "frequency": 1.5, "amplitude": 1, "phase": 0, "waveform": 3, "timing": 1, "division": 5 }
+    "parameters": { "frequency": 1.5, "amplitude": 1, "phase": 0, "waveform": 3, "timing": 1, "division": 5, "pulse-width": 0.5 }
   }
 ]

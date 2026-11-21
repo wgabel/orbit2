@@ -69,12 +69,14 @@
                 {
                     <ParameterChoiceEditor @key="parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue"
                           Readout="@ParameterReadout.ForChoice(Node, parameter, BeatsPerMinute)"
+                          Timing="@CycleTiming.ForParameter(Node, parameter, BeatsPerMinute)"
                           ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))" />
                 }
                 else
                 {
                     <ParameterSlider @key="parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue" Step="0.01"
                                  IsModulated="@IsModulated(parameter.Id)" ModulationRange="@GetRange(parameter.Id)" EffectiveValue="@GetEffective(parameter.Id)"
+                                 Timing="@CycleTiming.ForParameter(Node, parameter, BeatsPerMinute)"
                                  ValueChanged="@(edit => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), edit.Value, edit.GestureId)))"
                                  GestureEnded="OnParameterGestureEnded" />
                 }
@@ -82,5 +84,6 @@
         </div>
     }
     <NodeVisualizationPanel PatchId="@PatchId" GraphId="@GraphId" Node="@Node" Settings="@Visualization"
+                            BeatsPerMinute="@BeatsPerMinute"
                             ExpandedElsewhere="@VisualizationExpanded" SettingsChanged="OnVisualizationChange" OnExpand="OnExpandVisualization" />
 </article>

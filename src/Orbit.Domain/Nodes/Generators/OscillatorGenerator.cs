@@ -11,6 +11,9 @@ namespace Orbit.Domain.Nodes.Generators;
 public sealed class OscillatorGenerator : SignalNode, IGenerator
 {
     public const string NodeType = "generator.oscillator";
+    public const string PulseWidthKey = "pulse-width";
+    public const string PulseWidthPortKey = "pulse-width-modulation-in";
+    public const double DefaultPulseWidth = 0.5;
 
     private static readonly ParameterDefinition FrequencyDefinition = new(
         "frequency", "Frequency", 440, 0.01, 20_000,
@@ -51,12 +54,17 @@ public sealed class OscillatorGenerator : SignalNode, IGenerator
 
     private static readonly ParameterDefinition DivisionDefinition = MusicalDivisionParameter.Create("timing", (int)OscillatorTimingMode.Synchronized);
 
+    private static readonly ParameterDefinition PulseWidthDefinition = new(
+        PulseWidthKey, "Pulse width", DefaultPulseWidth, 0.01, 0.99,
+        ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: true)
+    { ActiveWhen = new("waveform", (int)OscillatorWaveform.Square) };
+
     public OscillatorGenerator(Guid id)
-        : this(id, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid())
+        : this(id, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid())
     {
     }
 
-    private OscillatorGenerator(Guid id, Guid frequencyPortId, Guid amplitudePortId, Guid phasePortId)
+    private OscillatorGenerator(Guid id, Guid frequencyPortId, Guid amplitudePortId, Guid phasePortId, Guid pulseWidthPortId)
         : base(id, NodeType, "Oscillator",
             [
                 new Parameter(Guid.NewGuid(), FrequencyDefinition, frequencyPortId),
@@ -64,7 +72,8 @@ public sealed class OscillatorGenerator : SignalNode, IGenerator
                 new Parameter(Guid.NewGuid(), PhaseDefinition, phasePortId),
                 new Parameter(Guid.NewGuid(), WaveformDefinition),
                 new Parameter(Guid.NewGuid(), TimingDefinition),
-                new Parameter(Guid.NewGuid(), DivisionDefinition)
+                new Parameter(Guid.NewGuid(), DivisionDefinition),
+                new Parameter(Guid.NewGuid(), PulseWidthDefinition, pulseWidthPortId)
             ],
             [
                 new PortDefinition(frequencyPortId, "frequency-modulation-in", "Frequency",
@@ -72,6 +81,8 @@ public sealed class OscillatorGenerator : SignalNode, IGenerator
                 new PortDefinition(amplitudePortId, "amplitude-modulation-in", "Amplitude",
                     PortDirection.Input, SignalType.Modulation, FanIn: FanInPolicy.Sum),
                 new PortDefinition(phasePortId, "phase-modulation-in", "Phase offset",
+                    PortDirection.Input, SignalType.Modulation, FanIn: FanInPolicy.Sum),
+                new PortDefinition(pulseWidthPortId, PulseWidthPortKey, "Pulse width",
                     PortDirection.Input, SignalType.Modulation, FanIn: FanInPolicy.Sum)
             ],
             [

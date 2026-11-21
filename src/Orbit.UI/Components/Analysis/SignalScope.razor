@@ -1,6 +1,6 @@
 @namespace Orbit.UI.Components.Analysis
 
-<div class="signal-scope @(Compact ? "scope-compact" : "")" data-configured-mode="@Settings.Mode" @ref="root">
+<div class="signal-scope @(Compact ? "scope-compact" : "")" data-configured-mode="@Settings.Mode" data-cycle-seconds="@(CycleSeconds?.ToString("G", System.Globalization.CultureInfo.InvariantCulture))" @ref="root">
     <div class="scope-controls workspace-toolbar">
         <label>View
             <select data-analysis-mode aria-label="Analysis view" value="@Settings.Mode">
@@ -13,6 +13,10 @@
     <div class="scope-controls workspace-toolbar" data-waveform-controls>
         <label>Timebase
             <select data-timebase aria-label="Scope timebase" value="@Settings.Timebase">
+                @if (CycleSeconds.HasValue)
+                {
+                    <option value="cycle">One configured cycle</option>
+                }
                 <option value="0.005">5 ms</option>
                 <option value="0.02">20 ms</option>
                 <option value="0.05">50 ms</option>

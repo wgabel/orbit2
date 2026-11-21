@@ -1,0 +1,59 @@
+@namespace Orbit.UI.Components.Parameters
+@using System.Globalization
+@using Orbit.Presentation.Canvas
+
+<div class="cycle-timing" aria-label="Configured cycle timing" title="Nominal timing at the configured rate and pulse width; modulation may change it. Negative does not mean silent.">
+    <div class="parameter-modulation-reading"><span>Cycle</span><output aria-label="Cycle duration" title="@CycleTiming.FormatDuration(Timing.Seconds)">@CycleTiming.FormatDuration(Timing.Seconds)</output></div>
+    <div class="parameter-modulation-reading"><span>Positive</span><output aria-label="Positive duration" title="@CycleTiming.FormatDuration(Timing.PositiveSeconds)">@CycleTiming.FormatDuration(Timing.PositiveSeconds)</output></div>
+    <div class="parameter-modulation-reading"><span>Negative</span><output aria-label="Negative duration" title="@CycleTiming.FormatDuration(Timing.NegativeSeconds)">@CycleTiming.FormatDuration(Timing.NegativeSeconds)</output></div>
+</div>
+@if (ShowLive)
+{
+    <div class="parameter-details cycle-live"><span>Live cycle ≈</span><output aria-label="Live cycle duration" title="@LiveDuration">@LiveDuration</output></div>
+}
+@if (HertzChanged.HasDelegate)
+{
+    <div class="parameter-heading">
+        <label for="@inputId">Period (s)</label>
+        <input id="@inputId" type="number" min="@Format(MinSeconds)" max="@Format(MaxSeconds)" step="any" value="@draft"
+               @onchange="Commit" aria-invalid="@(error is not null ? "true" : "false")" />
+    </div>
+    <ValidationMessage Message="@error" MessageId="@($"{inputId}-error")" />
+}
+
+@code {
+    [Parameter, EditorRequired] public CycleTiming Timing { get; set; } = default!;
+    [Parameter] public double? LiveHertz { get; set; }
+    [Parameter] public bool ShowLive { get; set; }
+    [Parameter] public double MinSeconds { get; set; }
+    [Parameter] public double MaxSeconds { get; set; }
+    [Parameter] public EventCallback<double> HertzChanged { get; set; }
+    private readonly string inputId = $"period-{Guid.NewGuid():N}";
+    private double? previous;
+    private string draft = "";
+    private string? error;
+    private string LiveDuration => LiveHertz is double hz && double.IsFinite(hz) && hz > 0 ? CycleTiming.FormatDuration(1 / hz) : "—";
+
+    protected override void OnParametersSet()
+    {
+        if (previous == Timing.Seconds) return;
+        previous = Timing.Seconds;
+        draft = Format(Timing.Seconds);
+        error = null;
+    }
+
+    private async Task Commit(ChangeEventArgs args)
+    {
+        draft = args.Value?.ToString() ?? "";
+        if (!double.TryParse(draft, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds) ||
+            !double.IsFinite(seconds) || seconds < MinSeconds || seconds > MaxSeconds || seconds <= 0)
+        {
+            error = $"Enter {Format(MinSeconds)}–{Format(MaxSeconds)} seconds.";
+            return;
+        }
+        error = null;
+        await HertzChanged.InvokeAsync(Math.Clamp(1 / seconds, 1 / MaxSeconds, 1 / MinSeconds));
+    }
+
+    private static string Format(double value) => value.ToString("G", CultureInfo.InvariantCulture);
+}

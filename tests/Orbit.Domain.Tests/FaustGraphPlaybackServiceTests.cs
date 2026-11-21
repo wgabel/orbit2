@@ -123,9 +123,10 @@ public sealed class FaustGraphPlaybackServiceTests
             await service.UpdateAsync(patch.Session.Snapshot));
         var replacement = Assert.Single(engine.Replacements);
         Assert.NotEqual(engine.Request!.Source, replacement.Source);
-        Assert.Contains("float(p < 0.5)", replacement.Source);
+        Assert.Contains("float(p < (", replacement.Source);
         Assert.Empty(engine.Updates);
-        Assert.Equal(engine.Request.Parameters.Keys.Order(), replacement.Parameters.Keys.Order());
+        Assert.Single(replacement.Parameters.Keys.Except(engine.Request.Parameters.Keys));
+        Assert.Empty(engine.Request.Parameters.Keys.Except(replacement.Parameters.Keys));
         Assert.Equal(original.GetGraph(patch.ChildId).Connections.ToArray(),
             patch.Session.Snapshot.GetGraph(patch.ChildId).Connections.ToArray());
         patch.Session.Execute(new SetParameterValueCommand(patch.ChildId, patch.Frequency, 330));

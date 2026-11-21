@@ -85,7 +85,7 @@ public sealed class NodeRegistryTests
         Assert.Equal((double)MusicalDivision.QuarterNote, division.BaseValue);
         Assert.Equal(7, division.Definition.Choices!.Count);
         Assert.Null(division.ModulationPortId);
-        Assert.Equal(3, node.Inputs.Count);
+        Assert.Equal(4, node.Inputs.Count);
         var timing = node.Parameters.Single(p => p.Definition.Key == "timing");
         Assert.Equal((double)OscillatorTimingMode.Free, timing.BaseValue);
         Assert.Null(timing.ModulationPortId);

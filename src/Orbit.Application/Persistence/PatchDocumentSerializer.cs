@@ -7,6 +7,7 @@ using Orbit.Domain.Graphs;
 using Orbit.Domain.Nodes;
 using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Ports;
+using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Timing;
 
 namespace Orbit.Application.Persistence;
@@ -72,8 +73,17 @@ public sealed class PatchDocumentSerializer
                 if (node.TypeKey is CompositeNode.NodeType or InputRack.NodeType or OutputRack.NodeType ||
                     registry.Create(node.TypeKey, node.Id) is not SignalNode leaf)
                     throw new GraphValidationException("Invalid leaf node type.");
-                leaf.RestoreIdentity(node.Ports.ToDictionary(port => port.Key, port => port.Id),
-                    node.Parameters.ToDictionary(parameter => parameter.Key, parameter => (parameter.Id, parameter.BaseValue)));
+                var ports = node.Ports.ToDictionary(port => port.Key, port => port.Id);
+                var parameters = node.Parameters.ToDictionary(parameter => parameter.Key, parameter => (parameter.Id, parameter.BaseValue));
+                // Older schema-1 oscillators predate pulse width. Preserve every existing identity.
+                if (leaf is OscillatorGenerator && ports.Count == 4 && parameters.Count == 6 &&
+                    !ports.ContainsKey(OscillatorGenerator.PulseWidthPortKey) && !parameters.ContainsKey(OscillatorGenerator.PulseWidthKey))
+                {
+                    var pulse = leaf.Parameters.Single(p => p.Definition.Key == OscillatorGenerator.PulseWidthKey);
+                    ports.Add(OscillatorGenerator.PulseWidthPortKey, pulse.ModulationPortId!.Value);
+                    parameters.Add(OscillatorGenerator.PulseWidthKey, (pulse.Id, pulse.BaseValue));
+                }
+                leaf.RestoreIdentity(ports, parameters);
                 graph.AddNode(leaf);
             }
             if (node.IsMuted) graph.SetNodeMuted(node.Id, true);

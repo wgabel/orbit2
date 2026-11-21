@@ -162,8 +162,10 @@ class ScopeView {
             return;
         }
         this.#history.append(frame.samples, frame.sampleRate, frame.time);
-        const seconds = Number(this.#timebase.value);
-        const slow = seconds >= 1;
+        const cycle = this.#timebase.value === "cycle";
+        const configured = Number(this.#root.dataset.cycleSeconds);
+        const seconds = cycle ? (configured > 0 && Number.isFinite(configured) ? configured : 0.02) : Number(this.#timebase.value);
+        const slow = seconds >= 1 || (cycle && seconds * frame.sampleRate > frame.samples.length);
         this.#trigger.disabled = slow;
         const window = scopeWindow(frame.samples, frame.sampleRate, slow ? 0.02 : seconds, this.#trigger.value);
         this.#status.textContent = slow ? "History · 10 ms min/max" :
@@ -171,7 +173,8 @@ class ScopeView {
         let maximum = slow ? 1 : Math.max(1, measureLevels(window.samples).peak);
         if (slow) this.#history.visit(seconds, (_, min, max) => { maximum = Math.max(maximum, Math.abs(min), Math.abs(max)); });
         const scale = 2 ** Math.ceil(Math.log2(maximum));
-        this.#scale.textContent = `±${scale} · ${slow ? seconds + " s" : (window.seconds * 1000).toFixed(1) + " ms"}`;
+        this.#scale.textContent = `±${scale} · ${slow ? Number(seconds.toPrecision(4)) + " s" : (window.seconds * 1000).toFixed(2) + " ms"}${cycle ? " · configured cycle" : ""}`;
+        this.#scale.title = this.#scale.textContent;
         this.#draw(scale, slow, seconds, window.samples);
     };
 

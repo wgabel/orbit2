@@ -51,14 +51,14 @@ test("slow history keeps true extrema, drops overlapping samples and leaves gaps
 
 test("low-rate modulation retains peaks and memory stays bounded after wrap", () => {
     const history = new MinMaxHistory();
-    const rate = 1000, length = rate * 12;
+    const rate = 1000, length = rate * 102;
     const samples = Float32Array.from({ length }, (_, i) => Math.sin(2 * Math.PI * 0.5 * i / rate));
     for (let i = 0; i < length; i += 50) history.append(samples.subarray(i, i + 50), rate, (i + 50) / rate);
     const bins = [];
-    history.visit(10, (_, min, max, key) => bins.push({ min, max, key }));
-    assert.equal(bins.length, 1000);
+    history.visit(100, (_, min, max, key) => bins.push({ min, max, key }));
+    assert.equal(bins.length, 10000);
     assert.equal(bins[0].key, 200);
-    assert.equal(bins.at(-1).key, 1199);
+    assert.equal(bins.at(-1).key, 10199);
     assert.ok(Math.min(...bins.map(bin => bin.min)) < -0.999);
     assert.ok(Math.max(...bins.map(bin => bin.max)) > 0.999);
 });

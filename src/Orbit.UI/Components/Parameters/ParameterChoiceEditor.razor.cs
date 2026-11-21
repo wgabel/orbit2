@@ -11,6 +11,7 @@ public partial class ParameterChoiceEditor
     [Parameter, EditorRequired] public ParameterDefinition Definition { get; set; } = default!;
     [Parameter] public double Value { get; set; }
     [Parameter] public ParameterReadout? Readout { get; set; }
+    [Parameter] public CycleTiming? Timing { get; set; }
     [Parameter] public EventCallback<double> ValueChanged { get; set; }
     private string InputId { get; } = $"choice-{Guid.NewGuid():N}";
     private string ErrorId => $"{InputId}-error";

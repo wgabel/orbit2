@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Orbit.Domain.Parameters;
 using Orbit.Presentation.Parameters;
+using Orbit.Presentation.Canvas;
 
 namespace Orbit.UI.Components.Parameters;
 
@@ -17,6 +18,7 @@ public partial class ParameterSlider
     [Parameter] public bool IsModulated { get; set; }
     [Parameter] public ParameterRange? ModulationRange { get; set; }
     [Parameter] public double? EffectiveValue { get; set; }
+    [Parameter] public CycleTiming? Timing { get; set; }
     [Parameter] public EventCallback<ParameterValidation> ValidationChanged { get; set; }
 
     private readonly string inputId = $"parameter-{Guid.NewGuid():N}";
@@ -94,6 +96,7 @@ public partial class ParameterSlider
         return EditAsync(Format(value), gestureId);
     }
     private Task EditNumberAsync(ChangeEventArgs args) => EditAsync(args.Value?.ToString() ?? "", null);
+    private Task EditHertzAsync(double hertz) => EditAsync(Format(hertz), null);
 
     private async Task EditAsync(string input, Guid? editGestureId)
     {

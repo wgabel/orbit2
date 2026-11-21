@@ -140,7 +140,8 @@ var waveformProbes = (from mode in Enum.GetValues<OscillatorTimingMode>()
         source = compiled.Source,
         values = compiled.Controls.ToDictionary(control => control.Name, control => control.InitialValue),
         rateControl = ControlName(mode == OscillatorTimingMode.Free ? "frequency" : "division"),
-        phase = ControlName("phase")
+        phase = ControlName("phase"),
+        pulseWidth = waveform == OscillatorWaveform.Square ? ControlName(OscillatorGenerator.PulseWidthKey) : null
     };
 }).ToArray();
 File.WriteAllText(Path.Combine(args[0], "waveforms.json"), JsonSerializer.Serialize(waveformProbes));

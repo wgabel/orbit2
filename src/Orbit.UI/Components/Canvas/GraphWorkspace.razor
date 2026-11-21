@@ -77,6 +77,7 @@ else
     {
         <NodeVisualizationPanel @key="(workspaceGeneration, graphId, scopeNode.Id)" PatchId="@session.GraphId"
                           GraphId="@graphId" Node="@scopeNode" Expanded="true" Settings="@Canvas.Snapshot.VisualizationFor(scopeNode.Id)"
+                          BeatsPerMinute="@tempo"
                           SettingsChanged="@(settings => UpdateScopeSettings(graphId, scopeNode.Id, settings))" OnExpand="CloseScope" />
     }
 </section>

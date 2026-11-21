@@ -70,6 +70,9 @@ try {
     // Physical frequency and visual coordinates are deliberately different.
     const frequencyRange = frequency.getByRole("slider", { name: "Frequency" });
     const frequencyInput = frequency.getByRole("spinbutton", { name: "Frequency (Hz)" });
+    assert.equal(await frequency.getByLabel("Cycle duration").innerText(), "2.273 ms");
+    assert.equal(await frequency.getByLabel("Positive duration").innerText(), "1.136 ms");
+    assert.equal(Number(await frequency.getByRole("spinbutton", { name: "Period (s)" }).inputValue()), 1 / 440);
     const frequencyPosition = value => {
         const anchors = [[0, 0.01], [0.2, 40], [0.85, 1000], [1, 20000]];
         const index = value <= 40 ? 0 : value <= 1000 ? 1 : 2;
@@ -137,6 +140,13 @@ try {
     await undoButton.click();
     assert.equal(await amplitudeInput.inputValue(), originalAmplitude);
     assert.equal(await undoButton.isEnabled(), false);
+    const periodInput = frequency.getByRole("spinbutton", { name: "Period (s)" });
+    await periodInput.fill("5");
+    await periodInput.press("Tab");
+    await frequency.getByLabel("Cycle duration").filter({ hasText: /^5 s$/ }).waitFor();
+    assert.equal(await frequencyInput.inputValue(), "0.2");
+    await undoButton.click();
+    assert.equal(await frequencyInput.inputValue(), "440");
     // Inverse mapping commits physical values and preserves ordinary history.
     await frequencyRange.fill("0.2");
     assert.equal(await frequencyInput.inputValue(), "40");
@@ -391,6 +401,8 @@ try {
     assert.match(peakText, /-?\d+\.\d dBFS/);
     const rms = Number.parseFloat(await scope.locator("[data-rms]").innerText());
     assert.ok(Number.isFinite(rms) && rms <= Number.parseFloat(peakText));
+    await scope.getByRole("combobox", { name: "Scope timebase" }).selectOption("cycle");
+    await scope.locator("[data-scale]").filter({ hasText: /cycle/ }).waitFor();
     await scope.getByRole("combobox", { name: "Scope timebase" }).selectOption("5");
     await scope.locator("[data-scope-status]").filter({ hasText: "History" }).waitFor();
     assert.equal(await scope.getByRole("combobox", { name: "Scope trigger" }).isDisabled(), true);
@@ -488,6 +500,7 @@ try {
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 1}$`) }).waitFor({ timeout: 15000 });
     assert.equal(await wire.count(), 1);
     assert.equal(await articles.nth(1).getByRole("spinbutton", { name: "Frequency (Hz)" }).inputValue(), "330");
+    assert.equal(await articles.nth(1).getByRole("spinbutton", { name: "Pulse width (ratio)" }).inputValue(), "0.5");
     assert.equal(await play.isEnabled(), false);
     // Switching modes keeps the frequency connection visible but dormant,
     // then restores the same live input and value when returning to free mode.

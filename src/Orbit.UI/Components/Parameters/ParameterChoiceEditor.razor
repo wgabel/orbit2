@@ -19,5 +19,9 @@
             <output aria-label="@readout.Label" for="@InputId">@FormatReadout(readout)</output>
         </div>
     }
+    @if (Timing is { } timing)
+    {
+        <CycleTimingReadout Timing="@timing" />
+    }
     <ValidationMessage Message="@Error" MessageId="@ErrorId" />
 </div>
