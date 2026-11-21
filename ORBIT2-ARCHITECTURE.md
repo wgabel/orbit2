@@ -1028,6 +1028,56 @@ flowchart TD
 
 The runtime signal tap design is described in [Faust and real-time execution](#signal-observation-and-analysis-planned-phase-618). Both forms consume the same backend; an integrated visualization remains preferable for routine inspection, while dedicated analyzers support comparison and arbitrary routing without cluttering every node.
 
+### Patch documentation and canvas annotations (planned Phase 6.19)
+
+Complex patches should explain their musical intent as well as their signal topology. A **Note** appears in the Add catalog alongside other canvas items, but is a presentation-only annotation, not a `SignalNode`. It has no ports, parameter definitions, DSP emitter, presets, audition controls, observation channels or routing dependencies. Do not register an inert DSP node merely to obtain a frame or persistence. Notes and organizational metadata must be editable during playback without a graph commit, graph-history entry, audio update, compilation, phase reset or capture invalidation.
+
+#### Note card experience
+
+- Add Note on the current root or nested canvas using the existing visible-world placement policy, taking measured signal nodes and note cards into account. Give each note a stable ID scoped to its owning graph; allow multiple independent notes. A sensible default title and empty body are sufficient.
+- Render a reusable card with a draggable header, editable title, multiline body, collapse/expand, resize handle and a small palette of named semantic accents (e.g. neutral, idea, instruction, warning). Use existing design tokens, shared selection, keyboard accessibility and world-coordinate geometry; do not duplicate the graph viewport or implement a second editor. A note has a distinguishable icon and no sockets.
+- Keep editing simple: plain text with preserved line breaks, selectable/copyable text and an explicit edit/apply/cancel interaction (or equivalent accessible inline editor). Text editing owns focus; typing, selecting text, native text undo and scrolling must not drag the canvas, delete signal nodes or trigger shortcuts. Collapse retains the complete content and expanded size. Allow deletion and duplication with a fresh annotation ID; text is always stored and displayed as data, never injected as HTML, CSS, JavaScript or Faust source. A restricted Markdown renderer can be evaluated later, with raw HTML disabled.
+- Use selectable notes in Fit-to-content and shared hit testing, without counting them as signal nodes or introducing fake connectors. Notes remain visible when playback is stopped and survive pan/zoom, navigation, autosave, restart, named save and JSON import/export.
+
+Example: a note titled “Thump — pitch and noise” explains a short high-frequency onset, descending pitch, longer low-frequency decay and a filtered noise transient; the neighboring nodes remain independently editable.
+
+#### Descriptive patch features
+
+| Feature | Ownership and initial behavior |
+|---|---|
+| Note | Independent graph-scoped canvas item with title, body, bounds, accent and collapsed state. |
+| Node alias and attached note | Optional per-node presentation label and description keyed by graph/node ID; keep canonical type labels and IDs visible and unchanged. Show the alias in the shared frame, breadcrumbs/selection where useful; show a consistent description affordance without replacing real parameter editors. |
+| Connection label | Optional short description keyed by graph/connection ID, e.g. “slow cutoff sweep”; display in the selected-wire editor and optionally near the wire, never in its routing or amount contract. |
+| Visual group | Named, colored background frame with explicit member IDs and optional group description. Unlike a composite/drone, grouping never changes ownership, creates racks or reroutes signals. Start with manual membership, resize, and explicit move-group action that translates its members once; no implicit inclusion from overlapping bounds. Render behind nodes/cables and do not intercept normal member interactions. Group deletion removes the frame only; no implicit member deletion or mute. |
+| Patch overview | Optional patch-level title, description, intended sound, playing/tuning instructions and tags, stored in `PatchDocument` rather than duplicating the named-library storage key. Surface in the existing patch manager and support searching/filtering saved-patch metadata. |
+
+Do not use grouping, labels or notes as implicit graph commands. Later, an explicit upgrade from a visual group to a real composite may be considered under Phase 7 group/ungroup with validated routing and history. Node aliases are presentation metadata, not a new registered node type or a mutation of a composite's canonical name. Existing rack port names remain the actual public interface.
+
+#### State, persistence and history
+
+Use immutable records for annotation data with stable IDs and graph ownership. Data-only portable records belong in `Orbit.Application.Persistence`; validation, geometry, selection, edits and immutable annotation projections belong in `Orbit.Presentation.Canvas`. Extend `CanvasStateSnapshot` and `CanvasStateService` with dedicated annotation state, selection, explicit validated add/edit/move/resize/delete/duplicate operations and a layout notification. Reuse `CanvasNavigationService` capture/restore, placement and fit geometry. The UI only translates gestures, renders a shared annotation card and handles text drafts; no browser dependency enters the presentation model. Keep annotation IDs in a separate namespace/collection from node/connection IDs and check graph ownership before edits. Use shared geometry for bounds and a generic canvas-item abstraction only as needed, without forcing signal-specific sockets/editors onto notes.
+
+Extend `SavedCanvas` with optional annotations, aliases, connection descriptions and groups; extend `PatchDocument` with optional overview metadata. The schema-1 pattern used for visualization settings allows additive fields with empty/default values for older files; update the source-generated JSON contract and document compatibility. Validate all unique IDs, known graph/target references, finite world bounds, supported accent tokens, size/count limits and text lengths (initial proposal: title 120 characters, body 16,000, up to 200 notes per graph; bound total document size as well). Reject malformed annotation documents atomically before replacing a running workspace; do not silently discard user text. Restore missing optional fields as empty. No extra IndexedDB store is required: notes travel with patch recovery, independent named snapshots, JSON and future portable packages. The overview's patch title is distinct from the external library entry name; no automatic rename of named saves.
+
+Keep visual changes out of `IPatchSession.Execute` and `PatchHistory`. Existing graph undo/redo remains unchanged. Add a bounded presentation-only annotation edit history (explicit undo/redo actions, one committed content change or operation rather than keystroke entries); a text draft uses native text undo before Apply. Coalesce drag/resize into one operation; do not include viewport pan/zoom in annotation history. Reuse generic immutable history mechanics if extracted, with separate history and redo boundaries. Never undo an audio setting when a user intended to undo a note edit. Selection, uncommitted drafts and history are not persisted. Mark unapplied drafts clearly and prevent navigation/closing from silently discarding them. Content edits trigger existing debounced recovery persistence on commit; users can Save explicitly.
+
+When a signal node or connection is deleted, prune its alias/attached description and group membership, retaining graph-ID-qualified metadata in the existing bounded removal/restoration pattern for graph undo. Independent notes remain; linked annotations must not attach to an unrelated new ID. Removing a composite removes its child canvas annotations from capture and preserves them in the bounded removed-layout cache for graph undo, just like its positions and visualization settings. No orphaned layout references are emitted on export. Future copy/paste or composite template duplication must remap annotation identities and target/member IDs as part of the same copy operation; copies do not share mutable text or metadata.
+
+~~~mermaid
+flowchart TD
+    N[Note or organization edit] --> L[CanvasStateService layout commit]
+    L --> V[Immutable canvas snapshot]
+    L --> H[Annotation history]
+    V --> R[Shared GraphCanvas renderer]
+    V --> P[CanvasNavigation capture]
+    P --> D[PatchDocument]
+    D --> S[Recovery and named saves]
+    G[PatchSession graph commit] --> A[Audio engine]
+    G --> L
+~~~
+
+The only direction from the signal graph to annotations is reconciliation of identity/membership. No reverse dependency into the audio path is introduced. Test root and nested note edits, independent identities, undo/redo, visible placement at pan/zoom, bounds and fit, keyboard isolation, deletion/restoration, invalid import rejection, old documents, named snapshots and reload. Verify unchanged graph revision, signal node/edge count, compiler identity and active playback generation for every annotation action, including edits while playing. Ship a small annotated example patch when the shared documentation features are ready.
+
 ## 8. Input and output racks
 
 The user's proposed solution is the standard interface between canvases: a special internal Input Rack node with named ports that automatically appear as input sockets on the composite node in the parent canvas. The corresponding internal sockets are outputs, allowing external signals to be routed to any compatible internal node.
@@ -1907,6 +1957,7 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented (6.17.5): custom preset library with stable IDs, explicit management, independent IndexedDB persistence and stale-write protection.
 - Implemented (6.17.6): portable individual JSON presets with preview, compatibility validation and explicit conflict choices; signal observation next.
 - Planned (6.18): shared signal observation and visualization, integrated node plots, processor response curves and passive analyzer sinks.
+- Planned (6.19): presentation-only notes, node/connection descriptions, visual groups and searchable patch documentation.
 - Deferred: deployment-version detection and safe workspace-save/reload prompt for long-lived tabs whose versioned lazy modules have been removed by a later Pages deployment.
 - Add copies/preset reuse with independent instances.
 
@@ -1997,6 +2048,15 @@ Deliverable: choose or create a grouped configuration for any eligible node with
 
 Deliverable: inspect an oscillator waveform, harmonics, modulation and levels directly on the node; expand the same visualization without changing playback; see an EQ/filter's configured response when stopped and effective response during playback; attach an independent analyzer anywhere in a patch without changing its audible path.
 
+#### Phase 6.19 — Patch documentation and canvas organization (planned)
+
+- **6.19.1 — Note cards:** graph-scoped non-DSP annotation model, shared visible placement/fit, editable title and multiline body, semantic colors, resize/collapse/delete/duplicate, accessible text editing, bounded annotation history and additive `SavedCanvas` persistence; prove playback and graph history isolation in root/nested browser tests. Independent of remaining signal-analysis work; may be implemented early without renumbering Phase 6.18.
+- **6.19.2 — Node and connection descriptions:** presentation-only aliases, attached descriptions and wire labels keyed by stable graph/node/connection IDs; consistent shared editors, dormant/deleted target reconciliation and undo restoration.
+- **6.19.3 — Visual groups:** explicit member references, named/color-coded background regions, resize and atomic movement of members, annotation history and persistence; no new signal graph, rack, audio behavior or implicit deletion of members.
+- **6.19.4 — Patch overview and discovery:** optional title, description, usage instructions and tags in the portable document; patch manager metadata display/search/filter and compatible import/export; annotated example patches, including an impact recipe when AD envelopes are available.
+
+Deliverable: a musician can open a previously saved or shared complex patch, identify its sections, understand modulation intent and recover design notes without altering sound or reading source code.
+
 ### Phase 7 — Advanced functionality and performance
 
 - More filters, EQ, delay, chorus, flanger, compression and reverb.
@@ -2061,6 +2121,7 @@ The core model should be independently unit testable without a browser or Faust.
 | Signal analysis (planned) | Compare master samples with taps on/off; no observation-channel leakage, phase reset or graph compile on view changes; verify root/nested port mapping, weighted input and post-mute/bypass output, known waveform/FFT/peak/RMS, slow LFO history, stale-frame rejection, hidden-view cleanup and bounded resources. |
 | Processor response (planned) | EQ center gain, Q bandwidth, filter modes and Nyquist limits match offline Faust measurements at 44.1/48 kHz; distinguish base/effective estimates, live spectra and stopped previews. |
 | Analyzer sink (planned) | Analyzer-only branches are observable but silent at the master; explicit graph edits round-trip with undo and persistence; visualization preferences restore without changing graph topology or audio. |
+| Patch documentation (planned) | Notes, aliases, labels and groups round-trip with root/nested layouts and named snapshots; old documents restore empty annotations, invalid data is rejected atomically, annotation history and text editing remain independent of graph history, and graph revision, compilation and playback generation stay unchanged. |
 | Output safety | Controlled master gain, no unexpected discontinuity when changing base values. |
 | Persistence | Save/load nested graph and layout with stable IDs and equivalent connectivity. |
 | Audio assets (planned) | Import and reload binary recordings, share immutable data across nodes, preserve IDs through undo/redo, handle quota and missing assets without corrupting patches. |
