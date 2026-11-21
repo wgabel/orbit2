@@ -9,8 +9,9 @@ public static class FaustEnvelopeSegments
         Emit(EnvelopeMode.Ad, trigger, attack, decay, attackCurve, decayCurve);
 
     public static string Emit(EnvelopeMode mode, string signal, string attack, string decay, string attackCurve, string decayCurve,
-        string release = "1.0", string releaseCurve = "1.0", string sustain = "0.0", string rest = "0.0") => $$"""
-        ((step ~ (_, _, _, _, _, _, _)) : !, !, !, !, !, !, _) with {
+        string release = "1.0", string releaseCurve = "1.0", string sustain = "0.0", string rest = "0.0", string? meter = null) => $$"""
+        ((step ~ (_, _, _, _, _, _, _)) : {{(meter is null ? "!, !, !, !, !, !, _" : "report")}}) with {
+            {{(meter is null ? "" : $"report(stage, elapsed, start, target, duration, curve, level) = attach(level, (float(stage) + 0.5 * min(1.0, float(elapsed) / max(1, duration))) : hbargraph(\"{meter}\", 0, 5.5));")}}
             mode = {{(int)mode}};
             isAR = mode == 1;
             isADSR = mode == 2;

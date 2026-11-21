@@ -36,6 +36,7 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter] public int? SampleRate { get; set; }
     [Parameter] public IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
     [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();
+    [Parameter] public IReadOnlyDictionary<Guid, Orbit.Application.Models.EnvelopePlayhead> EnvelopePlayheads { get; set; } = new Dictionary<Guid, Orbit.Application.Models.EnvelopePlayhead>();
 
     private ElementReference viewportElement;
     private Orbit.Application.Persistence.ConnectionLabelMode LabelMode

@@ -19,6 +19,35 @@ namespace Orbit.Domain.Tests;
 public sealed class FaustGraphPlaybackServiceTests
 {
     [Fact]
+    public async Task EnvelopePlayheadIsQualifiedByOwningGraphAndClearedOnStop()
+    {
+        using var patch = new NestedFaustPatch();
+        var child = patch.ChildId;
+        var session = patch.Session;
+        var envelope = NestedFaustPatch.Add(session, child, EnvelopeGenerator.NodeType);
+        var orphan = NestedFaustPatch.Add(session, child, EnvelopeGenerator.NodeType);
+        var carrier = session.Snapshot.GetGraph(child).GetNode(patch.Frequency.NodeId);
+        session.Execute(new ConnectNodesCommand(child, new(envelope.Id, envelope.Outputs.Single().Id),
+            new(carrier.Id, carrier.Inputs.Single(p => p.Key == "amplitude-modulation-in").Id), 0.2));
+        var compiler = FaustGraphCompiler.CreateBuiltIn();
+        var meter = Assert.Single(compiler.Compile(session.Snapshot).EnvelopeMeters);
+        Assert.Equal(child, meter.GraphId);
+        Assert.Equal(envelope.Id, meter.NodeId);
+        var engine = new RecordingEngine();
+        var service = new FaustGraphPlaybackService(compiler, engine);
+        var playing = service.PlayAsync(session.Snapshot);
+        engine.Outputs = new() { ["/OrbitGraph/" + meter.Name] = 2.125 };
+        var frame = await service.GetTelemetryAsync(session.GraphId);
+        Assert.NotNull(frame);
+        Assert.Equal(new EnvelopePlayhead(EnvelopeStage.Decay, 0.25), frame.EnvelopePlayheads[child][envelope.Id]);
+        Assert.False(frame.EnvelopePlayheads[child].ContainsKey(orphan.Id));
+        Assert.False(frame.EnvelopePlayheads.ContainsKey(session.GraphId));
+        await service.StopAsync(session.GraphId);
+        await playing;
+        Assert.Null(await service.GetTelemetryAsync(session.GraphId));
+    }
+
+    [Fact]
     public async Task ManualActionsUseReachableNestedManifestWithoutMutatingTheGraph()
     {
         using var patch = new NestedFaustPatch();

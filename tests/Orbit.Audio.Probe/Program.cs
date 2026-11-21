@@ -391,7 +391,8 @@ var modesProgram = FaustGraphCompiler.CreateBuiltIn().Compile(modesSession.Snaps
 int ModeTap(GraphNodeSnapshot node) => modesProgram.SignalTaps.Channels[new(modesGraph, modesGraph, node.Id, node.Outputs[0].Id, PortDirection.Output)];
 File.WriteAllText(Path.Combine(args[0], "envelope-modes.json"), JsonSerializer.Serialize(new
 {
-    direct = modeFixtures.ToDictionary(mode => mode.ToString(), mode => $"import(\"stdfaust.lib\"); process(signal,a,d,ac,dc,r,rc,s,rest) = {FaustEnvelopeSegments.Emit(mode, "signal", "a", "d", "ac", "dc", "r", "rc", "s", "rest")};"),
+    direct = modeFixtures.Append(EnvelopeMode.Ad).ToDictionary(mode => mode.ToString(), mode => $"import(\"stdfaust.lib\"); process(signal,a,d,ac,dc,r,rc,s,rest) = {FaustEnvelopeSegments.Emit(mode, "signal", "a", "d", "ac", "dc", "r", "rc", "s", "rest")};"),
+    playheads = modeFixtures.Append(EnvelopeMode.Ad).ToDictionary(mode => mode.ToString() + "Telemetry", mode => $"import(\"stdfaust.lib\"); process(signal,a,d,ac,dc,r,rc,s,rest) = {FaustEnvelopeSegments.Emit(mode, "signal", "a", "d", "ac", "dc", "r", "rc", "s", "rest", "envelope_stage")};"),
     source = modesProgram.Source, values = modesProgram.InitialControlValues(),
     channels = modeNodes.Select(ModeTap).ToArray(), gate = ModeTap(modeGate), actionIndex = modesProgram.RhythmicInputs.ToList().FindIndex(i => i.NodeId == modeGate.Id)
 }));

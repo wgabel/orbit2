@@ -39,6 +39,7 @@ public sealed class FaustGraphCompiler
         var requiresTransportTempo = false;
         var requiresTransportReset = false;
         var actionInputs = new List<(string Name, RhythmicInput Input)>();
+        var envelopeMeters = new List<FaustEnvelopeMeter>();
         var outputExpression = "0.0";
 
         foreach (var node in ordered)
@@ -61,6 +62,11 @@ public sealed class FaustGraphCompiler
 
             var name = $"n_{node.Id:N}";
             var expression = emitter.Emit(context);
+            if (context.EnvelopeMeterName is { } meterName)
+            {
+                var origin = flattened.Origins[node.Id];
+                envelopeMeters.Add(new(origin.GraphId, origin.NodeId, meterName));
+            }
             if (node.SupportsMute || node.BypassInputKey is not null)
                 expression = audition.Apply(node, flattened.Origins[node.Id], context, expression);
             requiresTransportBeat |= context.RequiresTransportBeat;
@@ -132,6 +138,6 @@ public sealed class FaustGraphCompiler
         return new FaustGraphProgram(graph.Id, graph.Revision, source, Array.AsReadOnly(manifest))
             { RequiresTransport = requiresTransportBeat || requiresTransportTempo, TransportInputChannels = transportChannels,
                 RhythmicInputs = actionInputs.Select(input => input.Input).ToArray(), AuditionControls = audition.Manifest,
-                SignalTaps = new SignalTapManifest(tapChannels, outputExpressions.Count) };
+                SignalTaps = new SignalTapManifest(tapChannels, outputExpressions.Count), EnvelopeMeters = envelopeMeters.AsReadOnly() };
     }
 }

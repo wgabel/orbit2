@@ -127,3 +127,9 @@
 .response-effective-key { color: var(--semantic-color-modulation); }
 .response-effective-key[data-response-effective="unavailable"], .response-notice { color: var(--semantic-color-muted); }
 .response-legend span, .response-notice { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; font-size: var(--semantic-typography-caption); }
+
+.envelope-hold { fill: var(--semantic-color-track); }
+.envelope-time-axis { display: flex; justify-content: space-between; gap: var(--semantic-space-tight); margin-block-start: var(--semantic-space-tight); }
+.envelope-segments { display: flex; flex-wrap: wrap; gap: var(--semantic-space-tight); font-size: var(--semantic-typography-caption); color: var(--semantic-color-muted); }
+.envelope-segments span { padding: var(--semantic-space-tight); border: var(--semantic-border-width) solid var(--semantic-color-border); border-radius: var(--semantic-radius-control); }
+.envelope-segments .envelope-stage-active { color: var(--semantic-color-modulation); border-color: var(--semantic-color-modulation); }

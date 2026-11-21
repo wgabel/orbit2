@@ -9,7 +9,7 @@ const faust = process.env.ORBIT_FAUST_DIR;
 const { instantiateFaustModuleFromFile, LibFaust, FaustCompiler, FaustMonoDspGenerator } = await import(pathToFileURL(join(faust, 'dist/esm/index.js')));
 const compiler = new FaustCompiler(new LibFaust(await instantiateFaustModuleFromFile(join(faust, 'libfaust-wasm/libfaust-wasm.js'))));
 const factories = {};
-for (const [mode, source] of Object.entries({...fixture.direct, graph: fixture.source})) factories[mode] = await compiler.createMonoDSPFactory(mode, source, '');
+for (const [mode, source] of Object.entries({...fixture.direct, ...fixture.playheads, graph: fixture.source})) factories[mode] = await compiler.createMonoDSPFactory(mode, source, '');
 const dsp = (rate, mode) => new FaustMonoDspGenerator().createOfflineProcessor(rate, 128, { ...factories[mode], soundfiles: {} });
 const lengthFor = n => Math.ceil(n / 128) * 128;
 const near = (actual, expected, tolerance = .00001) => assert.ok(Math.abs(actual - expected) <= tolerance, `${actual} != ${expected}`);
@@ -18,6 +18,28 @@ const bounded = signal => assert.ok(signal.every(value => Number.isFinite(value)
 
 for (const rate of [44100, 48000]) {
     const ms = value => Math.round(rate * value / 1000);
+    test(`Passive playhead reports actual stages without altering envelope output at ${rate}`, async () => {
+        const n = lengthFor(ms(250));
+        const gate = new Float32Array(n); gate.fill(1, ms(20), ms(140));
+        const controls = params(n, [30, 40, 1, 1, 50, 2, .4, 20]);
+        for (const mode of ['Ad', 'Ar', 'Adsr', 'Loop']) {
+            const input = mode === 'Ad' ? new Float32Array(n) : gate;
+            if (mode === 'Ad') input[ms(20)] = 1;
+            const observed = await dsp(rate, mode + 'Telemetry');
+            const stages = new Set();
+            observed.setOutputParamHandler((path, value) => {
+                if (!path.endsWith('/envelope_stage')) return;
+                assert.ok(Number.isFinite(value) && value >= 0 && value <= 5.5);
+                assert.ok(value - Math.floor(value) <= .5);
+                stages.add(Math.floor(value));
+            });
+            const [actual] = observed.render([input, ...controls], n);
+            const [ordinary] = (await dsp(rate, mode)).render([input, ...controls], n);
+            assert.deepEqual(actual, ordinary);
+            for (const stage of mode === 'Ad' ? [0,1,2] : mode === 'Ar' ? [0,1,3,4] : mode === 'Adsr' ? [0,1,2,3,4] : [1,2,5])
+                assert.ok(stages.has(stage), `missing stage ${stage} in ${mode}: ${[...stages]}`);
+        }
+    });
     test(`AR holds while gate is high and releases from any stage at ${rate}`, async () => {
         const a = ms(8), r = ms(12), firstClose = Math.floor(a / 2), secondOpen = firstClose + Math.floor(r / 3), secondClose = secondOpen + a + 128;
         const n = lengthFor(secondClose + r + 128);

@@ -3,6 +3,7 @@ using Orbit.Application.Graphs.Commands;
 using Orbit.Application.Graphs.Events;
 using Orbit.Application.Graphs.Sessions;
 using Orbit.Application.Persistence;
+using Orbit.Application.Models;
 using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Nodes.Processors;
 using Orbit.Domain.Parameters;
@@ -13,6 +14,67 @@ namespace Orbit.Presentation.Tests;
 
 public sealed class NodeVisualizationTests
 {
+    [Theory]
+    [InlineData(EnvelopeMode.Ad, 2, 508)]
+    [InlineData(EnvelopeMode.Ar, 3, 508)]
+    [InlineData(EnvelopeMode.Adsr, 4, 1008)]
+    [InlineData(EnvelopeMode.Loop, 2, 508)]
+    public void EnvelopePreviewUsesModeSpecificDurationsAndExactEndpoints(EnvelopeMode mode, int stages, double duration)
+    {
+        using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+        var node = session.Execute(new AddNodeCommand(session.GraphId, EnvelopeGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        var selector = node.Parameters.Single(p => p.Definition.Key == EnvelopeGenerator.ModeKey);
+        session.Execute(new SetParameterValueCommand(session.GraphId, new ParameterAddress(node.Id, selector.Id), (int)mode));
+        var preview = EnvelopePreview.Create(session.Snapshot.GetNode(node.Id));
+        Assert.Equal(stages, preview.Segments.Count);
+        Assert.Equal(duration, preview.TimedMilliseconds);
+        Assert.Equal(0, preview.Points.First().Level);
+        Assert.Equal(0, preview.Points.Last().Level);
+        Assert.Equal(1, preview.Points.Last().X, 10);
+        Assert.Equal(1, preview.Segments[0].LevelAt(1));
+        Assert.Equal(mode is EnvelopeMode.Ar or EnvelopeMode.Adsr, preview.HasHold);
+        Assert.Null(preview.PlayheadPosition(new(EnvelopeStage.Idle, 0)));
+        Assert.Equal(preview.Segments[0].End / 2, preview.PlayheadPosition(new(EnvelopeStage.Attack, 0.5))!.Value, 10);
+    }
+
+    [Fact]
+    public void EnvelopeCurveModeAndLoopRestRoundTripWithoutGraphMutation()
+    {
+        var registry = BuiltInNodes.CreateEditorRegistry();
+        using var session = new PatchSession(registry);
+        var node = session.Execute(new AddNodeCommand(session.GraphId, EnvelopeGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        var oscillator = session.Execute(new AddNodeCommand(session.GraphId, OscillatorGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        foreach (var (key, value) in new[] { (EnvelopeGenerator.ModeKey, 3.0), (EnvelopeGenerator.RestKey, 1000.0) })
+            session.Execute(new SetParameterValueCommand(session.GraphId, new ParameterAddress(node.Id, node.Parameters.Single(p => p.Definition.Key == key).Id), value));
+        var preview = EnvelopePreview.Create(session.Snapshot.GetNode(node.Id));
+        Assert.Equal(EnvelopeStage.Rest, preview.Segments.Last().Stage);
+        Assert.Equal(1508, preview.TimedMilliseconds);
+        Assert.Equal(1 - 1000.0 / 1508, preview.Segments.Last().Start, 10);
+        using var navigation = new CanvasNavigationService(session);
+        var settings = NodeVisualizationSettings.Default with { Visible = true, Mode = "envelope", Timebase = "1" };
+        var before = session.Snapshot;
+        navigation.ActiveCanvas.SetVisualization(node.Id, settings);
+        navigation.ActiveCanvas.SetVisualization(oscillator.Id, settings);
+        Assert.Same(before, session.Snapshot);
+        Assert.Equal("waveform", navigation.ActiveCanvas.Snapshot.VisualizationFor(oscillator.Id).Mode);
+        var serializer = new PatchDocumentSerializer();
+        var document = serializer.Deserialize(serializer.Serialize(serializer.Capture(session, 120, session.GraphId, navigation.CaptureLayouts())));
+        using var restored = serializer.Restore(document, registry);
+        using var loaded = new CanvasNavigationService(restored, layouts: document.CanvasLayouts);
+        Assert.Equal(settings, loaded.ActiveCanvas.Snapshot.VisualizationFor(node.Id));
+    }
+
+    [Theory]
+    [InlineData(1.25, EnvelopeStage.Attack, 0.5)]
+    [InlineData(4.5, EnvelopeStage.Release, 1)]
+    [InlineData(5, EnvelopeStage.Rest, 0)]
+    public void PlayheadDecodesBoundedDspStage(double value, EnvelopeStage stage, double progress)
+    {
+        Assert.Equal(new EnvelopePlayhead(stage, progress), EnvelopePlayhead.Decode(value));
+        Assert.Null(EnvelopePlayhead.Decode(1.9));
+        Assert.Null(EnvelopePlayhead.Decode(double.NaN));
+    }
+
     [Fact]
     public void ResponseModeIsAvailableOnlyForSupportedProcessorsAndRoundTrips()
     {
