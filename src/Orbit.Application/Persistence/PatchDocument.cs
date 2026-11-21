@@ -23,6 +23,7 @@ public sealed record SavedComposite(string Name, Guid InputRackId, Guid OutputRa
 public sealed record SavedCanvas(Guid GraphId, double PanX, double PanY, double Zoom, SavedNodePosition[] Positions)
 {
     public SavedNodeVisualization[] Visualizations { get; init; } = [];
+    public ConnectionLabelMode ConnectionLabels { get; init; } = ConnectionLabelMode.All;
     public Guid? ExpandedVisualizationNodeId { get; init; }
 }
 public sealed record SavedNodePosition(Guid NodeId, double X, double Y);
