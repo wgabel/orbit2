@@ -13,3 +13,12 @@
 - If the number is unknown, open the PR and then add the links to the same branch before merge. Distinguish planned, partial, in-review and merged work; never cite a documentation-only PR as implementation evidence. For older direct-to-main changes, cite the actual commit rather than inventing a PR.
 - Prefer one authoritative technical contract with relative links from related modules; avoid duplicating detailed specifications. Preserve useful rationale, examples and historical implementation records, clearly distinguishing them from current contracts. Split or combine modules when the topic warrants it; filenames and target sizes are not rigid requirements.
 - Add regression coverage for changed behavior and report what was actually verified. Scale testing and documentation to the change; a typo or a purely editorial correction need not create a new feature specification.
+
+## Task handoff: documentation feedback
+
+At the end of every task, include a short documentation report in the user-facing summary (or to the coordinating agent when delegated):
+
+- **Documentation consulted:** List the repository-relative paths of Markdown files actually read for the task, including this file, the overview, roadmap and any feature modules consulted. If only specific sections were read, indicate that when useful. Do not claim to have read files you did not inspect. If none were consulted, say so.
+- **Documentation discoverability:** Report whether finding the relevant information was straightforward. Mention any missing topics, unclear navigation, misleading links, conflicting or outdated descriptions, or other search difficulties that affected the task. Say how the gap was resolved (for example, inspecting the source or tests), and flag any useful documentation improvement. If there were no difficulties, say "No issues found."
+
+Keep this report proportionate and factual, including for read-only tasks. It is feedback on the documentation system, not a requirement to read additional files or a reason to delay work on a new topic. When coordinating multiple agents, collect their reports and consolidate the relevant paths and findings in the final handoff.
