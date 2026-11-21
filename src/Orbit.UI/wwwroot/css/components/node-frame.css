@@ -46,12 +46,16 @@
     cursor: pointer;
 }
 .node-header .node-audition-toggle[aria-pressed="true"] {
-    color: var(--audition-active-color);
-    border-color: var(--audition-active-color);
     text-decoration: underline;
 }
-.node-audition-mute { --audition-active-color: var(--component-node-mute-active-color); }
-.node-audition-bypass { --audition-active-color: var(--component-node-bypass-active-color); }
+.node-header .node-audition-mute[aria-pressed="true"] {
+    color: var(--component-node-mute-active-color);
+    border-color: currentColor;
+}
+.node-header .node-audition-bypass[aria-pressed="true"] {
+    color: var(--component-node-bypass-active-color);
+    border-color: currentColor;
+}
 .node-muted .node-ports, .node-muted .node-parameters { opacity: var(--component-node-muted-opacity); }
 .node-bypassed .node-parameters { opacity: var(--component-node-muted-opacity); }
 .node-ports { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--component-node-port-gap); padding-block: var(--component-node-padding); }
