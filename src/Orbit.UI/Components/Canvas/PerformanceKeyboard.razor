@@ -74,7 +74,7 @@
                 <small>Space = Hold, arrows = select step. Step entry wraps; shrinking retains hidden slots.</small>
             </div>
             <div class="workspace-toolbar" role="group" aria-label="Live recording" data-recording="@((take is not null).ToString().ToLowerInvariant())">
-                <label>Take mode <select aria-label="Take mode" disabled="@RecordingLocked" @bind="replaceTake"><option value="false">Overdub</option><option value="true">Replace active slots</option></select></label>
+                <label>Take mode <select aria-label="Take mode" disabled="@RecordingLocked" @bind="takeMode"><option value="0">Overdub</option><option value="1">Replace active slots</option></select></label>
                 <label>Quantize <select aria-label="Recording quantization" disabled="@RecordingLocked" @bind="quantizeSpacing">
                     @foreach (var spacing in Enumerable.Range(1, StepCount).Where(n => StepCount % n == 0))
                     {
@@ -143,8 +143,8 @@
     private string? notice;
     private string? recordingNotice;
     private PitchRecordingTake? take;
-    private bool replaceTake, recordingOperation;
-    private int quantizeSpacing = 1, pendingNotes;
+    private bool recordingOperation;
+    private int takeMode, quantizeSpacing = 1, pendingNotes;
     private bool RecordingLocked => take is not null || recordingOperation;
     private bool CanStartTake => armed && !stepEntry && Offset is not null && Value(NoteSequencerGenerator.LoopKey) == 1;
     private readonly Dictionary<string, int> held = [];
@@ -203,7 +203,7 @@
             var position = await Transport.ReadPlayingPositionAsync();
             if (disposed || !CanStartTake || !baseline.Matches(PitchPattern.FromNode(Node)) || referenceNote != Reference) return;
             if (position is null) { recordingNotice = "Start playback before recording."; return; }
-            take = new PitchRecordingTake(baseline, referenceNote, quantizeSpacing, replaceTake, position);
+            take = new PitchRecordingTake(baseline, referenceNote, quantizeSpacing, takeMode == 1, position);
             recordingNotice = null;
             confirmClear = false;
             focusRequested = true;

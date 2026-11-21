@@ -1171,8 +1171,9 @@ try {
     await pattern.getByRole("button", { name: "Step 1: C5", exact: true }).waitFor();
     await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor();
     const cancelRevision = await responseStatus.innerText();
-    await recording.getByRole("combobox", { name: "Take mode" }).selectOption("true");
+    await recording.getByRole("combobox", { name: "Take mode" }).selectOption("1");
     await recording.getByRole("button", { name: "Record take" }).click();
+    await recording.locator('[data-recorded-slots="0"]').waitFor();
     await pattern.getByRole("button", { name: "Step 2: Hold", exact: true }).waitFor();
     await recording.getByRole("button", { name: "Cancel take" }).click();
     await pattern.getByRole("button", { name: "Step 2: A4", exact: true }).waitFor();
