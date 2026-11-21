@@ -57,6 +57,51 @@ public sealed class NodePresetLibraryService(INodePresetStorage storage, NodePre
         return existing;
     });
 
+    public Task ExportAsync(string id, string nodeType)
+    {
+        var preset = Find(catalog.CustomPresets.ToList(), id, nodeType);
+        return storage.DownloadAsync("orbit2-node-preset.json", NodePresetJsonWriter.WritePortable(preset));
+    }
+
+    /// <summary>Validate file content without modifying the catalog or the graph.</summary>
+    public NodePreset PreviewImport(string json, string nodeType)
+    {
+        var preset = NodePresetJsonReader.ReadPortable(json);
+        ValidateImport(preset, nodeType);
+        return preset;
+    }
+
+    public Task<NodePreset> ImportAsync(NodePreset preset, string nodeType, NodePresetImportMode mode, string? copyName = null) =>
+        EditAsync(presets =>
+        {
+            ValidateImport(preset, nodeType);
+            switch (mode)
+            {
+                case NodePresetImportMode.PreserveIdentity:
+                    if (presets.Any(existing => existing.Id == preset.Id))
+                        throw new InvalidOperationException("A custom preset with this ID already exists. Import a copy or explicitly replace it.");
+                    presets.Add(preset);
+                    return preset;
+                case NodePresetImportMode.Copy:
+                    var copy = new NodePreset(preset.SchemaVersion, Guid.NewGuid().ToString("D"), nodeType,
+                        ValidateName(copyName ?? ""), NodePreset.CustomGroup, preset.Description, preset.Parameters);
+                    presets.Add(copy);
+                    return copy;
+                case NodePresetImportMode.ReplaceMatchingIdentity:
+                    var existing = Find(presets, preset.Id, nodeType);
+                    presets[presets.IndexOf(existing)] = preset;
+                    return preset;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(mode));
+            }
+        });
+
+    private void ValidateImport(NodePreset preset, string nodeType)
+    {
+        catalog.ValidateCustomPreset(preset);
+        if (preset.NodeType != nodeType) throw new ArgumentException("This preset is for a different node type.");
+    }
+
     private async Task<NodePreset> EditAsync(Func<List<NodePreset>, NodePreset> edit)
     {
         await gate.WaitAsync();

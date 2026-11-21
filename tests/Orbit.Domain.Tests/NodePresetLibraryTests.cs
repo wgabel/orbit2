@@ -119,6 +119,95 @@ public sealed class NodePresetLibraryTests
         Assert.Equal(new[] { "First", "Second" }, firstCatalog.GetCustomPresets(node.TypeKey).Select(preset => preset.Name));
     }
 
+    [Fact]
+    public async Task PortableRoundTripPreservesAllValuesAndDoesNotModifyGraph()
+    {
+        var storage = new MemoryStorage();
+        var (catalog, library) = CreateLibrary(storage);
+        await library.LoadAsync();
+        using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+        var node = Add(session, OscillatorGenerator.NodeType);
+        Set(session, node, "frequency", 321);
+        Set(session, node, "timing", (int)OscillatorTimingMode.Synchronized);
+        var snapshot = session.Snapshot;
+        var saved = await library.SaveAsync(snapshot.GetNode(node.Id), "Portable pulse", "A description");
+        var revision = catalog.Revision;
+        await library.ExportAsync(saved.Id, node.TypeKey);
+        Assert.Equal("orbit2-node-preset.json", storage.DownloadName);
+        var (otherCatalog, otherLibrary) = CreateLibrary(new MemoryStorage());
+        await otherLibrary.LoadAsync();
+        var preview = otherLibrary.PreviewImport(storage.Downloaded!, node.TypeKey);
+        Assert.Equal(saved.Id, preview.Id);
+        Assert.Equal(saved.Name, preview.Name);
+        Assert.Equal(saved.Description, preview.Description);
+        Assert.Equal(saved.Parameters.OrderBy(x => x.Key), preview.Parameters.OrderBy(x => x.Key));
+        Assert.Empty(otherCatalog.GetCustomPresets(node.TypeKey));
+        var imported = await otherLibrary.ImportAsync(preview, node.TypeKey, NodePresetImportMode.PreserveIdentity);
+        Assert.Same(imported, otherCatalog.GetPreset(saved.Id));
+        Assert.Equal(321, imported.Parameters["frequency"]);
+        Assert.Same(snapshot, session.Snapshot);
+        Assert.Equal(revision, catalog.Revision);
+    }
+
+    [Fact]
+    public async Task PortableConflictsRequireExplicitCopyOrMatchingIdentityReplacement()
+    {
+        var storage = new MemoryStorage();
+        var (catalog, library) = CreateLibrary(storage);
+        await library.LoadAsync();
+        using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+        var node = Add(session, OscillatorGenerator.NodeType);
+        var saved = await library.SaveAsync(node, "Original");
+        var incoming = new NodePreset(saved.SchemaVersion, saved.Id, saved.NodeType, "Replacement", NodePreset.CustomGroup,
+            "File description", saved.Parameters.ToDictionary(pair => pair.Key, pair => pair.Key == "frequency" ? 333 : pair.Value));
+        var revision = catalog.Revision;
+        var json = storage.Json;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => library.ImportAsync(incoming, node.TypeKey, NodePresetImportMode.PreserveIdentity));
+        await Assert.ThrowsAsync<ArgumentException>(() => library.ImportAsync(
+            new NodePreset(1, Guid.NewGuid().ToString("D"), node.TypeKey, "ORIGINAL", NodePreset.CustomGroup, null, saved.Parameters),
+            node.TypeKey, NodePresetImportMode.PreserveIdentity));
+        await Assert.ThrowsAsync<ArgumentException>(() => library.ImportAsync(incoming, node.TypeKey, NodePresetImportMode.Copy, "ORIGINAL"));
+        Assert.Equal(revision, catalog.Revision);
+        Assert.Equal(json, storage.Json);
+        var copy = await library.ImportAsync(incoming, node.TypeKey, NodePresetImportMode.Copy, "Copied file");
+        Assert.NotEqual(saved.Id, copy.Id);
+        Assert.Same(saved, catalog.GetPreset(saved.Id));
+        var replaced = await library.ImportAsync(incoming, node.TypeKey, NodePresetImportMode.ReplaceMatchingIdentity);
+        Assert.Equal(saved.Id, replaced.Id);
+        Assert.Equal("Replacement", replaced.Name);
+        Assert.Equal(333, replaced.Parameters["frequency"]);
+        Assert.Equal(2, catalog.GetCustomPresets(node.TypeKey).Count);
+        Assert.Equal(440, session.Snapshot.GetNode(node.Id).Parameters.Single(p => p.Definition.Key == "frequency").BaseValue);
+    }
+
+    [Fact]
+    public async Task InvalidPortableFilesAndFailedImportsKeepBothCatalogAndStorageUnchanged()
+    {
+        var storage = new MemoryStorage();
+        var (catalog, library) = CreateLibrary(storage);
+        await library.LoadAsync();
+        using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+        var node = Add(session, OscillatorGenerator.NodeType);
+        var saved = await library.SaveAsync(node, "Original");
+        var portable = NodePresetJsonWriter.WritePortable(saved);
+        var revision = catalog.Revision;
+        var json = storage.Json;
+        Assert.Throws<ArgumentException>(() => library.PreviewImport(portable, GainProcessor.NodeType));
+        Assert.Throws<NotSupportedException>(() => library.PreviewImport(portable.Replace("\"schemaVersion\":1", "\"schemaVersion\":2"), node.TypeKey));
+        Assert.Throws<ArgumentException>(() => library.PreviewImport(portable.Replace("\"frequency\":440", "\"frequency\":99999"), node.TypeKey));
+        Assert.Throws<ArgumentException>(() => library.PreviewImport(portable.Replace("\"frequency\":440,", ""), node.TypeKey));
+        Assert.Throws<ArgumentException>(() => library.PreviewImport(portable.Replace("\"frequency\":440", "\"frequency\":440,\"frequency\":333"), node.TypeKey));
+        Assert.Throws<ArgumentException>(() => library.PreviewImport(NodePresetJsonWriter.WritePortable(catalog.GetPreset("oscillator-deep-sine")), node.TypeKey));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => library.ImportAsync(
+            new NodePreset(1, Guid.NewGuid().ToString("D"), node.TypeKey, "Missing target", NodePreset.CustomGroup, null, saved.Parameters),
+            node.TypeKey, NodePresetImportMode.ReplaceMatchingIdentity));
+        storage.FailWrites = true;
+        await Assert.ThrowsAsync<IOException>(() => library.ImportAsync(saved, node.TypeKey, NodePresetImportMode.Copy, "Failed copy"));
+        Assert.Equal(revision, catalog.Revision);
+        Assert.Equal(json, storage.Json);
+        Assert.Same(saved, catalog.GetPreset(saved.Id));
+    }
+
     private static (NodePresetService Catalog, NodePresetLibraryService Library) CreateLibrary(MemoryStorage storage)
     {
         var catalog = new NodePresetService(new EmbeddedNodePresetCatalog(), new NodePresetValidator(BuiltInNodes.CreateEditorRegistry()));
@@ -136,6 +225,14 @@ public sealed class NodePresetLibraryTests
     {
         public string? Json { get; set; }
         public bool FailWrites { get; set; }
+        public string? DownloadName { get; private set; }
+        public string? Downloaded { get; private set; }
+        public Task DownloadAsync(string name, string json)
+        {
+            DownloadName = name;
+            Downloaded = json;
+            return Task.CompletedTask;
+        }
         public Task<string?> LoadCustomAsync() => Task.FromResult(Json);
         public Task<bool> ReplaceCustomAsync(string? expectedJson, string json)
         {

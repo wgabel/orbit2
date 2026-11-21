@@ -5,4 +5,5 @@ public interface INodePresetStorage
 {
     Task<string?> LoadCustomAsync();
     Task<bool> ReplaceCustomAsync(string? expectedJson, string json);
+    Task DownloadAsync(string name, string json);
 }

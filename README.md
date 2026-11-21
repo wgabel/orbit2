@@ -627,7 +627,17 @@ These configurations use the existing selector, graph commands and audio engine 
 
 Click **…** beside the node's Preset selector to open its shared custom preset manager. Enter a unique name (up to 80 characters) and optional description, then choose **Save as** to capture the node's complete base configuration. Select an existing custom preset in the manager to rename it, explicitly overwrite its values with the current node settings, or delete it. Name uniqueness is case-insensitive within each node type. Built-ins cannot be edited. Close the manager to choose the saved preset in the Custom group on any compatible node. If several presets have identical values, the selector displays the first exact match in catalog order (built-ins first).
 
-The library is browser-local IndexedDB data independent of named patches and autosave. Custom presets are available after reload and when switching patches; saving, renaming, overwriting and deleting never change the graph or its undo history. If another tab changes the library before a write, reload the library and retry. A storage or validation failure preserves the existing configurations. Portable preset JSON import/export follows in Phase 6.17.6.
+The library is browser-local IndexedDB data independent of named patches and autosave. Custom presets are available after reload and when switching patches; saving, renaming, overwriting and deleting never change the graph or its undo history. If another tab changes the library before a write, reload the library and retry. A storage or validation failure preserves the existing configurations.
+
+### Portable node presets (Phase 6.17.6)
+
+In the custom preset manager, choose a saved preset and **Export selected JSON** to download a single versioned configuration. On another browser (or another patch), open the manager for the same node type, choose **Import preset JSON**, review the name, type, schema and description, and select an import action:
+
+- **Import preset** keeps the file's ID and name, rejecting either ID or name conflicts.
+- **Import as copy** creates a new ID and requires a unique copy name.
+- **Replace** appears only if the file's ID matches a custom preset of this type; it explicitly replaces that entry with the file's settings and metadata.
+
+Files must contain a single schema-1 custom preset with all registered parameter keys and valid values, including inactive settings. The manager rejects incompatible types, unknown versions, duplicate keys, invalid values and built-in identities. The file contains no patch, wiring, instance identity or DSP state. Preview, cancellation, export and import do not alter the current node; use the selector to apply the imported configuration as a separate graph edit. Import is limited to 256 KiB and is saved atomically through the existing library transaction.
 
 ### Chorus (Phase 6.15)
 

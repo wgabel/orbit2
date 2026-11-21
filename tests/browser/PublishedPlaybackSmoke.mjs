@@ -136,6 +136,48 @@ try {
     await presetManager.getByLabel("Saved custom preset").selectOption(customId);
     await presetManager.getByRole("button", { name: "Overwrite with current settings" }).click();
     await presetManager.getByText("Updated My renamed carrier.", { exact: true }).waitFor();
+    // Portable JSON is an independent, single-preset file, not a patch or catalog array.
+    const presetDownloadPromise = page.waitForEvent("download");
+    await presetManager.getByRole("button", { name: "Export selected JSON" }).click();
+    const presetDownload = await presetDownloadPromise;
+    const presetFile = await readFile(await presetDownload.path());
+    const portablePreset = JSON.parse(presetFile.toString());
+    assert.equal(portablePreset.id, customId);
+    assert.equal(portablePreset.schemaVersion, 1);
+    assert.equal(portablePreset.nodeType, "generator.oscillator");
+    assert.equal(portablePreset.parameters.frequency, 333);
+    assert.equal(portablePreset.group, "Custom");
+    const importPresetFile = buffer => presetManager.getByLabel("Import preset JSON").setInputFiles({
+        name: "preset.json", mimeType: "application/json", buffer
+    });
+    await importPresetFile(Buffer.from("{}"));
+    await presetManager.getByRole("alert").waitFor();
+    assert.equal(await presetManager.getByRole("button", { name: "Import preset", exact: true }).count(), 0);
+    await importPresetFile(presetFile);
+    await presetManager.getByText("Ready to import: My renamed carrier", { exact: false }).waitFor();
+    await presetManager.getByRole("button", { name: "Import preset", exact: true }).click();
+    await presetManager.getByRole("alert").filter({ hasText: "already exists" }).waitFor();
+    await presetManager.getByLabel("Name for imported copy").fill("Portable copy");
+    await presetManager.getByRole("button", { name: "Import as copy" }).click();
+    await presetManager.getByText("Imported Portable copy.", { exact: true }).waitFor();
+    const copyId = await presetManager.getByLabel("Saved custom preset").inputValue();
+    assert.notEqual(copyId, customId);
+    assert.equal(await rootPreset.locator(`option[value='${copyId}']`).count(), 1);
+    await presetManager.getByRole("button", { name: "Delete selected preset" }).click();
+    await presetManager.getByText("Custom preset deleted; current node unchanged.", { exact: true }).waitFor();
+    assert.equal(await rootPreset.locator(`option[value='${copyId}']`).count(), 0);
+    await importPresetFile(Buffer.from(JSON.stringify({ ...portablePreset, parameters: { ...portablePreset.parameters, frequency: 334 } })));
+    await presetManager.getByRole("button", { name: "Replace My renamed carrier", exact: true }).click();
+    await presetManager.getByText("Imported My renamed carrier.", { exact: true }).waitFor();
+    assert.equal(await frequency.getByRole("spinbutton").inputValue(), "333");
+    // Removing the library entry and importing the original file restores the original ID.
+    await presetManager.getByRole("button", { name: "Delete selected preset" }).click();
+    await presetManager.getByText("Custom preset deleted; current node unchanged.", { exact: true }).waitFor();
+    await importPresetFile(presetFile);
+    await presetManager.getByRole("button", { name: "Import preset", exact: true }).click();
+    await presetManager.getByText("Imported My renamed carrier.", { exact: true }).waitFor();
+    assert.equal(await presetManager.getByLabel("Saved custom preset").inputValue(), customId);
+    assert.equal(await rootPreset.inputValue(), customId);
     await presetManager.getByRole("button", { name: "Close" }).click();
     await undoButton.click();
     assert.equal(await frequency.getByRole("spinbutton").inputValue(), "440");

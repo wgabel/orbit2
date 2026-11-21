@@ -71,12 +71,18 @@ public sealed class NodePresetService
         }
         foreach (var preset in presets)
         {
-            validator.Validate(preset);
-            if (preset.Group != NodePreset.CustomGroup || !Guid.TryParseExact(preset.Id, "D", out var id) ||
-                id == Guid.Empty || id.ToString("D") != preset.Id)
-                throw new ArgumentException("Invalid custom preset identity or group.");
+            ValidateCustomPreset(preset);
             if (!ids.Add(preset.Id)) throw new ArgumentException($"Duplicate preset ID '{preset.Id}'.");
         }
+    }
+
+    internal void ValidateCustomPreset(NodePreset preset)
+    {
+        validator.Validate(preset);
+        if (preset.Group != NodePreset.CustomGroup || !Guid.TryParseExact(preset.Id, "D", out var id) ||
+            id == Guid.Empty || id.ToString("D") != preset.Id || byId.ContainsKey(preset.Id))
+            throw new ArgumentException("Invalid custom preset identity or group.");
+        if (preset.Name.Length > 80) throw new ArgumentException("Enter a preset name of 1–80 characters.");
     }
 
     internal void ReplaceCustomPresets(IReadOnlyList<NodePreset> presets)

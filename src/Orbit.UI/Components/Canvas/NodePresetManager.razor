@@ -1,5 +1,7 @@
 @namespace Orbit.UI.Components.Canvas
 @using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Forms
+@using Orbit.Application.Presets
 
 <section class="workspace-library-panel node-preset-manager" role="region" aria-label="Custom preset manager">
     <div class="workspace-toolbar">
@@ -24,8 +26,27 @@
         <button type="button" class="secondary" @onclick="RenameAsync" disabled="@(!CanManage)">Rename to preset name</button>
         <button type="button" class="secondary" @onclick="OverwriteAsync" disabled="@(!CanManage)">Overwrite with current settings</button>
         <button type="button" class="secondary" @onclick="DeleteAsync" disabled="@(!CanManage)">Delete selected preset</button>
+        <button type="button" class="secondary" @onclick="ExportAsync" disabled="@(!CanManage)">Export selected JSON</button>
         <button type="button" class="secondary" @onclick="RefreshAsync" disabled="@Busy">Reload library</button>
     </div>
+    <label for="preset-import">Import preset JSON</label>
+    <InputFile @key="ImportInputRevision" id="preset-import" OnChange="PreviewImportAsync" accept=".json,application/json" disabled="@Busy" />
+    @if (ImportPreview is { } preview)
+    {
+        <p class="workspace-notice">Ready to import: @preview.Name · @preview.NodeType (schema @preview.SchemaVersion)</p>
+        @if (preview.Description is not null) { <p class="workspace-notice">@preview.Description</p> }
+        <label for="preset-copy-name">Name for imported copy</label>
+        <input id="preset-copy-name" type="text" maxlength="80" @bind="ImportCopyName" @bind:event="oninput" disabled="@Busy" />
+        <div class="workspace-toolbar">
+            <button type="button" @onclick="() => ImportAsync(NodePresetImportMode.PreserveIdentity)" disabled="@(Busy || !Library.IsLoaded)">Import preset</button>
+            <button type="button" class="secondary" @onclick="() => ImportAsync(NodePresetImportMode.Copy)" disabled="@(Busy || !Library.IsLoaded)">Import as copy</button>
+            @if (MatchingImportPreset is { } matching)
+            {
+                <button type="button" class="secondary" @onclick="() => ImportAsync(NodePresetImportMode.ReplaceMatchingIdentity)" disabled="@(Busy || !Library.IsLoaded)">Replace @matching.Name</button>
+            }
+            <button type="button" class="secondary" @onclick="CancelImport" disabled="@Busy">Cancel import</button>
+        </div>
+    }
     @if (Message is not null) { <p class="workspace-notice">@Message</p> }
     @if (Error is not null) { <p class="parameter-error" role="alert">@Error</p> }
 </section>

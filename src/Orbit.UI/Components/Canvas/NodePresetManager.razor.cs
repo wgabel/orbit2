@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Orbit.Application.Graphs.Snapshots;
 using Orbit.Application.Presets;
 
@@ -19,6 +20,11 @@ public partial class NodePresetManager
     private bool Busy { get; set; }
     private string? Message { get; set; }
     private string? Error { get; set; }
+    private NodePreset? ImportPreview { get; set; }
+    private string ImportCopyName { get; set; } = "";
+    private int ImportInputRevision { get; set; }
+    private NodePreset? MatchingImportPreset => Catalog.GetCustomPresets(Node.TypeKey)
+        .FirstOrDefault(preset => preset.Id == ImportPreview?.Id);
     private bool CanManage => !Busy && Library.IsLoaded && Catalog.GetCustomPresets(Node.TypeKey).Any(preset => preset.Id == SelectedId);
 
     private Task RefreshAsync() => RunAsync(async () =>
@@ -53,7 +59,41 @@ public partial class NodePresetManager
         Message = "Custom preset deleted; current node unchanged.";
     });
 
-    private async Task RunAsync(Func<Task> action)
+    private Task ExportAsync() => RunAsync(async () =>
+    {
+        await Library.ExportAsync(SelectedId, Node.TypeKey);
+        Message = "Exported selected preset.";
+    }, libraryChanged: false);
+
+    private Task PreviewImportAsync(InputFileChangeEventArgs args) => RunAsync(async () =>
+    {
+        ImportPreview = null;
+        try
+        {
+            using var stream = args.File.OpenReadStream(256 * 1024);
+            using var reader = new StreamReader(stream);
+            ImportPreview = Library.PreviewImport(await reader.ReadToEndAsync(), Node.TypeKey);
+            ImportCopyName = ImportPreview.Name;
+        }
+        finally { ImportInputRevision++; }
+    }, libraryChanged: false);
+
+    private Task ImportAsync(NodePresetImportMode mode) => RunAsync(async () =>
+    {
+        if (ImportPreview is not { } preview) return;
+        var saved = await Library.ImportAsync(preview, Node.TypeKey, mode, ImportCopyName);
+        SelectedId = saved.Id;
+        ImportPreview = null;
+        Message = $"Imported {saved.Name}.";
+    });
+
+    private void CancelImport()
+    {
+        ImportPreview = null;
+        Error = Message = null;
+    }
+
+    private async Task RunAsync(Func<Task> action, bool libraryChanged = true)
     {
         if (Busy) return;
         Busy = true;
@@ -61,7 +101,7 @@ public partial class NodePresetManager
         try
         {
             await action();
-            await OnLibraryChanged.InvokeAsync();
+            if (libraryChanged) await OnLibraryChanged.InvokeAsync();
         }
         catch (Exception exception) { Error = exception.Message; }
         finally { Busy = false; }
