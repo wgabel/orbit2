@@ -16,6 +16,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
     [Parameter] public EventCallback<GraphParameterTelemetry?> TelemetryChanged { get; set; }
     [Parameter] public EventCallback<double> TempoChanged { get; set; }
     [Parameter] public EventCallback<int?> SampleRateChanged { get; set; }
+    [Parameter] public EventCallback PlaybackStopped { get; set; }
     [Parameter] public bool Disabled { get; set; }
     public bool CanReplaceWorkspace => !IsActive;
 
@@ -120,6 +121,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
             IsStopping = false;
             state = PlaybackState.Idle;
             await PublishTelemetryAsync(null);
+            if (!disposed) await PlaybackStopped.InvokeAsync();
         }
     }
 
@@ -170,6 +172,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
     {
         if (!IsActive || IsStopping) return;
         IsStopping = true;
+        await PlaybackStopped.InvokeAsync();
         await SynchronizeTransportAsync(false);
         await PublishTelemetryAsync(null);
         try { await Playback.StopAsync(activeGraph); }

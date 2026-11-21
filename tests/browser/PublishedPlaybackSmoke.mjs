@@ -1075,6 +1075,40 @@ try {
     await responsePage.getByRole("button", { name: "Stop", exact: true }).click();
     await responseStatus.filter({ hasText: /Ready/ }).waitFor();
 
+    // The live keyboard latches pitch across release and does not edit the graph.
+    await transpose.fill("0");
+    const sequencer = await addResponseNode("generator.note-sequencer");
+    for (const voice of [pitchA, pitchB]) {
+        await sequencer.getByRole("button", { name: "Output: Pitch (Modulation)" }).press("Enter");
+        await voice.getByRole("button", { name: "Input: Pitch (Modulation)" }).press("Enter");
+    }
+    await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
+    await sequencer.locator(".node-header > span").click();
+    const performance = responsePage.getByRole("region", { name: "Performance keyboard" });
+    await performance.getByRole("button", { name: "Arm keyboard" }).click();
+    await responsePage.getByRole("button", { name: "Play patch" }).click();
+    await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
+    const keyboardRevision = await responseStatus.innerText();
+    await performance.locator('[data-live-pitch-offset="0"]').waitFor();
+    await performance.focus();
+    await responsePage.keyboard.press("x");
+    await responsePage.keyboard.down("h");
+    await performance.locator('[data-live-pitch-offset="12"]').waitFor();
+    await responsePage.keyboard.up("h");
+    await waitForLiveHz(pitchA, 220);
+    await waitForLiveHz(pitchB, 330);
+    await frequencyA.focus();
+    await responsePage.keyboard.press("a"); // editing focus must not capture
+    assert.equal(await performance.locator('[data-live-pitch-offset]').getAttribute('data-live-pitch-offset'), "12");
+    await performance.getByRole("button", { name: "Play C5 (A)" }).click();
+    await performance.locator('[data-live-pitch-offset="3"]').waitFor();
+    await performance.getByRole("button", { name: "Reset pitch" }).click();
+    await performance.locator('[data-live-pitch-offset="0"]').waitFor();
+    assert.equal(await responseStatus.innerText(), keyboardRevision);
+    await responsePage.getByRole("button", { name: "Stop", exact: true }).click();
+    await responseStatus.filter({ hasText: /Ready/ }).waitFor();
+    await performance.getByRole("button", { name: "Arm keyboard" }).waitFor();
+
     // The AD generator uses the normal canvas, preset, range and live-control paths.
     await responsePage.getByRole("button", { name: "Patches", exact: true }).click();
     await responseManager.getByRole("button", { name: "New patch" }).click();

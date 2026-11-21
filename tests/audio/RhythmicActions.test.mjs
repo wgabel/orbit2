@@ -42,3 +42,23 @@ test('host bounds pending messages, validates allowed actions and rejects retire
     assert.deepEqual(messages.at(-1), {clear: true});
     assert.equal(source.send(1, 1), false);
 });
+
+test('pitch lanes accept only bounded note/reset codes, seed a replacement and preserve rhythmic actions', () => {
+    const inputs = [{isPitch: true, initialAction: 70}, {allowClose: false}, {allowClose: true}];
+    const queue = new RhythmicActionQueue(inputs);
+    assert.equal(queue.push(0, 130), false);
+    assert.equal(queue.push(0, 0), false);
+    assert.equal(queue.push(1, 70), false);
+    assert.equal(queue.push(1, 2), false);
+    assert.ok(queue.push(0, 128));
+    assert.ok(queue.push(0, 129));
+    assert.ok(queue.push(2, 2));
+    const output = inputs.map(() => new Float32Array(6));
+    assert.deepEqual([...queue.render(output, 0)], [3, 0, 1]);
+    assert.deepEqual(output.map(a => [...a]), [[70,0,128,0,129,0],[0,0,0,0,0,0],[2,0,0,0,0,0]]);
+    const source = new RhythmicActionSource({port: {postMessage() {}, close() {}}, disconnect() {}}, inputs);
+    assert.equal(source.pending[0], 1);
+    assert.equal(source.send(1, 70), false);
+    assert.equal(source.send(0, 129), true);
+    assert.equal(source.send(0, 129.5), false);
+});

@@ -43,6 +43,12 @@ public partial class GraphWorkspace : IDisposable
     private long rangeRevision = -1;
     private Guid rangeGraphId;
     private GraphParameterTelemetry? telemetry;
+    private long performanceEpoch;
+    private GraphNodeSnapshot? PerformanceTarget => Canvas.Snapshot.SelectedNodeIds.Count == 1
+        ? Canvas.Snapshot.Graph.Nodes.SingleOrDefault(node => node.Id == Canvas.Snapshot.SelectedNodeIds[0] && node.TypeKey == NoteSequencerGenerator.NodeType) : null;
+    private double? PerformanceOffset(Guid nodeId) => telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision &&
+        frame.PitchOffsets.TryGetValue(Canvas.Snapshot.GraphId, out var offsets) && offsets.TryGetValue(nodeId, out var value) ? value : null;
+    private void DisarmPerformance() => performanceEpoch++;
     private int? responseSampleRate;
     private IReadOnlyDictionary<ParameterAddress, double> EffectiveValues =>
         telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision

@@ -35,8 +35,12 @@ else
         <button type="button" disabled="@(addingNode || switchingWorkspace)" @onclick="AddNodeAsync">Add</button>
         <button type="button" class="secondary" disabled="@(!HasSelection)" @onclick="DeleteSelection">Delete selected</button>
         </div>
-        <GraphPlaybackControls @key="workspaceGeneration" @ref="playbackControls" Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" TempoChanged="OnTempoChanged" SampleRateChanged="OnSampleRateChanged" Disabled="switchingWorkspace" />
+        <GraphPlaybackControls @key="workspaceGeneration" @ref="playbackControls" Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" TempoChanged="OnTempoChanged" SampleRateChanged="OnSampleRateChanged" PlaybackStopped="DisarmPerformance" Disabled="switchingWorkspace" />
     </div>
+    @if (PerformanceTarget is { } target)
+    {
+        <PerformanceKeyboard @key="(workspaceGeneration, graphId, target.Id, performanceEpoch)" Node="@target" PatchId="@session.GraphId" GraphId="@graphId" Offset="@PerformanceOffset(target.Id)" />
+    }
     @if (Error is not null)
     {
         <p class="parameter-error workspace-error" role="alert">@Error</p>

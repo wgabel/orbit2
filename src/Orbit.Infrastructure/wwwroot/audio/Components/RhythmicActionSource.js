@@ -1,4 +1,4 @@
-import { MAX_ACTIONS, MAX_RHYTHMIC_INPUTS } from './RhythmicActionQueue.js';
+import { MAX_ACTIONS, MAX_RHYTHMIC_INPUTS, validAction } from './RhythmicActionQueue.js';
 
 // One bounded, generation-owned source per actual Faust voice, not per UI node.
 const modules = new WeakMap();
@@ -17,7 +17,7 @@ export class RhythmicActionSource {
         const node = new AudioWorkletNode(context, 'orbit-rhythmic-actions', {
             numberOfInputs: phaseChannels ? 1 : 0,
             numberOfOutputs: 1, channelCount: Math.max(1, phaseChannels), channelCountMode: 'explicit', channelInterpretation: 'discrete',
-            outputChannelCount: [phaseChannels + inputs.length], processorOptions: { count: inputs.length, phaseChannels }
+            outputChannelCount: [phaseChannels + inputs.length], processorOptions: { inputs, phaseChannels }
         });
         try {
             target.channelInterpretation = 'discrete';
@@ -30,6 +30,7 @@ export class RhythmicActionSource {
         this.node = node;
         this.inputs = inputs;
         this.pending = new Uint16Array(inputs.length);
+        inputs.forEach((input, index) => { if (input.isPitch && validAction(input, input.initialAction)) this.pending[index] = 1; });
         this.active = true;
         node.port.onmessage = ({ data }) => {
             if (this.active && data.length === this.pending.length)
@@ -39,7 +40,7 @@ export class RhythmicActionSource {
 
     send(index, action) {
         const input = this.inputs[index];
-        if (!this.active || !Number.isInteger(index) || !input || (action !== 1 && (action !== 2 || !input.allowClose)) || this.pending[index] >= MAX_ACTIONS)
+        if (!this.active || !Number.isInteger(index) || !validAction(input, action) || this.pending[index] >= MAX_ACTIONS)
             return false;
         this.pending[index]++;
         this.node.port.postMessage({ index, action });

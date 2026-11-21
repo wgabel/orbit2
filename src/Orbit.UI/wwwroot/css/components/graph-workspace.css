@@ -49,6 +49,12 @@
 .canvas-caption button { padding: var(--component-workspace-toolbar-button-block) var(--component-workspace-toolbar-button-inline); font-size: var(--semantic-typography-label); }
 .canvas-caption select { font-size: var(--semantic-typography-label); }
 .playback-toolbar { flex: 1 1 auto; }
+.performance-keyboard { padding: var(--semantic-space-compact); border: var(--semantic-border-width) solid var(--semantic-color-border); border-radius: var(--semantic-radius-control); }
+.performance-piano { display: flex; flex-wrap: wrap; gap: var(--semantic-space-tight); }
+.performance-piano button { display: grid; gap: var(--semantic-space-tight); text-align: center; padding: var(--semantic-space-compact); }
+.performance-piano .performance-white-key { background: var(--semantic-color-text); color: var(--semantic-color-canvas); }
+.performance-piano .performance-black-key { background: var(--semantic-color-canvas); color: var(--semantic-color-text); }
+.performance-piano button:active { background: var(--semantic-color-modulation); color: var(--semantic-color-canvas); }
 .transport-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--component-workspace-toolbar-gap); flex-basis: 100%; }
 .transport-controls input[type="number"] { width: var(--component-workspace-tempo-width); }
 .transport-rates { margin-inline-start: auto; }

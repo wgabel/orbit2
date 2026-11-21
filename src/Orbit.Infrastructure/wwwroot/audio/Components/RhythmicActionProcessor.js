@@ -4,7 +4,7 @@ class RhythmicActionProcessor extends AudioWorkletProcessor {
     constructor(options) {
         super();
         this.phaseChannels = options.processorOptions.phaseChannels;
-        this.queue = new RhythmicActionQueue(options.processorOptions.count);
+        this.queue = new RhythmicActionQueue(options.processorOptions.inputs);
         this.port.onmessage = ({ data }) => {
             if (data.clear) this.queue.clear();
             else this.queue.push(data.index, data.action);

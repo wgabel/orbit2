@@ -3,15 +3,23 @@
 export const MAX_ACTIONS = 64;
 export const MAX_RHYTHMIC_INPUTS = 30;
 
+export function validAction(input, action) {
+    return input && Number.isInteger(action) && (input.isPitch ? action >= 1 && action <= 129 :
+        action === 1 || (action === 2 && input.allowClose));
+}
+
 export class RhythmicActionQueue {
-    constructor(count) {
-        this.lanes = Array.from({ length: count }, () => ({ values: new Uint8Array(MAX_ACTIONS), head: 0, size: 0, gap: false }));
-        this.consumed = new Uint16Array(count);
+    constructor(inputs) {
+        this.inputs = typeof inputs === 'number' ? Array.from({ length: inputs }, () => ({allowClose: true})) : inputs;
+        this.lanes = this.inputs.map(() => ({ values: new Uint8Array(MAX_ACTIONS), head: 0, size: 0, gap: false }));
+        this.consumed = new Uint16Array(this.inputs.length);
+        for (let index = 0; index < this.inputs.length; index++)
+            if (this.inputs[index].isPitch && this.inputs[index].initialAction) this.push(index, this.inputs[index].initialAction);
     }
 
     push(index, action) {
         const lane = this.lanes[index];
-        if (!lane || (action !== 1 && action !== 2) || lane.size >= MAX_ACTIONS) return false;
+        if (!lane || !validAction(this.inputs[index], action) || lane.size >= MAX_ACTIONS) return false;
         lane.values[(lane.head + lane.size++) % MAX_ACTIONS] = action;
         return true;
     }
