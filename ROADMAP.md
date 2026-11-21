@@ -15,7 +15,7 @@
 | Recovery, named patches, portable JSON, undo/redo | Implemented · 6.8–6.11 | [Persistence](docs/editor/persistence-and-history.md) |
 | Mute/bypass and individual presets | Implemented · 6.16–6.17 | [Audition](docs/editor/audition.md), [presets](docs/editor/node-presets.md) |
 | Scope, spectrum, level and filter/EQ response | Implemented · 6.18.1–6.18.5; dedicated analyzer and advanced history planned | [Visualizations](docs/editor/visualizations.md), [observation](docs/audio/signal-observation.md); [PR #4](https://github.com/wgabel/orbit2/pull/4) |
-| Demand-driven signal tap allocation | Planned · urgent 6.18.8 | [Observation](docs/audio/signal-observation.md); [PR #15](https://github.com/wgabel/orbit2/pull/15) is design documentation only |
+| Demand-driven signal tap allocation | In review · 6.18.8 | [Observation](docs/audio/signal-observation.md); [PR #15](https://github.com/wgabel/orbit2/pull/15) (design), [PR #20](https://github.com/wgabel/orbit2/pull/20) (implementation) |
 | Cable badges, per-canvas preferences, anchored editing | Implemented core · 6.19.5; annotations and optional refinements planned | [Annotations and connections](docs/editor/annotations-and-connections.md); [PR #1](https://github.com/wgabel/orbit2/pull/1), [#2](https://github.com/wgabel/orbit2/pull/2), [#3](https://github.com/wgabel/orbit2/pull/3) |
 | Shared semitone tracking and Pitch Control | Implemented · 7.2.2 | [Pitch control](docs/instruments/pitch-control.md); [PR #6](https://github.com/wgabel/orbit2/pull/6) |
 | AD envelope and typed Trigger/Gate/Clock ports/adapters | Implemented · 7.1.1–7.1.2 | [Envelopes](docs/audio/envelopes.md); [PR #7](https://github.com/wgabel/orbit2/pull/7), [#8](https://github.com/wgabel/orbit2/pull/8) |
@@ -40,7 +40,7 @@ Keep identifiers stable even when independent milestones ship out of numerical o
 | Track | Delivered now | Next work |
 |---|---|---|
 | Foundation and editor | 1–5; 6.1–6.17 | Deferred version-aware reload / additional graph reuse |
-| Visualization | 6.18.1–6.18.5 | **6.18.8 urgent bug fix — dynamic signal taps (next implementation priority)**; then 6.18.6 analyzer sink, 6.18.7 advanced comparisons and profiling |
+| Visualization | 6.18.1–6.18.5 | 6.18.8 dynamic signal taps in review ([PR #20](https://github.com/wgabel/orbit2/pull/20)); then 6.18.6 analyzer sink, 6.18.7 advanced comparisons and profiling |
 | Patch organization | 6.19.5 core; 6.19.6 boundary visibility | 6.19.1–6.19.4 notes, descriptions, groups, discovery; optional badge refinements |
 | Rhythmic articulation | 7.1.1–7.1.5 | 7.1.6–7.1.7 |
 | Keyboard and sequencing | 7.2.2 shared pitch; 7.2.8a–c live pitch, loops and recording ([PR #19](https://github.com/wgabel/orbit2/pull/19)) | 7.2.3 and 7.2.8d for event/gated articulation |
@@ -49,7 +49,7 @@ Keep identifiers stable even when independent milestones ship out of numerical o
 | Performance and diagnostics | Existing clock, playback lifecycle and signal observation foundations | 7.3.1–7.3.4 passive monitor, compilation/UI metrics and profiling; 7.3.5 musical timing; 7.3.6 reports and regressions ([specification](performance.md)) |
 | Audio assets | Design only | Phase 8 |
 
-**Immediate priority:** fix the signal tap allocation regression (6.18.8) before continuing feature work. A single visible plot on a reachable signal must work even in a large patch; the capacity must limit simultaneous observed signals, not the size of the graph. This fix is independent of the analyzer sink and Phase 7.3.
+**Immediate priority:** review and merge the signal tap allocation regression fix (6.18.8, [PR #20](https://github.com/wgabel/orbit2/pull/20)) before continuing feature work. A single visible plot on a reachable signal must work even in a large patch; the capacity must limit simultaneous observed signals, not the size of the graph. This fix is independent of the analyzer sink and Phase 7.3.
 
 The most direct drone-performance path is 7.2.2 and 7.2.8a–b (delivered) → 7.2.8c (delivered, [PR #19](https://github.com/wgabel/orbit2/pull/19)). Gated instruments depend on rhythmic sources, ADSR and monophonic note delivery. Presentation-only annotations, dedicated analysis and the post-mixer pitch shifter can proceed independently.
 

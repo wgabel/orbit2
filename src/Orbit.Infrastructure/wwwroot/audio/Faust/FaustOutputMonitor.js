@@ -12,7 +12,13 @@ export class FaustOutputMonitor {
     }
 
     getSnapshot() {
-        return Object.fromEntries(this.#values);
+        return Object.fromEntries([...this.#values].filter(([path]) => !path.includes("/orbit_tap_ack_")));
+    }
+
+    getTapAcknowledgement(slot) {
+        for (const [path, value] of this.#values)
+            if (path.endsWith(`/orbit_tap_ack_${slot}`)) return value;
+        return undefined;
     }
 
     dispose() {

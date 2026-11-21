@@ -163,6 +163,11 @@ export class AudioEngine {
         return !playback || playback.cancelled ? null : playback.current?.monitor.getSnapshot() ?? null;
     }
 
+    getSignalDiagnostics(soundId) {
+        const playback = this.#active.get(soundId);
+        return !playback || playback.cancelled ? null : playback.current?.voice.getSignalDiagnostics() ?? null;
+    }
+
     readSignal(soundId, generation, subscription, channel) {
         return this.#readSignal(soundId, generation, subscription, channel, false);
     }
@@ -171,20 +176,27 @@ export class AudioEngine {
         return this.#readSignal(soundId, generation, subscription, channel, true);
     }
 
-    #readSignal(soundId, generation, subscription, channel, fullWindow) {
-        const playback = this.#active.get(soundId);
-        const current = playback?.current;
-        if (!current || playback.cancelled || current.generation !== generation) return null;
-        playback.subscriptions ??= new Set();
-        if (!playback.subscriptions.has(subscription) && playback.subscriptions.size >= SignalCapture.MaxLeases)
-            return null;
-        playback.subscriptions.add(subscription);
-        return (fullWindow ? current.voice.readSignalWindow?.(subscription, channel, generation)
-            : current.voice.readSignal?.(subscription, channel, generation)) ?? null;
+    readObservation(soundId, generation, subscription, selector, fullWindow = false) {
+        const playback = this.#active.get(soundId), current = playback?.current;
+        if (!current || playback.cancelled || current.generation !== generation)
+            return { availability: 2, frame: null };
+        const result = current.voice.observeSignal(subscription, selector, generation);
+        if (result.availability === 2 || result.availability === 3) {
+            playback.subscriptions ??= new Set();
+            playback.subscriptions.add(subscription);
+        } else playback.subscriptions?.delete(subscription);
+        if (result.frame && !fullWindow)
+            return { ...result, frame: { ...result.frame, samples: Array.from(result.frame.samples.subarray(-SignalCapture.WindowSize)) } };
+        return result;
     }
 
-    releaseSignal(soundId, subscription) {
+    #readSignal(soundId, generation, subscription, channel, fullWindow) {
+        return this.readObservation(soundId, generation, subscription, channel, fullWindow).frame;
+    }
+
+    releaseSignal(soundId, subscription, generation = null) {
         const playback = this.#active.get(soundId);
+        if (generation !== null && playback?.current?.generation !== generation) return;
         playback?.subscriptions?.delete(subscription);
         playback?.current?.voice.releaseSignal?.(subscription);
     }
@@ -246,8 +258,13 @@ export class AudioEngine {
     #startVoice(playback, node, request, transition) {
         let voice, monitor;
         try {
-            voice = this.#output.createVoice(playback.context, node, request.outputChannels ?? 1);
             monitor = this.#createMonitor(node);
+            const routing = request.tapSelectorCount > 0 ? {
+                selectorCount: request.tapSelectorCount,
+                write: (slot, value) => this.#nodeFactory.setParameters(node, { [`orbit_tap_select_${slot}`]: value }),
+                ack: slot => monitor.getTapAcknowledgement(slot)
+            } : null;
+            voice = this.#output.createVoice(playback.context, node, request.outputChannels ?? 1, routing);
             const instance = { node, voice, monitor, generation: request.generation };
             const lifetime = voice.play(request, transition);
             instance.finished = Promise.resolve(lifetime).finally(() => {
@@ -279,6 +296,8 @@ export class AudioEngine {
             !Number.isFinite(request.volume) || request.volume < 0 || request.volume > 1 ||
             (request.outputChannels != null && (!Number.isInteger(request.outputChannels) ||
                 request.outputChannels < 1 || request.outputChannels > SignalCapture.MaxChannels)) ||
+            (request.tapSelectorCount != null && (!Number.isInteger(request.tapSelectorCount) || request.tapSelectorCount < 0 ||
+                request.tapSelectorCount >= 16777215)) ||
             (request.source != null && (typeof request.source !== "string" || !request.source.trim())) ||
             (request.transportInputChannels != null && (!Number.isInteger(request.transportInputChannels) || request.transportInputChannels < 0 || request.transportInputChannels > 2)) ||
             (request.rhythmicInputs != null && (!Array.isArray(request.rhythmicInputs) || request.rhythmicInputs.length > 30)) ||

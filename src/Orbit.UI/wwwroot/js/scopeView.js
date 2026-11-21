@@ -98,7 +98,7 @@ class ScopeView {
     };
 
     #release() {
-        if (this.#binding?.soundId) this.#audio.releaseSignal(this.#binding.soundId, this.#lease);
+        if (this.#binding?.soundId) this.#audio.releaseSignal(this.#binding.soundId, this.#lease, this.#binding.generation);
         this.#binding = null;
     }
 
@@ -133,15 +133,18 @@ class ScopeView {
         const binding = this.#binding;
         if (!binding || binding.availability !== 3) {
             this.#clear(binding?.availability === 0 ? "Playback stopped" :
-                binding?.availability === 1 ? "Tap unavailable · unrouted or capacity limit" : "Waiting for signal");
+                binding?.availability === 1 ? "Signal unrouted or inactive" :
+                binding?.availability === 5 ? "Capture unsupported" : "Waiting for signal");
             return;
         }
-        let frame;
-        try { frame = this.#audio.readSignalWindow(binding.soundId, binding.generation, this.#lease, binding.channel); }
+        let result;
+        try { result = this.#audio.readObservationWindow(binding.soundId, binding.generation, this.#lease, binding.channel); }
         catch { this.#clear("Capture unavailable"); return; }
+        const frame = result.frame;
         if (!frame || frame.generation !== binding.generation) {
             this.#history.clear();
-            this.#clear("Waiting for signal");
+            this.#clear(result.availability === 4 ? (result.reason === 'slots' ? `Tap capacity reached · ${result.occupiedSlots}/${result.occupiedSlots + result.freeSlots} occupied` : 'Capture view limit reached') :
+                result.availability === 5 ? "Capture unsupported" : "Waiting for signal");
             return;
         }
         const levels = measureLevels(frame.samples, Math.max(0, frame.samples.length - Math.round(frame.sampleRate * 0.02)));

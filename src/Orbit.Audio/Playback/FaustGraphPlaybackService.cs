@@ -17,14 +17,14 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
     // Leave headroom at the browser output in addition to graph-defined gain.
     private const double PlaybackVolume = 0.5;
     private readonly ConcurrentDictionary<Guid, ActiveGraphPlayback> active = new();
-    private int TapCapacity => engine is ISignalCapture ? SignalTapManifest.MaxAuxiliaryChannels : 0;
+    private int TapCapacity => Capture?.SupportsDynamicTaps == true ? SignalTapManifest.MaxAuxiliaryChannels : 0;
     private ISignalCapture? Capture => engine as ISignalCapture;
 
     public Task InitializeAsync() => engine.InitializeAsync();
 
     public async Task PlayAsync(GraphSnapshot graph)
     {
-        var program = compiler.Compile(graph, TapCapacity);
+        var program = compiler.Compile(graph, TapCapacity, Capture?.SupportsDynamicTaps == true);
         var playback = new ActiveGraphPlayback(graph, program);
         if (!active.TryAdd(graph.Id, playback))
             throw new InvalidOperationException("Graph playback is already active.");
@@ -64,7 +64,7 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
             // Compiling a different topology can still produce identical DSP,
             // e.g. adding an unconnected node. Preserve the existing voice then.
             var program = GraphTopology.Matches(playback.Topology, graph)
-                ? playback.Program : compiler.Compile(graph, TapCapacity);
+                ? playback.Program : compiler.Compile(graph, TapCapacity, Capture?.SupportsDynamicTaps == true);
             var values = GetControlValues(graph, program);
             if (program.Source != playback.Program.Source)
             {
@@ -202,32 +202,34 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
 
     public SignalObservationBinding Resolve(SignalObservationAddress address)
     {
-        if (engine is not ISignalCapture ||
-            !active.TryGetValue(address.PatchId, out var playback) || playback.Stopping)
+        if (!active.TryGetValue(address.PatchId, out var playback) || playback.Stopping)
             return new(SignalObservationAvailability.Inactive);
-        return playback.Program.SignalTaps.Channels.TryGetValue(address, out var channel)
-            ? new(SignalObservationAvailability.Available, SoundId(address.PatchId), playback.Generation, channel)
+        if (Capture?.SupportsDynamicTaps != true) return new(SignalObservationAvailability.Unsupported);
+        var accepted = playback.Accepted;
+        return accepted.Program.SignalTaps.ObservationIds.TryGetValue(address, out var channel)
+            ? new(SignalObservationAvailability.Available, SoundId(address.PatchId), accepted.Generation, channel)
             : new(SignalObservationAvailability.Unavailable);
     }
 
     private async Task<SignalObservationResult> ReadSignalAsync(SignalObservationAddress address, Guid subscriptionId)
     {
-        if (engine is not ISignalCapture capture ||
-            !active.TryGetValue(address.PatchId, out var playback) || playback.Stopping)
+        if (!active.TryGetValue(address.PatchId, out var playback) || playback.Stopping)
             return new(SignalObservationAvailability.Inactive);
-        var generation = playback.Generation;
-        var program = playback.Program;
-        if (!program.SignalTaps.Channels.TryGetValue(address, out var channel))
+        if (Capture is not { SupportsDynamicTaps: true } capture) return new(SignalObservationAvailability.Unsupported);
+        var accepted = playback.Accepted;
+        var generation = accepted.Generation;
+        var program = accepted.Program;
+        if (!program.SignalTaps.ObservationIds.TryGetValue(address, out var channel))
         {
             await capture.ReleaseSignalAsync(SoundId(address.PatchId), subscriptionId);
             return new(SignalObservationAvailability.Unavailable);
         }
-        var frame = await capture.ReadSignalAsync(SoundId(address.PatchId), generation, subscriptionId, channel);
-        if (frame is null || frame.Generation != generation || playback.Stopping ||
+        var result = await capture.ReadObservationAsync(SoundId(address.PatchId), generation, subscriptionId, channel);
+        if ((result.Frame is not null && result.Frame.Generation != generation) || playback.Stopping ||
             !active.TryGetValue(address.PatchId, out var current) || !ReferenceEquals(current, playback) ||
             generation != playback.Generation || !ReferenceEquals(program, playback.Program))
             return new(SignalObservationAvailability.Pending);
-        return new(SignalObservationAvailability.Available, frame);
+        return result;
     }
 
     private sealed class SignalSubscription(FaustGraphPlaybackService owner, SignalObservationAddress address)
@@ -267,7 +269,7 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
         new(SoundId(program.GraphId), "OrbitGraph", PlaybackVolume,
             values ?? program.InitialControlValues(),
             Source: program.Source, RequiresTransport: program.RequiresTransport,
-            OutputChannels: program.SignalTaps.ChannelCount, Generation: generation,
+            OutputChannels: program.SignalTaps.ChannelCount, Generation: generation, TapSelectorCount: program.SignalTaps.SelectorCount,
             TransportInputChannels: program.TransportInputChannels, RhythmicInputs: program.RhythmicInputs.Select(input => input.IsPitch && pitchActions is not null &&
                 pitchActions.TryGetValue((input.GraphId, input.NodeId), out var code) ? input with { InitialAction = code } : input).ToArray());
 

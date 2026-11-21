@@ -18,7 +18,7 @@ public sealed class FaustGraphCompiler
     public static FaustGraphCompiler CreateBuiltIn() =>
         new(BuiltInFaustEmitters.Create());
 
-    public FaustGraphProgram Compile(GraphSnapshot graph, int auxiliaryChannels = 0)
+    public FaustGraphProgram Compile(GraphSnapshot graph, int auxiliaryChannels = 0, bool dynamicTaps = false)
     {
         if (auxiliaryChannels < 0 || auxiliaryChannels > SignalTapManifest.MaxAuxiliaryChannels)
             throw new ArgumentOutOfRangeException(nameof(auxiliaryChannels));
@@ -32,6 +32,13 @@ public sealed class FaustGraphCompiler
         var incoming = graph.Connections.ToLookup(edge => edge.Destination);
         var signals = new Dictionary<PortAddress, string>();
         var inputSignals = new Dictionary<PortAddress, string>();
+        var tapIdentities = new Dictionary<PortAddress, string>();
+        string InputIdentity(PortAddress port, string expression)
+        {
+            var edges = incoming[port].ToArray();
+            return edges.Length == 1 && edges[0].Amount == 1 && tapIdentities.TryGetValue(edges[0].Source, out var identity)
+                ? identity : expression;
+        }
         var controls = new List<FaustParameterControl>();
         var definitions = new List<string>();
         var audition = new FaustAuditionControls(definitions);
@@ -42,16 +49,23 @@ public sealed class FaustGraphCompiler
         var envelopeMeters = new List<FaustEnvelopeMeter>();
         var pitchMeters = new List<FaustPitchMeter>();
         var outputExpression = "0.0";
+        var masterIdentity = "0.0";
 
         foreach (var node in ordered)
         {
             var context = new FaustNodeContext(node, incoming, signals, controls, definitions);
             if (auxiliaryChannels > 0)
                 foreach (var port in node.Inputs.Where(port => node.IsInputActive(port.Id)))
-                    inputSignals.Add(new PortAddress(node.Id, port.Id), context.InputSignal(port.Id));
+                {
+                    var address = new PortAddress(node.Id, port.Id);
+                    var inputExpression = context.InputSignal(port.Id);
+                    inputSignals.Add(address, inputExpression);
+                    tapIdentities.Add(address, InputIdentity(address, inputExpression));
+                }
             if (node.Id == outputs[0].Id)
             {
                 outputExpression = context.Input("audio-in");
+                masterIdentity = InputIdentity(new(node.Id, node.Inputs.Single().Id), outputExpression);
                 continue;
             }
 
@@ -87,12 +101,17 @@ public sealed class FaustGraphCompiler
             }
             definitions.Add($"{name} = {expression};");
             signals.Add(new PortAddress(node.Id, node.Outputs[0].Id), name);
+            if (auxiliaryChannels > 0)
+                tapIdentities.Add(new(node.Id, node.Outputs[0].Id),
+                    node.TypeKey == BoundaryFaustEmitter.NodeType && !node.SupportsMute
+                        ? tapIdentities[new(node.Id, node.Inputs.Single().Id)] : name);
         }
 
         var tapChannels = new Dictionary<SignalObservationAddress, int>();
         var outputExpressions = new List<string> { outputExpression };
         if (auxiliaryChannels > 0)
         {
+            var catalog = new Dictionary<string, int>(StringComparer.Ordinal) { [masterIdentity] = 0 };
             // Prefer reachable outputs, then weighted inputs; aliases share a channel.
             var candidates = flattened.Endpoints.Select(pair =>
             {
@@ -100,7 +119,8 @@ public sealed class FaustGraphCompiler
                 if (!isOutput) inputSignals.TryGetValue(pair.Value, out signal);
                 return (Address: new SignalObservationAddress(graph.Id, pair.Key.GraphId,
                     pair.Key.Address.NodeId, pair.Key.Address.PortId,
-                    isOutput ? PortDirection.Output : PortDirection.Input), Signal: signal);
+                    isOutput ? PortDirection.Output : PortDirection.Input), Signal: signal,
+                    Identity: tapIdentities.GetValueOrDefault(pair.Value));
             }).Where(candidate => candidate.Signal is not null)
                 .OrderByDescending(candidate => candidate.Address.Direction)
                 .ThenBy(candidate => candidate.Signal == "0.0")
@@ -108,14 +128,32 @@ public sealed class FaustGraphCompiler
                 .ThenBy(candidate => candidate.Address.PortId);
             foreach (var candidate in candidates)
             {
-                var channel = outputExpressions.IndexOf(candidate.Signal!);
+                var channel = dynamicTaps ? catalog.GetValueOrDefault(candidate.Identity!, -1) : outputExpressions.IndexOf(candidate.Signal!);
                 if (channel < 0)
                 {
-                    if (outputExpressions.Count > auxiliaryChannels) continue;
+                    if (!dynamicTaps && outputExpressions.Count > auxiliaryChannels) continue;
                     channel = outputExpressions.Count;
                     outputExpressions.Add(candidate.Signal!);
+                    if (dynamicTaps) catalog.Add(candidate.Identity!, channel);
                 }
                 tapChannels.Add(candidate.Address, channel);
+            }
+        }
+        var selectorCount = 0;
+        if (dynamicTaps && outputExpressions.Count > 1)
+        {
+            // A single exact integer carries both assignment identity and selector.
+            // The passive meter echoes that same value from the rendered DSP.
+            selectorCount = outputExpressions.Count - 1;
+            var stride = selectorCount + 1;
+            var candidates = string.Join(", ", new[] { "0.0" }.Concat(outputExpressions.Skip(1)));
+            var slots = Math.Min(auxiliaryChannels, selectorCount);
+            outputExpressions = [outputExpression];
+            for (var slot = 1; slot <= slots; slot++)
+            {
+                var control = $"orbit_tap_select_{slot}";
+                definitions.Add($"{control} = hslider(\"{control}\", 0, 0, 16777215, 1);");
+                outputExpressions.Add($"attach(({candidates}):ba.selectn({stride}, int({control})%{stride}), {control}:hbargraph(\"orbit_tap_ack_{slot}\", 0, 16777215))");
             }
         }
         outputExpression = string.Join(", ", outputExpressions);
@@ -145,6 +183,6 @@ public sealed class FaustGraphCompiler
         return new FaustGraphProgram(graph.Id, graph.Revision, source, Array.AsReadOnly(manifest))
             { RequiresTransport = requiresTransportBeat || requiresTransportTempo || actionInputs.Any(input => input.Input.Pattern is not null), TransportInputChannels = transportChannels,
                 RhythmicInputs = actionInputs.Select(input => input.Input).ToArray(), AuditionControls = audition.Manifest,
-                SignalTaps = new SignalTapManifest(tapChannels, outputExpressions.Count), EnvelopeMeters = envelopeMeters.AsReadOnly(), PitchMeters = pitchMeters.AsReadOnly() };
+                SignalTaps = new SignalTapManifest(tapChannels, outputExpressions.Count, selectorCount), EnvelopeMeters = envelopeMeters.AsReadOnly(), PitchMeters = pitchMeters.AsReadOnly() };
     }
 }

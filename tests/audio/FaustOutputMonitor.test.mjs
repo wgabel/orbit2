@@ -12,6 +12,9 @@ test("keeps finite latest readings, returns independent snapshots and detaches",
     handler("/frequency", 480);
     handler("/frequency", NaN);
     handler("/gain", 0.5);
+    handler("/OrbitGraph/orbit_tap_ack_1", 123);
+    assert.equal(monitor.getTapAcknowledgement(1), 123);
+    assert.equal(monitor.getTapAcknowledgement(2), undefined);
     const snapshot = monitor.getSnapshot();
     assert.deepEqual(snapshot, { "/frequency": 480, "/gain": 0.5 });
     snapshot["/frequency"] = 0;
@@ -21,4 +24,5 @@ test("keeps finite latest readings, returns independent snapshots and detaches",
     assert.equal(handler, null);
     oldHandler("/frequency", 100);
     assert.deepEqual(monitor.getSnapshot(), {});
+    assert.equal(monitor.getTapAcknowledgement(1), undefined);
 });

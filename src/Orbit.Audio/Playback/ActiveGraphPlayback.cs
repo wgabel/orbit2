@@ -9,8 +9,10 @@ namespace Orbit.Audio.Playback;
 internal sealed class ActiveGraphPlayback(GraphSnapshot snapshot, FaustGraphProgram program)
 {
     public GraphSnapshot Topology { get; private set; } = snapshot;
-    public FaustGraphProgram Program { get; private set; } = program;
-    public Guid Generation { get; private set; } = Guid.NewGuid();
+    public sealed record AcceptedProgram(FaustGraphProgram Program, Guid Generation);
+    public AcceptedProgram Accepted { get; private set; } = new(program, Guid.NewGuid());
+    public FaustGraphProgram Program => Accepted.Program;
+    public Guid Generation => Accepted.Generation;
     public IReadOnlyList<FaustParameterControl> Controls => Program.Controls;
     public Dictionary<string, double> Values { get; } = program.InitialControlValues();
     public SemaphoreSlim UpdateLock { get; } = new(1);
@@ -37,8 +39,7 @@ internal sealed class ActiveGraphPlayback(GraphSnapshot snapshot, FaustGraphProg
         Guid? generation = null)
     {
         Topology = graph;
-        Program = compiled;
-        if (generation is Guid next) Generation = next;
+        Accepted = new(compiled, generation ?? Generation);
         Values.Clear();
         foreach (var value in values) Values.Add(value.Key, value.Value);
         return Result = new(graph.Revision, true);

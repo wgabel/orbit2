@@ -46,7 +46,10 @@ export const replace = (request, revision) => engine.replace(request, revision);
 export const getOutputValues = soundId => engine.getOutputValues(soundId);
 export const readSignal = (soundId, generation, subscription, channel) => engine.readSignal(soundId, generation, subscription, channel);
 export const readSignalWindow = (soundId, generation, subscription, channel) => engine.readSignalWindow(soundId, generation, subscription, channel);
-export const releaseSignal = (soundId, subscription) => engine.releaseSignal(soundId, subscription);
+export const readObservation = (soundId, generation, subscription, selector) => engine.readObservation(soundId, generation, subscription, selector);
+export const readObservationWindow = (soundId, generation, subscription, selector) => engine.readObservation(soundId, generation, subscription, selector, true);
+export const getSignalDiagnostics = soundId => engine.getSignalDiagnostics(soundId);
+export const releaseSignal = (soundId, subscription, generation = null) => engine.releaseSignal(soundId, subscription, generation);
 export async function dispose() {
     try { await engine.dispose(); }
     finally { compiler.dispose(); }

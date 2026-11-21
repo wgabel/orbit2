@@ -171,6 +171,11 @@ function replacementSetup(createActions) {
                     return new Promise(resolve => { finish = resolve; });
                 },
                 stop: transition => { events.push(["stop", node.name, transition]); finish(); },
+                observeSignal: (lease, selector, generation) => {
+                    events.push(['observe', node.name, lease, selector, generation]);
+                    return {availability: 2, frame: null};
+                },
+                releaseSignal: lease => events.push(['release', node.name, lease]),
                 dispose: () => { events.push(["dispose", node.name]); node.destroy(); }
             };
             voices.push(voice);
@@ -228,6 +233,28 @@ test("replacement crossfades on one clock and does not end the logical playback"
     engine.stop(request.soundId);
     await playing;
     assert.equal(engine.getPlaybackState(request.soundId), "idle");
+});
+
+test('observation requests and releases cannot cross playback generations', async () => {
+    const {engine, events} = replacementSetup();
+    const original = {...request, generation: 'old', outputChannels: 9, tapSelectorCount: 15};
+    const playing = engine.play(original);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(engine.readObservation(original.soundId, 'old', 'lease', 15).availability, 2);
+    assert.equal(await engine.replace({...original, processor: 'new', generation: 'new'}, 1), true);
+    assert.ok(events.some(event => event[0] === 'release' && event[1] === original.processor));
+    const count = events.length;
+    engine.readObservation(original.soundId, 'old', 'lease', 2);
+    engine.releaseSignal(original.soundId, 'lease', 'old');
+    assert.equal(events.length, count);
+    engine.readObservation(original.soundId, 'new', 'lease', 15);
+    assert.deepEqual(events.at(-1), ['observe', 'new', 'lease', 15, 'new']);
+    engine.releaseSignal(original.soundId, 'lease', 'old');
+    assert.equal(events.at(-1)[0], 'observe');
+    engine.releaseSignal(original.soundId, 'lease', 'new');
+    assert.deepEqual(events.at(-1), ['release', 'new', 'lease']);
+    engine.stop(original.soundId);
+    await playing;
 });
 
 test("failed replacement keeps the old voice alive", async () => {
