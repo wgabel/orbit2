@@ -1,16 +1,21 @@
 /* Compact catalog control, sharing the standard parameter choice field. */
 .node-preset-selector {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--semantic-space-tight);
     padding: var(--component-node-padding);
     border-bottom: var(--semantic-border-width) solid var(--semantic-color-border);
 }
+.node-preset-heading {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr) max-content;
+}
 .node-preset-heading select {
-    flex: 1;
+    width: 100%;
+    text-overflow: ellipsis;
     font-size: var(--semantic-typography-label);
 }
 .node-preset-heading .node-preset-manage {
-    flex-shrink: 0;
     padding: var(--component-slider-input-padding-block) var(--component-slider-input-padding-inline);
     font-size: var(--semantic-typography-label);
 }

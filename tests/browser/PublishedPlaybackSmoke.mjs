@@ -123,6 +123,25 @@ try {
     assert.equal(await undoButton.isEnabled(), false);
     // The shared catalog selector applies an entire configuration in one undo step.
     const rootPreset = articles.nth(1).getByRole("combobox", { name: "Preset for Oscillator" });
+    const assertPresetControlsFit = async () => {
+        const rows = await page.locator(".node-preset-heading").evaluateAll(headings => headings.map(heading => {
+            const bounds = element => {
+                const { left, right, width } = element.getBoundingClientRect();
+                return { left, right, width };
+            };
+            return { node: bounds(heading.closest("article")), heading: bounds(heading),
+                label: bounds(heading.querySelector("label")), select: bounds(heading.querySelector("select")),
+                manage: bounds(heading.querySelector(".node-preset-manage")) };
+        }));
+        assert.ok(rows.length > 0, "Expected preset controls on this canvas");
+        for (const { node, heading, label, select, manage } of rows) {
+            assert.ok(heading.left >= node.left && heading.right <= node.right + 1, "Preset row must fit the node");
+            assert.ok(label.right <= select.left + 1 && select.width > 0 && select.right <= manage.left + 1,
+                "Preset selector must fit between the label and management button");
+            assert.ok(manage.width > 0 && manage.right <= heading.right + 1, "Preset management button must stay inside the node");
+        }
+    };
+    await assertPresetControlsFit();
     assert.equal(await rootPreset.inputValue(), "");
     assert.ok(await rootPreset.locator("optgroup[label='Drones'] option").count() >= 3);
     assert.equal(await rootPreset.locator("optgroup[label='Bass'] option[value='oscillator-sub-bass']").count(), 1);
@@ -150,10 +169,11 @@ try {
     const presetManager = page.getByRole("region", { name: "Custom preset manager" });
     const manageRootPresets = articles.nth(1).getByRole("button", { name: "Manage presets for Oscillator" });
     await manageRootPresets.click();
-    await presetManager.getByLabel("Preset name").fill("My carrier");
+    const longPresetName = "My carrier with a very long descriptive name for layered atmospheric drones";
+    await presetManager.getByLabel("Preset name").fill(longPresetName);
     await presetManager.getByLabel("Description (optional, for new presets)").fill("A reusable test configuration");
     await presetManager.getByRole("button", { name: "Save as" }).click();
-    await presetManager.getByText("Saved My carrier.", { exact: true }).waitFor({ timeout: 10000 }).catch(async error => {
+    await presetManager.getByText(`Saved ${longPresetName}.`, { exact: true }).waitFor({ timeout: 10000 }).catch(async error => {
         console.error("Custom preset save panel:", await presetManager.innerText());
         console.error("Custom preset controls:", await presetManager.locator("input, select, button").evaluateAll(controls =>
             controls.map(control => ({ tag: control.tagName, text: control.textContent, value: control.value, disabled: control.disabled }))));
@@ -163,8 +183,9 @@ try {
     assert.ok(customId);
     assert.equal(await rootPreset.inputValue(), customId);
     assert.equal(await articles.nth(0).locator(`optgroup[label='Custom'] option[value='${customId}']`).count(), 1);
+    await assertPresetControlsFit();
     assert.equal(await undoButton.isEnabled(), false);
-    await presetManager.getByLabel("Preset name").fill("MY CARRIER");
+    await presetManager.getByLabel("Preset name").fill(longPresetName.toUpperCase());
     await presetManager.getByRole("button", { name: "Save as" }).click();
     await presetManager.getByRole("alert").waitFor();
     await presetManager.getByLabel("Preset name").fill("My renamed carrier");
@@ -519,6 +540,7 @@ try {
     await childFrequency.locator("xpath=../..").locator(".parameter-effective-marker").waitFor({ timeout: 10000 });
     assert.equal(await rack.locator(".node-preset-selector").count(), 0);
     const childPreset = page.getByRole("combobox", { name: "Preset for Oscillator" });
+    await assertPresetControlsFit();
     await childPreset.selectOption("oscillator-deep-sine");
     await status.filter({ hasText: new RegExp(`^Playing revision ${droneRevision + 1}$`) }).waitFor({ timeout: 15000 });
     assert.equal(await childFrequency.inputValue(), "110");
