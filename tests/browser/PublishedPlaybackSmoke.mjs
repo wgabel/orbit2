@@ -1149,6 +1149,34 @@ try {
     await performance.locator('[data-live-pitch-offset="12"]').waitFor();
     await pattern.locator('[data-sequence-playhead="2"]').waitFor();
     await performance.locator('[data-live-pitch-offset="0"]').waitFor();
+    // A coarser two-step grid maps every onset to step one, independent of
+    // runner speed. Recording must not advance graph history until commit.
+    const recording = pattern.getByRole("group", { name: "Live recording" });
+    await recording.getByRole("combobox", { name: "Recording quantization" }).selectOption("2");
+    const takeRevision = await responseStatus.innerText();
+    await recording.getByRole("button", { name: "Record take" }).click();
+    await recording.locator('[data-recorded-slots="0"]').waitFor();
+    await performance.getByRole("button", { name: "Play C5 (A)" }).click();
+    await recording.locator('[data-recorded-slots="1"]').waitFor();
+    await pattern.getByRole("button", { name: "Step 1: C5", exact: true }).waitFor();
+    await pattern.getByRole("button", { name: "Step 2: A4", exact: true }).waitFor();
+    assert.equal(await responseStatus.innerText(), takeRevision);
+    await recording.getByRole("button", { name: "Commit take" }).click();
+    await recording.getByText("Take committed.", { exact: true }).waitFor();
+    await responseStatus.filter({ hasText: /^Playing revision \d+$/, hasNotText: takeRevision }).waitFor();
+    await responsePage.getByRole("button", { name: "Undo", exact: true }).click();
+    await pattern.getByRole("button", { name: "Step 1: A5", exact: true }).waitFor();
+    await pattern.getByRole("button", { name: "Step 2: A4", exact: true }).waitFor();
+    await responsePage.getByRole("button", { name: "Redo", exact: true }).click();
+    await pattern.getByRole("button", { name: "Step 1: C5", exact: true }).waitFor();
+    await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor();
+    const cancelRevision = await responseStatus.innerText();
+    await recording.getByRole("combobox", { name: "Take mode" }).selectOption("true");
+    await recording.getByRole("button", { name: "Record take" }).click();
+    await pattern.getByRole("button", { name: "Step 2: Hold", exact: true }).waitFor();
+    await recording.getByRole("button", { name: "Cancel take" }).click();
+    await pattern.getByRole("button", { name: "Step 2: A4", exact: true }).waitFor();
+    assert.equal(await responseStatus.innerText(), cancelRevision);
     await pattern.getByRole("combobox", { name: "Pattern mode" }).selectOption("0");
     await pattern.locator('[data-sequence-playhead="none"]').waitFor();
     await responsePage.getByRole("button", { name: "Stop", exact: true }).click();

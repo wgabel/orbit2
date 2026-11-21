@@ -47,6 +47,18 @@ test('leading Holds, inactive slots, atomic edits, and stop preserve current pit
     assert.equal(sample(s,0,0,1),0);
     assert.equal(validPitchPattern(pattern({steps:[129]})),false);
 });
+test('committed slot edits wait for future boundaries without replaying the current step', () => {
+    const s = new PitchPatternScheduler(pattern());
+    assert.equal(sample(s, 0, 0), 256 + 46);
+    assert.equal(s.setPattern(pattern({steps:[70, 61, 53, 0, ...Array(60).fill(0)]})),true);
+    assert.equal(sample(s, 5, 2.5), 0);
+    assert.equal(sample(s, 40, 20), 512 + 61);
+    assert.equal(sample(s, 160, 80), 256 + 70);
+    // Reset and timing changes still resolve the current slot immediately.
+    assert.equal(sample(s, 0, 0, 1), 256 + 70);
+    assert.equal(s.setPattern(pattern({ticks:80})),true);
+    assert.equal(sample(s, 0, 0, 1), 256 + 46);
+});
 for (const rate of [44100,48000]) test(`fractional sample timing survives long absolute positions at ${rate}`, () => {
     const anchor = toTransportAnchor({beatsPerMinute:120, beatPosition:40000, elapsedSeconds:20000, isPlaying:true,
         clock:{currentSample:0, sampleRate:rate}});

@@ -11,6 +11,7 @@
 @using System.Globalization
 @implements IAsyncDisposable
 @inject IPerformanceNoteService Performance
+@inject IMusicalTransportService Transport
 @inject IJSRuntime JavaScript
 @inject Orbit.UI.Components.Analysis.ScopeBrowserAssets BrowserAssets
 
@@ -20,7 +21,7 @@
     <output class="workspace-notice" data-live-pitch-offset="@(Offset?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "unavailable")">
         @(Offset is double offset ? $"Live: {offset:+0.##;-0.##;0} st" : "Play connected patch")
     </output>
-    <button type="button" class="secondary" @onclick="() => showPattern = !showPattern" aria-expanded="@showPattern.ToString().ToLowerInvariant()">@(showPattern ? "Hide pattern" : "Edit pattern")</button>
+    <button type="button" class="secondary" disabled="@RecordingLocked" @onclick="() => showPattern = !showPattern" aria-expanded="@showPattern.ToString().ToLowerInvariant()">@(showPattern ? "Hide pattern" : "Edit pattern")</button>
     @if (showPattern)
     {
         <div class="pitch-pattern-editor" role="region" aria-label="Pitch pattern">
@@ -30,7 +31,7 @@
                     <label @key="definition.Key">@definition.Name
                         @if (definition.Choices is { } choices)
                         {
-                            <select aria-label="@definition.Name" value="@Format(Value(definition.Key))" @onchange="e => EditValueAsync(definition.Key, e)">
+                            <select disabled="@RecordingLocked" aria-label="@definition.Name" value="@Format(Value(definition.Key))" @onchange="e => EditValueAsync(definition.Key, e)">
                                 @foreach (var choice in choices)
                                 {
                                     <option value="@Format(choice.Value)">@choice.Label</option>
@@ -39,7 +40,7 @@
                         }
                         else
                         {
-                            <input type="number" aria-label="@definition.Name" min="@Format(definition.Minimum)" max="@Format(definition.Maximum)" step="0.01" value="@Format(Value(definition.Key))" @onchange="e => EditValueAsync(definition.Key, e)" />
+                            <input disabled="@RecordingLocked" type="number" aria-label="@definition.Name" min="@Format(definition.Minimum)" max="@Format(definition.Maximum)" step="0.01" value="@Format(Value(definition.Key))" @onchange="e => EditValueAsync(definition.Key, e)" />
                         }
                     </label>
                 }
@@ -49,7 +50,7 @@
                 @for (var index = 0; index < StepCount; index++)
                 {
                     var slot = index;
-                    var code = (int)Value(NoteSequencerGenerator.StepKey(slot));
+                    var code = take?.Step(slot) ?? (int)Value(NoteSequencerGenerator.StepKey(slot));
                     <button type="button" class="secondary @(Playhead == slot + 1 ? "pitch-step-playing" : "")" aria-pressed="@((selectedStep == slot).ToString().ToLowerInvariant())" data-step="@(slot + 1)" aria-label="@($"Step {slot + 1}: {StepLabel(code)}")" @onclick="() => selectedStep = slot">
                         <small>@(slot + 1)</small><span>@StepLabel(code)</span>
                     </button>
@@ -57,7 +58,7 @@
             </div>
             <div class="workspace-toolbar">
                 <label>Selected step @(selectedStep + 1)
-                    <select aria-label="Step note" value="@Format(Value(NoteSequencerGenerator.StepKey(selectedStep)))" @onchange="e => EditValueAsync(NoteSequencerGenerator.StepKey(selectedStep), e)">
+                    <select disabled="@RecordingLocked" aria-label="Step note" value="@Format(take?.Step(selectedStep) ?? Value(NoteSequencerGenerator.StepKey(selectedStep)))" @onchange="e => EditValueAsync(NoteSequencerGenerator.StepKey(selectedStep), e)">
                         <option value="0">Hold</option>
                         @foreach (var note in Enumerable.Range(0, 128))
                         {
@@ -65,12 +66,33 @@
                         }
                     </select>
                 </label>
-                <button type="button" class="secondary" @onclick="() => WriteStepAsync(0, false)">Clear step (Hold)</button>
-                <button type="button" class="secondary" @onclick="ClearAllAsync">@(confirmClear ? "Confirm clear all 64 slots" : "Clear all")</button>
+                <button type="button" class="secondary" disabled="@RecordingLocked" @onclick="() => WriteStepAsync(0, false)">Clear step (Hold)</button>
+                <button type="button" class="secondary" disabled="@RecordingLocked" @onclick="ClearAllAsync">@(confirmClear ? "Confirm clear all 64 slots" : "Clear all")</button>
                 @if (confirmClear) { <button type="button" class="secondary" @onclick="() => confirmClear = false">Cancel</button> }
-                <label><input type="checkbox" @bind="stepEntry" /> Step entry (arm keyboard)</label>
-                <label>Advance <select aria-label="Auto advance" @bind="advance">@foreach (var n in new[] { 1, 2, 4, 8 }) { <option value="@n">@n</option> }</select></label>
+                <label><input type="checkbox" disabled="@RecordingLocked" @bind="stepEntry" /> Step entry (arm keyboard)</label>
+                <label>Advance <select disabled="@RecordingLocked" aria-label="Auto advance" @bind="advance">@foreach (var n in new[] { 1, 2, 4, 8 }) { <option value="@n">@n</option> }</select></label>
                 <small>Space = Hold, arrows = select step. Step entry wraps; shrinking retains hidden slots.</small>
+            </div>
+            <div class="workspace-toolbar" role="group" aria-label="Live recording" data-recording="@((take is not null).ToString().ToLowerInvariant())">
+                <label>Take mode <select aria-label="Take mode" disabled="@RecordingLocked" @bind="replaceTake"><option value="false">Overdub</option><option value="true">Replace active slots</option></select></label>
+                <label>Quantize <select aria-label="Recording quantization" disabled="@RecordingLocked" @bind="quantizeSpacing">
+                    @foreach (var spacing in Enumerable.Range(1, StepCount).Where(n => StepCount % n == 0))
+                    {
+                        <option value="@spacing">Every @spacing @(spacing == 1 ? "step" : "steps")</option>
+                    }
+                </select></label>
+                @if (take is null)
+                {
+                    <button type="button" class="secondary" disabled="@(!CanStartTake || recordingOperation)" @onclick="StartTakeAsync">Record take</button>
+                }
+                else
+                {
+                    <button type="button" class="secondary" disabled="@(recordingOperation || pendingNotes > 0)" @onclick="CommitTakeAsync">Commit take</button>
+                    <button type="button" class="secondary" @onclick="CancelTake">Cancel take</button>
+                    <output data-recorded-slots="@take.RecordedSlots">@take.RecordedSlots recorded slots · pending take</output>
+                }
+                <small>Arm keyboard and play a connected Loop. Notes sound immediately; the pending grid is saved only on Commit. Replace clears active slots, not hidden slots.</small>
+                @if (recordingNotice is not null) { <span class="workspace-notice" role="status">@recordingNotice</span> }
             </div>
         </div>
     }
@@ -108,6 +130,7 @@
     [Parameter] public double Tempo { get; set; }
     [Parameter] public EventCallback<ParameterEditRequest> Edit { get; set; }
     [Parameter] public EventCallback ClearPattern { get; set; }
+    [Parameter, EditorRequired] public Func<PitchRecordingTake, bool> CommitTake { get; set; } = default!;
     private ElementReference root;
     private IJSObjectReference? module, adapter;
     private DotNetObjectReference<PerformanceKeyboard>? reference;
@@ -118,6 +141,12 @@
     private int octave = 4;
     private int previousReference = -1;
     private string? notice;
+    private string? recordingNotice;
+    private PitchRecordingTake? take;
+    private bool replaceTake, recordingOperation;
+    private int quantizeSpacing = 1, pendingNotes;
+    private bool RecordingLocked => take is not null || recordingOperation;
+    private bool CanStartTake => armed && !stepEntry && Offset is not null && Value(NoteSequencerGenerator.LoopKey) == 1;
     private readonly Dictionary<string, int> held = [];
     private int Reference => (int)Node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.ReferenceKey).BaseValue;
     private double Value(string key) => Node.Parameters.Single(p => p.Definition.Key == key).BaseValue;
@@ -131,19 +160,80 @@
     private static string StepLabel(int code) => code == 0 ? "Hold" : MusicalPitch.NoteName(code - 1);
     private async Task EditValueAsync(string key, ChangeEventArgs args)
     {
+        if (RecordingLocked) return;
         var p = Node.Parameters.Single(p => p.Definition.Key == key);
         if (double.TryParse(args.Value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var value) && p.Definition.IsValidBaseValue(value))
             await Edit.InvokeAsync(new(new ParameterAddress(Node.Id, p.Id), value));
     }
     private async Task WriteStepAsync(int code, bool move)
     {
+        if (RecordingLocked) return;
         var p = Node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.StepKey(selectedStep));
         await Edit.InvokeAsync(new(new ParameterAddress(Node.Id, p.Id), code));
         if (move) selectedStep = (selectedStep + advance) % StepCount;
     }
-    private Task EnterNoteAsync(int note) => stepEntry && showPattern ? WriteStepAsync(note + 1, true) : SendAsync(new(PerformanceNoteKind.NoteOn, note));
+    private async Task EnterNoteAsync(int note)
+    {
+        if (recordingOperation) return;
+        if (stepEntry && showPattern) { await WriteStepAsync(note + 1, true); return; }
+        var current = take;
+        if (current is null) { await SendAsync(new(PerformanceNoteKind.NoteOn, note)); return; }
+        pendingNotes++;
+        try
+        {
+            // Sample the real transport at input admission, not the displayed playhead.
+            var position = await Transport.ReadPlayingPositionAsync();
+            if (disposed || !ReferenceEquals(take, current)) return;
+            if (position is null || !current.IsCurrent(position)) { CancelTake("Take cancelled: transport changed."); return; }
+            if (await SendAsync(new(PerformanceNoteKind.NoteOn, note)) && !disposed && ReferenceEquals(take, current))
+                current.TryRecord(note, position);
+        }
+        catch (Exception exception) { recordingNotice = $"Recording unavailable: {exception.Message}"; }
+        finally { pendingNotes--; if (!disposed) StateHasChanged(); }
+    }
+
+    private async Task StartTakeAsync()
+    {
+        if (!CanStartTake || RecordingLocked) return;
+        recordingOperation = true;
+        var baseline = PitchPattern.FromNode(Node);
+        var referenceNote = Reference;
+        try
+        {
+            var position = await Transport.ReadPlayingPositionAsync();
+            if (disposed || !CanStartTake || !baseline.Matches(PitchPattern.FromNode(Node)) || referenceNote != Reference) return;
+            if (position is null) { recordingNotice = "Start playback before recording."; return; }
+            take = new PitchRecordingTake(baseline, referenceNote, quantizeSpacing, replaceTake, position);
+            recordingNotice = null;
+            confirmClear = false;
+            focusRequested = true;
+        }
+        catch (Exception exception) { recordingNotice = exception.Message; }
+        finally { recordingOperation = false; }
+    }
+
+    private async Task CommitTakeAsync()
+    {
+        if (take is not { } current || pendingNotes > 0 || recordingOperation) return;
+        recordingOperation = true;
+        try
+        {
+            var position = await Transport.ReadPlayingPositionAsync();
+            if (disposed || !ReferenceEquals(take, current)) return;
+            if (position is null || !current.IsCurrent(position)) { CancelTake("Take cancelled: transport changed."); return; }
+            // Clear draft before the synchronous graph command publishes its new snapshot.
+            take = null;
+            recordingNotice = CommitTake(current) ? "Take committed." : "Take not committed: pattern changed.";
+        }
+        catch (Exception exception) { recordingNotice = exception.Message; }
+        finally { recordingOperation = false; }
+    }
+
+    private void CancelTake() => CancelTake("Take cancelled; committed pattern unchanged.");
+    private void CancelTake(string message) { take = null; recordingNotice = message; }
     private async Task ClearAllAsync()
     {
+        if (RecordingLocked) return;
         if (!confirmClear) { confirmClear = true; return; }
         confirmClear = false;
         await ClearPattern.InvokeAsync();
@@ -154,11 +244,15 @@
         if (previousReference < 0 || !PerformanceKeyboardLayout.IsAvailable(octave, Reference)) octave = PerformanceKeyboardLayout.ReferenceOctave(Reference);
         previousReference = Reference;
         selectedStep = Math.Clamp(selectedStep, 0, StepCount - 1);
+        if (StepCount % quantizeSpacing != 0) quantizeSpacing = 1;
+        if (take is { } current && !current.MatchesSource(PitchPattern.FromNode(Node), Reference))
+            CancelTake("Take cancelled: pattern or reference changed.");
     }
 
     private async Task ToggleAsync()
     {
         armed = !armed;
+        if (!armed && take is not null) CancelTake();
         held.Clear();
         notice = null;
         focusRequested = armed;
@@ -220,12 +314,14 @@
     [JSInvokable] public Task ReleasePhysicalKeys() => InvokeAsync(() => held.Clear());
 
     private Task ResetAsync() => SendAsync(new(PerformanceNoteKind.Reset));
-    private async Task SendAsync(PerformanceNoteAction action)
+    private async Task<bool> SendAsync(PerformanceNoteAction action)
     {
-        if (!armed || disposed) return;
-        try { notice = await Performance.SendAsync(PatchId, GraphId, Node.Id, action) ? null : "Play a connected patch; retry if updating or busy."; }
+        if (!armed || disposed) return false;
+        var accepted = false;
+        try { accepted = await Performance.SendAsync(PatchId, GraphId, Node.Id, action); notice = accepted ? null : "Play a connected patch; retry if updating or busy."; }
         catch (Exception exception) { notice = $"Performance unavailable: {exception.Message}"; }
         if (!disposed) StateHasChanged();
+        return accepted;
     }
 
     public async ValueTask DisposeAsync()

@@ -59,6 +59,30 @@ public sealed class MusicalTransportServiceTests
     }
 
     [Fact]
+    public async Task RecordingReadsFreshPlayingClockWithoutPublishingOrStartingTransport()
+    {
+        var clock = new TestClock();
+        var sink = new TestSink();
+        var service = new MusicalTransportService(clock, sink);
+        Assert.Null(await service.ReadPlayingPositionAsync());
+        Assert.Equal(0, clock.Reads);
+        clock.Set(1000, 48000);
+        await service.SynchronizeAsync(true);
+        clock.Set(25000, 48000);
+        var position = Assert.IsType<TransportSnapshot>(await service.ReadPlayingPositionAsync());
+        Assert.Equal(1, position.BeatPosition);
+        Assert.Equal(.5, position.ElapsedSeconds);
+        Assert.Single(sink.Anchors);
+        await service.ResetAsync();
+        Assert.Equal(1, (await service.ReadPlayingPositionAsync())!.ResetGeneration);
+        clock.Set(24000, 48000); // stale clock
+        Assert.Null(await service.ReadPlayingPositionAsync());
+        clock.Set(26000, 48000, false);
+        Assert.Null(await service.ReadPlayingPositionAsync());
+        Assert.Equal(2, sink.Anchors.Count);
+    }
+
+    [Fact]
     public async Task PublishesAnchorsOnlyWhenMusicalTimeChanges()
     {
         var clock = new TestClock();

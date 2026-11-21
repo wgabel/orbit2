@@ -20,6 +20,21 @@ public sealed class MusicalTransportService(IAudioClock clock, ITransportSignalS
             Observe(await clock.GetSnapshotAsync(), audioPlaying);
     });
 
+    public async Task<TransportSnapshot?> ReadPlayingPositionAsync()
+    {
+        await gate.WaitAsync();
+        try
+        {
+            if (!transport.IsPlaying || lastClock is not { } previous) return null;
+            var current = await clock.GetSnapshotAsync();
+            if (current is not { IsRunning: true } || current.SampleRate != previous.SampleRate ||
+                current.CurrentSample < previous.CurrentSample) return null;
+            return new(transport.BeatsPerMinute, transport.GetBeatPosition(current), true, current)
+            { ResetGeneration = resetGeneration, ElapsedSeconds = transport.GetElapsedSeconds(current) };
+        }
+        finally { gate.Release(); }
+    }
+
     public Task<TransportSnapshot> SetTempoAsync(double beatsPerMinute) => ExecuteAsync(async () =>
     {
         MusicalTransport.ValidateTempo(beatsPerMinute);
