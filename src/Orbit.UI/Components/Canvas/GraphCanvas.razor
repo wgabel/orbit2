@@ -35,7 +35,7 @@
         <div class="connection-label-control" @onpointerdown:stopPropagation="true">
             <label for="connection-label-mode">Connection labels</label>
             <select id="connection-label-mode" @bind="LabelMode" aria-label="Connection labels">
-                @foreach (var mode in Enum.GetValues<ConnectionLabelMode>())
+                @foreach (var mode in Enum.GetValues<Orbit.Application.Persistence.ConnectionLabelMode>())
                 {
                     <option value="@mode">@mode</option>
                 }
