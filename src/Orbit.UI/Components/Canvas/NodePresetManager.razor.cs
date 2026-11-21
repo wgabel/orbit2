@@ -21,8 +21,6 @@ public partial class NodePresetManager
     private string? Error { get; set; }
     private bool CanManage => !Busy && Library.IsLoaded && Catalog.GetCustomPresets(Node.TypeKey).Any(preset => preset.Id == SelectedId);
 
-    protected override Task OnInitializedAsync() => RefreshAsync();
-
     private Task RefreshAsync() => RunAsync(async () =>
     {
         await Library.LoadAsync();

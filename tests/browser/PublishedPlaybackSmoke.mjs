@@ -114,6 +114,8 @@ try {
     await presetManager.getByRole("button", { name: "Save as" }).click();
     await presetManager.getByText("Saved My carrier.", { exact: true }).waitFor({ timeout: 10000 }).catch(async error => {
         console.error("Custom preset save panel:", await presetManager.innerText());
+        console.error("Custom preset controls:", await presetManager.locator("input, select, button").evaluateAll(controls =>
+            controls.map(control => ({ tag: control.tagName, text: control.textContent, value: control.value, disabled: control.disabled }))));
         throw error;
     });
     const customId = await presetManager.getByLabel("Saved custom preset").inputValue();

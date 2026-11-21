@@ -246,11 +246,14 @@ public partial class GraphWorkspace : IDisposable
 
     private void CloseRackEditor() => editingRack = null;
 
-    private void OpenPresetManager(Guid graphId, Guid nodeId)
+    private async Task OpenPresetManagerAsync(Guid graphId, Guid nodeId)
     {
         if (graphId != Canvas.Snapshot.GraphId) return;
         var node = Canvas.Snapshot.Graph.Nodes.SingleOrDefault(candidate => candidate.Id == nodeId);
-        if (node is not null && PresetCatalog.Supports(node.TypeKey)) managingPresets = (graphId, nodeId);
+        if (node is null || !PresetCatalog.Supports(node.TypeKey)) return;
+        try { await PresetLibrary.LoadAsync(); PresetLibraryError = null; }
+        catch (Exception exception) { PresetLibraryError = $"Custom presets could not be loaded: {exception.Message}"; }
+        if (graphId == Canvas.Snapshot.GraphId) managingPresets = (graphId, nodeId);
     }
 
     private void ClosePresetManager() => managingPresets = null;
