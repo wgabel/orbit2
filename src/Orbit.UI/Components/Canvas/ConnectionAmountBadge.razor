@@ -5,7 +5,11 @@
         style="@($"left:{Wire.BadgeX.ToString(System.Globalization.CultureInfo.InvariantCulture)}px;top:{Wire.BadgeY.ToString(System.Globalization.CultureInfo.InvariantCulture)}px;transform:translate(-50%,-50%) scale({(1 / Zoom).ToString(System.Globalization.CultureInfo.InvariantCulture)})")"
         title="@Wire.Description" aria-label="@Wire.Description"
         @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true" @onclick="Select">
-    @Wire.Label@if (Wire.Dormant) { <span class="connection-badge-inactive"> inactive</span> }
+    <span>@Wire.Label</span>
+    @if (Wire.Dormant)
+    {
+        <span class="connection-badge-inactive"> inactive</span>
+    }
 </button>
 
 @code {
