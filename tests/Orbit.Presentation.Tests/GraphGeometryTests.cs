@@ -24,6 +24,21 @@ public sealed class GraphGeometryTests
     }
 
     [Fact]
+    public void BadgeAnchorFollowsCubicAtMidpointIncludingBackwardsConnections()
+    {
+        foreach (var end in new[] { new CanvasPoint(300, 120), new CanvasPoint(-180, 120) })
+        {
+            var curve = BezierConnection.Between(new CanvasPoint(20, 40), end);
+            Assert.Equal(curve.Start, curve.At(0));
+            Assert.Equal(curve.End, curve.At(1));
+            var middle = curve.At(0.5);
+            Assert.Equal((curve.Start.X + 3 * curve.Control1.X + 3 * curve.Control2.X + curve.End.X) / 8, middle.X, 8);
+            Assert.Equal(80, middle.Y, 8);
+            Assert.Throws<ArgumentOutOfRangeException>(() => curve.At(-0.1));
+        }
+    }
+
+    [Fact]
     public void FitCentersBoundsWithScreenPaddingAndClampedZoom()
     {
         var bounds = new CanvasBounds(-50, -100, 350, 100);
