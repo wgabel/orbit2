@@ -237,6 +237,7 @@ public partial class GraphWorkspace : IDisposable
         session.CompleteHistoryGesture();
         CloseRackEditor();
         ClosePresetManager();
+        if (SelectedConnection is not null) Canvas.ClearSelection();
         Navigation.OpenChild(nodeId);
     }
 
@@ -246,6 +247,7 @@ public partial class GraphWorkspace : IDisposable
         session.CompleteHistoryGesture();
         CloseRackEditor();
         ClosePresetManager();
+        if (SelectedConnection is not null) Canvas.ClearSelection();
         Navigation.NavigateTo(graphId);
     }
 

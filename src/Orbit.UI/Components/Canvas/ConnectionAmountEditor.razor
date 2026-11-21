@@ -4,13 +4,18 @@
 
 @* Edit a selected route without changing its topology. Apply explicitly so
    typing intermediate values does not repeatedly compile new audio programs. *@
-<section class="connection-amount-editor" aria-label="Connection amount editor">
+<section @ref="root" class="connection-amount-editor" aria-label="Connection amount editor"
+         data-anchor-x="@Anchor.X.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+         data-anchor-y="@Anchor.Y.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+         @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true"
+         @onwheel:stopPropagation="true" @onkeydown="HandleKeyDown" @onkeydown:stopPropagation="true">
     <strong>@RouteName</strong>
     <div class="workspace-toolbar">
         <label for="@InputId">@AmountLabel (@UnitLabel)</label>
         <input id="@InputId" type="number" step="any" value="@Draft" @oninput="EditDraft"
                aria-invalid="@(Error is not null ? "true" : "false")" aria-describedby="@ErrorId" />
         <button type="button" @onclick="Apply">Apply amount</button>
+        <button type="button" class="secondary" @onclick="OnCancel">Cancel</button>
     </div>
     <ValidationMessage Message="@Error" MessageId="@ErrorId" />
     <p class="workspace-notice">@Explanation</p>

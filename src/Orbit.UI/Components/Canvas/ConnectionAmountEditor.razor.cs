@@ -1,19 +1,31 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using Orbit.Application.Graphs.Commands;
 using Orbit.Application.Graphs.Snapshots;
 using Orbit.Domain.Graphs;
 using Orbit.Domain.Ports;
+using Orbit.Presentation.Canvas;
 using Orbit.UI.Components.Parameters;
 
 namespace Orbit.UI.Components.Canvas;
 
-/// <summary>Presentation-only inspector for a single selected connection.</summary>
-public partial class ConnectionAmountEditor
+/// <summary>Presentation-only anchored editor for a single selected connection.</summary>
+public partial class ConnectionAmountEditor : IAsyncDisposable
 {
+    [Inject] private IJSRuntime JavaScript { get; set; } = default!;
     [Parameter, EditorRequired] public GraphSnapshot Graph { get; set; } = default!;
     [Parameter, EditorRequired] public SignalConnection Connection { get; set; } = default!;
     [Parameter, EditorRequired] public Func<SetConnectionAmountCommand, string?> Dispatch { get; set; } = default!;
+    [Parameter, EditorRequired] public CanvasPoint Anchor { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private ElementReference root;
+    private IJSObjectReference? module;
+    private IJSObjectReference? placement;
+    private Task? initialization;
+    private bool disposed;
 
     private readonly string inputId = $"connection-amount-{Guid.NewGuid():N}";
     private string InputId => inputId;
@@ -60,5 +72,36 @@ public partial class ConnectionAmountEditor
             return;
         }
         Error = Dispatch(new SetConnectionAmountCommand(Graph.Id, Connection.Id, amount));
+    }
+
+    private Task HandleKeyDown(KeyboardEventArgs args) => args.Key == "Escape"
+        ? OnCancel.InvokeAsync() : Task.CompletedTask;
+
+    protected override Task OnAfterRenderAsync(bool firstRender) =>
+        firstRender ? initialization = InitializeAsync() : Task.CompletedTask;
+
+    private async Task InitializeAsync()
+    {
+        module = await JavaScript.InvokeAsync<IJSObjectReference>("import", "./js/canvasDom.js");
+        if (!disposed)
+            placement = await module.InvokeAsync<IJSObjectReference>("mountConnectionEditor", root);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        disposed = true;
+        if (initialization is not null) await initialization;
+        try
+        {
+            if (placement is not null)
+            {
+                try { await placement.InvokeVoidAsync("dispose"); }
+                finally { await placement.DisposeAsync(); }
+            }
+        }
+        finally
+        {
+            if (module is not null) await module.DisposeAsync();
+        }
     }
 }

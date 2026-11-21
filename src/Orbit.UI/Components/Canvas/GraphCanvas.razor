@@ -3,6 +3,7 @@
 @using Orbit.Presentation.Canvas
 
 @* Root and nested editors use the same canvas, with no dependencies on the DSP runtime. *@
+@{ var wires = Wires; }
 <div class="graph-canvas">
     <div class="canvas-viewport" @ref="viewportElement" tabindex="0" aria-label="Graph canvas"
          @onpointerdown="BeginBackground" @onpointerdown:preventDefault="true"
@@ -10,8 +11,8 @@
          @onpointercancel="CancelGesture" @onpointerleave="CancelGesture"
          @onwheel="OnWheelAsync" @onwheel:preventDefault="true" @onkeydown="KeyDown">
         <div class="canvas-world" style="@WorldStyle">
-            <ConnectionLayer Wires="@Wires" DraftPath="@DraftPath" OnSelect="SelectConnection" />
-            @foreach (var wire in Wires.Where(ShowBadge))
+            <ConnectionLayer Wires="@wires" DraftPath="@DraftPath" OnSelect="SelectConnection" />
+            @foreach (var wire in wires.Where(ShowBadge))
             {
                 <ConnectionAmountBadge @key="wire.Id" Wire="@wire" Zoom="@Snapshot.Viewport.Zoom" OnSelect="SelectConnection" />
             }
@@ -48,6 +49,13 @@
                     @onclick:stopPropagation="true" @onclick="OnToggleScope">@(ScopeOpen ? "Hide scope" : "Show scope")</button>
         }
         <span class="canvas-hint">@Hint</span>
+        @if (Snapshot.SelectedConnectionIds.Count == 1 && wires.FirstOrDefault(wire => wire.Selected) is { } selectedWire)
+        {
+            <ConnectionAmountEditor @key="(Snapshot.GraphId, selectedWire.Id)" Graph="@Snapshot.Graph"
+                                    Connection="@Snapshot.Graph.Connections.Single(edge => edge.Id == selectedWire.Id)"
+                                    Anchor="@Snapshot.Viewport.WorldToScreen(new CanvasPoint(selectedWire.BadgeX, selectedWire.BadgeY))"
+                                    Dispatch="@DispatchConnectionAmount" OnCancel="CloseConnectionEditorAsync" />
+        }
         @if (Snapshot.Graph.Nodes.Count == 0)
         {
             <div class="canvas-empty">Add a node to start building your graph.</div>

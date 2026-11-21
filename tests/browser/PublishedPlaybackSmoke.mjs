@@ -468,6 +468,33 @@ try {
     const amount = amountEditor.getByRole("spinbutton", { name: "Modulation depth (Hz)" });
     await amount.waitFor();
     assert.equal(await amount.inputValue(), "100");
+    const assertEditorFits = async () => {
+        await amountEditor.waitFor({ state: "visible" });
+        await page.waitForFunction(() => {
+            const panel = document.querySelector(".connection-amount-editor[data-positioned]");
+            if (!panel || !panel.closest(".canvas-viewport")) return false;
+            const rect = panel.getBoundingClientRect();
+            const canvas = panel.closest(".canvas-viewport").getBoundingClientRect();
+            return rect.left >= Math.max(0, canvas.left) && rect.right <= Math.min(innerWidth, canvas.right) &&
+                rect.top >= Math.max(0, canvas.top) && rect.bottom <= Math.min(innerHeight, canvas.bottom);
+        });
+    };
+    await assertEditorFits();
+    await amount.fill("75");
+    await badges.filter({ hasText: /^\+100 Hz$/ }).waitFor({ state: "attached" });
+    const anchorBeforePan = await amountEditor.getAttribute("data-anchor-x");
+    await panCanvas(4000);
+    await page.waitForFunction(old => document.querySelector(".connection-amount-editor")?.dataset.anchorX !== old, anchorBeforePan);
+    await assertEditorFits();
+    assert.equal(await amount.inputValue(), "75", "Panning must preserve the uncommitted draft");
+    await panCanvas(-4000);
+    await assertEditorFits();
+    await amount.press("Escape");
+    await amountEditor.waitFor({ state: "detached" });
+    assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
+    await badges.filter({ hasText: /^\+100 Hz$/ }).press("Enter");
+    await amount.waitFor();
+    assert.equal(await amount.inputValue(), "100", "Escape discards the draft");
     await amount.fill("");
     await amountEditor.getByRole("button", { name: "Apply amount" }).click();
     await amountEditor.getByText("Enter a finite number.").waitFor();
@@ -489,6 +516,8 @@ try {
     await predictedFrequency.filter({ hasText: "415–465 Hz" }).waitFor();
     await badges.filter({ hasText: /^\+25 Hz$/ }).waitFor({ state: "attached" });
     await marker.waitFor({ timeout: 10000 });
+    await amountEditor.getByRole("button", { name: "Cancel", exact: true }).click();
+    await amountEditor.waitFor({ state: "detached" });
     assert.equal(await wire.count(), 1);
     assert.equal(await play.isEnabled(), false);
     // Changing an existing control advances the audible revision without stopping.
@@ -561,7 +590,9 @@ try {
     };
     // Remove the original LFO-to-frequency connection, then connect to amplitude.
     await selectVisibleWire(wire);
+    await assertEditorFits();
     await page.getByRole("button", { name: "Delete selected" }).click();
+    await amountEditor.waitFor({ state: "detached" });
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 3}$`) }).waitFor({ timeout: 15000 });
     assert.equal(await marker.count(), 0);
     assert.equal(await frequency.locator(".parameter-band").count(), 0);
