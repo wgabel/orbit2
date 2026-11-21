@@ -3,6 +3,8 @@ using Orbit.Application.Services;
 using Orbit.Audio.Compilation;
 using Orbit.Domain.Parameters;
 using Orbit.Domain.Ports;
+using Orbit.Domain.Nodes.Generators;
+using Orbit.Domain.Timing;
 
 namespace Orbit.Audio.Analysis;
 
@@ -66,6 +68,17 @@ public sealed class GraphModulationRangeEstimator(IEnumerable<IFaustNodeEmitter>
             var definition = parameter.Definition;
             if (!definition.IsValidBaseValue(parameter.BaseValue)) return null;
             var address = new ParameterAddress(node.Id, parameter.Id);
+            // The frequency control is a base frequency, scaled by semitones before additive Hz modulation.
+            if (ActivePitchForFrequency(node, parameter) is { } pitch)
+            {
+                if (ranges.TryGetValue(address, out var cachedPitchRange)) return cachedPitchRange;
+                if (Effective(node, pitch) is not { } pitchRange ||
+                    Input(new PortAddress(node.Id, parameter.ModulationPortId!.Value)) is not { } hzRange)
+                    return ranges[address] = null;
+                return ranges[address] = new ParameterRange(
+                    MusicalPitch.Frequency(parameter.BaseValue, pitchRange.Minimum, hzRange.Minimum, definition.Minimum, definition.Maximum),
+                    MusicalPitch.Frequency(parameter.BaseValue, pitchRange.Maximum, hzRange.Maximum, definition.Minimum, definition.Maximum));
+            }
             if (parameter.ModulationPortId is not Guid port ||
                 !incoming[new PortAddress(node.Id, port)].Any())
                 return new ParameterRange(parameter.BaseValue, parameter.BaseValue);
@@ -80,10 +93,15 @@ public sealed class GraphModulationRangeEstimator(IEnumerable<IFaustNodeEmitter>
 
         foreach (var node in graph.Nodes)
             foreach (var parameter in node.Parameters)
-                if (parameter.ModulationPortId is Guid port && incoming[new PortAddress(node.Id, port)].Any())
+                if (parameter.ModulationPortId is Guid port && (incoming[new PortAddress(node.Id, port)].Any() ||
+                    ActivePitchForFrequency(node, parameter) is not null))
                     Effective(node, parameter);
         return ranges.Where(pair => flattened.Origins[pair.Key.NodeId].GraphId == graphId)
             .ToDictionary(pair => pair.Key with { NodeId = flattened.Origins[pair.Key.NodeId].NodeId },
                 pair => pair.Value);
     }
+
+    private static ParameterSnapshot? ActivePitchForFrequency(GraphNodeSnapshot node, ParameterSnapshot parameter) =>
+        node.TypeKey == OscillatorGenerator.NodeType && parameter.Definition.Key == "frequency"
+            ? node.Parameters.SingleOrDefault(p => p.Definition.Key == OscillatorGenerator.PitchKey && node.IsParameterActive(p)) : null;
 }

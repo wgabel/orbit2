@@ -6,7 +6,7 @@ using Orbit.Domain.Timing;
 namespace Orbit.Presentation.Canvas;
 
 /// <summary>Nominal cycle timing, not a prediction of downstream silence.</summary>
-public sealed record CycleTiming(double Hertz, double PositiveFraction)
+public sealed record CycleTiming(double Hertz, double PositiveFraction, double BaseRatio = 1)
 {
     public double Seconds => 1 / Hertz;
     public double PositiveSeconds => Seconds * PositiveFraction;
@@ -16,10 +16,14 @@ public sealed record CycleTiming(double Hertz, double PositiveFraction)
     {
         if (node.TypeKey != OscillatorGenerator.NodeType) return null;
         double Value(string key) => node.Parameters.Single(p => p.Definition.Key == key).BaseValue;
-        var hz = Value("timing") == (int)OscillatorTimingMode.Free ? Value("frequency") :
-            MusicalTime.GetFrequency(bpm, MusicalTime.GetBeats((MusicalDivision)Value("division")));
+        var frequency = node.Parameters.Single(p => p.Definition.Key == "frequency");
+        var pitch = node.Parameters.Single(p => p.Definition.Key == OscillatorGenerator.PitchKey);
+        var ratio = node.IsParameterActive(pitch) ? MusicalPitch.Ratio(pitch.BaseValue) : 1;
+        var hz = Value("timing") == (int)OscillatorTimingMode.Free
+            ? Math.Clamp(frequency.BaseValue * ratio, frequency.Definition.Minimum, frequency.Definition.Maximum)
+            : MusicalTime.GetFrequency(bpm, MusicalTime.GetBeats((MusicalDivision)Value("division")));
         var positive = Value("waveform") == (int)OscillatorWaveform.Square ? Value(OscillatorGenerator.PulseWidthKey) : 0.5;
-        return double.IsFinite(hz) && hz > 0 ? new(hz, positive) : null;
+        return double.IsFinite(hz) && hz > 0 ? new(hz, positive, ratio) : null;
     }
 
     public static CycleTiming? ForParameter(GraphNodeSnapshot node, ParameterSnapshot parameter, double bpm) =>

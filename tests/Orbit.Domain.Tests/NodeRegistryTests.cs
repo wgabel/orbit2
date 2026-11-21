@@ -18,7 +18,7 @@ public sealed class NodeRegistryTests
     {
         var registry = BuiltInNodes.CreateRegistry();
 
-        Assert.Equal(10, registry.RegisteredTypes.Count);
+        Assert.Equal(11, registry.RegisteredTypes.Count);
         Assert.IsType<ChorusProcessor>(registry.Create(ChorusProcessor.NodeType));
         Assert.IsType<ReverbProcessor>(registry.Create(ReverbProcessor.NodeType));
         Assert.IsType<DelayProcessor>(registry.Create(DelayProcessor.NodeType));
@@ -85,7 +85,7 @@ public sealed class NodeRegistryTests
         Assert.Equal((double)MusicalDivision.QuarterNote, division.BaseValue);
         Assert.Equal(7, division.Definition.Choices!.Count);
         Assert.Null(division.ModulationPortId);
-        Assert.Equal(4, node.Inputs.Count);
+        Assert.Equal(5, node.Inputs.Count);
         var timing = node.Parameters.Single(p => p.Definition.Key == "timing");
         Assert.Equal((double)OscillatorTimingMode.Free, timing.BaseValue);
         Assert.Null(timing.ModulationPortId);

@@ -309,6 +309,39 @@ File.WriteAllText(Path.Combine(args[0], "chorus.json"), JsonSerializer.Serialize
     mix = ChorusControl(chorus, "mix"), modulation = ChorusControl(modulation, "amplitude")
 }));
 
+// Shared pitch control drives a three-oscillator bank through ordinary modulation edges.
+using var pitchSession = new PatchSession(registry);
+var pitchGraph = pitchSession.GraphId;
+GraphNodeSnapshot PitchAdd(string type) => pitchSession.Execute(new AddNodeCommand(pitchGraph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+void PitchSet(GraphNodeSnapshot node, string key, double value) => pitchSession.Execute(new SetParameterValueCommand(pitchGraph, Address(node, key), value));
+void PitchWire(GraphNodeSnapshot source, GraphNodeSnapshot target, string port, double amount = 1) =>
+    pitchSession.Execute(new ConnectNodesCommand(pitchGraph, new PortAddress(source.Id, source.Outputs.Single().Id),
+        new PortAddress(target.Id, target.Inputs.Single(p => p.Key == port).Id), amount));
+var pitchSource = PitchAdd(PitchControlGenerator.NodeType);
+var pitchMixer = PitchAdd(MixerProcessor.NodeType);
+var pitchMaster = PitchAdd(MasterOutput.NodeType);
+var pitchFrequencies = new[] { 110d, 165d, 220d };
+var pitchVoices = new List<GraphNodeSnapshot>();
+foreach (var hz in pitchFrequencies)
+{
+    var voice = PitchAdd(OscillatorGenerator.NodeType);
+    pitchVoices.Add(voice);
+    PitchSet(voice, "frequency", hz);
+    PitchSet(voice, "amplitude", 0.1);
+    PitchSet(voice, OscillatorGenerator.PitchTrackingKey, 1);
+    PitchWire(pitchSource, voice, OscillatorGenerator.PitchPortKey);
+    PitchWire(voice, pitchMixer, "audio-in");
+}
+PitchWire(pitchMixer, pitchMaster, "audio-in");
+var pitchProgram = FaustGraphCompiler.CreateBuiltIn().Compile(pitchSession.Snapshot);
+File.WriteAllText(Path.Combine(args[0], "pitch.json"), JsonSerializer.Serialize(new
+{
+    source = pitchProgram.Source, values = pitchProgram.InitialControlValues(), frequencies = pitchFrequencies,
+    frequencyMeters = pitchVoices.Select(voice => pitchProgram.Controls.Single(c => c.Address == Address(voice, "frequency")).MeterName).ToArray(),
+    transpose = pitchProgram.Controls.Single(c => c.Address == Address(pitchSource, PitchControlGenerator.SemitonesKey)).Name,
+    cents = pitchProgram.Controls.Single(c => c.Address == Address(pitchSource, PitchControlGenerator.CentsKey)).Name
+}));
+
 GraphNodeSnapshot TempoAdd(Guid graph, string type) =>
     tempoSession.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
 

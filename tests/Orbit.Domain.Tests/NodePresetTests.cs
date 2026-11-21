@@ -90,7 +90,14 @@ public sealed class NodePresetTests
                 session.Execute(new ConnectNodesCommand(graphId, new PortAddress(source.Id, source.Outputs.Single().Id),
                     new PortAddress(target.Id, input.Id), 0.2));
             }
-            session.Execute(new ConnectNodesCommand(graphId, new PortAddress(target.Id, target.Outputs.Single().Id),
+            if (target.Outputs.Single().SignalType == SignalType.Modulation)
+            {
+                var carrier = session.Execute(new AddNodeCommand(graphId, OscillatorGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+                session.Execute(new SetParameterValueCommand(graphId, new ParameterAddress(carrier.Id, carrier.Parameters.Single(p => p.Definition.Key == OscillatorGenerator.PitchTrackingKey).Id), 1));
+                session.Execute(new ConnectNodesCommand(graphId, new PortAddress(target.Id, target.Outputs.Single().Id), new PortAddress(carrier.Id, carrier.Inputs.Single(p => p.Key == OscillatorGenerator.PitchPortKey).Id)));
+                session.Execute(new ConnectNodesCommand(graphId, new PortAddress(carrier.Id, carrier.Outputs.Single().Id), new PortAddress(master.Id, master.Inputs.Single().Id)));
+            }
+            else session.Execute(new ConnectNodesCommand(graphId, new PortAddress(target.Id, target.Outputs.Single().Id),
                 new PortAddress(master.Id, master.Inputs.Single().Id)));
             var connections = session.Snapshot.Connections.ToArray();
             foreach (var preset in service.GetGroups(type).SelectMany(group => group.Presets))

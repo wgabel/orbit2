@@ -1,0 +1,7 @@
+[
+  { "schemaVersion": 1, "id": "pitch-control-octave-up", "nodeType": "generator.pitch-control", "name": "Octave up", "group": "Intervals", "description": "Double the base frequency of every connected pitch-tracked oscillator.", "parameters": { "semitones": 12, "cents": 0 } },
+  { "schemaVersion": 1, "id": "pitch-control-octave-down", "nodeType": "generator.pitch-control", "name": "Octave down", "group": "Intervals", "description": "Halve the frequency of the connected oscillator bank.", "parameters": { "semitones": -12, "cents": 0 } },
+  { "schemaVersion": 1, "id": "pitch-control-fifth-up", "nodeType": "generator.pitch-control", "name": "Fifth up", "group": "Intervals", "description": "Transpose the bank up seven equal-tempered semitones.", "parameters": { "semitones": 7, "cents": 0 } },
+  { "schemaVersion": 1, "id": "pitch-control-detune-up", "nodeType": "generator.pitch-control", "name": "Fine tune up", "group": "Detuning", "description": "Shift every connected voice up ten cents.", "parameters": { "semitones": 0, "cents": 10 } },
+  { "schemaVersion": 1, "id": "pitch-control-detune-down", "nodeType": "generator.pitch-control", "name": "Fine tune down", "group": "Detuning", "description": "Shift every connected voice down ten cents.", "parameters": { "semitones": 0, "cents": -10 } }
+]

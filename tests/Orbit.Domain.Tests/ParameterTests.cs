@@ -31,8 +31,8 @@ public sealed class ParameterTests
     {
         var node = new OscillatorGenerator(Guid.NewGuid());
 
-        Assert.Equal(7, node.Parameters.Count);
-        Assert.Equal(4, node.Inputs.Count);
+        Assert.Equal(9, node.Parameters.Count);
+        Assert.Equal(5, node.Inputs.Count);
         foreach (var parameter in node.Parameters.Where(parameter => parameter.Definition.CanModulate))
         {
             Assert.True(parameter.Definition.CanModulate);
