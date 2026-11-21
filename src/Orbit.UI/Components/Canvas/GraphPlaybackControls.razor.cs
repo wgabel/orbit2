@@ -15,6 +15,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
     [Parameter, EditorRequired] public GraphSnapshot Snapshot { get; set; } = default!;
     [Parameter] public EventCallback<GraphParameterTelemetry?> TelemetryChanged { get; set; }
     [Parameter] public EventCallback<double> TempoChanged { get; set; }
+    [Parameter] public EventCallback<int?> SampleRateChanged { get; set; }
     [Parameter] public bool Disabled { get; set; }
     public bool CanReplaceWorkspace => !IsActive;
 
@@ -77,6 +78,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
         {
             await Playback.InitializeAsync();
             TransportState = await Transport.SynchronizeAsync(false);
+            await SampleRateChanged.InvokeAsync(TransportState.Clock?.SampleRate);
             IsReady = true;
         }
         catch (Exception exception)
@@ -198,6 +200,8 @@ public partial class GraphPlaybackControls : IAsyncDisposable
         {
             TransportState = await operation();
             TransportError = null;
+            if (previous.Clock?.SampleRate != TransportState.Clock?.SampleRate)
+                await SampleRateChanged.InvokeAsync(TransportState.Clock?.SampleRate);
         }
         catch (Exception exception)
         {

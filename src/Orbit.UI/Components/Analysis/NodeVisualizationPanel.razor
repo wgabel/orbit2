@@ -3,6 +3,7 @@
 @using Orbit.Application.Models
 @using Orbit.Application.Persistence
 @using Orbit.Presentation.Canvas
+@using Orbit.Domain.Parameters
 @using Microsoft.AspNetCore.Components.Web
 
 @if (NodeVisualizationCapabilities.ResolvePort(Node, Settings.PortId) is { } selected)
@@ -29,18 +30,41 @@
         </div>
         @if (Expanded || Settings.Visible && !ExpandedElsewhere)
         {
-            <label class="scope-source">
-                Signal
-                <select aria-label="Scope signal" value="@selected.Id" @onchange="ChangePort">
-                    @foreach (var port in NodeVisualizationCapabilities.EligiblePorts(Node))
-                    {
-                        <option value="@port.Id">@port.Direction: @port.Name</option>
-                    }
-                </select>
-            </label>
-            var address = new SignalObservationAddress(PatchId, GraphId, Node.Id, selected.Id, selected.Direction);
-            <SignalScope @key="address" Address="@address" Compact="@(!Expanded)" Settings="@Settings" SettingsChanged="SettingsChanged"
-                CycleSeconds="@(NodeVisualizationCapabilities.SupportsCycle(Node, selected.Id) ? CycleTiming.ForNode(Node, BeatsPerMinute)?.Seconds : null)" />
+            var supportsResponse = NodeVisualizationCapabilities.SupportsResponse(Node);
+            @if (supportsResponse)
+            {
+                <div class="scope-controls workspace-toolbar @(!Expanded ? "scope-compact" : "")">
+                    <label>View
+                        <select aria-label="Analysis view" @bind:get="Settings.Mode" @bind:set="ChangeMode">
+                            <option value="waveform">Waveform</option>
+                            <option value="spectrum">Spectrum</option>
+                            <option value="level">Level</option>
+                            <option value="response">Frequency response</option>
+                        </select>
+                    </label>
+                </div>
+            }
+            @if (Settings.Mode == "response" && supportsResponse)
+            {
+                <ProcessorResponseView Node="@Node" Compact="@(!Expanded)"
+                                       SampleRate="@SampleRate" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" />
+            }
+            else
+            {
+                <label class="scope-source">
+                    Signal
+                    <select aria-label="Scope signal" value="@selected.Id" @onchange="ChangePort">
+                        @foreach (var port in NodeVisualizationCapabilities.EligiblePorts(Node))
+                        {
+                            <option value="@port.Id">@port.Direction: @port.Name</option>
+                        }
+                    </select>
+                </label>
+                var address = new SignalObservationAddress(PatchId, GraphId, Node.Id, selected.Id, selected.Direction);
+                <SignalScope @key="(address, supportsResponse ? Settings.Mode : null)" Address="@address" Compact="@(!Expanded)" Settings="@Settings" SettingsChanged="SettingsChanged"
+                    ExternalModeControl="@supportsResponse"
+                    CycleSeconds="@(NodeVisualizationCapabilities.SupportsCycle(Node, selected.Id) ? CycleTiming.ForNode(Node, BeatsPerMinute)?.Seconds : null)" />
+            }
         }
     </section>
 }
@@ -53,10 +77,14 @@
     [Parameter] public bool Expanded { get; set; }
     [Parameter] public bool ExpandedElsewhere { get; set; }
     [Parameter] public double BeatsPerMinute { get; set; } = 120;
+    [Parameter] public int? SampleRate { get; set; }
+    [Parameter] public IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
+    [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();
     [Parameter] public EventCallback<NodeVisualizationSettings> SettingsChanged { get; set; }
     [Parameter] public EventCallback OnExpand { get; set; }
 
     private Task Toggle() => SettingsChanged.InvokeAsync(Settings with { Visible = !Settings.Visible });
+    private Task ChangeMode(string mode) => SettingsChanged.InvokeAsync(Settings with { Mode = mode });
     private Task ChangePort(ChangeEventArgs args) => Guid.TryParse(args.Value?.ToString(), out var portId)
         ? SettingsChanged.InvokeAsync(Settings with { PortId = portId }) : Task.CompletedTask;
 }

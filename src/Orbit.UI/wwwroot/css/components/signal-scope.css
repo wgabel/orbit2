@@ -88,3 +88,42 @@
 .scope-levels meter::-moz-meter-bar { background: var(--semantic-color-modulation); }
 .scope-levels output { color: var(--semantic-color-text); min-width: 0; overflow-wrap: anywhere; }
 .scope-levels output.scope-over { color: var(--semantic-color-error); font-weight: var(--semantic-typography-emphasis); }
+
+/* Calculated gain relative to the input; not a live spectrum or dBFS. */
+.processor-response { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--semantic-space-tight); }
+.response-chart {
+    display: grid;
+    grid-template-columns: var(--component-scope-response-axis-width) minmax(0, 1fr);
+    gap: var(--semantic-space-tight);
+    margin-block: var(--semantic-space-compact) var(--semantic-space-tight);
+    font-size: var(--semantic-typography-caption);
+    color: var(--semantic-color-muted);
+    font-variant-numeric: tabular-nums;
+}
+.response-db-axis { position: relative; height: var(--component-scope-plot-height); }
+.response-db-axis span { position: absolute; inset-inline-end: 0; transform: translateY(-50%); }
+.response-plot-area { min-width: 0; }
+.response-plot {
+    display: block;
+    width: 100%;
+    height: var(--component-scope-plot-height);
+    background: var(--semantic-color-canvas);
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-control);
+    contain: inline-size;
+}
+.scope-compact .response-plot, .scope-compact .response-db-axis { height: var(--component-scope-compact-plot-height); }
+.response-plot line, .response-plot polyline { fill: none; vector-effect: non-scaling-stroke; }
+.response-grid { stroke: var(--semantic-color-border); stroke-width: var(--semantic-border-width); }
+.response-zero { stroke: var(--semantic-color-muted); stroke-width: var(--semantic-border-width); }
+.response-configured { stroke: var(--semantic-color-generator); stroke-width: var(--component-scope-response-line-width); }
+.response-effective { stroke: var(--semantic-color-modulation); stroke-width: var(--component-scope-response-line-width); stroke-dasharray: var(--component-scope-response-line-dash); }
+.response-frequency-axis { position: relative; height: var(--semantic-typography-caption); margin-block-start: var(--semantic-space-tight); }
+.response-frequency-axis span { position: absolute; white-space: nowrap; transform: translateX(-50%); }
+.response-frequency-axis span:first-child { transform: none; }
+.response-frequency-axis span:last-child { transform: translateX(-100%); }
+.response-legend { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--semantic-space-tight); font-size: var(--semantic-typography-caption); }
+.response-configured-key { color: var(--semantic-color-generator); }
+.response-effective-key { color: var(--semantic-color-modulation); }
+.response-effective-key[data-response-effective="unavailable"], .response-notice { color: var(--semantic-color-muted); }
+.response-legend span, .response-notice { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; font-size: var(--semantic-typography-caption); }

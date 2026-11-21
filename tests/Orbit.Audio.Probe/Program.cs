@@ -4,6 +4,8 @@ using Orbit.Application.Graphs.Commands;
 using Orbit.Application.Graphs.Events;
 using Orbit.Application.Graphs.Sessions;
 using Orbit.Application.Graphs.Snapshots;
+using Orbit.Application.Models;
+using Orbit.Audio.Analysis;
 using Orbit.Audio.Compilation;
 using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Nodes;
@@ -203,7 +205,15 @@ var filterProbes = Enum.GetValues<FilterMode>().Select(mode =>
     string Name(GraphNodeSnapshot node, string key) => compiled.Controls.Single(c => c.Address == Address(node, key)).Name;
     return new { mode = mode.ToString(), source = compiled.Source,
         values = compiled.Controls.ToDictionary(c => c.Name, c => c.InitialValue),
-        frequency = Name(carrier, "frequency"), resonance = Name(filter, "resonance"), modulation = Name(modulation, "amplitude") };
+        frequency = Name(carrier, "frequency"), cutoff = Name(filter, "cutoff"), resonance = Name(filter, "resonance"), modulation = Name(modulation, "amplitude"),
+        predictions = new[] { 44100, 48000 }.Select(rate =>
+        {
+            var response = new ProcessorResponseParameters((ProcessorResponseKind)(int)mode, 1000, 0.707);
+            double At(double frequency) => StateVariableResponse.Magnitude(response, rate, frequency);
+            return new { rate, low = At(100), center = At(1000), high = At(8000),
+                resonant = StateVariableResponse.Magnitude(response with { Q = 4 }, rate, 1000),
+                nearNyquist = StateVariableResponse.Magnitude(response with { Frequency = 20000 }, rate, 19000) };
+        }).ToArray() };
 }).ToArray();
 File.WriteAllText(Path.Combine(args[0], "filters.json"), JsonSerializer.Serialize(filterProbes));
 
@@ -221,7 +231,18 @@ File.WriteAllText(Path.Combine(args[0], "eq.json"), JsonSerializer.Serialize(new
 {
     source = eqProgram.Source, values = eqProgram.Controls.ToDictionary(c => c.Name, c => c.InitialValue),
     carrier = EqControl(carrier, "frequency"), frequency = EqControl(eq, "frequency"),
-    gain = EqControl(eq, "gain"), q = EqControl(eq, "q"), modulation = EqControl(modulation, "amplitude")
+    gain = EqControl(eq, "gain"), q = EqControl(eq, "q"), modulation = EqControl(modulation, "amplitude"),
+    predictions = new[] { 44100, 48000 }.Select(rate =>
+    {
+        var response = new ProcessorResponseParameters(ProcessorResponseKind.Peaking, 1000, 1, 12);
+        double At(double frequency) => StateVariableResponse.Decibels(response, rate, frequency);
+        return new { rate, boost = At(1000), low = At(20), high = At(12000),
+            flat = StateVariableResponse.Decibels(response with { GainDb = 0 }, rate, 1000),
+            broad = StateVariableResponse.Decibels(response with { Q = 0.5 }, rate, 1500),
+            narrow = StateVariableResponse.Decibels(response with { Q = 8 }, rate, 1500),
+            cut = StateVariableResponse.Decibels(response with { Q = 8, GainDb = -12 }, rate, 1000),
+            moved = StateVariableResponse.Decibels(response with { Frequency = 2000, Q = 8, GainDb = -12 }, rate, 2000) };
+    }).ToArray()
 }));
 
 filterSession.Execute(new RemoveNodeCommand(filterRoot, eq.Id));

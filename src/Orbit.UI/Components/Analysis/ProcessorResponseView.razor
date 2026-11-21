@@ -1,0 +1,41 @@
+@namespace Orbit.UI.Components.Analysis
+
+<div class="processor-response @(Compact ? "scope-compact" : "")" data-configured-mode="response">
+    <div class="response-chart" role="img" aria-label="Calculated frequency response in decibels, logarithmic frequency in Hz">
+        <div class="response-db-axis" aria-hidden="true">
+            @foreach (var db in DbTicks)
+            {
+                <span style="@FormattableString.Invariant($"top:{Y(db)}%")">@(db > 0 ? $"+{db}" : db.ToString())</span>
+            }
+        </div>
+        <div class="response-plot-area">
+            <svg class="response-plot" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                @foreach (var db in DbTicks)
+                {
+                    <line class="@(db == 0 ? "response-zero" : "response-grid")" x1="0" x2="100" y1="@Number(Y(db))" y2="@Number(Y(db))" />
+                }
+                @foreach (var frequency in FrequencyTicks)
+                {
+                    <line class="response-grid" x1="@Number(X(frequency))" x2="@Number(X(frequency))" y1="0" y2="100" />
+                }
+                <polyline class="response-configured" points="@configuredPath" />
+                @if (effectivePath is not null)
+                {
+                    <polyline class="response-effective" points="@effectivePath" />
+                }
+            </svg>
+            <div class="response-frequency-axis" aria-hidden="true">
+                @foreach (var frequency in FrequencyTicks)
+                {
+                    <span style="@FormattableString.Invariant($"left:{X(frequency)}%")">@FrequencyLabel(frequency)</span>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="response-legend">
+        <span class="response-configured-key">Configured · wet</span>
+        <span class="response-effective-key" data-response-effective="@(effectivePath is not null ? "available" : "unavailable")">@(effectivePath is not null ? "Effective · instant estimate" : "No effective response")</span>
+    </div>
+    <small class="response-notice" data-response-rate="@Rate">@(SampleRate is null ? "Reference" : "Audio context") @Rate.ToString("N0") Hz · gain dB</small>
+    <small class="response-notice" data-response-audition>@AuditionNotice</small>
+</div>

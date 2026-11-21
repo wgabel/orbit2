@@ -6,6 +6,9 @@ namespace Orbit.Audio.Compilation;
 /// integrator states. Cutoff and damping are signals, not block-rate controls.</summary>
 internal static class FaustStateVariableFilter
 {
+    internal const double MaximumCutoffRatio = 0.45;
+    internal static string MaximumCutoff => $"{FaustNumber.Format(MaximumCutoffRatio)} * ma.SR";
+
     public static string Emit(FilterMode mode, string input, string cutoff, string resonance)
     {
         var output = mode switch
