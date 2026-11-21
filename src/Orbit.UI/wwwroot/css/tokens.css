@@ -132,6 +132,8 @@
     --component-connection-hit-width: 12px;
     --component-connection-selected-width: 3px;
     --component-connection-draft-dash: 6px;
+    --component-connection-badge-max-width: 12rem;
+    --component-connection-label-select-max-width: 7rem;
     --component-workspace-max-width: 100%;
     --component-workspace-toolbar-gap: var(--semantic-space-compact);
     --component-workspace-select-padding: var(--primitive-space-xs);
