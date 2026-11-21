@@ -104,6 +104,19 @@ public sealed class PatchDocumentSerializer
                     var selector = leaf.Parameters.Single(p => p.Definition.Key == EnvelopeGenerator.TriggerSourceKey);
                     parameters.Add(EnvelopeGenerator.TriggerSourceKey, (selector.Id, selector.BaseValue));
                 }
+                // Phase 7.1.4 extends the same envelope type. Only a complete
+                // legacy AD shape is migrated; all original IDs and wires survive.
+                if (leaf is EnvelopeGenerator && ports.Count == 8 && parameters.Count == 5 &&
+                    EnvelopeGenerator.LegacyAdParameterKeys.All(parameters.ContainsKey) &&
+                    leaf.Inputs.Concat(leaf.Outputs).Where(p => !EnvelopeGenerator.ModeExtensionDefinitions.Any(d => p.Key == d.Key + "-modulation-in")).All(p => ports.ContainsKey(p.Key)))
+                {
+                    foreach (var parameter in leaf.Parameters.Where(p => !EnvelopeGenerator.LegacyAdParameterKeys.Contains(p.Definition.Key)))
+                    {
+                        parameters.Add(parameter.Definition.Key, (parameter.Id, parameter.BaseValue));
+                        if (parameter.ModulationPortId is Guid portId)
+                            ports.Add(leaf.Inputs.Single(p => p.Id == portId).Key, portId);
+                    }
+                }
                 leaf.RestoreIdentity(ports, parameters);
                 graph.AddNode(leaf);
             }

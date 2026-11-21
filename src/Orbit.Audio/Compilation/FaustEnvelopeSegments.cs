@@ -1,32 +1,64 @@
+using Orbit.Domain.Nodes.Generators;
+
 namespace Orbit.Audio.Compilation;
 
-/// <summary>Sample-rate envelope state and shared power-shaped segment evaluation.</summary>
+/// <summary>One sample-rate state machine for triggered, gated and looping curves.</summary>
 public static class FaustEnvelopeSegments
 {
-    // The event sample preserves the previous output; N subsequent samples reach the
-    // endpoint. At that endpoint the next stage latches its own controls. Retrigger
-    // wins over completion, and every stage has at least one sample.
-    public static string EmitAd(string trigger, string attack, string decay, string attackCurve, string decayCurve) => $$"""
-        ((step ~ (_, _, _, _, _, _)) : !, !, !, !, !, _) with {
-            event = {{trigger}};
+    public static string EmitAd(string trigger, string attack, string decay, string attackCurve, string decayCurve) =>
+        Emit(EnvelopeMode.Ad, trigger, attack, decay, attackCurve, decayCurve);
+
+    public static string Emit(EnvelopeMode mode, string signal, string attack, string decay, string attackCurve, string decayCurve,
+        string release = "1.0", string releaseCurve = "1.0", string sustain = "0.0", string rest = "0.0") => $$"""
+        ((step ~ (_, _, _, _, _, _, _)) : !, !, !, !, !, !, _) with {
+            mode = {{(int)mode}};
+            isAR = mode == 1;
+            isADSR = mode == 2;
+            gated = isAR | isADSR;
+            looping = mode == 3;
+            gate = ({{signal}}) > 0.5;
+            rise = gate & (1 - (gate : mem));
+            fall = (1 - gate) & (gate : mem);
             attackSamples = max(1, int(floor(({{attack}}) * ma.SR / 1000.0 + 0.5)));
             decaySamples = max(1, int(floor(({{decay}}) * ma.SR / 1000.0 + 0.5)));
-            attackShape = {{attackCurve}};
-            decayShape = {{decayCurve}};
-            step(stage, elapsed, start, duration, curve, level) = nextStage, nextElapsed, nextStart, nextDuration, nextCurve, nextLevel with {
+            releaseSamples = max(1, int(floor(({{release}}) * ma.SR / 1000.0 + 0.5)));
+            restSamples = max(0, int(floor(({{rest}}) * ma.SR / 1000.0 + 0.5)));
+            heldTarget = select2(isAR, {{sustain}}, 1.0);
+            slew = 1.0 / max(1.0, 0.01 * ma.SR);
+            // Stages: idle 0, attack 1, decay 2, hold 3, release 4, rest 5.
+            step(stage, elapsed, start, target, duration, curve, level) = nextStage, nextElapsed, nextStart, nextTarget, nextDuration, nextCurve, nextLevel with {
+                timed = (stage == 1) | (stage == 2) | (stage == 4) | (stage == 5);
                 tick = elapsed + 1;
-                finished = tick >= duration;
-                attacking = stage == 1;
+                finished = timed & (tick >= duration);
                 progress = min(1.0, float(tick) / max(1, duration));
                 exponent = max(0.25, curve);
-                nextStage = select2(event, select2(stage == 0, select2(finished, stage, select2(attacking, 0, 2)), 0), 1);
-                nextElapsed = select2(event | finished | (stage == 0), tick, 0);
-                nextStart = select2(event, start, level);
-                nextDuration = select2(event, select2(attacking & finished, duration, decaySamples), attackSamples);
-                nextCurve = select2(event, select2(attacking & finished, curve, decayShape), attackShape);
-                rising = select2(finished, start + (1.0 - start) * pow(progress, exponent), 1.0);
-                falling = select2(finished, pow(1.0 - progress, exponent), 0.0);
-                nextLevel = select2(event, select2(stage == 0, select2(attacking, falling, rising), 0.0), level);
+                rising = start + (target - start) * pow(progress, exponent);
+                falling = target + (start - target) * pow(1.0 - progress, exponent);
+                segment = select2(finished, select2(stage == 1, falling, rising), target);
+                held = level + max(-slew, min(slew, heldTarget - level));
+                ordinary = select2(timed, select2(stage == 3, 0.0, held), segment);
+
+                eventStart = ((mode == 0) & gate) | (gated & rise) | (looping & (stage == 0));
+                eventRelease = gated & fall & (stage != 0) & (stage != 4);
+                cycleStart = looping & finished & (((stage == 2) & (restSamples == 0)) | (stage == 5));
+                toDecay = finished & (stage == 1) & (1 - isAR);
+                toHold = finished & (((stage == 1) & isAR) | ((stage == 2) & isADSR));
+                toRest = finished & looping & (stage == 2) & (restSamples > 0);
+                toIdle = finished & (((stage == 2) & (1 - isADSR) & (1 - looping)) | (stage == 4));
+                automatic = select2(cycleStart, select2(toDecay, select2(toHold, select2(toRest, select2(toIdle, stage, 0), 5), 3), 2), 1);
+                nextStage = select2(eventStart, select2(eventRelease, automatic, 4), 1);
+                entering = eventStart | eventRelease | cycleStart | toDecay | toHold | toRest | toIdle;
+                // Events preserve the instantaneous level and beat completion.
+                // Automatic transitions latch controls on the endpoint sample.
+                nextLevel = select2(eventStart | eventRelease, ordinary, level);
+                nextElapsed = select2(entering | (1 - timed), tick, 0);
+                nextStart = select2(entering, start, nextLevel);
+                entryTarget = select2(nextStage == 1, select2((nextStage == 2) & isADSR, 0.0, {{sustain}}), 1.0);
+                nextTarget = select2(entering, target, entryTarget);
+                entryDuration = select2(nextStage == 1, select2(nextStage == 2, select2(nextStage == 4, restSamples, releaseSamples), decaySamples), attackSamples);
+                nextDuration = select2(entering, duration, entryDuration);
+                entryCurve = select2(nextStage == 1, select2(nextStage == 2, select2(nextStage == 4, 1.0, {{releaseCurve}}), {{decayCurve}}), {{attackCurve}});
+                nextCurve = select2(entering, curve, entryCurve);
             };
         }
         """;

@@ -365,6 +365,37 @@ File.WriteAllText(Path.Combine(args[0], "envelope.json"), JsonSerializer.Seriali
     pitch = Tap(impactPitch), amplitude = Tap(impactAmp), trigger = Tap(impactTrigger)
 }));
 
+// Real generated graph: one typed manual gate drives both gated envelopes in
+// parallel, while the looping envelope remains independent of all triggers.
+using var modesSession = new PatchSession(BuiltInNodes.CreateRegistry());
+var modesGraph = modesSession.GraphId;
+GraphNodeSnapshot ModeAdd(string type) => modesSession.Execute(new AddNodeCommand(modesGraph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+void ModeSet(GraphNodeSnapshot node, string key, double value) => modesSession.Execute(new SetParameterValueCommand(modesGraph, Address(node, key), value));
+void ModeWire(GraphNodeSnapshot from, GraphNodeSnapshot to, string key, double amount = 1) => modesSession.Execute(new ConnectNodesCommand(modesGraph,
+    new(from.Id, from.Outputs.Single().Id), new(to.Id, to.Inputs.Single(p => p.Key == key).Id), amount));
+var modeGate = ModeAdd(GateGenerator.NodeType); ModeSet(modeGate, GateGenerator.DurationKey, 150);
+var modeVoice = ModeAdd(OscillatorGenerator.NodeType); ModeSet(modeVoice, "amplitude", 0);
+var modeMaster = ModeAdd(MasterOutput.NodeType); ModeWire(modeVoice, modeMaster, "audio-in");
+var modeFixtures = new[] { EnvelopeMode.Ar, EnvelopeMode.Adsr, EnvelopeMode.Loop };
+var modeNodes = modeFixtures.Select(mode => {
+    var node = ModeAdd(EnvelopeGenerator.NodeType);
+    ModeSet(node, EnvelopeGenerator.ModeKey, (int)mode);
+    foreach (var (key, value) in new (string, double)[] { (EnvelopeGenerator.AttackKey, 5), (EnvelopeGenerator.DecayKey, 10),
+        (EnvelopeGenerator.ReleaseKey, 15), (EnvelopeGenerator.SustainKey, 0.4), (EnvelopeGenerator.RestKey, 7),
+        (EnvelopeGenerator.AttackCurveKey, 1), (EnvelopeGenerator.DecayCurveKey, 1), (EnvelopeGenerator.ReleaseCurveKey, 1) }) ModeSet(node, key, value);
+    if (mode != EnvelopeMode.Loop) ModeWire(modeGate, node, EnvelopeGenerator.GatePortKey);
+    ModeWire(node, modeVoice, "amplitude-modulation-in", 0.2);
+    return node;
+}).ToArray();
+var modesProgram = FaustGraphCompiler.CreateBuiltIn().Compile(modesSession.Snapshot, SignalTapManifest.MaxAuxiliaryChannels);
+int ModeTap(GraphNodeSnapshot node) => modesProgram.SignalTaps.Channels[new(modesGraph, modesGraph, node.Id, node.Outputs[0].Id, PortDirection.Output)];
+File.WriteAllText(Path.Combine(args[0], "envelope-modes.json"), JsonSerializer.Serialize(new
+{
+    direct = modeFixtures.ToDictionary(mode => mode.ToString(), mode => $"import(\"stdfaust.lib\"); process(signal,a,d,ac,dc,r,rc,s,rest) = {FaustEnvelopeSegments.Emit(mode, "signal", "a", "d", "ac", "dc", "r", "rc", "s", "rest")};"),
+    source = modesProgram.Source, values = modesProgram.InitialControlValues(),
+    channels = modeNodes.Select(ModeTap).ToArray(), gate = ModeTap(modeGate), actionIndex = modesProgram.RhythmicInputs.ToList().FindIndex(i => i.NodeId == modeGate.Id)
+}));
+
 // Compare direct and rack-routed event fan-out through the actual compiler.
 var rhythms = new[] { SignalType.Trigger, SignalType.Gate }.Select(kind =>
 {

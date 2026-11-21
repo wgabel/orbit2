@@ -28,18 +28,21 @@ public abstract class SignalNode : ISignalNode
         Inputs = Array.AsReadOnly(inputs.ToArray());
         Outputs = Array.AsReadOnly(outputs.ToArray());
 
-        // Activation depends only on a local, unconditional structural choice.
-        // This avoids recursive conditions or per-sample structural changes.
+        // Activation reads stored local structural choices without recursion or
+        // per-sample structural changes. A conditional selector requires an
+        // explicit guard in every clause referring to it.
         foreach (var activation in Parameters.Select(parameter => parameter.Definition.ActiveWhen)
             .Concat(Inputs.Select(port => port.ActiveWhen)).OfType<ParameterActivation>())
         {
-            foreach (var condition in activation.Conditions())
+            foreach (var clause in activation.Clauses())
+            foreach (var condition in clause)
             {
                 var selector = Parameters.SingleOrDefault(candidate => candidate.Definition.Key == condition.SelectorKey);
-                if (selector is null || selector.Definition.ActiveWhen is not null ||
-                    !selector.Definition.RequiresRecompile || selector.Definition.Choices is null ||
-                    !selector.Definition.IsValidBaseValue(condition.EqualsValue))
-                    throw new ArgumentException("Activation requires a valid unconditional structural choice.", nameof(parameters));
+                if (selector is null || !selector.Definition.RequiresRecompile || selector.Definition.Choices is null ||
+                    !selector.Definition.IsValidBaseValue(condition.EqualsValue) ||
+                    (selector.Definition.ActiveWhen is { } guard && !guard.Matches(key =>
+                        clause.Where(c => c.SelectorKey == key && c.SelectorKey != condition.SelectorKey).Select(c => (double?)c.EqualsValue).FirstOrDefault())))
+                    throw new ArgumentException("Activation requires a valid structural choice with an explicit guard if conditional.", nameof(parameters));
             }
         }
     }

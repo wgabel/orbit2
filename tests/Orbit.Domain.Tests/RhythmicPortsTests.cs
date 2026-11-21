@@ -79,8 +79,9 @@ public sealed class RhythmicPortsTests
         Assert.Equal(typed.Source, compiler.Compile(restored.Snapshot).Source);
         session.Undo(); Assert.Equal(direct.Source, compiler.Compile(session.Snapshot).Source);
         var saved = document.RootGraph.Nodes.Single(n => n.Id == envelope.Id);
-        var legacy = saved with { Parameters = saved.Parameters.Where(p => p.Key != EnvelopeGenerator.TriggerSourceKey).ToArray(),
-            Ports = saved.Ports.Where(p => p.Key is not (EnvelopeGenerator.EventTriggerPortKey or EnvelopeGenerator.GatePortKey)).ToArray() };
+        var legacy = saved with { Parameters = saved.Parameters.Where(p => EnvelopeGenerator.LegacyAdParameterKeys.Contains(p.Key) && p.Key != EnvelopeGenerator.TriggerSourceKey).ToArray(),
+            Ports = saved.Ports.Where(p => p.Key is not (EnvelopeGenerator.EventTriggerPortKey or EnvelopeGenerator.GatePortKey) &&
+                !EnvelopeGenerator.ModeExtensionDefinitions.Any(d => p.Key == d.Key + "-modulation-in")).ToArray() };
         var legacyRoot = document.RootGraph with { Nodes = document.RootGraph.Nodes.Select(n => n.Id == envelope.Id ? legacy : n).ToArray(),
             Connections = document.RootGraph.Connections.Where(e => e.Source.NodeId != pulse.Id).ToArray() };
         using var migrated = serializer.Restore(document with { RootGraph = legacyRoot }, registry);

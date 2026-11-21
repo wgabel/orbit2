@@ -70,7 +70,7 @@ public sealed class FaustNodeContext
         return InputSignal(port.Id);
     }
 
-    public string Parameter(string key, string? signalMaximum = null, string? baseMultiplier = null)
+    public string Parameter(string key, string? signalMaximum = null, string? baseMultiplier = null, bool initializeAtTarget = false)
     {
         var parameter = Node.Parameters.SingleOrDefault(parameter => parameter.Definition.Key == key)
             ?? throw new FaustCompilationException($"Node {Node.TypeKey} has no parameter '{key}'.");
@@ -95,9 +95,14 @@ public sealed class FaustNodeContext
         if (!controls.Any(control => control.Name == name))
         {
             controls.Add(new FaustParameterControl(new ParameterAddress(Node.Id, parameter.Id), name, parameter.BaseValue, meter));
-            var smoothing = definition.Choices is null ? " : si.smoo" : "";
             var step = definition.Choices is null ? "0.001" : "1.0";
-            definitions.Add($"{name} = hslider(\"{name}\", {initial}, {minimum}, {maximum}, {step}){smoothing};");
+            var slider = $"hslider(\"{name}\", {initial}, {minimum}, {maximum}, {step})";
+            // Start a time-sensitive control at the actual initialized target,
+            // not a zero-valued smoother. Subsequent edits use the same si.smoo.
+            var expression = definition.Choices is not null ? slider : initializeAtTarget
+                ? $"first + ((value - first) : si.smoo) with {{ value = {slider}; first = ((select2(1 - (1 : mem), _, value)) ~ _); }}"
+                : slider + " : si.smoo";
+            definitions.Add($"{name} = {expression};");
         }
 
         var modulation = parameter.ModulationPortId is Guid portId ? InputSignal(portId) : "0.0";
