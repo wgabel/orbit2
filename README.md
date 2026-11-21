@@ -593,12 +593,16 @@ The application now has a read-only `NodePresetService` catalog of versioned, co
 
 ### Atomic node preset application (Phase 6.17.2)
 
-The application can apply any compatible preset to a root or nested node through one `ApplyNodePresetCommand`. The graph validates every stable parameter key and value before changing anything. It retains node, parameter and port identities, wiring, mute/bypass state and layout, including dormant modulation routes that reactivate when a preset switches the node back to the relevant mode. One committed revision contains all changed `ParameterChanged` facts and is one undoable action; invalid or identical presets do not commit. Slider gesture history remains independent. Ordinary base-value changes update the existing DSP voice and structural changes use its existing replacement/crossfade path. Saved patches retain actual values, not a reference to the preset. The shared visible selector is next in Phase 6.17.3; custom saving and portable presets follow later.
+The application can apply any compatible preset to a root or nested node through one `ApplyNodePresetCommand`. The graph validates every stable parameter key and value before changing anything. It retains node, parameter and port identities, wiring, mute/bypass state and layout, including dormant modulation routes that reactivate when a preset switches the node back to the relevant mode. One committed revision contains all changed `ParameterChanged` facts and is one undoable action; invalid or identical presets do not commit. Slider gesture history remains independent. Ordinary base-value changes update the existing DSP voice and structural changes use its existing replacement/crossfade path. Saved patches retain actual values, not a reference to the preset.
 
 ~~~csharp
 session.Execute(new ApplyNodePresetCommand(graphId, nodeId,
     nodePresetService.GetPreset("oscillator-deep-sine")));
 ~~~
+
+### Shared node preset selector (Phase 6.17.3)
+
+Eligible generators and processors now show a **Preset** selector just below their header, on every canvas. Choose a grouped configuration to apply it immediately as one graph edit, including during playback. Its usage description appears below the control (hover for the full text). The selector shows **Modified / no preset** if the current base settings do not exactly match a catalog entry. Manual edits and undo/redo update the selected name; modulation, mute and bypass do not affect matching. The Custom group is visible but empty until the custom library is implemented. Composites, racks and nodes without configurable parameters do not show the selector. Expanded built-in content, custom saving and portable presets follow in Phases 6.17.4–6.17.6.
 
 ### Chorus (Phase 6.15)
 

@@ -1,0 +1,29 @@
+@namespace Orbit.UI.Components.Canvas
+@using Microsoft.AspNetCore.Components.Web
+
+@if (Groups.Count > 0)
+{
+    <div class="node-preset-selector" @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true">
+        <div class="node-preset-heading parameter-heading">
+            <label for="@InputId">Preset</label>
+            <select id="@InputId" aria-label="@($"Preset for {Node.Name}")" aria-describedby="@DescriptionId"
+                    @bind:get="SelectedPresetId" @bind:set="SelectPresetAsync">
+                <option value="" disabled>Modified / no preset</option>
+                @foreach (var group in Groups)
+                {
+                    <optgroup label="@group.Name" disabled="@(group.Presets.Count == 0)">
+                        @if (group.Presets.Count == 0)
+                        {
+                            <option disabled>No saved presets</option>
+                        }
+                        @foreach (var preset in group.Presets)
+                        {
+                            <option value="@preset.Id" title="@preset.Description">@preset.Name</option>
+                        }
+                    </optgroup>
+                }
+            </select>
+        </div>
+        <div id="@DescriptionId" class="node-preset-description" title="@Description">@Description</div>
+    </div>
+}

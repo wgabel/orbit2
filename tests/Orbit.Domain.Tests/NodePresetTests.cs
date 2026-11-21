@@ -1,11 +1,15 @@
 using System.Text;
 using System.Text.Json;
 using Orbit.Application.Graphs;
+using Orbit.Application.Graphs.Commands;
+using Orbit.Application.Graphs.Events;
+using Orbit.Application.Graphs.Sessions;
 using Orbit.Application.Presets;
 using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Nodes.Processors;
+using Orbit.Domain.Parameters;
 using Orbit.Infrastructure.Presets;
 using Xunit;
 
@@ -14,6 +18,30 @@ namespace Orbit.Domain.Tests;
 public sealed class NodePresetTests
 {
     private readonly NodePresetValidator validator = new(BuiltInNodes.CreateEditorRegistry());
+
+    [Fact]
+    public void MatchingUsesAllBaseValuesAndIgnoresAuditionState()
+    {
+        var service = new NodePresetService(new EmbeddedNodePresetCatalog(), validator);
+        using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+        var graphId = session.GraphId;
+        var oscillator = session.Execute(new AddNodeCommand(graphId, OscillatorGenerator.NodeType))
+            .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        Assert.Null(service.FindMatchingPreset(oscillator));
+        var preset = service.GetPreset("oscillator-quarter-pulse");
+        session.Execute(new ApplyNodePresetCommand(graphId, oscillator.Id, preset));
+        Assert.Same(preset, service.FindMatchingPreset(session.Snapshot.GetNode(oscillator.Id)));
+        session.Execute(new SetNodeMutedCommand(graphId, oscillator.Id, true));
+        Assert.Same(preset, service.FindMatchingPreset(session.Snapshot.GetNode(oscillator.Id)));
+        var frequency = oscillator.Parameters.Single(parameter => parameter.Definition.Key == "frequency");
+        session.Execute(new SetParameterValueCommand(graphId, new ParameterAddress(oscillator.Id, frequency.Id), 2));
+        Assert.Null(service.FindMatchingPreset(session.Snapshot.GetNode(oscillator.Id)));
+        session.Undo();
+        Assert.Same(preset, service.FindMatchingPreset(session.Snapshot.GetNode(oscillator.Id)));
+        var output = session.Execute(new AddNodeCommand(graphId, MasterOutput.NodeType))
+            .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        Assert.Null(service.FindMatchingPreset(output));
+    }
 
     [Fact]
     public void EveryShippedPresetIsValidAndEveryEligibleTypeHasExampleData()

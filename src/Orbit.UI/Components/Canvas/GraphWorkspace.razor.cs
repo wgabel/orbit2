@@ -300,6 +300,12 @@ public partial class GraphWorkspace : IDisposable
         });
     }
 
+    private void ApplyNodePreset(Guid graphId, NodePresetApplyRequest request)
+    {
+        if (graphId == Canvas.Snapshot.GraphId)
+            Execute(new ApplyNodePresetCommand(graphId, request.NodeId, request.Preset));
+    }
+
     private void CompleteParameterGesture(Guid graphId, Guid gestureId)
     {
         if (!switchingWorkspace && graphId == Canvas.Snapshot.GraphId)

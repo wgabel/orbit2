@@ -18,6 +18,7 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter] public EventCallback<PortConnectionRequest> OnConnect { get; set; }
     [Parameter] public EventCallback<ParameterEditRequest> OnParameterEdit { get; set; }
     [Parameter] public EventCallback<NodeAuditionRequest> OnAudition { get; set; }
+    [Parameter] public EventCallback<NodePresetApplyRequest> OnPresetApply { get; set; }
     [Parameter] public EventCallback<Guid> OnParameterGestureEnded { get; set; }
     [Parameter] public EventCallback<Guid> OnOpenComposite { get; set; }
     [Parameter] public EventCallback<Guid> OnEditRack { get; set; }

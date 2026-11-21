@@ -58,6 +58,7 @@ else
                  OnConnect="@(request => Connect(graphId, request))" OnParameterEdit="@(request => EditParameter(graphId, request))"
                  OnParameterGestureEnded="@(id => CompleteParameterGesture(graphId, id))"
                  OnAudition="@(request => SetNodeAudition(graphId, request))"
+                 OnPresetApply="@(request => ApplyNodePreset(graphId, request))"
                  OnOpenComposite="@(nodeId => OpenComposite(graphId, nodeId))"
                  OnEditRack="@(nodeId => OpenRackEditor(graphId, nodeId))"
                  ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" />

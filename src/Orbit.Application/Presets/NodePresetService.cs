@@ -1,3 +1,5 @@
+using Orbit.Application.Graphs.Snapshots;
+
 namespace Orbit.Application.Presets;
 
 /// <summary>Validates shipped data once and serves deterministic, immutable usage groups.</summary>
@@ -39,4 +41,11 @@ public sealed class NodePresetService
         byType.TryGetValue(nodeType, out var groups) ? groups : Supports(nodeType) ? EmptyCustom : Array.Empty<NodePresetGroup>();
 
     public NodePreset GetPreset(string id) => byId[id];
+
+    /// <summary>Resolve an exact configuration match using stored base values, including inactive values.</summary>
+    public NodePreset? FindMatchingPreset(GraphNodeSnapshot node) => GetGroups(node.TypeKey)
+        .SelectMany(group => group.Presets)
+        .FirstOrDefault(preset => preset.Parameters.Count == node.Parameters.Count &&
+            node.Parameters.All(parameter => preset.Parameters.TryGetValue(parameter.Definition.Key, out var value) &&
+                value == parameter.BaseValue));
 }

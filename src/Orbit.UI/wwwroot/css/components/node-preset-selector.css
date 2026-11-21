@@ -1,0 +1,23 @@
+/* Compact catalog control, sharing the standard parameter choice field. */
+.node-preset-selector {
+    display: grid;
+    gap: var(--semantic-space-tight);
+    padding: var(--component-node-padding);
+    border-bottom: var(--semantic-border-width) solid var(--semantic-color-border);
+}
+.node-preset-heading select {
+    flex: 1;
+    font-size: var(--semantic-typography-label);
+}
+.node-preset-heading select:focus-visible {
+    outline: var(--semantic-border-focus-width) solid var(--semantic-color-selected);
+    outline-offset: var(--semantic-border-focus-offset);
+}
+.node-preset-description {
+    min-width: 0;
+    color: var(--semantic-color-muted);
+    font-size: var(--semantic-typography-caption);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

@@ -898,6 +898,19 @@ flowchart TD
 
 **Presentation.** Add a shared `NodePresetSelector` inside `NodeFrame`, below the header, using design tokens and the same component at every canvas level. Render groups via a compact accessible selector, provide a usage description and allow loading a preset without extra permanent toolbars. Show an unselected/modified state when the current base configuration does not match a preset; modulation alone does not mark it modified. Saving captures the current base configuration from an immutable snapshot. Built-ins cannot be overwritten, renamed or deleted; users can apply them, adjust values and save a new custom preset. Management actions (save as, deliberate overwrite, rename, delete) belong to a compact shared menu/dialog, not per-node implementations. Editing the preset library is separate from graph undo/redo; applying a preset is a graph edit.
 
+**Implemented 6.17.3.** `NodePresetSelector` is composed once in `NodeFrame` immediately below the header. It consumes `NodePresetService` and an immutable `GraphNodeSnapshot`, resolves eligibility and ordered usage groups through the existing catalog, and exposes a native accessible grouped select with a description and an explicit modified/unmatched option. The empty Custom group stays visible but disabled. `NodePresetService.FindMatchingPreset` compares the complete stable-key base configuration, including inactive parameters, and chooses the first match in deterministic catalog order; effective telemetry and audition flags are not involved. The component skips rematching the same snapshot on layout/telemetry-only refresh. Selecting a preset emits `NodePresetApplyRequest` through the shared frame and canvas to the workspace, which addresses the active graph and executes the atomic command. The control is bound to the committed matching value, not a separately persisted selection; undo/redo, reload and direct edits therefore stay consistent. Pointer and keyboard events do not start canvas gestures, and committed edits trigger the existing measured connection geometry refresh. CSS reuses parameter-choice styling and existing JSON-derived semantic/node tokens, with a single-line description and full tooltip. Published browser tests cover grouped options, applied values, modified/undo state and nested playback without interruption. Custom management remains a later phase.
+
+~~~mermaid
+flowchart TD
+    S[Node snapshot] --> M[Catalog match]
+    C[Grouped preset catalog] --> M
+    M --> U[NodePresetSelector]
+    U --> R[Preset apply request]
+    R --> W[GraphWorkspace]
+    W --> P[ApplyNodePresetCommand]
+    P --> S
+~~~
+
 **Custom persistence.** Define `INodePresetStorage` separately from `IPatchLibraryStorage`, with a browser adapter using the existing versioned IndexedDB interop and a dedicated logical store/namespace. Reuse validated serialization, transaction and error patterns where appropriate; never mix node presets with recovery records or named complete patches. Persist versioned data by stable ID, enforce unique names per node type (case-insensitive) and explicit overwrite semantics, and report storage failure without changing the current node. Custom presets survive reload and patch switching; eventually support portable individual JSON import/export with validation and conflict handling. Future audio-asset-valued configurations need explicit references and portability rules from Phase 8; scalar parameter presets do not embed recordings.
 
 ### Signal analysis and visualization (planned Phase 6.18)
@@ -1691,7 +1704,8 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented (6.16.1): reversible node mute with shared header control, persisted state, boundary-wide smooth gain and settled modulation range projection.
 - Implemented (6.16.2): explicit effect bypass capability, independent persisted state, shared click-safe audition controls, dry range projection and continuously running wet DSP.
 - Implemented (6.17.1): immutable versioned individual node preset model, registry-derived validation and grouped embedded JSON catalog.
-- Implemented (6.17.2): atomic preset application through validated batch parameter changes, one revision/undo entry, and existing live playback; shared selector next.
+- Implemented (6.17.2): atomic preset application through validated batch parameter changes, one revision/undo entry, and existing live playback.
+- Implemented (6.17.3): shared grouped node preset selector, description and exact base-configuration matching in every canvas; expanded built-in content next.
 - Planned (6.18): shared signal observation and visualization, integrated node plots, processor response curves and passive analyzer sinks.
 - Deferred: deployment-version detection and safe workspace-save/reload prompt for long-lived tabs whose versioned lazy modules have been removed by a later Pages deployment.
 - Add copies/preset reuse with independent instances.
@@ -1763,7 +1777,7 @@ Deliverable: audition or silence entire linear lanes by muting their final node,
 
 - **6.17.1 — Model and catalog (implemented):** versioned immutable parameter configurations, stable IDs, registry-derived type/key validation and grouped embedded JSON resources with starter examples for all eligible node types.
 - **6.17.2 — Atomic application (implemented):** validated multi-parameter graph operation and `ApplyNodePresetCommand`, one committed revision and undo entry; tested nested nodes, dormant connections, audition state and live playback updates/replacements.
-- **6.17.3 — Shared selector:** compact grouped `NodePresetSelector`, descriptions, matching/modified state, existing design tokens and accessibility; no node-specific UI.
+- **6.17.3 — Shared selector (implemented):** compact accessible grouped `NodePresetSelector`, descriptions, base-configuration matching/modified state, shared token styling, and root/nested browser coverage; no node-specific UI.
 - **6.17.4 — Built-in content:** meaningful usage groups and example presets for all eligible existing generators and processors, including chorus; validate all shipped data in CI.
 - **6.17.5 — Custom library:** persistent `Custom` group for every eligible node type, save as, explicit overwrite, rename/delete and independent instances; IndexedDB reload and workspace-switch coverage.
 - **6.17.6 — Portable node presets:** versioned JSON import/export with transactional validation, conflict handling and backwards compatibility.
