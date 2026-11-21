@@ -48,6 +48,8 @@ public partial class GraphWorkspace : IDisposable
         ? Canvas.Snapshot.Graph.Nodes.SingleOrDefault(node => node.Id == Canvas.Snapshot.SelectedNodeIds[0] && node.TypeKey == NoteSequencerGenerator.NodeType) : null;
     private double? PerformanceOffset(Guid nodeId) => telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision &&
         frame.PitchOffsets.TryGetValue(Canvas.Snapshot.GraphId, out var offsets) && offsets.TryGetValue(nodeId, out var value) ? value : null;
+    private int? PerformanceStep(Guid nodeId) => telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision &&
+        frame.PitchSteps.TryGetValue(Canvas.Snapshot.GraphId, out var steps) && steps.TryGetValue(nodeId, out var value) && value > 0 ? value : null;
     private void DisarmPerformance() => performanceEpoch++;
     private int? responseSampleRate;
     private IReadOnlyDictionary<ParameterAddress, double> EffectiveValues =>
@@ -360,6 +362,12 @@ public partial class GraphWorkspace : IDisposable
     {
         if (graphId == Canvas.Snapshot.GraphId)
             Execute(new SetParameterValueCommand(graphId, request.Address, request.Value), request.GestureId);
+    }
+
+    private void ClearPitchPattern(Guid graphId, Guid nodeId)
+    {
+        if (graphId == Canvas.Snapshot.GraphId)
+            Execute(new SetPitchPatternStepsCommand(graphId, nodeId, new int[NoteSequencerGenerator.Capacity]));
     }
 
     private void SetNodeAudition(Guid graphId, NodeAuditionRequest request)

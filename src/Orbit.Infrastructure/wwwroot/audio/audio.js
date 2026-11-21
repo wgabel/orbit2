@@ -39,7 +39,7 @@ export const stop = soundId => engine.stop(soundId);
 export const getClockSnapshot = () => audioClock.getSnapshot();
 export const setTransport = snapshot => transportSignal.setSnapshot(snapshot);
 export const getPlaybackState = soundId => engine.getPlaybackState(soundId);
-export const setParameters = (soundId, parameters) => engine.setParameters(soundId, parameters);
+export const setParameters = (soundId, parameters, patterns) => engine.setParameters(soundId, parameters, patterns);
 export const sendRhythmicAction = (soundId, generation, index, action) => engine.sendRhythmicAction(soundId, generation, index, action);
 export const markRevision = (soundId, revision) => engine.markRevision(soundId, revision);
 export const replace = (request, revision) => engine.replace(request, revision);

@@ -55,6 +55,13 @@
 .performance-piano .performance-white-key { background: var(--semantic-color-text); color: var(--semantic-color-canvas); }
 .performance-piano .performance-black-key { background: var(--semantic-color-canvas); color: var(--semantic-color-text); }
 .performance-piano button:active { background: var(--semantic-color-modulation); color: var(--semantic-color-canvas); }
+.pitch-pattern-editor { flex-basis: 100%; display: grid; gap: var(--semantic-space-compact); max-height: var(--component-pitch-pattern-max-height); overflow: auto; }
+.pitch-pattern-settings label { display: grid; gap: var(--semantic-space-tight); }
+.pitch-pattern-settings input[type="number"] { width: var(--component-pitch-pattern-numeric-width); }
+.pitch-pattern-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--component-pitch-pattern-step-min-width), 1fr)); gap: var(--semantic-space-tight); }
+.pitch-pattern-grid button { display: grid; text-align: center; gap: var(--semantic-space-tight); }
+.pitch-pattern-grid button[aria-pressed="true"] { border-color: var(--semantic-color-modulation); }
+.pitch-pattern-grid .pitch-step-playing { background: var(--semantic-color-modulation); color: var(--semantic-color-canvas); }
 .transport-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--component-workspace-toolbar-gap); flex-basis: 100%; }
 .transport-controls input[type="number"] { width: var(--component-workspace-tempo-width); }
 .transport-rates { margin-inline-start: auto; }
@@ -75,7 +82,7 @@
     border: var(--semantic-border-width) solid var(--semantic-color-border);
     border-radius: var(--semantic-radius-surface);
 }
-.rack-editor input[type="text"], .connection-amount-editor input[type="number"], .transport-controls input[type="number"] {
+.rack-editor input[type="text"], .connection-amount-editor input[type="number"], .transport-controls input[type="number"], .pitch-pattern-settings input[type="number"] {
     max-width: 100%;
     background: var(--semantic-color-input);
     color: var(--semantic-color-text);

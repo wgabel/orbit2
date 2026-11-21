@@ -1,4 +1,5 @@
 import { MAX_ACTIONS, MAX_RHYTHMIC_INPUTS, validAction } from './RhythmicActionQueue.js';
+import { validPitchPattern } from './PitchPatternScheduler.js';
 
 // One bounded, generation-owned source per actual Faust voice, not per UI node.
 const modules = new WeakMap();
@@ -14,9 +15,11 @@ export class RhythmicActionSource {
         }
         try { await loading; }
         catch (error) { if (modules.get(context) === loading) modules.delete(context); throw error; }
+        const longClock = inputs.some(input => input.pattern);
+        if (inputs.some(input => input.pattern && (!input.isPitch || !validPitchPattern(input.pattern)))) throw new Error('Invalid pitch pattern.');
         const node = new AudioWorkletNode(context, 'orbit-rhythmic-actions', {
-            numberOfInputs: phaseChannels ? 1 : 0,
-            numberOfOutputs: 1, channelCount: Math.max(1, phaseChannels), channelCountMode: 'explicit', channelInterpretation: 'discrete',
+            numberOfInputs: phaseChannels || longClock ? 1 : 0,
+            numberOfOutputs: 1, channelCount: longClock ? 7 : Math.max(1, phaseChannels), channelCountMode: 'explicit', channelInterpretation: 'discrete',
             outputChannelCount: [phaseChannels + inputs.length], processorOptions: { inputs, phaseChannels }
         });
         try {
@@ -44,6 +47,12 @@ export class RhythmicActionSource {
             return false;
         this.pending[index]++;
         this.node.port.postMessage({ index, action });
+        return true;
+    }
+
+    setPatterns(updates) {
+        if (!this.active || !updates.every(update => this.inputs[update.index]?.pattern && validPitchPattern(update.pattern))) return false;
+        this.node.port.postMessage({ patterns: updates });
         return true;
     }
 

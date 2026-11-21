@@ -1,0 +1,46 @@
+using Orbit.Application.Graphs;
+using Orbit.Application.Graphs.Commands;
+using Orbit.Application.Graphs.Events;
+using Orbit.Application.Graphs.Sessions;
+using Orbit.Application.Models;
+using Orbit.Application.Persistence;
+using Orbit.Application.Presets;
+using Orbit.Domain.Nodes.Generators;
+using Xunit;
+
+namespace Orbit.Domain.Tests;
+
+public sealed class PitchPatternTests
+{
+    [Fact]
+    public void FixedSlotsMigratePreserveInactiveNotesAndUndoAtomically()
+    {
+        var registry = BuiltInNodes.CreateRegistry();
+        using var session = new PatchSession(registry);
+        var id = session.GraphId;
+        var node = session.Execute(new AddNodeCommand(id, NoteSequencerGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        var serializer = new PatchDocumentSerializer();
+        var document = serializer.Capture(session, 120, id, []);
+        var saved = document.RootGraph.Nodes.Single();
+        var legacy = saved with { Parameters = saved.Parameters.Where(p => !NoteSequencerGenerator.IsPatternParameter(p.Key)).ToArray() };
+        using var restored = serializer.Restore(document with { RootGraph = document.RootGraph with { Nodes = [legacy] } }, registry);
+        var migrated = restored.Snapshot.GetNode(node.Id);
+        Assert.All(legacy.Parameters, p => Assert.Contains(migrated.Parameters, a => a.Id == p.Id));
+        Assert.Equal(64, PitchPattern.FromNode(migrated).Steps.Count);
+        Assert.False(PitchPattern.FromNode(migrated).Loop);
+        var preset = new NodePreset(1, "old", node.TypeKey, "Old", "Custom", null, legacy.Parameters.ToDictionary(p => p.Key, p => p.BaseValue));
+        new NodePresetValidator(registry).Validate(preset);
+        var notes = new int[64]; notes[0] = 46; notes[63] = 58;
+        session.Execute(new SetPitchPatternStepsCommand(id, node.Id, notes));
+        session.Execute(new SetParameterValueCommand(id, new(node.Id, node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.CountKey).Id), 1));
+        Assert.Equal(58, PitchPattern.FromNode(session.Snapshot.GetNode(node.Id)).Steps[63]);
+        var revision = session.Snapshot.Revision;
+        session.Execute(new SetPitchPatternStepsCommand(id, node.Id, new int[64]));
+        Assert.Equal(revision + 1, session.Snapshot.Revision);
+        Assert.All(PitchPattern.FromNode(session.Snapshot.GetNode(node.Id)).Steps, code => Assert.Equal(0, code));
+        session.Undo();
+        Assert.Equal(notes, PitchPattern.FromNode(session.Snapshot.GetNode(node.Id)).Steps);
+        using var roundtrip = serializer.Restore(serializer.Deserialize(serializer.Serialize(serializer.Capture(session, 120, id, []))), registry);
+        Assert.True(PitchPattern.FromNode(session.Snapshot.GetNode(node.Id)).Matches(PitchPattern.FromNode(roundtrip.Snapshot.GetNode(node.Id))));
+    }
+}

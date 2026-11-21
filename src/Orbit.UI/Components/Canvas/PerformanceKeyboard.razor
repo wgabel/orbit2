@@ -7,17 +7,73 @@
 @using Orbit.Domain.Nodes.Generators
 @using Orbit.Domain.Timing
 @using Orbit.Presentation.Canvas
+@using Orbit.Domain.Parameters
+@using System.Globalization
 @implements IAsyncDisposable
 @inject IPerformanceNoteService Performance
 @inject IJSRuntime JavaScript
 @inject Orbit.UI.Components.Analysis.ScopeBrowserAssets BrowserAssets
 
-<section class="performance-keyboard workspace-toolbar toolbar-group" aria-label="Performance keyboard" data-armed="@armed.ToString().ToLowerInvariant()" data-keyboard-ready="@((adapter is not null).ToString().ToLowerInvariant())" tabindex="0" @ref="root">
+<section class="performance-keyboard workspace-toolbar toolbar-group" aria-label="Performance keyboard" data-armed="@armed.ToString().ToLowerInvariant()" data-step-entry="@((stepEntry && showPattern).ToString().ToLowerInvariant())" data-keyboard-ready="@((adapter is not null).ToString().ToLowerInvariant())" tabindex="0" @ref="root">
     <button type="button" class="secondary" aria-pressed="@armed.ToString().ToLowerInvariant()" @onclick="ToggleAsync">@(armed ? "Disarm keyboard" : "Arm keyboard")</button>
-    <span class="workspace-notice">@Node.Name · Live continuous pitch</span>
+    <span class="workspace-notice">@Node.Name · Continuous pitch</span>
     <output class="workspace-notice" data-live-pitch-offset="@(Offset?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "unavailable")">
         @(Offset is double offset ? $"Live: {offset:+0.##;-0.##;0} st" : "Play connected patch")
     </output>
+    <button type="button" class="secondary" @onclick="() => showPattern = !showPattern" aria-expanded="@showPattern.ToString().ToLowerInvariant()">@(showPattern ? "Hide pattern" : "Edit pattern")</button>
+    @if (showPattern)
+    {
+        <div class="pitch-pattern-editor" role="region" aria-label="Pitch pattern">
+            <div class="workspace-toolbar pitch-pattern-settings">
+                @foreach (var definition in NoteSequencerGenerator.PatternDefinitions.Take(7).Where(d => VisibleSetting(d.Key)))
+                {
+                    <label @key="definition.Key">@definition.Name
+                        @if (definition.Choices is { } choices)
+                        {
+                            <select aria-label="@definition.Name" value="@Format(Value(definition.Key))" @onchange="e => EditValueAsync(definition.Key, e)">
+                                @foreach (var choice in choices)
+                                {
+                                    <option value="@Format(choice.Value)">@choice.Label</option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <input type="number" aria-label="@definition.Name" min="@Format(definition.Minimum)" max="@Format(definition.Maximum)" step="0.01" value="@Format(Value(definition.Key))" @onchange="e => EditValueAsync(definition.Key, e)" />
+                        }
+                    </label>
+                }
+                <output data-sequence-playhead="@(Playhead?.ToString() ?? "none")">@(Playhead is int step ? $"Playing step {step}" : "No active step") · @LoopDuration</output>
+            </div>
+            <div class="pitch-pattern-grid" role="group" aria-label="Pattern steps">
+                @for (var index = 0; index < StepCount; index++)
+                {
+                    var slot = index;
+                    var code = (int)Value(NoteSequencerGenerator.StepKey(slot));
+                    <button type="button" class="secondary @(Playhead == slot + 1 ? "pitch-step-playing" : "")" aria-pressed="@((selectedStep == slot).ToString().ToLowerInvariant())" data-step="@(slot + 1)" aria-label="@($"Step {slot + 1}: {StepLabel(code)}")" @onclick="() => selectedStep = slot">
+                        <small>@(slot + 1)</small><span>@StepLabel(code)</span>
+                    </button>
+                }
+            </div>
+            <div class="workspace-toolbar">
+                <label>Selected step @(selectedStep + 1)
+                    <select aria-label="Step note" value="@Format(Value(NoteSequencerGenerator.StepKey(selectedStep)))" @onchange="e => EditValueAsync(NoteSequencerGenerator.StepKey(selectedStep), e)">
+                        <option value="0">Hold</option>
+                        @foreach (var note in Enumerable.Range(0, 128))
+                        {
+                            <option value="@(note + 1)">@MusicalPitch.NoteName(note)</option>
+                        }
+                    </select>
+                </label>
+                <button type="button" class="secondary" @onclick="() => WriteStepAsync(0, false)">Clear step (Hold)</button>
+                <button type="button" class="secondary" @onclick="ClearAllAsync">@(confirmClear ? "Confirm clear all 64 slots" : "Clear all")</button>
+                @if (confirmClear) { <button type="button" class="secondary" @onclick="() => confirmClear = false">Cancel</button> }
+                <label><input type="checkbox" @bind="stepEntry" /> Step entry (arm keyboard)</label>
+                <label>Advance <select aria-label="Auto advance" @bind="advance">@foreach (var n in new[] { 1, 2, 4, 8 }) { <option value="@n">@n</option> }</select></label>
+                <small>Space = Hold, arrows = select step. Step entry wraps; shrinking retains hidden slots.</small>
+            </div>
+        </div>
+    }
     @if (armed)
     {
         <div class="workspace-toolbar">
@@ -30,9 +86,10 @@
             @foreach (var pianoKey in PerformanceKeyboardLayout.Keys)
             {
                 var note = PerformanceKeyboardLayout.Note(octave, pianoKey);
+                if (note > 127) continue;
                 <button @key="pianoKey.Code" type="button" class="@(pianoKey.Black ? "performance-black-key" : "performance-white-key")"
                         data-midi-note="@note" aria-label="@($"Play {MusicalPitch.NoteName(note)} ({pianoKey.Hint})")"
-                        disabled="@(!NoteSequencerGenerator.IsPlayable(note, Reference))" @onclick="() => SendAsync(new(PerformanceNoteKind.NoteOn, note))">
+                        disabled="@(!NoteSequencerGenerator.IsPlayable(note, Reference))" @onclick="() => EnterNoteAsync(note)">
                     <span>@MusicalPitch.NoteName(note)</span><small>@pianoKey.Hint</small>
                 </button>
             }
@@ -47,21 +104,56 @@
     [Parameter] public Guid PatchId { get; set; }
     [Parameter] public Guid GraphId { get; set; }
     [Parameter] public double? Offset { get; set; }
+    [Parameter] public int? Playhead { get; set; }
+    [Parameter] public double Tempo { get; set; }
+    [Parameter] public EventCallback<ParameterEditRequest> Edit { get; set; }
+    [Parameter] public EventCallback ClearPattern { get; set; }
     private ElementReference root;
     private IJSObjectReference? module, adapter;
     private DotNetObjectReference<PerformanceKeyboard>? reference;
     private Task? mounting;
     private bool disposed, armed, focusRequested;
+    private bool showPattern, stepEntry, confirmClear;
+    private int selectedStep, advance = 1;
     private int octave = 4;
     private int previousReference = -1;
     private string? notice;
     private readonly Dictionary<string, int> held = [];
     private int Reference => (int)Node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.ReferenceKey).BaseValue;
+    private double Value(string key) => Node.Parameters.Single(p => p.Definition.Key == key).BaseValue;
+    private int StepCount => (int)Value(NoteSequencerGenerator.CountKey);
+    private bool Free => Value(NoteSequencerGenerator.TimingKey) == 1;
+    private string LoopDuration => Free
+        ? $"Loop: {Value(NoteSequencerGenerator.SecondsKey) * StepCount:0.##} s"
+        : $"Loop: {Value(NoteSequencerGenerator.DivisionKey) * Value(NoteSequencerGenerator.MultiplierKey) * StepCount / 4:0.##} beats · {Value(NoteSequencerGenerator.DivisionKey) * Value(NoteSequencerGenerator.MultiplierKey) * StepCount / 4 * 60 / Tempo:0.##} s";
+    private bool VisibleSetting(string key) => key switch { NoteSequencerGenerator.SecondsKey => Free, NoteSequencerGenerator.DivisionKey or NoteSequencerGenerator.MultiplierKey => !Free, _ => true };
+    private static string Format(double value) => value.ToString(CultureInfo.InvariantCulture);
+    private static string StepLabel(int code) => code == 0 ? "Hold" : MusicalPitch.NoteName(code - 1);
+    private async Task EditValueAsync(string key, ChangeEventArgs args)
+    {
+        var p = Node.Parameters.Single(p => p.Definition.Key == key);
+        if (double.TryParse(args.Value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var value) && p.Definition.IsValidBaseValue(value))
+            await Edit.InvokeAsync(new(new ParameterAddress(Node.Id, p.Id), value));
+    }
+    private async Task WriteStepAsync(int code, bool move)
+    {
+        var p = Node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.StepKey(selectedStep));
+        await Edit.InvokeAsync(new(new ParameterAddress(Node.Id, p.Id), code));
+        if (move) selectedStep = (selectedStep + advance) % StepCount;
+    }
+    private Task EnterNoteAsync(int note) => stepEntry && showPattern ? WriteStepAsync(note + 1, true) : SendAsync(new(PerformanceNoteKind.NoteOn, note));
+    private async Task ClearAllAsync()
+    {
+        if (!confirmClear) { confirmClear = true; return; }
+        confirmClear = false;
+        await ClearPattern.InvokeAsync();
+    }
 
     protected override void OnParametersSet()
     {
         if (previousReference < 0 || !PerformanceKeyboardLayout.IsAvailable(octave, Reference)) octave = PerformanceKeyboardLayout.ReferenceOctave(Reference);
         previousReference = Reference;
+        selectedStep = Math.Clamp(selectedStep, 0, StepCount - 1);
     }
 
     private async Task ToggleAsync()
@@ -109,13 +201,19 @@
             if (held.Remove(code, out var released)) await SendAsync(new(PerformanceNoteKind.NoteOff, released));
             return;
         }
+        if (stepEntry && showPattern && code is "Space" or "ArrowLeft" or "ArrowRight")
+        {
+            if (code == "Space") await WriteStepAsync(0, true);
+            else selectedStep = (selectedStep + (code == "ArrowLeft" ? StepCount - 1 : 1)) % StepCount;
+            StateHasChanged(); return;
+        }
         if (code is "KeyZ" or "KeyX") { ChangeOctave(code == "KeyZ" ? -1 : 1); StateHasChanged(); return; }
         var key = PerformanceKeyboardLayout.Keys.SingleOrDefault(key => key.Code == code);
         if (key is null || held.ContainsKey(code)) return;
         var note = PerformanceKeyboardLayout.Note(octave, key);
         if (!NoteSequencerGenerator.IsPlayable(note, Reference)) return;
         held.Add(code, note);
-        await SendAsync(new(PerformanceNoteKind.NoteOn, note));
+        await EnterNoteAsync(note);
         StateHasChanged();
     });
 

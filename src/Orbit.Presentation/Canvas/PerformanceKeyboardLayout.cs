@@ -16,6 +16,6 @@ public static class PerformanceKeyboardLayout
     });
 
     public static int Note(int octave, PerformanceKey key) => (octave + 1) * MusicalPitch.SemitonesPerOctave + key.Semitone;
-    public static bool IsAvailable(int octave, int reference) => octave is >= -1 and <= 8 && Keys.Any(key => NoteSequencerGenerator.IsPlayable(Note(octave, key), reference));
-    public static int ReferenceOctave(int reference) => Math.Clamp(reference / 12 - 1, -1, 8);
+    public static bool IsAvailable(int octave, int reference) => octave is >= -1 and <= 9 && Keys.Any(key => NoteSequencerGenerator.IsPlayable(Note(octave, key), reference));
+    public static int ReferenceOctave(int reference) => Math.Clamp(reference / 12 - 1, -1, 9);
 }

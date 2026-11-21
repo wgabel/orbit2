@@ -41,7 +41,7 @@ export class TransportSignalSource {
                 await loading;
                 if (this.#context !== context) throw new Error("Transport context changed.");
                 this.#node ??= new AudioWorkletNode(context, "orbit-transport-signal", {
-                    numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2],
+                    numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [7],
                     processorOptions: { anchor: this.#anchor }
                 });
             } catch (error) {

@@ -38,7 +38,7 @@ export class AudioEngine {
             cancelled: false, current: undefined, voices: new Set(), ready,
             latestRevision: -1, replacing: false,
             controlNames: new Set(Object.keys(request.parameters ?? {})),
-            pendingParameters: Object.create(null)
+            pendingParameters: Object.create(null), pendingPatterns: new Map()
         };
         this.#active.set(request.soundId, playback);
 
@@ -60,6 +60,8 @@ export class AudioEngine {
                 // voice attacks, with the last value winning for each control.
                 if (Object.keys(playback.pendingParameters).length > 0)
                     this.#nodeFactory.setParameters(node, playback.pendingParameters);
+                if (playback.pendingPatterns.size && !this.#actions.get(node)?.setPatterns([...playback.pendingPatterns.values()]))
+                    throw new Error("Invalid pending pitch pattern.");
             } catch (error) {
                 this.#destroyNode(node);
                 throw error;
@@ -136,7 +138,7 @@ export class AudioEngine {
     }
 
     // Only values of existing controls may change; this never recreates a node.
-    setParameters(soundId, parameters) {
+    setParameters(soundId, parameters, patterns = []) {
         const playback = this.#active.get(soundId);
         if (!playback || playback.cancelled) return false;
         if (!parameters || typeof parameters !== "object" || Array.isArray(parameters))
@@ -145,8 +147,13 @@ export class AudioEngine {
             if (!playback.controlNames.has(name) || !Number.isFinite(value))
                 throw new Error("Invalid audio parameter: " + name);
         }
-        if (playback.current) this.#nodeFactory.setParameters(playback.current.node, parameters);
-        else Object.assign(playback.pendingParameters, parameters);
+        if (playback.current) {
+            if (patterns.length && !this.#actions.get(playback.current.node)?.setPatterns(patterns)) return false;
+            this.#nodeFactory.setParameters(playback.current.node, parameters);
+        } else {
+            Object.assign(playback.pendingParameters, parameters);
+            for (const update of patterns) playback.pendingPatterns.set(update.index, update);
+        }
         return true;
     }
 
@@ -216,7 +223,7 @@ export class AudioEngine {
             if (inputs.length) this.#actions.set(node, await this.#createActions(context, node, inputs, phaseChannels));
             if (request.requiresTransport) {
                 if (!this.#transport) throw new Error("Transport signal source is unavailable.");
-                await this.#transport.connect(context, node, this.#actions.get(node)?.node ?? node, phaseChannels);
+                await this.#transport.connect(context, node, this.#actions.get(node)?.node ?? node, inputs.some(input => input.pattern) ? 7 : phaseChannels);
             }
             return node;
         } catch (error) {

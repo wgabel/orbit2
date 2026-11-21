@@ -81,7 +81,11 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
             // oscillator state when a validated base value changes.
             var changes = values.Where(value => !playback.Values.TryGetValue(value.Key, out var previous) || previous != value.Value)
                 .ToDictionary(value => value.Key, value => value.Value);
-            if (changes.Count > 0 && !await engine.SetParametersAsync(SoundId(graph.Id), changes))
+            var patterns = program.RhythmicInputs.Select((input, index) => (input, index)).Where(entry => entry.input.IsPitch)
+                .Select(entry => (entry.index, Previous: PitchPattern.FromNode(playback.Topology.GetGraph(entry.input.GraphId).GetNode(entry.input.NodeId)),
+                    Current: PitchPattern.FromNode(graph.GetGraph(entry.input.GraphId).GetNode(entry.input.NodeId))))
+                .Where(entry => !entry.Current.Matches(entry.Previous)).Select(entry => new PitchPatternUpdate(entry.index, entry.Current)).ToArray();
+            if ((changes.Count > 0 || patterns.Length > 0) && !await engine.SetGraphControlsAsync(SoundId(graph.Id), changes, patterns))
                 return playback.Result with { IsActive = false };
             return playback.Accept(graph, program, values);
         }
@@ -152,7 +156,9 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
         var envelopeAddresses = envelopeMeters.ToDictionary(meter => meter.Name, StringComparer.Ordinal);
         var playheads = new Dictionary<Guid, Dictionary<Guid, EnvelopePlayhead>>();
         var pitchAddresses = pitchMeters.ToDictionary(meter => meter.Name, StringComparer.Ordinal);
+        var stepAddresses = pitchMeters.ToDictionary(meter => meter.StepName, StringComparer.Ordinal);
         var pitchOffsets = new Dictionary<Guid, Dictionary<Guid, double>>();
+        var pitchSteps = new Dictionary<Guid, Dictionary<Guid, int>>();
         foreach (var (path, value) in outputs)
         {
             var name = path[(path.LastIndexOf('/') + 1)..];
@@ -173,6 +179,11 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
                 if (!pitchOffsets.TryGetValue(pitch.GraphId, out var local)) pitchOffsets.Add(pitch.GraphId, local = []);
                 local[pitch.NodeId] = value;
             }
+            else if (stepAddresses.TryGetValue(name, out var step) && value is >= 0 and <= 64 && value == Math.Truncate(value))
+            {
+                if (!pitchSteps.TryGetValue(step.GraphId, out var local)) pitchSteps.Add(step.GraphId, local = []);
+                local[step.NodeId] = (int)value;
+            }
         }
         return values.Count == 0 && playheads.Count == 0 && pitchOffsets.Count == 0 ? null : new(graphId, revision,
             values.Remove(graphId, out var rootValues) ? rootValues : new Dictionary<ParameterAddress, double>())
@@ -181,7 +192,8 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
                 pair => (IReadOnlyDictionary<ParameterAddress, double>)pair.Value),
             EnvelopePlayheads = playheads.ToDictionary(pair => pair.Key,
                 pair => (IReadOnlyDictionary<Guid, EnvelopePlayhead>)pair.Value),
-            PitchOffsets = pitchOffsets.ToDictionary(pair => pair.Key, pair => (IReadOnlyDictionary<Guid, double>)pair.Value)
+            PitchOffsets = pitchOffsets.ToDictionary(pair => pair.Key, pair => (IReadOnlyDictionary<Guid, double>)pair.Value),
+            PitchSteps = pitchSteps.ToDictionary(pair => pair.Key, pair => (IReadOnlyDictionary<Guid, int>)pair.Value)
         };
     }
 

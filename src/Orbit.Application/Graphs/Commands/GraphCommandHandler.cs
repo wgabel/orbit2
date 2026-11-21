@@ -25,6 +25,7 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
             RemoveConnectionCommand disconnect => RemoveConnection(graph, disconnect),
             SetConnectionAmountCommand amount => SetConnectionAmount(graph, amount),
             SetParameterValueCommand set => SetParameterValue(graph, set),
+            SetPitchPatternStepsCommand set => SetPitchPatternSteps(graph, set),
             ApplyNodePresetCommand apply => ApplyNodePreset(graph, apply),
             SetNodeMutedCommand mute => SetNodeMuted(graph, mute),
             SetNodeBypassedCommand bypass => SetNodeBypassed(graph, bypass),
@@ -104,6 +105,17 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
         return graph.SetNodeParameterValues(command.NodeId, command.Preset.NodeType, command.Preset.Parameters)
             .Select(change => (IGraphEvent)new ParameterChanged(graph.Id, change.Address,
                 change.PreviousValue, change.CurrentValue)).ToArray();
+    }
+
+    private static IReadOnlyList<IGraphEvent> SetPitchPatternSteps(SignalGraph graph, SetPitchPatternStepsCommand command)
+    {
+        var node = graph.GetNode(command.NodeId);
+        if (node is not Orbit.Domain.Nodes.Generators.NoteSequencerGenerator || command.Steps.Count != Orbit.Domain.Nodes.Generators.NoteSequencerGenerator.Capacity ||
+            command.Steps.Any(code => code is < 0 or > 128)) throw new GraphValidationException("Invalid pitch pattern.");
+        var values = node.Parameters.ToDictionary(p => p.Definition.Key, p => p.BaseValue);
+        for (var i = 0; i < command.Steps.Count; i++) values[Orbit.Domain.Nodes.Generators.NoteSequencerGenerator.StepKey(i)] = command.Steps[i];
+        return graph.SetNodeParameterValues(command.NodeId, node.TypeKey, values)
+            .Select(change => (IGraphEvent)new ParameterChanged(graph.Id, change.Address, change.PreviousValue, change.CurrentValue)).ToArray();
     }
 
     private static IReadOnlyList<IGraphEvent> SetConnectionAmount(SignalGraph graph, SetConnectionAmountCommand command)
