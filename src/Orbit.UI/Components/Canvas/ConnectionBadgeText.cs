@@ -13,6 +13,7 @@ public static class ConnectionBadgeText
     {
         var destination = graph.GetNode(connection.Destination.NodeId);
         var input = destination.Inputs.Single(port => port.Id == connection.Destination.PortId);
+        if (input.SignalType.IsEvent()) return input.SignalType.ToString();
         var parameter = destination.Parameters.SingleOrDefault(p => p.ModulationPortId == input.Id);
         var amount = connection.Amount;
         var magnitude = Math.Abs(amount).ToString("0.###", CultureInfo.InvariantCulture);
@@ -29,6 +30,7 @@ public static class ConnectionBadgeText
         var destination = graph.GetNode(connection.Destination.NodeId);
         var sourcePort = source.Outputs.Single(p => p.Id == connection.Source.PortId);
         var destinationPort = destination.Inputs.Single(p => p.Id == connection.Destination.PortId);
-        return $"{source.Name}: {sourcePort.Name} to {destination.Name}: {destinationPort.Name}, amount {connection.Amount.ToString("G17", CultureInfo.InvariantCulture)}";
+        var detail = destinationPort.SignalType.IsEvent() ? "unity rhythmic event" : $"amount {connection.Amount.ToString("G17", CultureInfo.InvariantCulture)}";
+        return $"{source.Name}: {sourcePort.Name} to {destination.Name}: {destinationPort.Name}, {detail}";
     }
 }

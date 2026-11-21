@@ -10,7 +10,7 @@ public static class NodeRoleClassifier
     {
         if (node.TypeKey.StartsWith("generator.", StringComparison.Ordinal))
         {
-            if (node.Outputs.All(port => port.SignalType == SignalType.Modulation)) return NodeVisualRole.Modulator;
+            if (node.Outputs.All(port => port.SignalType == SignalType.Modulation || port.SignalType.IsEvent())) return NodeVisualRole.Modulator;
             var outgoing = graph.Connections.Where(edge => edge.Source.NodeId == node.Id).ToArray();
             return outgoing.Length > 0 && outgoing.All(edge =>
                 graph.GetNode(edge.Destination.NodeId).Inputs.Single(port => port.Id == edge.Destination.PortId)

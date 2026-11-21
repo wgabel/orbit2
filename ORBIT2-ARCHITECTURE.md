@@ -356,9 +356,9 @@ public record PortAddress(
 
 Signal types express semantics and validation rules, not necessarily different buffer implementations. Audio and modulation can both be floating-point streams. Converting an audio-rate oscillator output into modulation is permitted when compatible with the target; use explicit mapping or channel selection when required.
 
-A trigger represents a discrete occurrence; a gate represents a level or duration; a clock carries rhythmic timing information. Their exact runtime representations can be introduced later without changing the core port concept.
+A Trigger and Clock carry one-sample binary pulses; a Gate carries a held binary level. All three are mono, single-source and unity-only. Clock can feed a Trigger input (a timing pulse is a valid occurrence), but other conversions require an explicit adapter.
 
-The first envelope implementation accepts an ordinary oscillator signal on a dedicated continuous event-detection input; this is not a parameter modulation socket. The reserved Trigger, Gate and Clock kinds will become explicit event-stream contracts in Phase 7.1. See [Envelope generators and rhythmic triggers](#envelope-generators-and-rhythmic-triggers-planned-phase-71) for conversion, routing and timing rules.
+The envelope accepts an ordinary oscillator signal on a dedicated continuous event-detection input, distinct from parameter modulation sockets. It also supports typed Trigger/Clock and Gate-rising input selection. See [Envelope generators and rhythmic triggers](#envelope-generators-and-rhythmic-triggers-planned-phase-71) for conversion, routing and timing rules.
 
 ### Connections
 
@@ -698,9 +698,9 @@ A sine used as an LFO remains the same generator implementation: the displayed r
 | --- | --- |
 | Audio | Circle |
 | Modulation / continuous control | Diamond |
-| Trigger (future) | Triangle |
-| Gate (future) | Square |
-| Clock (future) | Hexagon |
+| Trigger | Triangle |
+| Gate | Square |
+| Clock | Hexagon |
 
 Map these presentation shapes to the existing domain port kinds; introduce future kinds only when their domain semantics exist. Audio channel count is a label, not a separate signal kind.
 
@@ -1097,7 +1097,7 @@ Every connection already owns a signed finite `SignalConnection.Amount`. Make th
 | Parametric EQ gain | `+6 dB` | Additive depth in the receiving parameter's unit, not an audio-route gain. |
 | Phase parameter | `+90°` | Additive depth in degrees. |
 | Audio input or intermediate rack/modulation route | `×0.5` | Dimensionless multiplier; the final parameter unit applies only at its direct input. |
-| Future typed event route | `Trigger`, `Gate` or `Clock` | Unity event semantics; no ordinary amount control. |
+| Typed event route | `Trigger`, `Gate` or `Clock` | Unity event semantics; type badge and no ordinary amount control. |
 
 Extract shared destination/amount semantics and formatting from `ConnectionAmountEditor` into reusable presentation helpers, resolving the graph-qualified source and destination, target parameter, unit, active state and actual default amount (currently 1). Use the existing parameter unit vocabulary; display short, readable signed values, with full precision and route name available in the accessible label/inspector. A positive depth means a positive coefficient, not necessarily a positive signal; actual contribution depends on source amplitude, polarity and upstream routing. Do not label an audio multiplier as dB or present a depth as a measured live value. No special cases by node type.
 
@@ -1630,7 +1630,7 @@ stateDiagram-v2
 
 **Implemented Phase 7.1.1.** Add **AD Envelope** from the node catalog or use the editable **Impact — AD percussion** composite and connect its Audio output to Master output. The envelope has independent Attack (1–10000 ms), Decay (1–20000 ms), Attack curve and Decay curve (0.25–8, where 1 is linear). Defaults are 8 ms, 500 ms, 1 and 3; larger decay exponents fall more quickly, larger attack exponents start more slowly. All four are ordinary modulatable controls with the shared parameter editor, preset system and signal scope. `FaustSchmittEdge` implements the detector; `FaustEnvelopeSegments` holds per-instance state and evaluates normalized power curves. On the event sample, preserve the previous output and latch attack controls; after N = max(1, round(ms × sample rate / 1000)) further samples reach exactly 1, latch decay controls, and after D further samples reach exactly 0. A retrigger takes priority over stage completion. Falling edges never interrupt AD. The node conservatively predicts 0–1 for destinations, uses the ordinary signal weighting rules, and base edits do not rebuild the Faust program. The composite and five node presets are regular editable, persistable graphs/configurations; dedicated envelope visualization, other modes, and typed event sources remain later phases.
 
-**Future explicit rhythmic infrastructure.** The existing `SignalType` enum reserves Trigger, Gate and Clock, but they do not yet have DSP support. Introduce reusable typed contracts, not one envelope-specific UI event system:
+**Explicit rhythmic infrastructure (Phase 7.1.2 and later).** Trigger, Gate and Clock have reusable typed routing contracts. Manual and transport-clock sources are planned for 7.1.3:
 
 | Source / adapter | Meaning | First consumer(s) |
 |---|---|---|
@@ -1640,6 +1640,8 @@ stateDiagram-v2
 | Clock | One timing pulse per rhythmic boundary, free Hz or transport-synchronized musical division | Envelopes, gates, steps and sample playback |
 
 Use scalar per-sample streams internally (event pulse 1 for exactly one sample, 0 otherwise; gate 0/1), with typed ports enforcing intent. Keep signal-to-event conversion explicit; do not treat arbitrary positive audio as a typed trigger or permit event streams to be multiplied by ordinary audio gain/modulation depth. Typed event links have unity semantics and single-source input policy; fan-out is supported. Multiple events may later combine through an explicit merge/logic adapter, with coincident pulses coalesced by a documented policy. Add conditional source selection or a separate typed input alongside the existing oscillator input, with a single active source and retained dormant connections. Phase 7.1 must extend graph validation, connection editing, rack mirroring/flattening, dependency ordering, persistence, range/observation handling and shared port rendering (triangle Trigger, square Gate, hexagon Clock) consistently. Test nested fan-out without duplicate or delayed events; add multi-output compiler support only when a node actually needs it. Mute on event/gate sources must suppress pulses or close the gate rather than slew a boolean through fractional values.
+
+**Implemented Phase 7.1.2.** `Signal to Trigger` and `Signal to Gate` use the same 0.1/0.0 Schmitt thresholds on their weighted mono continuous input. Trigger starts unarmed, emits a single sample on each qualified rise and never synthesizes a startup-high pulse; Gate starts closed, opens at high (including startup high), holds in the deadband and closes at low. AD now exposes a structural Trigger source choice: Continuous signal (legacy/default), Trigger / clock (binary pulses consumed directly), or Gate rising edge (the existing Schmitt detector; falling does not release AD). All three sockets keep distinct identities and dormant wires. Schema-1 AD documents and presets get only the new identities/default selector; existing wires and values remain unchanged. Event ports are mono and single-source, Clock-to-Trigger is the only cross-event compatibility, event amounts are exactly 1 on connect/edit/restore, and composite racks mirror the same constraints. Faust routes events without gain arithmetic or delay, scopes can observe binary streams, and mixed-output composites reuse the same mute control while continuous outputs ramp and events switch immediately. Muting a Gate closes it; unmuting while high restores its level, while Trigger never replays missed events. Event badges display the type and the inspector has no amount field. The compiled tests measure exact fan-out/rack alignment, Schmitt transitions and mute behavior at 44.1/48 kHz. Clock generation and manual actions remain Phase 7.1.3; AR/ADSR gate release remains 7.1.4.
 
 ~~~mermaid
 flowchart TD
@@ -1657,7 +1659,7 @@ flowchart TD
 
 **Layering and UX.** Keep `EnvelopeGenerator`, parameter/port definitions and validation in Domain; registry/presets and runtime action contracts in Application; reusable edge detector, segment math, state machine and emitters in Audio; browser transport/event delivery in Infrastructure. Use `NodeFrame`, ordinary conditional parameter editors, tokenized event sockets, a capability-driven trigger action (where applicable) and the shared Phase 6.18 visualization panel for the configured envelope curve and optionally its measured output/playhead. Static preview is valid while stopped; live telemetry is generation-qualified, not persisted and never drives DSP. Provide built-in AD impact, slow swell and ADSR examples using the preset catalog, plus a complete impact example patch with wiring. Custom envelope definitions will need immutable versioned point data and atomic history once implemented; they are distinct from live playhead telemetry.
 
-**Acceptance.** Test actual compiled Faust at 44.1/48 kHz: falling/constant/disconnected input, oscillator rising edges, exact segment timing/endpoints and bounded amplitude, onset slope, retrigger continuity, early gate release, sustain, looping with zero-duration safeguards, shared trigger alignment across nested graphs, typed route validation and persistence, tempo/division/reset/wrap behavior, manual action latency and stale generation rejection, and no recompile or graph/history mutation on events. Render the worked pitch/amplitude patch offline to verify its frequency and level trajectories and distinguish clipping from amplitude jumps. Published browser tests cover shared editors/visualizations, presets, live parameter changes and transient actions. Phase 7.1.1 provides the continuous AD path; gate release, additional modes and typed event DSP are future work.
+**Acceptance.** Test actual compiled Faust at 44.1/48 kHz: falling/constant/disconnected input, oscillator rising edges, exact segment timing/endpoints and bounded amplitude, onset slope, retrigger continuity, early gate release, sustain, looping with zero-duration safeguards, shared trigger alignment across nested graphs, typed route validation and persistence, tempo/division/reset/wrap behavior, manual action latency and stale generation rejection, and no recompile or graph/history mutation on events. Render the worked pitch/amplitude patch offline to verify its frequency and level trajectories and distinguish clipping from amplitude jumps. Published browser tests cover shared editors/visualizations, presets, live parameter changes and transient actions. Phases 7.1.1–2 provide continuous AD and typed event conversion/routing; gate release, additional modes and rhythmic runtime sources remain future work.
 
 ### Musical instrument synthesis and physical modelling (planned Phase 7.2)
 
@@ -2266,7 +2268,7 @@ Deliverable: a scalable modular environment, adding functionality through node d
 #### Phase 7.1 — Envelope generators and rhythmic triggers (planned)
 
 - **7.1.1 — Oscillator-driven AD envelope (implemented):** reusable sample-rate edge detector, continuous oscillator trigger input, shared AD segment state machine, configurable durations/curves, unipolar range prediction, shared parameter UI, five presets, editable impact patch and compiled DSP timing/continuity tests. No dedicated trigger source required.
-- **7.1.2 — Typed rhythmic ports and adapters:** Trigger, Gate and Clock contracts, explicit continuous-signal edge/gate conversion, single-source unity event links, nested rack/flattening/validation/persistence support and tokenized event sockets; preserve the existing oscillator trigger route.
+- **7.1.2 — Typed rhythmic ports and adapters (implemented):** Trigger, Gate and Clock contracts, explicit continuous-signal edge/gate adapters, single-source unity event links, nested rack/flattening/validation/persistence support and tokenized event sockets; preserve the existing oscillator trigger route with conditional source selection.
 - **7.1.3 — Rhythmic sources:** manual trigger and gate runtime actions, free/BPM clock using shared transport, gate duration and trigger fan-out; no graph revision or recompilation on events; generation-safe worklet delivery and timing tests.
 - **7.1.4 — AR, ADSR and Loop:** gate-aware stage transitions, sustain/release, repeat/rest and rapid retrigger continuity using the same envelope node and conditional parameters.
 - **7.1.5 — Envelope visualization:** configured curve, optional live measured output/playhead and compact/expanded shared visualization; no graph mutation or DSP dependency on display.

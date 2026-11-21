@@ -1,3 +1,5 @@
+using Orbit.Domain.Parameters;
+
 namespace Orbit.Domain.Ports;
 
 /// <summary>
@@ -11,4 +13,7 @@ public sealed record PortDefinition(
     PortDirection Direction,
     SignalType SignalType,
     int ChannelCount = 1,
-    FanInPolicy FanIn = FanInPolicy.Single);
+    FanInPolicy FanIn = FanInPolicy.Single)
+{
+    public ParameterActivation? ActiveWhen { get; init; }
+}

@@ -94,6 +94,16 @@ public sealed class PatchDocumentSerializer
                     parameters.Add(OscillatorGenerator.PitchKey, (pitch.Id, pitch.BaseValue));
                     parameters.Add(OscillatorGenerator.PitchTrackingKey, (tracking.Id, tracking.BaseValue));
                 }
+                // Phase 7.1.1 AD nodes used only continuous triggering. Preserve those wires and IDs.
+                if (leaf is EnvelopeGenerator && ports.Count == 6 && parameters.Count == 4 &&
+                    !ports.ContainsKey(EnvelopeGenerator.EventTriggerPortKey) && !ports.ContainsKey(EnvelopeGenerator.GatePortKey) &&
+                    !parameters.ContainsKey(EnvelopeGenerator.TriggerSourceKey))
+                {
+                    foreach (var key in new[] { EnvelopeGenerator.EventTriggerPortKey, EnvelopeGenerator.GatePortKey })
+                        ports.Add(key, leaf.Inputs.Single(p => p.Key == key).Id);
+                    var selector = leaf.Parameters.Single(p => p.Definition.Key == EnvelopeGenerator.TriggerSourceKey);
+                    parameters.Add(EnvelopeGenerator.TriggerSourceKey, (selector.Id, selector.BaseValue));
+                }
                 leaf.RestoreIdentity(ports, parameters);
                 graph.AddNode(leaf);
             }

@@ -1,6 +1,7 @@
 using Orbit.Domain.Nodes;
 using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Ports;
+using Orbit.Domain.Parameters;
 
 namespace Orbit.Application.Graphs.Snapshots;
 
@@ -20,12 +21,15 @@ public sealed record GraphNodeSnapshot(
 
     /// <summary>Evaluate conditional parameter activity from the committed node snapshot.</summary>
     public bool IsParameterActive(ParameterSnapshot parameter) =>
-        parameter.Definition.ActiveWhen is not { } condition ||
+        IsActive(parameter.Definition.ActiveWhen);
+
+    private bool IsActive(ParameterActivation? condition) => condition is null ||
         condition.Conditions().All(required => Parameters.Any(selector => selector.Definition.Key == required.SelectorKey &&
             selector.BaseValue == required.EqualsValue));
 
-    /// <summary>Ordinary signal inputs stay active; modulation inputs follow their parameter.</summary>
+    /// <summary>Inputs follow their explicit activation and their associated parameter, if any.</summary>
     public bool IsInputActive(Guid portId) =>
+        IsActive(Inputs.SingleOrDefault(port => port.Id == portId)?.ActiveWhen) &&
         Parameters.All(parameter => parameter.ModulationPortId != portId || IsParameterActive(parameter));
 
     internal static GraphNodeSnapshot Capture(ISignalNode node, long revision) => new(

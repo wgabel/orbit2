@@ -56,7 +56,8 @@ public sealed class CompositeNode : SignalNode, ICompositeNode
             var all = inputPorts.Concat(outputPorts).ToArray();
             if (all.Any(port => port is null || port.Id == Guid.Empty ||
                 string.IsNullOrWhiteSpace(port.Name) || port.ChannelCount < 1 ||
-                !Enum.IsDefined(port.SignalType) || !Enum.IsDefined(port.FanIn)))
+                !Enum.IsDefined(port.SignalType) || !Enum.IsDefined(port.FanIn) ||
+                port.SignalType.IsEvent() && (port.ChannelCount != 1 || port.FanIn != FanInPolicy.Single)))
                 throw new GraphValidationException("Every exposed port needs a valid definition.");
             if (all.Select(port => port.Id).Distinct().Count() != all.Length)
                 throw new GraphValidationException("Boundary port IDs must be unique within a composite.");
