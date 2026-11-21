@@ -1,12 +1,36 @@
 # Orbit 2 — Modular audio engine and hierarchical graph architecture
 
-**Status:** Architecture proposal and implementation roadmap  
+**Status:** Living architecture, implemented contracts and implementation roadmap  
+**Implementation audit:** 2026-11-21 · main through [`4f8de46`](https://github.com/wgabel/orbit2/commit/4f8de46b03a6dd0f09f39d842a625f48c28f7f3c)  
 **Target repository:** [wgabel/orbit2](https://github.com/wgabel/orbit2)  
-**Date:** 2026-11-20
+**Original design date:** 2026-11-20
 
-This document consolidates the design discussions for Orbit 2: the original browser boilerplate, separation of responsibilities, signal generation, modulation, audio processing, clocks, hierarchical node canvases, exposed input/output racks, and event-driven editing. It is intended as a reference for implementing the next iterations, not a claim that the proposed systems already exist.
+This document consolidates the design discussions for Orbit 2: the original browser boilerplate, separation of responsibilities, signal generation, modulation, audio processing, clocks, hierarchical node canvases, exposed input/output racks, and event-driven editing. It is intended as a reference for implementing the next iterations, not a claim that every proposed system already exists. Earlier implementation sketches, design rationale, examples and acceptance criteria are preserved even when later implementation records supersede the initial wording. The README remains the practical build/run guide.
+
+## Reading guide and current implementation
+
+**Status vocabulary:** Implemented = verified on the audited main branch or in an explicitly identified implementation PR; Partial = a defined subset delivered; In progress = implementation underway; Planned = design or future deliverable; Deferred = deliberately outside current scope.
+
+| Capability | Current status | Design / evidence |
+|---|---|---|
+| Graph, validated commands, nested racks, dynamic Faust compilation, live parameter updates | Implemented · Phases 1–5 | Sections 2–5, 7–10 |
+| Shared BPM, oscillators, noise, mixer, filter, EQ, delay, reverb, chorus | Implemented · 6.1–6.7, 6.12–6.15 | Sections 6 and 10 |
+| Recovery, named patches, portable JSON, undo/redo | Implemented · 6.8–6.11 | Section 9 |
+| Mute/bypass and individual presets | Implemented · 6.16–6.17 | Section 7 |
+| Scope, spectrum, level and filter/EQ response | Implemented · 6.18.1–6.18.5; dedicated analyzer and advanced history planned | Sections 7 and 10; [PR #4](https://github.com/wgabel/orbit2/pull/4) |
+| Cable badges, per-canvas preferences, anchored editing | Implemented core · 6.19.5; annotations and optional refinements planned | Section 7; [PR #1](https://github.com/wgabel/orbit2/pull/1), [#2](https://github.com/wgabel/orbit2/pull/2), [#3](https://github.com/wgabel/orbit2/pull/3) |
+| Shared semitone tracking and Pitch Control | Implemented · 7.2.2 | Section 10; [PR #6](https://github.com/wgabel/orbit2/pull/6) |
+| AD envelope and typed Trigger/Gate/Clock ports/adapters | Implemented · 7.1.1–7.1.2 | Section 10; [PR #7](https://github.com/wgabel/orbit2/pull/7), [#8](https://github.com/wgabel/orbit2/pull/8) |
+| Manual Trigger, timed Gate and Clock sources | Implemented · 7.1.3 | Section 10; [PR #10](https://github.com/wgabel/orbit2/pull/10) |
+| AR/ADSR/Loop envelope modes | Implemented · 7.1.4 | Section 10; [PR #12](https://github.com/wgabel/orbit2/pull/12) |
+| Playable note source, continuous keyboard transposer, sequencer, resonators, polyphony | Planned · remaining Phase 7 | Section 10; [PR #9](https://github.com/wgabel/orbit2/pull/9) is design documentation only |
+| Post-mixer pitch shifter; recorded audio assets and sample synthesis | Planned · 6.20, Phase 8 | Section 10 |
+
+Use the [roadmap](#13-implementation-roadmap) for delivery status, milestone identifiers and dependencies. Use the relevant architecture sections for implementation contracts and acceptance criteria. Where a design sketch and a later implementation record coexist, follow the latter for the current state.
 
 ## Contents
+
+**Foundations — model, signal semantics and timing**
 
 1. [Goals and current baseline](#1-goals-and-current-baseline)
 2. [Fundamental concepts](#2-fundamental-concepts)
@@ -14,13 +38,24 @@ This document consolidates the design discussions for Orbit 2: the original brow
 4. [Parameters and modulation](#4-parameters-and-modulation)
 5. [Ports and connections](#5-ports-and-connections)
 6. [Audio time, oscillator phase and transport](#6-audio-time-oscillator-phase-and-transport)
+**Editing, persistence and runtime**
+
 7. [Hierarchical signal graphs and canvases](#7-hierarchical-signal-graphs-and-canvases)
 8. [Input and output racks](#8-input-and-output-racks)
 9. [Commands, events and transaction boundaries](#9-commands-events-and-transaction-boundaries)
+    - [Workspace persistence and history](#workspace-persistence-and-history-phases-68611)
 10. [Faust and real-time execution](#10-faust-and-real-time-execution)
+    - [Runtime foundations and safety](#runtime-foundations-and-safety)
+    - [Audio processors and effects](#audio-processors-and-effects)
+    - [Signal observation and analysis](#signal-observation-and-analysis-phase-618)
+    - [Musical control, performance and instrument synthesis](#musical-control-performance-and-instrument-synthesis)
+    - [Keyboard performance and continuous pitch sequencer](#keyboard-performance-and-continuous-pitch-sequencer-phase-728--planned)
 11. [Project organization and dependencies](#11-project-organization-and-dependencies)
+**Delivery, verification and reference**
+
 12. [Worked patch example](#12-worked-patch-example)
 13. [Implementation roadmap](#13-implementation-roadmap)
+    - [Roadmap at a glance](#roadmap-at-a-glance)
 14. [Testing and acceptance criteria](#14-testing-and-acceptance-criteria)
 15. [Decisions and open questions](#15-decisions-and-open-questions)
 16. [References and glossary](#16-references-and-glossary)
@@ -44,9 +79,9 @@ The goal is a modular architecture in which new generators, processors, paramete
 | Minimal JavaScript modules | Browser audio integration and lifecycle; not application business logic |
 | GitHub Actions / Pages | Build, test and deployment of the static app |
 
-The current implementation includes the independent Orbit.Domain graph model (Phase 1) and a continuously running, fixed two-sine modulation graph (Phase 2). The browser bridge, build-time Faust compilation and separated application/UI/infrastructure projects support this playback path. Existing infrastructure concepts include AudioEngine, AudioContextManager, AudioClock, FaustModuleLoader, FaustNodeFactory, AudioVoice, AudioOutput and AudioEnvelope.
+**Original baseline (historical, Phases 1–2).** The initial implementation included the independent Orbit.Domain graph model (Phase 1) and a continuously running, fixed two-sine modulation graph (Phase 2). The browser bridge, build-time Faust compilation and separated application/UI/infrastructure projects support this playback path. Existing infrastructure concepts include AudioEngine, AudioContextManager, AudioClock, FaustModuleLoader, FaustNodeFactory, AudioVoice, AudioOutput and AudioEnvelope.
 
-The next stage adds validated commands and application events, then a reusable graph editor and general DSP compilation. The active modulation playback path and shared infrastructure provide the baseline.
+**Original next stage — now delivered in Phases 3–4:** validated commands and application events, then a reusable graph editor and general DSP compilation. The active modulation playback path and shared infrastructure provide the baseline.
 
 ### Design principles
 
@@ -104,7 +139,7 @@ classDiagram
     IProcessor <|-- Mixer
 ~~~
 
-Examples of future nodes:
+Examples of node families (both implemented and planned; see the roadmap for delivery status):
 
 - Generators: sine, triangle, band-limited sawtooth, square/pulse, noise, random, envelope, stepper, clock.
 - Processors: gain, mixer, pan, low-pass/high-pass filters, EQ, delay, reverb, chorus, flanger, compressor, distortion, signal mapping, rectification.
@@ -822,7 +857,9 @@ flowchart TD
     S --> D[Existing Faust compiler]
 ~~~
 
-### Node mute and processor bypass (Phase 6.16)
+<a id="node-mute-and-processor-bypass-phase-616"></a>
+
+### Node mute and processor bypass (Phase 6.16 — implemented)
 
 Provide fast, reversible auditioning without deleting nodes, rewiring a graph, changing base parameters or overwriting connection amounts. A compact **M** action in the shared node header mutes a node's complete outgoing signal; a **B** action on an eligible processor bypasses its processing and passes its input signal through. These are distinct operations.
 
@@ -864,9 +901,16 @@ flowchart TD
 
 **Implemented 6.16.2 — bypass.** `AudioEffectProcessor` explicitly declares a compatible single dry audio path, validates its port contract and exposes the stable `BypassInputKey`. Gain, Filter, Parametric EQ, Delay, Reverb and Chorus opt in; Mixer remains a routing processor with no B action. `IsBypassed`, `SetNodeBypassedCommand` and `NodeBypassedChanged` follow the existing independent mute state and command pattern; optional schema 1 `SavedNode.isBypassed` restores false for legacy documents. `FaustAuditionControls` and `FaustAuditionControl` replace the mute-only manifest with one shared kind-qualified host control system for both flags. A bypass blend of 1 sends the weighted dry audio input unchanged; 0 sends the ordinary processor output. The wet computation and all modulation dependencies remain running. The shared 10 ms slew initializes from the committed flag, and the final mute gate takes precedence over the dry/wet blend. No recompilation or processor-specific emitter change is needed for either action. The interval estimator uses the routed dry input bound for settled bypass and zero for mute, including when wet bounds are unknown; temporary fade trajectories are not predicted as settled ranges. `NodeAuditionToggle` renders M/B with distinct active token colors and accessible pressed states inside `NodeFrame`; muted and bypassed parameter controls remain editable. Tests compare dry samples and resumed reverb tails with continuous reference DSP at 44.1/48 kHz, including simultaneous mute/bypass.
 
+**Implementation record:**
+
+- Implemented (6.16.1): reversible node mute with shared header control, persisted state, boundary-wide smooth gain and settled modulation range projection.
+- Implemented (6.16.2): explicit effect bypass capability, independent persisted state, shared click-safe audition controls, dry range projection and continuously running wet DSP.
+
 **Deferred routing actions.** Do not implement mute buttons on individual connections, connection solo, global node solo or group mute/solo in this phase. An existing connection amount of zero can temporarily silence a single branch, while endpoint mute covers ordinary linear mixer lanes. Revisit dedicated edge mute only if preserving independent amounts or fan-out auditioning becomes a genuine requirement. If introduced later, edge state must be distinct from configured amount and use the same reversible, click-safe runtime-control approach. Solo scope and multi-output bypass routing require explicit contracts rather than implicit graph traversal.
 
-### Individual node presets (Phase 6.17, in progress)
+### Individual node presets (Phase 6.17 — implemented)
+
+#### Model and catalog (6.17.1)
 
 A node preset is a reusable immutable configuration of an existing registered node type, not a new node type, a factory, a DSP implementation, a patch or a live link to another node. Initially support leaf generators and processors with editable parameters; racks, master output without editable parameters, and composite graph definitions are not individual preset targets. Custom composite definitions remain a separate graph-template feature.
 
@@ -897,20 +941,7 @@ flowchart TD
     S --> G[Immutable usage groups]
 ~~~
 
-| Node | Presets | Built-in usage groups | Example presets |
-|---|---:|---|---|
-| Oscillator | 14 | Bass, Drones, Harmonic layers, Modulation, Rhythmic modulation | Sub Bass, Slow LFO, Deep Sine, Bright Saw |
-| Noise | 7 | Atmosphere, Modulation, Texture | Wind, Deep Rumble, Bright Hiss |
-| Gain | 6 | Gain staging, Layering, Modulation | Half Level, Quiet Bed, Modulation Center |
-| Filter | 8 | Corrective, Resonance, Texture, Tone shaping | Warm Low-pass, Gentle High-pass, Vocal Resonance |
-| Parametric EQ | 7 | Corrective, Texture, Tone shaping | Warmth, Presence, Remove Muddiness |
-| Delay | 8 | Atmospheric, Rhythmic, Short reflections | Quarter Note, Triplet, Long Echo |
-| Reverb | 8 | Atmospheric, Spaces, Texture | Small Room, Large Hall, Dark Ambient |
-| Chorus | 7 | Modulated pitch, Texture, Thickening | Gentle Chorus, Deep Ensemble |
-
-Examples describe intended usage, not a guarantee of a particular sound without suitable input/routing. Each supported node also exposes `Custom` even when empty. Presets should demonstrate meaningful settings, sensible output headroom and compatible parameter modes; factory defaults remain available independently.
-
-**Implemented 6.17.4.** The embedded catalog now contains 65 presets across all eight eligible types. The 55 additions preserve the original ten IDs and configurations and introduce no new runtime mechanism or storage format. All entries include descriptions and complete stable-key values (including dormant parameters). CI validates every entry against the registry, applies it through the atomic graph command, checks exact selector matching and unchanged connections, and generates a reachable Faust graph for each configuration. Duplicate complete configurations within a node type would fail the matching test. Custom persistence is the next step.
+#### Atomic application (6.17.2)
 
 **Atomic application.** Introduce `ApplyNodePresetCommand` targeting a graph ID and node ID with a validated type-key/value configuration. A domain batch parameter operation resolves and validates every key, value and target before mutating anything, including structural choices and stored inactive values. A failed or unchanged configuration produces no revision. A successful application preserves node, parameter and port IDs, connections and layout; publishes one `GraphChangeSet` with the individual `ParameterChanged` facts; records one undo entry; and triggers existing audio, range projection and autosave subscribers once. Do not loop through separate session commands. Topology comparison already distinguishes base-only changes from structural changes, so ordinary presets update active controls and structural choices use the existing crossfade policy. No preset-specific logic belongs in DSP or audio infrastructure. Existing pending slider history is finalized before a distinct preset application.
 
@@ -939,6 +970,8 @@ flowchart TD
     P --> V[Canvas and autosave]
 ~~~
 
+#### Shared selector (6.17.3)
+
 **Presentation.** Add a shared `NodePresetSelector` inside `NodeFrame`, below the header, using design tokens and the same component at every canvas level. Render groups via a compact accessible selector, provide a usage description and allow loading a preset without extra permanent toolbars. Show an unselected/modified state when the current base configuration does not match a preset; modulation alone does not mark it modified. Saving captures the current base configuration from an immutable snapshot. Built-ins cannot be overwritten, renamed or deleted; users can apply them, adjust values and save a new custom preset. Management actions (save as, deliberate overwrite, rename, delete) belong to a compact shared menu/dialog, not per-node implementations. Editing the preset library is separate from graph undo/redo; applying a preset is a graph edit.
 
 **Implemented 6.17.3.** `NodePresetSelector` is composed once in `NodeFrame` immediately below the header. It consumes `NodePresetService` and an immutable `GraphNodeSnapshot`, resolves eligibility and ordered usage groups through the existing catalog, and exposes a native accessible grouped select with a description and an explicit modified/unmatched option. The empty Custom group stays visible but disabled. `NodePresetService.FindMatchingPreset` compares the complete stable-key base configuration, including inactive parameters, and chooses the first match in deterministic catalog order; effective telemetry and audition flags are not involved. The component skips rematching the same snapshot on layout/telemetry-only refresh. Selecting a preset emits `NodePresetApplyRequest` through the shared frame and canvas to the workspace, which addresses the active graph and executes the atomic command. The control is bound to the committed matching value, not a separately persisted selection; undo/redo, reload and direct edits therefore stay consistent. Pointer and keyboard events do not start canvas gestures, and committed edits trigger the existing measured connection geometry refresh. CSS reuses parameter-choice styling and existing JSON-derived semantic/node tokens, with a single-line description and full tooltip. Published browser tests cover grouped options, applied values, modified/undo state and nested playback without interruption. Custom management remains a later phase.
@@ -955,6 +988,27 @@ flowchart TD
     W --> P[ApplyNodePresetCommand]
     P --> S
 ~~~
+
+#### Built-in content (6.17.4 — implemented at this milestone)
+
+| Node | Presets | Built-in usage groups | Example presets |
+|---|---:|---|---|
+| Oscillator | 14 | Bass, Drones, Harmonic layers, Modulation, Rhythmic modulation | Sub Bass, Slow LFO, Deep Sine, Bright Saw |
+| Noise | 7 | Atmosphere, Modulation, Texture | Wind, Deep Rumble, Bright Hiss |
+| Gain | 6 | Gain staging, Layering, Modulation | Half Level, Quiet Bed, Modulation Center |
+| Filter | 8 | Corrective, Resonance, Texture, Tone shaping | Warm Low-pass, Gentle High-pass, Vocal Resonance |
+| Parametric EQ | 7 | Corrective, Texture, Tone shaping | Warmth, Presence, Remove Muddiness |
+| Delay | 8 | Atmospheric, Rhythmic, Short reflections | Quarter Note, Triplet, Long Echo |
+| Reverb | 8 | Atmospheric, Spaces, Texture | Small Room, Large Hall, Dark Ambient |
+| Chorus | 7 | Modulated pitch, Texture, Thickening | Gentle Chorus, Deep Ensemble |
+
+Examples describe intended usage, not a guarantee of a particular sound without suitable input/routing. Each supported node also exposes `Custom` even when empty. Presets should demonstrate meaningful settings, sensible output headroom and compatible parameter modes; factory defaults remain available independently.
+
+**Implemented 6.17.4.** The embedded catalog now contains 65 presets across all eight eligible types. The 55 additions preserve the original ten IDs and configurations and introduce no new runtime mechanism or storage format. All entries include descriptions and complete stable-key values (including dormant parameters). CI validates every entry against the registry, applies it through the atomic graph command, checks exact selector matching and unchanged connections, and generates a reachable Faust graph for each configuration. Duplicate complete configurations within a node type would fail the matching test. Custom persistence is the next step.
+
+The 65 presets across eight types describe the original completed 6.17.4 catalog, not a permanent inventory: 7.1.1 and 7.2.2 subsequently added five AD and five Pitch Control presets respectively.
+
+#### Custom library (6.17.5)
 
 **Custom persistence.** Define `INodePresetStorage` separately from `IPatchLibraryStorage`, with a browser adapter using the existing versioned IndexedDB interop and a dedicated logical store/namespace. Reuse validated serialization, transaction and error patterns where appropriate; never mix node presets with recovery records or named complete patches. Persist versioned data by stable ID, enforce unique names per node type (case-insensitive) and explicit overwrite semantics, and report storage failure without changing the current node. Custom presets survive reload and patch switching; eventually support portable individual JSON import/export with validation and conflict handling. Future audio-asset-valued configurations need explicit references and portability rules from Phase 8; scalar parameter presets do not embed recordings.
 
@@ -973,6 +1027,8 @@ flowchart TD
     U --> A[Apply preset command]
 ~~~
 
+#### Portable node presets (6.17.6)
+
 **Implemented 6.17.6.** Portable files contain one schema-versioned `NodePreset` object, not the internal array or a patch document. The shared reflection-free JSON writer and strict reader use the same field names and stable parameter keys for both formats. Existing schema-1 library arrays remain unchanged; unknown schema versions are rejected until an explicit migration exists. Export is restricted to a saved custom preset and delegates to the existing browser download adapter through `INodePresetStorage`. The `NodePresetManager` limits file reads to 256 KiB, previews a completely validated custom configuration for the active node type, and offers three explicit actions: preserve identity (reject ID/name conflicts), save a copy with a new GUID and unique name, or replace a matching custom ID of the same type. Built-in IDs/groups cannot be imported or replaced. The candidate is validated again inside the serialized library edit, including name uniqueness and full parameter compatibility. Only a successful compare-and-replace publishes a catalog revision; erroneous files, cancellations, stale writes and failed storage leave existing entries unchanged. Import/export do not mutate the patch or history; applying a configuration is still a separate graph command.
 
 ~~~mermaid
@@ -984,7 +1040,20 @@ flowchart TD
     S --> R[Refresh custom group]
 ~~~
 
-### Signal analysis and visualization (planned Phase 6.18)
+#### Completed milestone integration record
+
+- Implemented (6.17.1): immutable versioned individual node preset model, registry-derived validation and grouped embedded JSON catalog.
+- Implemented (6.17.2): atomic preset application through validated batch parameter changes, one revision/undo entry, and existing live playback.
+- Implemented (6.17.3): shared grouped node preset selector, description and exact base-configuration matching in every canvas.
+- Implemented (6.17.4): expanded data-only catalog of 65 built-in configurations across all eight eligible node types.
+- Implemented (6.17.5): custom preset library with stable IDs, explicit management, independent IndexedDB persistence and stale-write protection.
+- Implemented (6.17.6): portable individual JSON presets with preview, compatibility validation and explicit conflict choices; signal observation next.
+
+<a id="signal-analysis-and-visualization-planned-phase-618"></a>
+
+### Signal analysis and visualization (Phase 6.18 — partial)
+
+**Status:** shared observation, scope/meter, FFT spectrum, integrated views and filter/EQ response (6.18.1–6.18.5) implemented. Dedicated sinks (6.18.6) and advanced history/comparison (6.18.7) planned.
 
 Visualization is a shared observation system, not a DSP effect or a second audio engine. Distinguish actual live samples from a calculated/configured response. An oscillator's ideal shape is useful before playback; its live output can differ substantially due to modulation, anti-aliasing, mute and processing. Do not present a theoretical preview as measured audio.
 
@@ -1034,9 +1103,13 @@ flowchart TD
     M -. implicit observation .-> P[Integrated mixer plot]
 ~~~
 
-The runtime signal tap design is described in [Faust and real-time execution](#signal-observation-and-analysis-planned-phase-618). Both forms consume the same backend; an integrated visualization remains preferable for routine inspection, while dedicated analyzers support comparison and arbitrary routing without cluttering every node.
+The runtime signal tap design is described in [Faust and real-time execution](#signal-observation-and-analysis-phase-618). Both forms consume the same backend; an integrated visualization remains preferable for routine inspection, while dedicated analyzers support comparison and arbitrary routing without cluttering every node.
 
-### Patch documentation and canvas annotations (planned Phase 6.19)
+<a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>
+
+### Patch documentation and canvas annotations (Phase 6.19.1–6.19.4 — planned)
+
+The independent cable badge/editor (6.19.5) has shipped; it does not depend on these presentation-only annotations.
 
 Complex patches should explain their musical intent as well as their signal topology. A **Note** appears in the Add catalog alongside other canvas items, but is a presentation-only annotation, not a `SignalNode`. It has no ports, parameter definitions, DSP emitter, presets, audition controls, observation channels or routing dependencies. Do not register an inert DSP node merely to obtain a frame or persistence. Notes and organizational metadata must be editable during playback without a graph commit, graph-history entry, audio update, compilation, phase reset or capture invalidation.
 
@@ -1086,7 +1159,11 @@ flowchart TD
 
 The only direction from the signal graph to annotations is reconciliation of identity/membership. No reverse dependency into the audio path is introduced. Test root and nested note edits, independent identities, undo/redo, visible placement at pan/zoom, bounds and fit, keyboard isolation, deletion/restoration, invalid import rejection, old documents, named snapshots and reload. Verify unchanged graph revision, signal node/edge count, compiler identity and active playback generation for every annotation action, including edits while playing. Ship a small annotated example patch when the shared documentation features are ready.
 
-#### Connection amount badges and inline editing (planned Phase 6.19.5)
+<a id="connection-amount-badges-and-inline-editing-planned-phase-6195"></a>
+
+### Connection amount badges and inline editing (Phase 6.19.5 — implemented core)
+
+**Implemented:** [PR #1](https://github.com/wgabel/orbit2/pull/1) added badges and selection, [PR #2](https://github.com/wgabel/orbit2/pull/2) persisted per-canvas visibility, [PR #3](https://github.com/wgabel/orbit2/pull/3) anchored the shared editor. Typed event labels and unity semantics arrived in [PR #8](https://github.com/wgabel/orbit2/pull/8). Automatic zoom suppression and per-edge predicted contribution remain refinements.
 
 Every connection already owns a signed finite `SignalConnection.Amount`. Make this configured value readable directly on its cable, without requiring the user to select each connection. The badge is a derived presentation of the committed edge, distinct from the optional human-authored connection description in Phase 6.19.2. It never introduces a second copy of the amount, a new signal port, or a modulation destination.
 
@@ -1110,7 +1187,7 @@ Add a compact **Connection labels** toolbar choice with four modes, scoped to ea
 - **Selected:** show selected connection amounts only.
 - **Off:** hide all badges, retaining normal cable selection and the inspector.
 
-At low zoom suppress unselected badges automatically using a shared configurable threshold; retain an eligible selected badge when practical. Use existing signal colors and semantic surface/focus tokens. A negative amount displays its sign, a zero amount has a visibly faded line and `0`/`×0` label (not a distinct mute state), dormant connections keep their dashed style and show an explicit inactive indicator when labelled, and selection remains visually distinguishable. Zero and dormant are not interchangeable; amount edits and resets preserve edge identity and dormant settings. User-authored descriptions may be displayed as secondary text or a tooltip rather than competing with the numeric badge.
+**Planned refinement:** at low zoom suppress unselected badges automatically using a shared configurable threshold; retain an eligible selected badge when practical. Use existing signal colors and semantic surface/focus tokens. A negative amount displays its sign, a zero amount has a visibly faded line and `0`/`×0` label (not a distinct mute state), dormant connections keep their dashed style and show an explicit inactive indicator when labelled, and selection remains visually distinguishable. Zero and dormant are not interchangeable; amount edits and resets preserve edge identity and dormant settings. User-authored descriptions may be displayed as secondary text or a tooltip rather than competing with the numeric badge.
 
 **Interaction and history.** Clicking a badge selects its existing connection exactly as clicking the wire does, using the same graph-qualified selection and the single `ConnectionAmountEditor`. Host that editor outside the transformed world in a bounded, accessible floating panel anchored to the cable midpoint in screen space, including when badges are hidden. Clamp it to the visible canvas and prefer placing it below or above the anchor; observe size and anchor changes without polling playback. Keep the draft and Apply/Cancel semantics, stop pointer/keyboard propagation during editing, avoid obscuring the active cable where possible, and close safely on navigation, deletion, Escape or selection change. An amount edit still dispatches `SetConnectionAmountCommand` once on explicit Apply, preserving validation, graph revision, undo/redo, range updates and existing playback replacement/crossfade. Display-mode changes, selection and opening/closing the form are layout changes only and never advance graph revision or compile DSP. The badge always displays the latest committed amount, not a partially typed input; undo/redo, imports and graph edits automatically refresh it.
 
@@ -1336,6 +1413,65 @@ flowchart TD
 
 Notice that the graph has no direct dependencies on these subscribers. Undo/redo must use validated commands or equivalent transactions, not reverse DSP samples. Subscriber failure should not silently roll back an already committed graph; report runtime sync errors separately.
 
+<a id="workspace-persistence-and-history-phases-68611"></a>
+
+### Workspace persistence and history (Phases 6.8–6.11)
+
+**Status: Implemented.** These storage, session-history and gesture rules are architecture, not roadmap milestones. Layout and navigation remain separate from the signal graph.
+
+Workspace persistence uses a data-only schema version 1. `PatchDocumentSerializer` captures immutable session snapshots with stable node, parameter, socket, connection and graph IDs. Parameter and port definitions are reconstructed by the registry using their stable keys; composites reconstruct their boundary definitions, preserving both rack identities and receiving-side fan-in. Invalid definitions, unknown schemas and invalid connections are rejected before a session is exposed. `CanvasNavigationService` captures and restores layout and navigation independently. `PatchPersistenceService` coalesces changes for 350 ms and serializes writes; `IPatchStorage` is implemented by `BrowserPatchStorage` through IndexedDB transactions. No live runtime state or selection is stored. Startup loads before rendering the workspace; a missing document seeds the demo, while a failed restore preserves the saved record and disables autosave for that session. Very fast reloads within the debounce window can lose the latest edit; storage is browser-local and can be cleared by the browser.
+
+Phase 6.10 adds `PatchLibraryService` and `IPatchLibraryStorage`, using distinct named keys alongside the recovery key without changing the schema. Named snapshots are not live links to the editor; Save as rejects duplicate names and overwriting is explicit. JSON import/export uses the same serializer. Workspace replacement validates a candidate session and navigation, requires stopped playback, drains pending recovery writes and commits the replacement immediately; then the workspace recreates its keyed presentation and playback components. Invalid imports retain the existing graph and named snapshots.
+
+Phase 6.11 puts `PatchHistory` inside `PatchSession`, retaining up to 100 successful graph command before/after snapshots. Undo/redo reconstructs the target graph using the persistence reconstruction path (without JSON or storage), validates before replacing, advances the current revision and publishes one `GraphChangeSet` containing `GraphHistoryRestored` facts for affected graphs, including added/removed descendants. This preserves the original patch identity, subscriptions, and current audio lifetime. Failed/no-op edits do not enter history; divergent commands clear redo. History is not persisted and begins empty after startup or patch replacement. Presentation retains bounded last-known layouts for recently removed nodes/graphs; standalone layout gestures and tempo are outside graph history.
+
+Continuous parameter editing groups history separately from graph transactions. The shared parameter slider gives pointer drags and range keyboard gestures unique identities; `PatchSession.Execute` accepts an optional history gesture identity. `PatchHistory` retains the initial and latest immutable snapshots for consecutive parameter changes with the same identity, graph and parameter address, while every accepted value still commits and notifies the normal DSP, canvas and autosave subscribers. Release, cancellation, blur, navigation, undo/redo or an intervening successful edit finalizes the pending gesture. A stale completion cannot finalize a newer gesture. If the final value equals the initial value, no entry is added and redo is preserved. Numeric edits and discrete choices retain their ordinary command behavior. No UI component manages history snapshots directly.
+
+~~~mermaid
+sequenceDiagram
+    participant U as Shared slider
+    participant S as Patch session
+    participant H as History
+    participant D as DSP and autosave
+    loop Drag updates
+        U->>S: Value and gesture ID
+        S->>H: Keep first and latest snapshots
+        S->>D: Committed revision
+    end
+    U->>S: Gesture ended
+    S->>H: Finalize one entry
+~~~
+
+~~~mermaid
+flowchart TD
+    C[Graph command] --> H[Patch session history]
+    U[Undo or redo] --> H
+    H --> V[Validated graph reconstruction]
+    V --> R[New committed revision]
+    R --> A[Audio update]
+    R --> P[Canvas and autosave]
+~~~
+
+~~~mermaid
+flowchart TD
+    M[Patch manager] --> L[Patch library service]
+    L --> S[Document serializer]
+    L --> I[(Named snapshots)]
+    S --> V[Validated candidate]
+    V --> W[Workspace replacement]
+    W --> R[(Recovery record)]
+~~~
+
+~~~mermaid
+flowchart TD
+    S[Patch session snapshot] --> D[Patch document serializer]
+    L[Canvas navigation layouts] --> D
+    T[Tempo] --> D
+    D --> P[Patch persistence service]
+    P --> B[IPatchStorage]
+    B --> I[(IndexedDB)]
+~~~
+
 ### Real-time signal versus event
 
 | Application events | DSP signals |
@@ -1349,7 +1485,9 @@ An LFO does not publish ParameterChanged 48,000 times a second. Its effective ta
 
 ## 10. Faust and real-time execution
 
-### Reusable DSP implementations
+### Runtime foundations and safety
+
+#### Reusable DSP implementations
 
 Small Faust components should accept the signals they need rather than hardcoding UI sliders and modulation.
 
@@ -1389,7 +1527,7 @@ process = os.osc(effectiveFrequency) * 0.1;
 
 This proves the important distinction: C# changes the base values and depth; Faust computes the modulation and oscillator phase at audio rate.
 
-### Runtime options
+#### Runtime options
 
 | Aspect | Separate DSP nodes | Compiled composite graph |
 |---|---|---|
@@ -1399,9 +1537,9 @@ This proves the important distinction: C# changes the base values and depth; Fau
 | Overhead | Potentially many nodes/worklets and routing buffers | Potentially more compiler optimization |
 | Complexity | Easier initial wiring in some cases | Requires graph compiler and safe replacement |
 
-Preferred long-term direction: compile a flattened, connected patch (or a carefully partitioned graph) to Faust. This permits internal sample-level modulation and avoids a JavaScript object for each DSP step. For a first prototype, a fixed graph compiled at build time is useful to verify the execution and modulation path. Then implement a dynamic compiler. One worklet per independently compilable drone is also a feasible intermediate choice if exported signal inputs/outputs support cross-drone modulation.
+**Selected and implemented direction (Phases 4–5):** compile a flattened, connected patch (or a carefully partitioned graph) to Faust. This permits internal sample-level modulation and avoids a JavaScript object for each DSP step. The initial historical prototype was a fixed graph compiled at build time to verify the execution and modulation path (Phase 2); the dynamic compiler followed in Phase 4. One worklet per independently compilable drone is also a feasible intermediate choice if exported signal inputs/outputs support cross-drone modulation.
 
-### Graph compilation pipeline
+#### Graph compilation pipeline
 
 ~~~mermaid
 flowchart TD
@@ -1426,7 +1564,43 @@ Parameter controls use stable IDs and definition defaults in the source; edited 
 
 The graph compiler produces stable parameter addresses and metadata so the browser audio engine can update base controls. Validate names/escaping when generating Faust source; do not concatenate unchecked user labels into executable code. Cache compiled factories by a structural signature where appropriate.
 
-### Resonant filter implementation (Phase 6.7)
+#### Updating without clicks
+
+| Change | Runtime operation |
+|---|---|
+| Move/resize/open node | UI-only; no audio change |
+| Set oscillator frequency | Update/smooth existing DSP control |
+| Change LFO speed or depth | Update/smooth existing DSP control |
+| Add/remove node | Recompile if topology cannot be updated dynamically |
+| Create/remove connection | Update routing or compile a new graph |
+| Change effect order | Update routing/compile |
+| Rename a rack port | Update model/projection, typically no audio compile if stable addresses are unchanged |
+
+The browser integration captures one committed snapshot per Play request and maps it to Faust source and initial values via `FaustGraphPlaybackService`. The pinned complete compiler bundle loads lazily inside `FaustCompilerWorker.js`, coordinated by `FaustCompilerClient`. It compiles outside both the UI and audio threads, and returns a WebAssembly module and metadata to the existing AudioWorklet node factory. The node uses the source-specific factory hash for its processor identity. The shared audio envelope handles start and stop.
+
+Live base-only changes use the active compiler control manifest instead of recompiling. `GraphTopology` compares node/port/parameter definitions and connections (including weights), but ignores base values. `ActiveGraphPlayback` serializes revisions, stores the last accepted topology and values, and maps changed `ParameterAddress` instances to stable control names. The browser engine writes the existing worklet's parameters; Faust's `si.smoo` smooths the change without resetting oscillator phase. While initial compilation is in progress, the browser coalesces base updates before the initial attack.
+
+Structural changes compile new source and compare it with the current program; identical source reuses the existing voice. A changed program is compiled by the worker and instantiated silently before replacement. `MarkRevisionAsync` supersedes in-flight work, and the browser rejects stale results before connecting them. `AudioEngine` treats the Play task as a logical lifetime that can span multiple voices. `AudioVoice` and `AudioEnvelope` schedule complementary linear gain ramps over 50 ms on the same audio clock, after which the retiring voice is disposed. Compiler failures retain the last accepted graph; Stop releases both voices and invalidates pending replacements. This preserves continuity of playback, not arbitrary DSP state.
+
+Compile outside the audio rendering thread, preferably in an appropriate worker or build pipeline. A new graph should be prepared before swapping it in. Use revision numbers to discard stale compilation results and coalesce rapid structural edits. Keep the last good runtime active if compilation fails; report the error in the UI.
+
+Deployment versions the complete audio and persistence JavaScript module trees, not just their entry points. `BrowserModulePaths` resolves both adapters' imports from the shared `OrbitBrowserAssetVersion` assembly metadata; local builds use default unversioned directories. CI rejects unversioned interop paths in the published editor test. IndexedDB database names and keys do not depend on the asset version.
+
+When swapping graphs, use an appropriate short fade/crossfade and preserve state where possible. A newly compiled oscillator may restart phase and filters/effects may lose state; maintaining continuity across topology changes is a distinct engineering problem. Do not promise seamless arbitrary graph edits until tested. Consider the cost of running old and new graphs during a crossfade.
+
+#### Real-time requirements
+
+- A 128-frame block at 48 kHz represents only about 2.67 ms.
+- Avoid allocation-heavy work, blocking I/O, graph compilation or ordinary UI event dispatch inside processing callbacks.
+- Use actual sample rate/block sizes and reuse buffers.
+- Manage summing levels, master gain and headroom to prevent clipping.
+- Use suitable band-limited waveform implementations for saw/pulse etc. to control aliasing.
+- Avoid abrupt parameter changes, accidental phase resets and unsafe feedback.
+- Measure CPU and underruns with representative complex patches, including multiple drones.
+
+### Audio processors and effects
+
+#### Resonant filter implementation (Phase 6.7 — implemented)
 
 `FilterProcessor` is a mono processor with a structural mode choice and two continuously modulatable parameters, cutoff in Hz and resonance Q. `FilterFaustEmitter` selects a response from one topology-preserving state-variable filter. `FaustStateVariableFilter` calculates trapezoidal integrator updates with audio-rate coefficients derived from cutoff and Q; two delayed feedback states remain internal to DSP, not editable graph cycles. The cutoff is limited to 0.45 times the actual sample rate and Q is constrained to 0.5–8. Mode changes preserve model identities and crossfade replacement DSP; base cutoff/Q changes preserve runtime state. Output bounds are deliberately unknown given resonance and time variation.
 
@@ -1438,13 +1612,17 @@ flowchart TD
     S --> O[Audio output]
 ~~~
 
-### Parametric EQ (Phase 6.12)
+<a id="parametric-eq-phase-612"></a>
+
+#### Parametric EQ (Phase 6.12 — implemented)
 
 `ParametricEqProcessor` is a mono single-band bell equalizer. It registers through the ordinary node and Faust emitter catalogs; generic parameter UI, modulation, persistence, history and nested graph compilation apply without special cases. Frequency (20–20,000 Hz), gain (−18 to +18 dB) and Q (0.2–10) are all continuous additive modulation targets in Hz, dB and ratio respectively. Defaults are 1 kHz, 0 dB and Q 1. The emitter bounds frequency at 0.45 times the actual sample rate.
 
 The filter and EQ share `FaustStateVariableFilter.EmitCore`, which implements a two-state trapezoidal integrator. With `A = 10^(gain/40)` and damping `k = 1/(Q*A)`, the bell response is `x + k*(A*A-1)*band`. This gives unity at zero gain, reciprocal static boost/cut and audio-rate coefficient updates without resetting DSP state. Output range remains unknown for time-varying EQ; use gain stages for headroom. Offline tests measure gain and width at 44.1/48 kHz and stress all modulation inputs.
 
-### Feedback delay (Phase 6.13)
+<a id="feedback-delay-phase-613"></a>
+
+#### Feedback delay (Phase 6.13 — implemented)
 
 `DelayProcessor` is a mono processor with one audio input/output, free delay time (0.01–2 s), feedback (0–0.9) and wet mix (0–1). The continuous parameters use the shared modulation system. Timing mode is structural; synchronized mode activates the shared musical-division definition and deactivates free-delay time and its incoming wires without deleting them. Musical divisions and their Faust beat conversion are shared with the oscillator. Delay time is `60 * beats / BPM` in synchronized mode, with smoothed transitions; the transport's phase-reset semantics do not reset an echo buffer.
 
@@ -1452,19 +1630,25 @@ The emitter uses one bounded `de.fdelay` buffer, linear fractional-sample interp
 
 Transport-aware DSP requests distinguish beat phase and absolute BPM. `FaustNodeContext.TransportTempo` requests one reserved host control `orbit_tempo`, excluded from editable parameter manifests. Existing beat consumers still use a single audio-rate input. `TransportSignalSource` initializes the BPM control from its current anchor and updates active and retiring DSP nodes on tempo changes, without deriving tempo from a quantized wrapped phase or requiring a phase worklet for tempo-only graphs. Unregister controls on voice disposal. Offline waveform tests verify timing and feedback at 44.1/48 kHz; live host control tests verify current tempo and subsequent edits.
 
-### Algorithmic reverb (Phase 6.14)
+<a id="algorithmic-reverb-phase-614"></a>
+
+#### Algorithmic reverb (Phase 6.14 — implemented)
 
 `ReverbProcessor` is mono with continuous decay (RT60, 0.1–12 s), damping (0–1) and wet mix (0–1) controls. `ReverbFaustEmitter` reuses the standard parameter/modulation context and delegates to `FaustSchroederReverb`. Eight parallel feedback combs with distinct 25–37 ms delay lengths and four serial Schroeder all-pass diffusers form the late reverberation. Delay lengths are fixed in seconds, converted at the actual sample rate, and bounded by compile-time allocations sized up to 192 kHz. Each comb uses feedback `10^(-3 * delaySeconds / decay)` and a one-pole damping filter whose cutoff moves logarithmically from 20 kHz toward 500 Hz. Coefficients remain bounded below unity even under audio-rate modulation. RT60 is an approximate low-frequency decay target, not an exact broadband measurement. Wet summing has attenuation for headroom, not clipping or adaptive normalization. Output range remains unknown for arbitrary input and time-varying parameters.
 
 Base edits and modulation retain the active delay state; dry/wet mix is linear (zero wet hides the tail but does not stop its computation). Stop and structural graph swaps use existing envelope/crossfade behavior and do not promise preservation of long reverb tails. This first implementation uses fixed geometry and mono routing; room size, stereo and alternative algorithms are later extensions. Offline tests use noise bursts to measure tail energy, decay, damping and dry bypass, with extreme modulation at 44.1/48 kHz.
 
-### Chorus (Phase 6.15)
+<a id="chorus-phase-615"></a>
+
+#### Chorus (Phase 6.15 — implemented)
 
 `ChorusProcessor` is a mono effect with rate (0.05–5 Hz), depth (0–10 ms), base delay (5–40 ms) and wet mix (0–1), all audio-rate modulatable. Milliseconds are a new shared parameter unit; append it to the unit enum and render it through the common unit formatter. Defaults are 0.6 Hz, 3 ms, 15 ms and 0.5. `ChorusFaustEmitter` uses an integrated free-running phase and two sine-modulated fractional delay taps separated by one-third of a cycle. The time excursion is limited to `min(depth, baseDelay - 1 ms)`; taps use actual sample rate and fixed buffers bounded to 50 ms at 192 kHz. Linear interpolation and equal averaging form the wet signal, which is blended linearly with dry input. No feedback, new audio clock, structural constants or special UI are required.
 
 The conservative signal range is the input range expanded to include zero (initially empty delay buffers). All combinations are convex weighted sums, so no extra gain occurs. Base edits retain the phase and delay states; high-speed modulation may deliberately pitch-shift the wet signal. Stereo widening, alternate voice counts and tempo-locked chorus are future extensions. Offline tests verify dry amplitude, fixed fractional delay at zero depth, sideband spacing controlled by rate, and bounded output under extreme modulation at 44.1/48 kHz.
 
-### Pitch shifter (Phase 6.20, planned)
+<a id="pitch-shifter-phase-620-planned"></a>
+
+#### Pitch shifter (Phase 6.20 — planned)
 
 `PitchShifterProcessor` transposes an incoming mono audio signal, including a complete chord or layered drone after a mixer, without intentionally changing the duration or playback tempo. It is distinct from a frequency shifter (which adds a fixed number of Hz and changes harmonic relationships), a delay-time sweep (which only shifts pitch while the delay changes), and Phase 7.2.2 shared oscillator pitch control (which changes the frequencies at their sources without resampling existing audio).
 
@@ -1485,7 +1669,11 @@ flowchart LR
 
 **Verification.** At 44.1/48 kHz render single sine tones, a non-harmonically related two-tone mixture, a harmonic chord, transients and silence. Check each expected shifted spectral peak (including upward/downward octave, fifth and cent offsets), preserved frequency ratios, suppression of unintended aliases and excessive sidebands, bounded output and no cumulative tempo/duration change over sustained input. Measure impulse latency and transition discontinuities at zero shift, modulation extremes, mix endpoints and audition changes; test multiple independent instances and benchmark CPU/memory. No new external audio dependency or hardware integration is required for the first version.
 
-### Signal observation and analysis (Phase 6.18)
+<a id="signal-observation-and-analysis-phase-618"></a>
+
+<a id="signal-observation-and-analysis-planned-phase-618"></a>
+
+### Signal observation and analysis (Phase 6.18 — partial)
 
 **Phase 6.18.1 implementation.** Live playback enables up to eight auxiliary channels; the compiler's default mono-only mode remains available for offline comparisons and engines without capture support. The master input maps to channel zero, before the playback gain/envelope. The immutable manifest is keyed by patch, owning graph, node, port, direction and channel. Flattened endpoint aliases reuse compiled expressions; output candidates precede inputs in deterministic identity order, identical expressions share a slot, and omitted addresses report unavailable. No new dependency roots are introduced. The fixed conservative cap (nine total channels) is a prototype limit, not a device-specific performance guarantee.
 
@@ -1581,7 +1769,13 @@ Keep analysis subscriptions reference-counted and restricted to visible compact/
 
 Rebind subscriptions atomically to the latest accepted runtime and manifest on graph replacement, discard stale frames/callbacks, and label a brief transition or missing tap rather than showing old-node data under a new identity. Failed replacement retains last-good audio and its corresponding analysis; Stop, workspace replacement and node removal release buffers and browser handles. Preserve the existing effective-parameter meter path independently. Analyzer-only graph branches, if added, are explicit reachability roots; ordinary visual preferences do not change graph reachability. Use deterministic offline fixtures to prove identical audible master samples with observations enabled/disabled, correct root/nested mapping, known sample and FFT/level results, and no output leakage even when taps contain a distinct louder signal.
 
-### Envelope generators and rhythmic triggers (planned Phase 7.1)
+### Musical control, performance and instrument synthesis
+
+<a id="envelope-generators-and-rhythmic-triggers-planned-phase-71"></a>
+
+#### Envelope generators and rhythmic triggers (Phase 7.1 — partial)
+
+**Status:** 7.1.1 AD envelope, 7.1.2 typed ports/adapters, 7.1.3 rhythmic sources (PR #10) and 7.1.4 AR/ADSR/Loop (PR #12) implemented; advanced visualization and custom envelopes planned. AD presets, an impact composite and initial AR/ADSR/Loop presets are implemented; additional envelope presets and worked patches (7.1.6) remain partial.
 
 **Purpose and boundaries.** Introduce one registered `EnvelopeGenerator` (`generator.envelope`) with a unipolar modulation output (0–1 by default). It generates a time-dependent control signal, not a sound oscillator, and is independent of its destinations. It can drive amplitude, linear-Hz frequency, filter cutoff, gain, effect mix or any other compatible parameter; the target retains its own units, clamp and modulation depth. Do not embed a separate envelope implementation in every oscillator or effect. This is unrelated to the existing browser `AudioEnvelope`, which manages playback voice fades and graph replacements.
 
@@ -1667,13 +1861,17 @@ flowchart TD
 
 **Layering and UX.** Keep `EnvelopeGenerator`, parameter/port definitions and validation in Domain; registry/presets and runtime action contracts in Application; reusable edge detector, segment math, state machine and emitters in Audio; browser transport/event delivery in Infrastructure. Use `NodeFrame`, ordinary conditional parameter editors, tokenized event sockets, a capability-driven trigger action (where applicable) and the shared Phase 6.18 visualization panel for the configured envelope curve and optionally its measured output/playhead. Static preview is valid while stopped; live telemetry is generation-qualified, not persisted and never drives DSP. Provide built-in AD impact, slow swell and ADSR examples using the preset catalog, plus a complete impact example patch with wiring. Custom envelope definitions will need immutable versioned point data and atomic history once implemented; they are distinct from live playhead telemetry.
 
-**Acceptance.** Test actual compiled Faust at 44.1/48 kHz: falling/constant/disconnected input, oscillator rising edges, exact segment timing/endpoints and bounded amplitude, onset slope, retrigger continuity, early gate release, sustain, looping with zero-duration safeguards, shared trigger alignment across nested graphs, typed route validation and persistence, tempo/division/reset/wrap behavior, manual action latency and stale generation rejection, and no recompile or graph/history mutation on events. Render the worked pitch/amplitude patch offline to verify its frequency and level trajectories and distinguish clipping from amplitude jumps. Published browser tests cover shared editors/visualizations, presets, live parameter changes and transient actions. Phases 7.1.1–2 provide continuous AD and typed event conversion/routing; gate release, additional modes and rhythmic runtime sources remain future work.
+**Acceptance.** Test actual compiled Faust at 44.1/48 kHz: falling/constant/disconnected input, oscillator rising edges, exact segment timing/endpoints and bounded amplitude, onset slope, retrigger continuity, early gate release, sustain, looping with zero-duration safeguards, shared trigger alignment across nested graphs, typed route validation and persistence, tempo/division/reset/wrap behavior, manual action latency and stale generation rejection, and no recompile or graph/history mutation on events. Render the worked pitch/amplitude patch offline to verify its frequency and level trajectories and distinguish clipping from amplitude jumps. Published browser tests cover shared editors/visualizations, presets, live parameter changes and transient actions. Phases 7.1.1–4 provide continuous AD, typed event conversion/routing, rhythmic runtime sources and gate-aware AR/ADSR and Loop envelopes; preview visualization, broader presets/worked patches and custom envelope definitions remain future work.
 
-### Musical instrument synthesis and physical modelling (planned Phase 7.2)
+<a id="musical-instrument-synthesis-and-physical-modelling-planned-phase-72"></a>
+
+#### Musical instrument synthesis and physical modelling (Phase 7.2 — partial)
+
+**Status:** shared oscillator pitch and Pitch Control (7.2.2) implemented. The instrument recipes below use existing capabilities; additional packaged instrument templates, playable note sources, keyboard pitch sequencing, resonators and polyphony are planned.
 
 **Goal and scope.** Build editable synthesized instrument approximations from reusable oscillators, noise, filters, effects, envelopes, pitch controllers and resonators. Do not create a separate DSP class for each instrument. An instrument template is an ordinary composite graph with stable named rack inputs, independent state and an audio output. Preserve the possibility of opening it, inspecting its components, changing routing and saving a new configuration. This is sound design, not a claim of exact reproduction of acoustic instruments. Sample-based approximations and hybrid instruments can additionally use Phase 8 assets later.
 
-#### Existing capabilities and worked instrument patches
+##### Existing capabilities and worked instrument patches
 
 Start with a built-in example-patch/composite catalog using existing nodes and the existing registered template mechanism. No DSP node or event source is needed for these initial sustained versions. Examples contain documented settings and safe gain staging, not just a name on an oscillator preset. Add the Phase 6.19 notes and labels when available; independent examples can ship before that work. Starting configurations are illustrative and should be adjusted by listening and examining the shared scope/FFT, not treated as measured acoustic spectra.
 
@@ -1702,7 +1900,7 @@ flowchart TD
     R --> O[Audio output]
 ~~~
 
-#### Reusable musical pitch and note control
+##### Reusable musical pitch and note control
 
 Existing frequency modulation is linear Hz. Multiplying or adding the same Hz depth to several different-frequency oscillators does not generally preserve musical intervals. Keep all existing free/BPM timing, frequency ports, base values, connections and additive behavior compatible. Introduce shared pure pitch conversion and an explicit pitch-tracking mode or capability for pitched generators and resonators, with semantic modulation input measured in semitones (fine tuning in cents). Define one convention: `p=0` means the configured base tuning; `f = f_base * 2^(p/12)` for semitone offset p. Fine offsets can be fractional. A separate existing linear-Hz input is added after pitch scaling where supported; clamp the final physical frequency to its existing valid/sample-rate range. The order must be identical in DSP and prediction. Default pitch tracking off for existing patches; inactive connection/settings are retained with the conditional parameter system. Use shared parameter definitions, display mapping and live values, not a note-specific UI in each oscillator. Musical note names and optional Hz readout can be derived by a pure tuning utility; changing the tuning mode must not silently reinterpret previously saved Hz amounts.
 
@@ -1725,11 +1923,19 @@ flowchart TD
 
 Runtime note actions are generation-qualified and scheduled on the shared sample timeline, following Phase 7.1 event delivery. Do not rebuild or recompile the graph for notes, change persisted base settings, or record note-on/off in graph undo history. Pitch/velocity update coherently with gate/trigger on the intended sample; stop, navigation/runtime replacement, losing input focus or disconnection must not leave a stuck gate. Reject stale events and bound queues. Keep a held note's sound stable across ordinary parameter edits; failed structural replacements retain the last-good runtime. Test note-to-Hz mapping, exact octaves, harmonic ratios under vibrato, monotonic pitch modulation, conditional connections and accurate range estimation. Full polyphonic note allocation is deferred until monophonic performance is reliable.
 
-#### Keyboard performance and continuous pitch sequencer (planned Phase 7.2.8)
+<a id="keyboard-performance-and-continuous-pitch-sequencer-planned-phase-728"></a>
 
-**Feature summary.** Add a keyboard-playable, monophonic musical control sequencer that can be used either as a conventional note sequencer or as a **continuous transposer** for evolving drones. Its outputs are control signals, not audio. In continuous mode a key press changes the pitch of an already-playing oscillator bank; key release does not silence it, restart oscillator phases, reset LFOs, retrigger envelopes or clear effect tails. The same pitch progression can be performed live, recorded with quantization, constructed without real-time performance, edited, and looped in synchronization with the patch transport. Long ambient steps must be as intentional as short rhythmic steps; a 20-second retune is a first-class use case, not 160 empty sixteenth notes.
+<a id="keyboard-performance-and-continuous-pitch-sequencer-phase-728--planned"></a>
 
-**Relationship to existing nodes.** Keep `Pitch Control` (7.2.2) a simple manual transpose/fine-tune source. Add a dedicated `Note Sequencer` (proposed stable type `generator.note-sequencer`) sharing the keyboard adapter, musical-note conversion and event primitives of `NoteSource` (7.2.3). Do not add compulsory keyboard behavior to every oscillator or scalar pitch editor. The sequencer's Pitch output connects directly to the existing semitone inputs (amount 1 for normal tracking), including exposed rack inputs. An independent Pitch Control can remain connected for global fine tuning or manual transpose; contributions add under the existing bounds. This is source-level transposition, not the buffered audio Pitch Shifter of 6.20. The sequencer's own output does not produce sound, and a pitch cable alone does not implicitly open a gate.
+##### Keyboard performance and continuous pitch sequencer (Phase 7.2.8 — planned)
+
+###### Feature summary
+
+Add a keyboard-playable, monophonic musical control sequencer that can be used either as a conventional note sequencer or as a **continuous transposer** for evolving drones. Its outputs are control signals, not audio. In continuous mode a key press changes the pitch of an already-playing oscillator bank; key release does not silence it, restart oscillator phases, reset LFOs, retrigger envelopes or clear effect tails. The same pitch progression can be performed live, recorded with quantization, constructed without real-time performance, edited, and looped in synchronization with the patch transport. Long ambient steps must be as intentional as short rhythmic steps; a 20-second retune is a first-class use case, not 160 empty sixteenth notes.
+
+###### Relationship to existing nodes
+
+Keep `Pitch Control` (7.2.2) a simple manual transpose/fine-tune source. Add a dedicated `Note Sequencer` (proposed stable type `generator.note-sequencer`) sharing the keyboard adapter, musical-note conversion and event primitives of `NoteSource` (7.2.3). Do not add compulsory keyboard behavior to every oscillator or scalar pitch editor. The sequencer's Pitch output connects directly to the existing semitone inputs (amount 1 for normal tracking), including exposed rack inputs. An independent Pitch Control can remain connected for global fine tuning or manual transpose; contributions add under the existing bounds. This is source-level transposition, not the buffered audio Pitch Shifter of 6.20. The sequencer's own output does not produce sound, and a pitch cable alone does not implicitly open a gate.
 
 | Output | Meaning |
 |---|---|
@@ -1740,7 +1946,7 @@ Runtime note actions are generation-qualified and scheduled on the shared sample
 
 The initial continuous-pitch implementation can ship with Pitch only, independently of full gate/trigger articulation and polyphony. Adding outputs later follows existing stable-port migration and conditional activation contracts. Use the A4/MIDI 69 convention by default: the emitted offset is `noteNumber - referenceNote`, plus a bounded fine offset if exposed. An optional reference note makes a drone's existing base tuning the zero-transpose key (e.g. choose A2 for a 110 Hz fundamental); it does not change oscillator base Hz. Retain exact note labels and explain that the actual frequency still depends on the receiving oscillator's base and other pitch modulation. Enforce the existing receiving pitch and frequency clamps; restrict octave selection to the supported note/offset range rather than silently generating out-of-range values.
 
-**Performance modes.**
+###### Performance modes
 
 | Behavior | Note mode | Continuous pitch mode (drone) |
 |---|---|---|
@@ -1753,11 +1959,15 @@ The initial continuous-pitch implementation can ship with Pitch only, independen
 
 Do not treat empty steps as pitch zero, because zero is itself a valid unison offset. Store step occupancy explicitly. Define an initial pitch (default zero semitones); leading empty steps use it on first play/reset, then hold the previous loop's last pitch on subsequent passes. All-empty loops hold the initial or live latched pitch indefinitely, without emitting events. On ordinary Note-mode loop wrap, retrigger the first populated step according to its articulation; permit explicit ties across the boundary only when validated to avoid perpetual or stuck gates. Stopping root playback still uses the existing audio release/cleanup lifecycle.
 
-**Keyboard input and UI.** Provide an explicit Performance mode/capture toggle in the shared toolbar, a graph-qualified selected/armed performance target, and an accessible on-screen piano using the same action contract. Use physical `KeyboardEvent.code` mapping for conventional QWERTY piano layout: A S D F G H J K for C D E F G A B C, W E T Y U for the corresponding black keys, Z/X for octave down/up (with visible key hints and current octave). Support rebinding/layout adaptation later without embedding browser details in Domain. Keyboard events supply note-on/off, not pressure; use a configurable velocity (e.g. 0.8) in the first version. Ignore auto-repeat and modifiers/shortcuts, track held physical codes, release held Note-mode gates on blur, visibility loss, switching target, leaving Performance mode and stop; do not reset a continuous-mode latch merely because a key was released or focus was lost. Disable capture inside inputs, text editors, sliders, dialogs or other editable controls. Only an explicitly armed node receives keyboard input, regardless of pointer position; playback of other sequencers continues independently. Do not globally intercept normal editor shortcuts while Performance mode is off.
+###### Keyboard input and UI
+
+Provide an explicit Performance mode/capture toggle in the shared toolbar, a graph-qualified selected/armed performance target, and an accessible on-screen piano using the same action contract. Use physical `KeyboardEvent.code` mapping for conventional QWERTY piano layout: A S D F G H J K for C D E F G A B C, W E T Y U for the corresponding black keys, Z/X for octave down/up (with visible key hints and current octave). Support rebinding/layout adaptation later without embedding browser details in Domain. Keyboard events supply note-on/off, not pressure; use a configurable velocity (e.g. 0.8) in the first version. Ignore auto-repeat and modifiers/shortcuts, track held physical codes, release held Note-mode gates on blur, visibility loss, switching target, leaving Performance mode and stop; do not reset a continuous-mode latch merely because a key was released or focus was lost. Disable capture inside inputs, text editors, sliders, dialogs or other editable controls. Only an explicitly armed node receives keyboard input, regardless of pointer position; playback of other sequencers continues independently. Do not globally intercept normal editor shortcuts while Performance mode is off.
 
 The node uses the shared frame, design tokens, controls, presets and visualization conventions. A compact grid shows step number, note name/offset, empty/rest/hold state, selected edit step and a separate moving playhead; highlight beat groups in synchronized mode. Show live/loop, record/stop, mode, step count, timing, quantization, octave/reference, initial/current pitch and glide, with expanded editing where helpful. Step count is adjustable (initial proposal 1–64, default 16); retain deterministic inactive steps when shrinking or explicitly confirm truncation according to ordinary graph editing policy. Use keyboard/pointer accessible per-step selection and insert/replace/clear; add explicit Rest/Hold and Tie controls as applicable. Default view must remain legible at canvas zoom and must not resize every time telemetry changes. Named presets and worked patches should reuse the same bounded versioned pattern representation rather than hidden special cases.
 
-**Time model.** A step is one equal-duration slot of the loop, not necessarily a conventional sixteenth note. Separate playback step duration from recording quantization. Provide:
+###### Time model
+
+A step is one equal-duration slot of the loop, not necessarily a conventional sixteenth note. Separate playback step duration from recording quantization. Provide:
 
 - Synchronized timing: rational beat durations (e.g. 1/16 = 1/4 beat, 1/8 = 1/2 beat, 1 beat, 1/2 bar, 1 bar) and a positive integer bar/beat multiplier for multi-bar steps. Clearly define bars using an explicit beats-per-bar convention (initially four, unless shared meter configuration is introduced). Support at least 10 bars per step; derive total loop beats and seconds from the selected step length and current BPM. Tempo changes preserve accumulated musical position and proportionally adjust the remaining duration of the step; never restart the progression merely because BPM changed.
 - Free timing: positive bounded seconds per step (proposed 10 ms–600 s initially, validate/profile limits); unaffected by BPM changes and measured from the shared sample timeline, not a wall clock. This is intentionally not tempo-locked. Show resulting loop duration in seconds/minutes.
@@ -1765,25 +1975,33 @@ The node uses the shared frame, design tokens, controls, presets and visualizati
 
 At 120 BPM and 4 beats per bar, one beat is 0.5 s and one bar is 2 s. A 16-step loop at 1/16 is 2 s; at 1 bar it is 32 s; at 10 bars per step it is 320 s (5 min 20 s). A four-step pattern with 10 bars per step has an 80-second loop and retunes at 0, 20, 40 and 60 seconds. Free timing of 20 s yields the same interval initially but does not track later BPM changes.
 
-**Long-duration transport requirement.** The existing transport signal wraps at 12 beats for oscillator precision; this cannot distinguish long sequence positions by itself. Extend the shared transport contract with a precision-safe epoch/cycle count plus within-wrap beat phase, or an equivalent bounded sample/beat cursor that preserves absolute musical position across wrap, tempo changes, reset, suspend/resume and crossfades. Do not derive a 40-beat step or multi-minute loop from the 12-beat phase alone, use a single ever-growing low-precision Faust float, or introduce a separate browser interval timer per node. Preserve existing synchronized oscillator behavior. Use fractional accumulation/remainder handling for durations that are non-integer sample counts; compute crossings/loop modulo against the shared timeline to avoid cumulative drift and duplicate/missed transitions. Account explicitly for wrap/reset identity and a long render/UI stall without replaying obsolete events. Reuse a shared transport signal rather than creating per-sequencer clocks when possible.
+###### Long-duration transport requirement
 
-**Recording and editing workflow.** Keep the loop pattern (what is played) separate from transient performance/recording state (what is being played right now).
+The existing transport signal wraps at 12 beats for oscillator precision; this cannot distinguish long sequence positions by itself. Extend the shared transport contract with a precision-safe epoch/cycle count plus within-wrap beat phase, or an equivalent bounded sample/beat cursor that preserves absolute musical position across wrap, tempo changes, reset, suspend/resume and crossfades. Do not derive a 40-beat step or multi-minute loop from the 12-beat phase alone, use a single ever-growing low-precision Faust float, or introduce a separate browser interval timer per node. Preserve existing synchronized oscillator behavior. Use fractional accumulation/remainder handling for durations that are non-integer sample counts; compute crossings/loop modulo against the shared timeline to avoid cumulative drift and duplicate/missed transitions. Account explicitly for wrap/reset identity and a long render/UI stall without replaying obsolete events. Reuse a shared transport signal rather than creating per-sequencer clocks when possible.
+
+###### Recording and editing workflow
+
+Keep the loop pattern (what is played) separate from transient performance/recording state (what is being played right now).
 
 1. Live mode: keyboard input immediately updates the ongoing pitch or note articulation. The last chosen pitch is retained in Continuous mode even with no keys held. No permanent step is modified unless recording or editing is explicitly enabled.
 2. Live quantized recording: arm a node, choose loop length/step duration and quantization, start with optional count-in/metronome, then perform. Timestamp physical note events against the shared audio/transport timeline, map each onset to the nearest allowed slot (deterministic ties, with wraparound), and store the result in the pending take. For a 16-step sixteenth-note grid with quarter-note quantization the selectable onset steps are 1, 5, 9 and 13. Finer recording resolution than playback slots is not supported in the first equal-step representation; constrain the choice or explicitly change the sequence resolution rather than silently dropping intended events. For coarser quantization require a compatible integer spacing (or documented compatible slots with deterministic wrap). For free timing quantize to step boundaries or integer multiples in seconds. Playing nothing leaves unrecorded slots empty; in overdub it leaves existing steps unchanged. An explicit replace take begins empty; overdub begins from the committed pattern. A later note mapped to the same slot replaces the earlier note deterministically (monophonic), never adds another independent voice. Live monitoring can be immediate and imperfectly timed; quantized playback is exact on the next applicable boundary/loop. If nearest quantization refers to an already-passed boundary, update the pattern for its next occurrence, not backwards or by scheduling a burst of overdue notes. Make this distinction visible. In Note mode optionally quantize end/duration independently and clamp a note's gate to its allowed non-overlapping span; in Continuous mode releases never insert rests.
 3. Step recording: no real-time performance is necessary. Select a cursor, press a mapped note key to enter that note, then advance by a selectable 1/2/4/8 slots. Space inserts explicit Rest (Note mode) or Hold (Continuous mode) and advances; only intercept Space while this mode owns input. Arrow keys or click select a slot without editing. Skipped slots remain unchanged in overdub and empty in replace. Wrap the cursor predictably or stop at the end according to a visible option. Auto-advance 4 on an empty sixteen-step pattern gives notes at 1, 5, 9, 13 without manually entering three gaps each time.
 4. Manual editing: select a step to assign a note, clear/delete, configure duration/tie and velocity where supported, or edit glide. Supply clear all, replace and overdub with appropriate confirmation for destructive pattern changes. Start with deterministic patterns; probability, swing, ratchets, chords and per-step variable duration can be separately designed later, not implied by the first contract.
 
-**Glide and continuity.** Interpolate semitones rather than linear Hz, so each tracked oscillator moves through the same musical intervals. Use an audio-rate bounded ramp from the current evaluated pitch to the next note over the configured time (0 means immediate subject to existing click-prevention smoothing; positive values may be seconds or an explicit beat duration). For example 4 seconds of glide on a 20-second step reaches the new pitch after four seconds and holds it for sixteen. If a new target arrives before the previous ramp ends, re-target from the instantaneous value without jumping. Define zero/longer-than-step behavior, optional separate live versus sequence glide later, and prevent cascaded parameter smoothing from unexpectedly changing advertised glide duration. A held/empty step is not a new ramp target. Do not restart the carrier phase or downstream effect state. Optional pitch-mode muting yields neutral zero offset through the normal audition contract; document what unmuting restores.
+###### Glide and continuity
 
-**Implementation boundaries and runtime.**
+Interpolate semitones rather than linear Hz, so each tracked oscillator moves through the same musical intervals. Use an audio-rate bounded ramp from the current evaluated pitch to the next note over the configured time (0 means immediate subject to existing click-prevention smoothing; positive values may be seconds or an explicit beat duration). For example 4 seconds of glide on a 20-second step reaches the new pitch after four seconds and holds it for sixteen. If a new target arrives before the previous ramp ends, re-target from the instantaneous value without jumping. Define zero/longer-than-step behavior, optional separate live versus sequence glide later, and prevent cascaded parameter smoothing from unexpectedly changing advertised glide duration. A held/empty step is not a new ramp target. Do not restart the carrier phase or downstream effect state. Optional pitch-mode muting yields neutral zero offset through the normal audition contract; document what unmuting restores.
+
+###### Implementation boundaries and runtime
 - Domain: immutable bounded per-node pattern data (stable node/graph identity, explicit occupied/rest/tie state, note number, optional duration/velocity; validated count, timing, reference, glide and mode). Version the payload and specify migration/defaults. Do not store held keys, playhead, transient target, timestamps or pending take as committed graph state.
 - Application: reusable note-input/action contract, performance target ownership, pure timing/mapping/quantization and editing policies, graph commands for pattern changes and atomic take commit. Share conversion with `MusicalPitch`. A complete recording take is one undoable committed graph edit (Cancel restores the previous pattern), not a revision per key; manual edits participate in normal history/autosave. Pending audition updates are transient and generation-qualified. Support compatible named patches, JSON import/export, nested graph/rack instances and independent pattern identity. Retain the last good state on invalid import.
 - Presentation/UI: browser-neutral cursor/draft/playhead view model; Blazor owns composition and reusable controls. Use a narrow browser input adapter for physical event capture/timestamps and normal C# use cases for validated actions. Do not use telemetry refresh or Blazor component rerender cadence as a scheduler. Show current step/target from revision- and generation-matched passive telemetry at existing display rates.
 - Infrastructure: use the existing audio-engine interop and bounded worklet event path; convert host timestamps to the current audio clock/transport rather than trusting DOM arrival as an exact audio sample. Reject stale generation, retired voice, invalid position and queue overflow safely. Immediate laptop reactions are limited by host/message/render-quantum latency; internally scheduled playback and pitch transitions run on sample-aligned boundaries. No browser background/global keyboard access is promised.
 - Audio: one stateful per-instance sequencer/held-pitch/ramp evaluator with stable output addressing, integrated via graph-to-Faust compilation and worklet processing; multiple outputs reuse state rather than separately evaluating clocks. Use a bounded runtime pattern update mechanism (prototype fixed-capacity runtime controls/tables or a worklet-supported buffer/event contract) so notes, cursor actions, loop playback and ordinary same-capacity pattern changes do not compile the graph or reset active state. Apply committed pattern/timing updates atomically at a documented boundary and reconcile pending take audition; structural capacity or port changes may use the normal replacement/crossfade contract. Define how a replacement re-anchors a transport-locked sequence, restores held pitch from accepted runtime state where compatible and invalidates old messages; failed replacements retain the last good runtime. No unbounded allocations or graph edits in the audio callback. Do not promise arbitrary DSP state transfer across topology changes; distinguish that from phase- and tail-preserving ordinary pitch changes.
 
-**Worked usage — slow drone progression.** Build three oscillators at 110, 165 and 220 Hz, enable free-frequency Semitones tracking on each, feed their audio to a Mixer, then shared effects and Master output. Connect Note Sequencer Pitch to each Pitch input with amount 1; set reference A2 so playing A2 leaves those frequencies unchanged. Select Continuous pitch, four steps, 10 bars per step, 120 BPM (or Free 20 s), and glide 4 seconds. Enter A2, D3, E3, A2 by step recording or play them at the desired times during a live take. The bank changes tuning at 0/20/40/60 seconds, reaches each changed target over four seconds, and loops after 80 seconds. At +12 semitones all three frequencies double. Leave Gate and Trigger disconnected: the oscillators, amplitude/brightness LFOs and reverb continue naturally even when the user's fingers are off the keyboard. A sixteen-step pattern with 1/16 timing and quarter-note recording quantization instead produces the same four-onset layout in two seconds. To play a conventional melody, select Note mode, route Pitch to oscillator(s), Gate to ADSR and envelope output to a gain stage; empty/rest steps now close the gate unless explicitly sustained. Multiple nodes (e.g. bass loop, slow drone progression and percussion) can have distinct lengths/durations while their synchronized boundaries follow the same patch transport. For polyphonic chords, defer independent note/voice allocation to 7.2.6; repeated transposition of an oscillator chord is already possible with one pitch output.
+###### Worked usage — slow drone progression
+
+Build three oscillators at 110, 165 and 220 Hz, enable free-frequency Semitones tracking on each, feed their audio to a Mixer, then shared effects and Master output. Connect Note Sequencer Pitch to each Pitch input with amount 1; set reference A2 so playing A2 leaves those frequencies unchanged. Select Continuous pitch, four steps, 10 bars per step, 120 BPM (or Free 20 s), and glide 4 seconds. Enter A2, D3, E3, A2 by step recording or play them at the desired times during a live take. The bank changes tuning at 0/20/40/60 seconds, reaches each changed target over four seconds, and loops after 80 seconds. At +12 semitones all three frequencies double. Leave Gate and Trigger disconnected: the oscillators, amplitude/brightness LFOs and reverb continue naturally even when the user's fingers are off the keyboard. A sixteen-step pattern with 1/16 timing and quarter-note recording quantization instead produces the same four-onset layout in two seconds. To play a conventional melody, select Note mode, route Pitch to oscillator(s), Gate to ADSR and envelope output to a gain stage; empty/rest steps now close the gate unless explicitly sustained. Multiple nodes (e.g. bass loop, slow drone progression and percussion) can have distinct lengths/durations while their synchronized boundaries follow the same patch transport. For polyphonic chords, defer independent note/voice allocation to 7.2.6; repeated transposition of an oscillator chord is already possible with one pitch output.
 
 ~~~mermaid
 flowchart TD
@@ -1797,9 +2015,11 @@ flowchart TD
     M --> FX["Effects / output"]
 ~~~
 
-**Verification and acceptance.** Test exact physical key mapping, octave/reference conversion, target isolation, auto-repeat, input/shortcut isolation, focus-loss release and repeated/overlapping keys. Test the three entry workflows, independent resolution/quantization, ties/leading and all-empty patterns, auto-advance 4, overwrite/overdub/cancel/undo, collision and late/wrapped recording behavior, invalid pattern rejection and JSON/nested/preset round-trips. Compile/render pitch-only and note-mode fixtures at 44.1/48 kHz (including 20-second steps, multi-minute loop boundaries, non-integer sample durations and several 12-beat transport wraps); verify common sample positions across sequencers of different lengths, tempo edit continuity, reset/stop/replay, suspend and crossfade policies, drift bounds, glide interruption/zero duration, actual frequency ratios, phase continuity, intact envelope/effect behavior and finite output. Verify that performance actions and same-capacity runtime edits never trigger a compile per note, only completed pattern edits are saved, retired generations cannot retune active nodes, and CPU/memory are bounded with several active sequences. Use published browser tests for input, grid editing and playhead behavior and deterministic compiled/probe tests for timing; document measured live-input latency separately from exact sequencer timing.
+###### Verification and acceptance
 
-#### Resonator processor and modal synthesis
+Test exact physical key mapping, octave/reference conversion, target isolation, auto-repeat, input/shortcut isolation, focus-loss release and repeated/overlapping keys. Test the three entry workflows, independent resolution/quantization, ties/leading and all-empty patterns, auto-advance 4, overwrite/overdub/cancel/undo, collision and late/wrapped recording behavior, invalid pattern rejection and JSON/nested/preset round-trips. Compile/render pitch-only and note-mode fixtures at 44.1/48 kHz (including 20-second steps, multi-minute loop boundaries, non-integer sample durations and several 12-beat transport wraps); verify common sample positions across sequencers of different lengths, tempo edit continuity, reset/stop/replay, suspend and crossfade policies, drift bounds, glide interruption/zero duration, actual frequency ratios, phase continuity, intact envelope/effect behavior and finite output. Verify that performance actions and same-capacity runtime edits never trigger a compile per note, only completed pattern edits are saved, retired generations cannot retune active nodes, and CPU/memory are bounded with several active sequences. Use published browser tests for input, grid editing and playhead behavior and deterministic compiled/probe tests for timing; document measured live-input latency separately from exact sequencer timing.
+
+##### Resonator processor and modal synthesis
 
 A resonator is an **audio-input processor**, not an oscillator that always generates a sound. An impulse or noise burst supplies excitation; the internal resonant state rings at its tuned frequency even after input returns to zero. A sustained input may continue exciting it. This makes body resonances and struck instruments possible without a recording. Begin with one `processor.resonator` using the existing node registry, common parameter UI, modulation, bypass/dry contract where appropriate and shared visualization. It is useful by itself for ringing textures and as a component of modal synthesis.
 
@@ -1830,13 +2050,15 @@ flowchart TD
 
 Use a very short AD-controlled white noise burst or a bounded pulse from the rhythmic infrastructure for a strike. The latter needs an explicit audio-excitation adapter rather than an implicit Trigger-to-Audio wire. Example synthetic handpan-like modes at 220, 440 and 660 Hz with respective T60 values around 1.5, 0.8 and 0.4 s and decreasing gains give a tuned ring that changes naturally over time. These are starting values for an approximation, not a measured handpan model. An inharmonic metal/bell template can use non-integer frequency ratios and longer independent decays; a wood template shorter T60 values and quieter upper modes. Velocity controls energy at the excitation input; multiple strikes superpose in the resonator states according to their excitation and headroom. Resonators must not be reset for every strike. Consider bowed/plucked-string waveguides, tube models and formant banks only after the simpler resonators have been measured; advanced models need independent stability and performance criteria.
 
-#### Reuse, polyphony and verification
+##### Reuse, polyphony and verification
 
 Use ordinary composite templates with named macro-style rack inputs (`Pitch`, `Gate`, `Velocity`, `Brightness`, `Excitation`, etc., exposing only applicable ports), shared preset catalog and annotation features. For rate-dependent tuning, a pitched bank receives the same semitone signal, not one Hz amount per oscillator guessed from a UI. Phase 7.1 ADSR enables held instruments, and AD/pulses enable strikes. Begin with monophonic templates, then design a bounded polyphonic voice allocator (fixed precompiled voice capacity, explicit voice stealing/release and peak headroom). Note actions must activate existing voice states rather than add/remove graph nodes, allocate in the audio callback or recompile per key. Independent notes retain independent envelopes and resonator tails; polyphonic performance must be profiled before promising a large voice count. Hardware MIDI, sequencer-driven pitch and sample hybrids reuse the same pitch/note/action interface when available.
 
 Keep Domain node definitions/validation independent from browser/Faust, Application contracts/commands and template registry independent from the renderer, pure pitch/coefficient math and emitters in Audio, worklet event delivery in Infrastructure, and readable projection/controls in Presentation/UI. Maintain immutable snapshot and portable persistence compatibility. Compile and render deterministic impulse/noise fixtures at 44.1/48 kHz: verify resonant center/decay T60, zero-input silence, frequency tracking, spectral ratios, stable fast modulation, independent per-mode decays, retrigger superposition, finite bounds and no unintended master clipping or instability. Test live note/gate timing, no graph mutation per note, stale events, nested racks, voice independence and bounded CPU/memory. Reuse the shared scope and spectrum for actual signal and processor response views for configured stationary response. No new sample observation channels are required for synthesis. Annotated example patches and listening checks complement, but do not replace, numerical regression tests.
 
-### Sample-based synthesis and audio assets (planned Phase 8)
+<a id="sample-based-synthesis-and-audio-assets-planned-phase-8"></a>
+
+### Sample-based synthesis and audio assets (Phase 8 — planned)
 
 Imported recordings (voice, instruments, field recordings) are reusable immutable assets, not graph parameters or DSP source code. A `SamplePlayer` generator reads an asset and emits an ordinary audio signal, allowing the same routing, modulation, nesting and effects as oscillator generators. Other sample-based generators reuse the asset subsystem.
 
@@ -1861,40 +2083,6 @@ flowchart TD
 **Persistence and portability.** Version the patch schema for asset references with backwards-compatible migration of existing asset-free patches. Asset selection is a validated graph command, participates in snapshots, undo/redo and autosave, and preserves IDs across nested graphs. Missing assets remain explicit unresolved references with relink UI; a runtime requiring missing data must not silently play substitute audio. Extend patch export with a versioned self-contained `.orbit` archive (JSON manifest and binary assets); keep existing JSON import/export for asset-free patches and clearly flag reference-only exports. Validate archive size, paths, formats, hashes and references before committing imported data; deduplicate immutable assets and remap conflicting IDs transactionally. No cloud upload is required.
 
 **Future consumers.** `GranularGenerator` reads overlapping enveloped grains from the same asset, with modulatable position, grain length, density, pitch, spread and deterministic random seed where appropriate. `WavetableGenerator` uses separately prepared periodic tables derived from recordings, with interpolation and anti-aliasing; an arbitrary speech segment is not necessarily a suitable single cycle. `EnvelopeFollower` is an audio-input processor emitting a modulation signal with attack/release and gain, usable with recordings or any other audio source; it does not need direct asset ownership.
-
-### Updating without clicks
-
-| Change | Runtime operation |
-|---|---|
-| Move/resize/open node | UI-only; no audio change |
-| Set oscillator frequency | Update/smooth existing DSP control |
-| Change LFO speed or depth | Update/smooth existing DSP control |
-| Add/remove node | Recompile if topology cannot be updated dynamically |
-| Create/remove connection | Update routing or compile a new graph |
-| Change effect order | Update routing/compile |
-| Rename a rack port | Update model/projection, typically no audio compile if stable addresses are unchanged |
-
-The browser integration captures one committed snapshot per Play request and maps it to Faust source and initial values via `FaustGraphPlaybackService`. The pinned complete compiler bundle loads lazily inside `FaustCompilerWorker.js`, coordinated by `FaustCompilerClient`. It compiles outside both the UI and audio threads, and returns a WebAssembly module and metadata to the existing AudioWorklet node factory. The node uses the source-specific factory hash for its processor identity. The shared audio envelope handles start and stop.
-
-Live base-only changes use the active compiler control manifest instead of recompiling. `GraphTopology` compares node/port/parameter definitions and connections (including weights), but ignores base values. `ActiveGraphPlayback` serializes revisions, stores the last accepted topology and values, and maps changed `ParameterAddress` instances to stable control names. The browser engine writes the existing worklet's parameters; Faust's `si.smoo` smooths the change without resetting oscillator phase. While initial compilation is in progress, the browser coalesces base updates before the initial attack.
-
-Structural changes compile new source and compare it with the current program; identical source reuses the existing voice. A changed program is compiled by the worker and instantiated silently before replacement. `MarkRevisionAsync` supersedes in-flight work, and the browser rejects stale results before connecting them. `AudioEngine` treats the Play task as a logical lifetime that can span multiple voices. `AudioVoice` and `AudioEnvelope` schedule complementary linear gain ramps over 50 ms on the same audio clock, after which the retiring voice is disposed. Compiler failures retain the last accepted graph; Stop releases both voices and invalidates pending replacements. This preserves continuity of playback, not arbitrary DSP state.
-
-Compile outside the audio rendering thread, preferably in an appropriate worker or build pipeline. A new graph should be prepared before swapping it in. Use revision numbers to discard stale compilation results and coalesce rapid structural edits. Keep the last good runtime active if compilation fails; report the error in the UI.
-
-Deployment versions the complete audio and persistence JavaScript module trees, not just their entry points. `BrowserModulePaths` resolves both adapters' imports from the shared `OrbitBrowserAssetVersion` assembly metadata; local builds use default unversioned directories. CI rejects unversioned interop paths in the published editor test. IndexedDB database names and keys do not depend on the asset version.
-
-When swapping graphs, use an appropriate short fade/crossfade and preserve state where possible. A newly compiled oscillator may restart phase and filters/effects may lose state; maintaining continuity across topology changes is a distinct engineering problem. Do not promise seamless arbitrary graph edits until tested. Consider the cost of running old and new graphs during a crossfade.
-
-### Real-time requirements
-
-- A 128-frame block at 48 kHz represents only about 2.67 ms.
-- Avoid allocation-heavy work, blocking I/O, graph compilation or ordinary UI event dispatch inside processing callbacks.
-- Use actual sample rate/block sizes and reuse buffers.
-- Manage summing levels, master gain and headroom to prevent clipping.
-- Use suitable band-limited waveform implementations for saw/pulse etc. to control aliasing.
-- Avoid abrupt parameter changes, accidental phase resets and unsafe feedback.
-- Measure CPU and underruns with representative complex patches, including multiple drones.
 
 ## 11. Project organization and dependencies
 
@@ -2138,7 +2326,28 @@ A composite node would additionally contain its nested graph and the shared expo
 
 Do not attempt to build the entire modular synth in one change. Establish and test each foundation.
 
-### Phase 1 — Domain primitives, graph ownership and tests
+### Roadmap at a glance
+
+Keep identifiers stable even when independent milestones ship out of numerical order. The following is a recommended dependency-aware delivery order, not a deadline or a requirement to finish every earlier number.
+
+| Track | Delivered now | Next work |
+|---|---|---|
+| Foundation and editor | 1–5; 6.1–6.17 | Deferred version-aware reload / additional graph reuse |
+| Visualization | 6.18.1–6.18.5 | 6.18.6 analyzer sink, 6.18.7 advanced comparisons and profiling |
+| Patch organization | 6.19.5 core | 6.19.1–6.19.4 notes, descriptions, groups, discovery; optional badge refinements |
+| Rhythmic articulation | 7.1.1–7.1.4 (PRs #10, #12) | 7.1.5–7.1.7 |
+| Keyboard and sequencing | 7.2.2 shared pitch | 7.2.8a–c live pitch, long transport, recording; 7.2.3 and 7.2.8d when event/gated articulation is ready |
+| Instruments | Existing oscillator/effect capabilities and AD impact preset | 7.2.1 recipes/templates, 7.2.4 resonator, 7.2.5 modal synthesis, 7.2.6 polyphony, 7.2.7 physical models |
+| Standalone audio transposition | Design only | 6.20.1–6.20.2; independent of keyboard tracking |
+| Audio assets | Design only | Phase 8 |
+
+The most direct drone-performance path is 7.2.2 (delivered) → 7.2.8a–c. Gated instruments depend on rhythmic sources, ADSR and monophonic note delivery. Presentation-only annotations, dedicated analysis and the post-mixer pitch shifter can proceed independently.
+
+**Detailed milestone register.** The following retains the original deliverables and implementation records, including earlier milestones for regression and architectural context.
+
+<a id="phase-1--domain-primitives-graph-ownership-and-tests"></a>
+
+### Phase 1 — Domain primitives, graph ownership and tests (implemented)
 
 - Define SignalGraph, ISignalNode, generator/processor contracts, Parameter, PortDefinition and SignalConnection.
 - Define stable ID rules, signal compatibility and fan-in/fan-out.
@@ -2148,7 +2357,9 @@ Do not attempt to build the entire modular synth in one change. Establish and te
 
 Deliverable: create and validate a small graph without a UI or a real audio device.
 
-### Phase 2 — Shared timing and first sample-rate modulation
+<a id="phase-2--shared-timing-and-first-sample-rate-modulation"></a>
+
+### Phase 2 — Shared timing and first sample-rate modulation (implemented)
 
 - Use the actual AudioContext sample rate/frame clock.
 - Introduce transport model and a time snapshot interface; add BPM synchronization incrementally.
@@ -2159,18 +2370,22 @@ Deliverable: create and validate a small graph without a UI or a real audio devi
 
 Deliverable: audible two-sine modulation proof, no per-sample C#/JS message loop.
 
-### Phase 3 — Commands and event dispatch
+<a id="phase-3--commands-and-event-dispatch"></a>
+
+### Phase 3 — Commands and event dispatch (implemented)
 
 - Implemented: typed ConnectNodes, RemoveConnection, SetParameterValue, AddNode and RemoveNode commands.
 - Implemented: validated single-command commits, immutable snapshots and revisioned change sets.
 - Implemented: patch-session dispatcher with disposable typed and whole-change-set subscriptions, isolation and failure reporting.
 - Implemented: the fixed modulation patch is constructed through the session commands.
 - Implemented: independently tested canvas state projection, layout-only events, node placement, selection, pan and pointer-anchored zoom in Orbit.Presentation.
-- Next: the actual canvas renderer and dynamic audio graph subscriber in Phase 4. Multi-graph transactions await composite support.
+- Historical next steps — delivered in Phase 4 (canvas renderer and dynamic audio graph subscriber) and Phase 5 (multi-graph transactions and composite support).
 
 Deliverable: a graph edit reaches independent subscribers once, with valid model state.
 
-### Phase 4 — Flat canvas and dynamic graph compiler
+<a id="phase-4--flat-canvas-and-dynamic-graph-compiler"></a>
+
+### Phase 4 — Flat canvas and dynamic graph compiler (implemented)
 
 - Reuse the implemented JSON design token system for canvas, node, port, connection and parameter styles.
 - Implemented: reusable canvas renderer with role-colored nodes, typed ports and visible Bézier connections, plus pointer pan/zoom and fit.
@@ -2180,14 +2395,16 @@ Deliverable: a graph edit reaches independent subscribers once, with valid model
 - Implemented: live base-value updates on the running worklet, including startup queuing, revision ordering, smoothed controls and structural-change detection.
 - Implemented: automatic structural replacement, stale-revision invalidation, same-source reuse, 50 ms audio-clock crossfade and last-good-graph recovery.
 - Implemented: effective parameter telemetry and animated modulation indicators; conservative ranges are estimated from the graph and live values come directly from Faust passive meters.
-- Next: composite nodes and nested canvases (Phase 5).
-- Compile asynchronously, track graph revision and safely swap runtime.
-- Test fan-out and multiple modulation sources.
-- Add low-pass effect and mixer.
+- Historical next step — delivered: composite nodes and nested canvases (Phase 5).
+- Implemented: compile asynchronously, track graph revision and safely swap runtime.
+- Implemented: tests for fan-out and multiple modulation sources.
+- Delivered later in Phases 6.6–6.7: low-pass effect and mixer.
 
 Deliverable: construct and edit a graph of two generators, a filter, mixer/output and modulation edges on the canvas while audio runs.
 
-### Phase 5 — Composite nodes and rack interfaces
+<a id="phase-5--composite-nodes-and-rack-interfaces"></a>
+
+### Phase 5 — Composite nodes and rack interfaces (implemented)
 
 - Implemented: ICompositeNode, graph-owned Input Rack and Output Rack, immutable shared boundary identities, recursion checks and nested snapshots.
 - Implemented: child graph command routing, patch-wide committed snapshots, exact graph event filters and independent graph-ID-targeted canvas projections.
@@ -2200,90 +2417,40 @@ Deliverable: construct and edit a graph of two generators, a filter, mixer/outpu
 
 Deliverable: open a drone node's internal canvas, connect external LFO to a named input, route it internally and hear the modulation.
 
-### Phase 6 — Transport synchronization and drone presets
+### Phase 6 — Transport synchronization, drone presets and editor features (partial)
 
-- Implemented: shared patch-wide transport service, BPM editor, sample-frame-derived musical position, start/stop/resume/reset semantics, and musical divisions.
-- Implemented: audio-rate shared transport phase, tempo-synchronized sine LFO, validated musical division parameter choices, root/nested and crossfade phase sharing.
-- Implemented: one reusable oscillator with waveform selector (sine, triangle, square, sawtooth), phase, normalized output and structural change crossfade.
-- Implemented: unified free/synchronized oscillator timing modes, conditional rate controls, dormant wires and active DSP lowering.
-- Implemented: separate white/pink/brown noise generator with modulatable amplitude and structural color selection.
-- Implemented: independent layered drone preset, generic composite preset catalog registration and mono weighted mixer.
-- Implemented: unified resonant filter processor (low-pass, high-pass, band-pass, notch), with audio-rate cutoff and Q modulation.
+#### Phase 6.1–6.15 — Foundations, nodes and workspace management (implemented)
+
+##### Timing and sound generation
+
+- Implemented (6.1): shared patch-wide transport service, BPM editor, sample-frame-derived musical position, start/stop/resume/reset semantics, and musical divisions.
+- Implemented (6.2): audio-rate shared transport phase, tempo-synchronized sine LFO, validated musical division parameter choices, root/nested and crossfade phase sharing.
+- Implemented (6.3): one reusable oscillator with waveform selector (sine, triangle, square, sawtooth), phase, normalized output and structural change crossfade.
+- Implemented (6.4): unified free/synchronized oscillator timing modes, conditional rate controls, dormant wires and active DSP lowering.
+- Implemented (6.5): separate white/pink/brown noise generator with modulatable amplitude and structural color selection.
+- Implemented (6.6): independent layered drone preset, generic composite preset catalog registration and mono weighted mixer.
+- Implemented (6.7): unified resonant filter processor (low-pass, high-pass, band-pass, notch), with audio-rate cutoff and Q modulation.
+
+##### Workspace persistence and history
+
 - Implemented (6.8): versioned `PatchDocument` serialization, including root/nested graph identities, rack definitions, primitive parameter values and separate canvas layout. Reconstruction uses registered leaf factories and validated domain graph operations, not persisted DSP definitions.
 - Implemented (6.9): browser-local IndexedDB, debounced autosave and startup recovery of all visited layouts, active canvas and BPM; playback starts stopped.
 - Implemented (6.10): named independent patch snapshots, new/open/overwrite/delete, JSON import/export, validated workspace replacement while stopped.
 - Implemented (6.11): bounded patch-wide graph command history with atomic undo/redo and fresh committed revisions, including nested boundaries and stable edge/node identities.
+
+##### Audio effects
+
 - Implemented (6.12): single-band parametric EQ with continuously modulatable frequency, gain in dB and Q, sharing the state-variable filter core.
 - Implemented (6.13): mono feedback delay with free and synchronized timing, fractional delay, audio-rate modulation and live shared BPM.
 - Implemented (6.14): mono algorithmic reverb with audio-rate decay, damping and wet mix, bounded feedback combs and all-pass diffusion.
 - Implemented (6.15): two-voice mono chorus with modulatable rate, depth, base delay and wet mix; shared millisecond parameter unit and conservative output bounds.
-- Implemented (6.16.1): reversible node mute with shared header control, persisted state, boundary-wide smooth gain and settled modulation range projection.
-- Implemented (6.16.2): explicit effect bypass capability, independent persisted state, shared click-safe audition controls, dry range projection and continuously running wet DSP.
-- Implemented (6.17.1): immutable versioned individual node preset model, registry-derived validation and grouped embedded JSON catalog.
-- Implemented (6.17.2): atomic preset application through validated batch parameter changes, one revision/undo entry, and existing live playback.
-- Implemented (6.17.3): shared grouped node preset selector, description and exact base-configuration matching in every canvas.
-- Implemented (6.17.4): expanded data-only catalog of 65 built-in configurations across all eight eligible node types.
-- Implemented (6.17.5): custom preset library with stable IDs, explicit management, independent IndexedDB persistence and stale-write protection.
-- Implemented (6.17.6): portable individual JSON presets with preview, compatibility validation and explicit conflict choices; signal observation next.
-- Planned (6.18): shared signal observation and visualization, integrated node plots, processor response curves and passive analyzer sinks.
-- Planned (6.19): presentation-only notes, node/connection descriptions, visual groups, searchable patch documentation and connection amount badges with inline editing.
-- Deferred: deployment-version detection and safe workspace-save/reload prompt for long-lived tabs whose versioned lazy modules have been removed by a later Pages deployment.
-- Add copies/preset reuse with independent instances.
-
-Workspace persistence uses a data-only schema version 1. `PatchDocumentSerializer` captures immutable session snapshots with stable node, parameter, socket, connection and graph IDs. Parameter and port definitions are reconstructed by the registry using their stable keys; composites reconstruct their boundary definitions, preserving both rack identities and receiving-side fan-in. Invalid definitions, unknown schemas and invalid connections are rejected before a session is exposed. `CanvasNavigationService` captures and restores layout and navigation independently. `PatchPersistenceService` coalesces changes for 350 ms and serializes writes; `IPatchStorage` is implemented by `BrowserPatchStorage` through IndexedDB transactions. No live runtime state or selection is stored. Startup loads before rendering the workspace; a missing document seeds the demo, while a failed restore preserves the saved record and disables autosave for that session. Very fast reloads within the debounce window can lose the latest edit; storage is browser-local and can be cleared by the browser.
-
-Phase 6.10 adds `PatchLibraryService` and `IPatchLibraryStorage`, using distinct named keys alongside the recovery key without changing the schema. Named snapshots are not live links to the editor; Save as rejects duplicate names and overwriting is explicit. JSON import/export uses the same serializer. Workspace replacement validates a candidate session and navigation, requires stopped playback, drains pending recovery writes and commits the replacement immediately; then the workspace recreates its keyed presentation and playback components. Invalid imports retain the existing graph and named snapshots.
-
-Phase 6.11 puts `PatchHistory` inside `PatchSession`, retaining up to 100 successful graph command before/after snapshots. Undo/redo reconstructs the target graph using the persistence reconstruction path (without JSON or storage), validates before replacing, advances the current revision and publishes one `GraphChangeSet` containing `GraphHistoryRestored` facts for affected graphs, including added/removed descendants. This preserves the original patch identity, subscriptions, and current audio lifetime. Failed/no-op edits do not enter history; divergent commands clear redo. History is not persisted and begins empty after startup or patch replacement. Presentation retains bounded last-known layouts for recently removed nodes/graphs; standalone layout gestures and tempo are outside graph history.
-
-Continuous parameter editing groups history separately from graph transactions. The shared parameter slider gives pointer drags and range keyboard gestures unique identities; `PatchSession.Execute` accepts an optional history gesture identity. `PatchHistory` retains the initial and latest immutable snapshots for consecutive parameter changes with the same identity, graph and parameter address, while every accepted value still commits and notifies the normal DSP, canvas and autosave subscribers. Release, cancellation, blur, navigation, undo/redo or an intervening successful edit finalizes the pending gesture. A stale completion cannot finalize a newer gesture. If the final value equals the initial value, no entry is added and redo is preserved. Numeric edits and discrete choices retain their ordinary command behavior. No UI component manages history snapshots directly.
-
-~~~mermaid
-sequenceDiagram
-    participant U as Shared slider
-    participant S as Patch session
-    participant H as History
-    participant D as DSP and autosave
-    loop Drag updates
-        U->>S: Value and gesture ID
-        S->>H: Keep first and latest snapshots
-        S->>D: Committed revision
-    end
-    U->>S: Gesture ended
-    S->>H: Finalize one entry
-~~~
-
-~~~mermaid
-flowchart TD
-    C[Graph command] --> H[Patch session history]
-    U[Undo or redo] --> H
-    H --> V[Validated graph reconstruction]
-    V --> R[New committed revision]
-    R --> A[Audio update]
-    R --> P[Canvas and autosave]
-~~~
-
-~~~mermaid
-flowchart TD
-    M[Patch manager] --> L[Patch library service]
-    L --> S[Document serializer]
-    L --> I[(Named snapshots)]
-    S --> V[Validated candidate]
-    V --> W[Workspace replacement]
-    W --> R[(Recovery record)]
-~~~
-
-~~~mermaid
-flowchart TD
-    S[Patch session snapshot] --> D[Patch document serializer]
-    L[Canvas navigation layouts] --> D
-    T[Tempo] --> D
-    D --> P[Patch persistence service]
-    P --> B[IPatchStorage]
-    B --> I[(IndexedDB)]
-~~~
 
 Deliverable: several independently configurable drones from one reusable modular architecture.
+
+#### Cross-cutting follow-up items
+
+- Deferred: deployment-version detection and safe workspace-save/reload prompt for long-lived tabs whose versioned lazy modules have been removed by a later Pages deployment.
+- Partial: independent composite and individual preset reuse implemented; general graph/subgraph copies and linked/versioned template reuse remain planned.
 
 #### Phase 6.16 — Node audition actions (implemented)
 
@@ -2304,7 +2471,11 @@ Deliverable: audition or silence entire linear lanes by muting their final node,
 
 Deliverable: choose or create a grouped configuration for any eligible node without changing its identity or wiring; apply in one undoable operation during playback and reuse across patches. Custom composite graph templates (including internal wiring and exposed racks) remain separate Phase 7 work, with a consistent catalog experience.
 
-#### Phase 6.18 — Signal analysis and visualization (planned)
+<a id="phase-618--signal-analysis-and-visualization-planned"></a>
+
+#### Phase 6.18 — Signal analysis and visualization (partial: 6.18.1–6.18.5 implemented)
+
+- Partial (6.18): shared observation, visualization, integrated node plots and processor response curves implemented; passive analyzer sinks and advanced analysis planned.
 
 - **6.18.1 — Observation infrastructure (implemented):** bounded Faust output taps, explicit master-channel isolation, graph-qualified manifest, generation-aware capture leases and analysis contracts. Offline/worklet regression coverage for master equivalence, nested routing, mute/bypass, leakage and bounded resources. Device-scale profiling and long-history capture remain later analysis work.
 - **6.18.2 — Oscilloscope and level meter (implemented):** reusable selected-node scope, browser-side time-domain display, peak/RMS, timebase, zero-crossing trigger and bounded slow-modulation history. Known sine, clipped and low-rate modulation regression coverage.
@@ -2313,33 +2484,39 @@ Deliverable: choose or create a grouped configuration for any eligible node with
 - **6.18.4 — Integrated and expanded views (implemented):** capability-driven shared `NodeVisualizationPanel`, compact collapsible waveform/spectrum/level plots, expand/mode/source controls, visible-only rendering, tokenized design and compatible per-graph layout persistence; no graph history or DSP restarts for display changes.
 - **Cycle timing and pulse width refinement (implemented):** shared nominal cycle/polarity durations, seconds-based editing of free oscillator rate, approximate live period, conditional modulatable square duty with schema-1 compatibility, and oscillator-output one-configured-cycle scope with bounded history.
 - **6.18.5 — Processor response curves (implemented):** pure tested response providers matching the actual parametric EQ and four filter modes, configured and instantaneous effective parameter response, sample-rate-aware logarithmic axis, stopped previews, audition notices and shared compact/expanded layout persistence; numerical and measured offline Faust parity.
-- **6.18.6 — Dedicated analyzer sink:** validated passive mono observation node for any compatible signal, reusable visualization panels, independent placement/resizing, analyzer-only reachability, nested graph persistence and undo/redo; prove audible master isolation.
-- **6.18.7 — Advanced analysis:** synchronized input/output spectral comparisons, bounded spectrogram history and profiling of multi-drone workloads; reuse chart infrastructure for future envelopes, automation and sample-based nodes.
+- **6.18.6 — Dedicated analyzer sink (planned):** validated passive mono observation node for any compatible signal, reusable visualization panels, independent placement/resizing, analyzer-only reachability, nested graph persistence and undo/redo; prove audible master isolation.
+- **6.18.7 — Advanced analysis (planned):** synchronized input/output spectral comparisons, bounded spectrogram history and profiling of multi-drone workloads; reuse chart infrastructure for future envelopes, automation and sample-based nodes.
 
 Deliverable: inspect an oscillator waveform, harmonics, modulation and levels directly on the node; expand the same visualization without changing playback; see an EQ/filter's configured response when stopped and effective response during playback; attach an independent analyzer anywhere in a patch without changing its audible path.
 
-#### Phase 6.19 — Patch documentation and canvas organization (planned)
+<a id="phase-619--patch-documentation-and-canvas-organization-planned"></a>
 
-- **6.19.1 — Note cards:** graph-scoped non-DSP annotation model, shared visible placement/fit, editable title and multiline body, semantic colors, resize/collapse/delete/duplicate, accessible text editing, bounded annotation history and additive `SavedCanvas` persistence; prove playback and graph history isolation in root/nested browser tests. Independent of remaining signal-analysis work; may be implemented early without renumbering Phase 6.18.
-- **6.19.2 — Node and connection descriptions:** presentation-only aliases, attached descriptions and wire labels keyed by stable graph/node/connection IDs; consistent shared editors, dormant/deleted target reconciliation and undo restoration.
-- **6.19.3 — Visual groups:** explicit member references, named/color-coded background regions, resize and atomic movement of members, annotation history and persistence; no new signal graph, rack, audio behavior or implicit deletion of members.
-- **6.19.4 — Patch overview and discovery:** optional title, description, usage instructions and tags in the portable document; patch manager metadata display/search/filter and compatible import/export; annotated example patches, including an impact recipe when AD envelopes are available.
-- **6.19.5 — Connection visualization and inline editing:** shared committed amount badge with destination units, signed/zero/dormant states, fixed Bézier midpoint behind nodes (no collision detection or manual positioning), All/Modified/Selected/Off persisted display preference, and one anchored floating amount editor with explicit Apply/Cancel and Escape. Remaining refinements: automatic zoom suppression and optional per-edge predicted contribution. Verify display-only isolation and ordinary graph undo/redo for actual amount edits in root and nested canvases. Badges may be implemented independently of other Phase 6.19 steps.
+#### Phase 6.19 — Patch documentation and canvas organization (partial: 6.19.5 implemented core)
+
+- Partial (6.19): presentation-only notes, node/connection descriptions, visual groups and searchable patch documentation planned; connection amount badges and inline editing implemented (core).
+
+- **6.19.1 — Note cards (planned):** graph-scoped non-DSP annotation model, shared visible placement/fit, editable title and multiline body, semantic colors, resize/collapse/delete/duplicate, accessible text editing, bounded annotation history and additive `SavedCanvas` persistence; prove playback and graph history isolation in root/nested browser tests. Independent of remaining signal-analysis work; may be implemented early without renumbering Phase 6.18.
+- **6.19.2 — Node and connection descriptions (planned):** presentation-only aliases, attached descriptions and wire labels keyed by stable graph/node/connection IDs; consistent shared editors, dormant/deleted target reconciliation and undo restoration.
+- **6.19.3 — Visual groups (planned):** explicit member references, named/color-coded background regions, resize and atomic movement of members, annotation history and persistence; no new signal graph, rack, audio behavior or implicit deletion of members.
+- **6.19.4 — Patch overview and discovery (planned):** optional title, description, usage instructions and tags in the portable document; patch manager metadata display/search/filter and compatible import/export; annotated example patches, including an impact recipe when AD envelopes are available.
+- **6.19.5 — Connection visualization and inline editing (implemented core):** shared committed amount badge with destination units, signed/zero/dormant states, fixed Bézier midpoint behind nodes (no collision detection or manual positioning), All/Modified/Selected/Off persisted display preference, and one anchored floating amount editor with explicit Apply/Cancel and Escape. Remaining refinements: automatic zoom suppression and optional per-edge predicted contribution. Verify display-only isolation and ordinary graph undo/redo for actual amount edits in root and nested canvases. Badges may be implemented independently of other Phase 6.19 steps.
 
 Deliverable: a musician can open a previously saved or shared complex patch, identify its sections, understand modulation intent and recover design notes without altering sound or reading source code.
 
 #### Phase 6.20 — Audio pitch shifting (planned)
 
-- **6.20.1 — Pitch shifter processor:** mono post-mixer transposition with semitone/cents and wet mix controls, shared pitch-ratio mathematics, bounded overlapping-window Faust resampling, click-safe zero shift, standard audition and live parameter updates; test polyphonic spectral ratios, duration, latency, artifacts and resource bounds at 44.1/48 kHz. Ship independently of oscillator pitch tracking or typed note events.
-- **6.20.2 — Quality and usage:** tune window/interpolation choices against multi-tone and transient fixtures, measure latency and CPU cost, document dry/wet and parallel-path limitations, include octave/fifth/detune presets and a reusable mixed-drone example. Investigate higher-quality algorithms only if measured needs justify them.
+- **6.20.1 — Pitch shifter processor (planned):** mono post-mixer transposition with semitone/cents and wet mix controls, shared pitch-ratio mathematics, bounded overlapping-window Faust resampling, click-safe zero shift, standard audition and live parameter updates; test polyphonic spectral ratios, duration, latency, artifacts and resource bounds at 44.1/48 kHz. Ship independently of oscillator pitch tracking or typed note events.
+- **6.20.2 — Quality and usage (planned):** tune window/interpolation choices against multi-tone and transient fixtures, measure latency and CPU cost, document dry/wet and parallel-path limitations, include octave/fifth/detune presets and a reusable mixed-drone example. Investigate higher-quality algorithms only if measured needs justify them.
 
 Deliverable: transpose an entire mixed oscillator bank or another audio source using a single downstream node, with documented latency and quality tradeoffs; use Phase 7.2.2 source-level pitch tracking when generators are individually accessible and clean transposition is preferred.
 
-### Phase 7 — Advanced functionality and performance
+<a id="phase-7--advanced-functionality-and-performance"></a>
 
-- More filters, EQ, delay, chorus, flanger, compression and reverb.
-- Random, step sequencers, automation, explicit feedback; reuse the Phase 7.1 event and envelope infrastructure.
-- Musical pitch/note control, resonator and modal instrument templates; reuse Phase 7.1 articulations and existing composite graphs (Phase 7.2).
+### Phase 7 — Advanced functionality and performance (partial)
+
+- Partial: filters, EQ, delay, chorus and reverb implemented in Phase 6; flanger, compression and further processing planned.
+- Planned: random, step sequencers, automation, explicit feedback; reuse the Phase 7.1 event and envelope infrastructure.
+- Partial: shared musical pitch control implemented (7.2.2); note control, resonator and modal instrument templates planned; reuse Phase 7.1 articulations and existing composite graphs (Phase 7.2).
 - Additional routing adapters and channel handling; extend Phase 6.18 observation infrastructure to multichannel signals and future node types.
 - Group/ungroup nodes; versioned reusable graph definitions.
 - Improve graph swap continuity, compile cache and performance profiling.
@@ -2347,40 +2524,44 @@ Deliverable: transpose an entire mixed oscillator bank or another audio source u
 
 Deliverable: a scalable modular environment, adding functionality through node definitions rather than hardcoded editors.
 
-#### Phase 7.1 — Envelope generators and rhythmic triggers (planned)
+<a id="phase-71--envelope-generators-and-rhythmic-triggers-planned"></a>
+
+#### Phase 7.1 — Envelope generators and rhythmic triggers (partial: 7.1.1–7.1.4 implemented)
 
 - **7.1.1 — Oscillator-driven AD envelope (implemented):** reusable sample-rate edge detector, continuous oscillator trigger input, shared AD segment state machine, configurable durations/curves, unipolar range prediction, shared parameter UI, five presets, editable impact patch and compiled DSP timing/continuity tests. No dedicated trigger source required.
 - **7.1.2 — Typed rhythmic ports and adapters (implemented):** Trigger, Gate and Clock contracts, explicit continuous-signal edge/gate adapters, single-source unity event links, nested rack/flattening/validation/persistence support and tokenized event sockets; preserve the existing oscillator trigger route with conditional source selection.
-- **7.1.3 — Rhythmic sources (implemented):** manual trigger and gate runtime actions, free/BPM clock using shared transport, gate duration and trigger fan-out; no graph revision or recompilation on events; generation-safe worklet delivery and timing tests.
-- **7.1.4 — AR, ADSR and Loop (implemented):** gate-aware stage transitions, sustain/release, repeat/rest and rapid retrigger continuity using the same envelope node and conditional parameters; compatible AD migration, initial presets and multi-rate DSP tests.
-- **7.1.5 — Envelope visualization:** configured curve, optional live measured output/playhead and compact/expanded shared visualization; no graph mutation or DSP dependency on display.
-- **7.1.6 — Presets and worked patches:** grouped AD/percussion, AR/swell, ADSR/voice, rhythmic modulation presets and independently routed multi-envelope impact examples, validated in CI.
-- **7.1.7 — Custom multi-point envelopes:** bounded versioned breakpoint definitions, reusable segment evaluation, atomic edit/history and compatible persistence; documented loop and trigger behavior.
+- **7.1.3 — Rhythmic sources (implemented — PR #10):** manual trigger and gate runtime actions, free/BPM clock using shared transport, gate duration and trigger fan-out; no graph revision or recompilation on events; generation-safe worklet delivery and timing tests.
+- **7.1.4 — AR, ADSR and Loop (implemented — PR #12):** gate-aware stage transitions, sustain/release, repeat/rest and rapid retrigger continuity using the same envelope node and conditional parameters; compatible AD migration, initial presets and multi-rate DSP tests.
+- **7.1.5 — Envelope visualization (planned):** configured curve, optional live measured output/playhead and compact/expanded shared visualization; no graph mutation or DSP dependency on display.
+- **7.1.6 — Presets and worked patches (partial — AD presets and impact composite delivered in 7.1.1, initial AR/ADSR/Loop presets in 7.1.4):** grouped AD/percussion, AR/swell, ADSR/voice, rhythmic modulation presets and independently routed multi-envelope impact examples, validated in CI.
+- **7.1.7 — Custom multi-point envelopes (planned):** bounded versioned breakpoint definitions, reusable segment evaluation, atomic edit/history and compatible persistence; documented loop and trigger behavior.
 
 Deliverable: an oscillator can repeatedly trigger a percussion envelope without any new timing node; later explicit trigger, gate and clock nodes can drive several independently shaped envelopes or other event consumers in sample-aligned fashion. Phase 6.18 visualization remains the shared display foundation; sequencers and sample playback reuse the event contracts.
 
-#### Phase 7.2 — Musical instrument synthesis and physical modelling (planned)
+<a id="phase-72--musical-instrument-synthesis-and-physical-modelling-planned"></a>
 
-- **7.2.1 — Existing-node instrument templates:** editable organ, flute, brass, string and didgeridoo approximations using harmonic oscillators, filtered noise, mixers, effects and safe gain staging; validate worked patches and document settings. Can ship before envelopes or other Phase 7.2 steps.
+#### Phase 7.2 — Musical instrument synthesis and physical modelling (partial: 7.2.2 implemented)
+
+- **7.2.1 — Existing-node instrument templates (planned):** editable organ, flute, brass, string and didgeridoo approximations using harmonic oscillators, filtered noise, mixers, effects and safe gain staging; validate worked patches and document settings. Can ship before envelopes or other Phase 7.2 steps.
 - **7.2.2 — Musical pitch tracking (implemented for oscillators):** pure note/Hz/semitone/cents conversion, opt-in pitch tracking and conditional semitone inputs, shared `Pitch Control` source with transpose/fine tune and presets, audio-rate mapping and range prediction, effective Hz telemetry, stable intervals, compatible migration and nested fan-out. Independent of typed note events and Phase 6.20; future resonators reuse the convention.
-- **7.2.3 — Monophonic note source:** sample-aligned pitch/gate/trigger/velocity outputs, on-screen and laptop keyboard note actions through a shared explicit performance-input adapter (reused by 7.2.8), and generic multi-output lowering where required; reuse Phase 7.1 event delivery and ADSR, no recompilation or graph history on note events. Define release/retrigger, legato and focus-loss behavior.
-- **7.2.4 — Resonator processor:** reusable damped-mode Faust emitter with independently modulatable frequency, decay/T60 and excitation/output gain, stable sample-rate-aware coefficient math, compatible persistence/presets and impulse/spectrum/stability regression tests. Independent of note-source work; ordinary signals can excite it.
-- **7.2.5 — Modal synthesis:** parallel resonator composite first, then bounded configurable modal bank if needed; short AD/noise or pulse excitation, independent tuned/inharmonic mode ratios and decays, shared pitch and velocity, handpan-like, bell, gong and wood templates, response and spectrum views.
-- **7.2.6 — Playable instrument templates and polyphony:** add reusable note-controlled organ, flute, brass, bowed-string and modal instruments with expressive rack inputs, annotated recipes, optional browser MIDI adapter and bounded precompiled voice allocation once monophonic timing is proven. Profile CPU/memory, voice stealing and independent releases before increasing voice counts.
-- **7.2.7 — Further physical models:** investigate string/waveguide, tube/formant and hybrid sample excitation models only after verified resonator/modal performance, with explicit stability, tuning and resource acceptance criteria.
-- **7.2.8 — Keyboard performance and continuous pitch sequencing:** shared laptop/on-screen input capture, live latched transposition, editable bounded note patterns, BPM/free seconds step timing including multi-bar ambient durations, sample-aligned looping, glide, quantized live recording, step recording with rests/holds/auto-advance, manual grid editing and atomic pattern history. Deliver in increments: (a) keyboard capture and live pitch-only latch on 7.2.2 using the 7.2.3 shared input/runtime contract; (b) pitch-only pattern engine, long-transport extension, playback, glide and manual/step editing; (c) quantized live recording/overdub, take history/persistence and worked drone patches; (d) Note-mode gate/trigger/velocity articulation using 7.1.3–7.1.4 and 7.2.3. Parts (a–c) may ship before ADSR, resonators or polyphony; keep (d) dependent on their relevant note/event prerequisites. Profile and verify long synchronized loops, tempo changes, wrap/reset, live input latency, phase/tail continuity and runtime updates without per-note recompilation.
+- **7.2.3 — Monophonic note source (planned):** sample-aligned pitch/gate/trigger/velocity outputs, on-screen and laptop keyboard note actions through a shared explicit performance-input adapter (reused by 7.2.8), and generic multi-output lowering where required; reuse Phase 7.1 event delivery and ADSR, no recompilation or graph history on note events. Define release/retrigger, legato and focus-loss behavior.
+- **7.2.4 — Resonator processor (planned):** reusable damped-mode Faust emitter with independently modulatable frequency, decay/T60 and excitation/output gain, stable sample-rate-aware coefficient math, compatible persistence/presets and impulse/spectrum/stability regression tests. Independent of note-source work; ordinary signals can excite it.
+- **7.2.5 — Modal synthesis (planned):** parallel resonator composite first, then bounded configurable modal bank if needed; short AD/noise or pulse excitation, independent tuned/inharmonic mode ratios and decays, shared pitch and velocity, handpan-like, bell, gong and wood templates, response and spectrum views.
+- **7.2.6 — Playable instrument templates and polyphony (planned):** add reusable note-controlled organ, flute, brass, bowed-string and modal instruments with expressive rack inputs, annotated recipes, optional browser MIDI adapter and bounded precompiled voice allocation once monophonic timing is proven. Profile CPU/memory, voice stealing and independent releases before increasing voice counts.
+- **7.2.7 — Further physical models (planned):** investigate string/waveguide, tube/formant and hybrid sample excitation models only after verified resonator/modal performance, with explicit stability, tuning and resource acceptance criteria.
+- **7.2.8 — Keyboard performance and continuous pitch sequencing (planned):** shared laptop/on-screen input capture, live latched transposition, editable bounded note patterns, BPM/free seconds step timing including multi-bar ambient durations, sample-aligned looping, glide, quantized live recording, step recording with rests/holds/auto-advance, manual grid editing and atomic pattern history. Deliver in increments: (a) keyboard capture and live pitch-only latch on 7.2.2 using the 7.2.3 shared input/runtime contract; (b) pitch-only pattern engine, long-transport extension, playback, glide and manual/step editing; (c) quantized live recording/overdub, take history/persistence and worked drone patches; (d) Note-mode gate/trigger/velocity articulation using 7.1.3–7.1.4 and 7.2.3. Parts (a–c) may ship before ADSR, resonators or polyphony; keep (d) dependent on their relevant note/event prerequisites. Profile and verify long synchronized loops, tempo changes, wrap/reset, live input latency, phase/tail continuity and runtime updates without per-note recompilation.
 
 Deliverable: play and edit a synthesized instrument as an ordinary Orbit2 graph; excite a handpan-like modal bank with short bursts and different pitches/velocities; use the same pitch, gate, envelope and resonator components for sustained and percussive sounds without hardcoded instrument-specific DSP; perform and loop quantized pitch progressions over rhythmic or multi-minute ambient timescales without interrupting continuous drones. Phase 8 later adds recorded assets and hybrid techniques.
 
 ### Phase 8 — Audio assets and sample-based synthesis (planned)
 
-- **8.1 — Audio asset library:** import browser-decodable audio files, validate size/format, store original binary assets and metadata in IndexedDB, list and resolve by stable ID, and verify reload and deduplication. Prototype the FaustWasm soundfile binding and measure decoded memory requirements.
-- **8.2 — Sample Player:** integrate asset references into graph commands, snapshots, persistence and history; implement independent playheads, amplitude/rate modulation, playback modes, bounded loop region and click-safe looping. Validate nested graphs, live edits and resource-aware runtime replacement.
-- **8.3 — Waveform editor:** reusable waveform preview with region selection, playhead telemetry and relink/missing-asset feedback; reuse design tokens and shared parameter controls.
-- **8.4 — Portable patch packages:** versioned `.orbit` archives containing the graph document and required binary assets; safe transactional import, deduplication, missing-asset handling and backwards-compatible JSON patches.
-- **8.5 — Granular Generator:** overlapping grains, positional and grain-parameter modulation, bounded polyphony and CPU/memory tests.
-- **8.6 — Wavetable Generator:** extract or import periodic tables, prepare anti-aliased mip levels, implement morph/interpolation and pitch/phase modulation.
-- **8.7 — Envelope Follower:** general audio-to-modulation processor with adjustable attack/release and output scaling; test routing into existing parameters.
+- **8.1 — Audio asset library (planned):** import browser-decodable audio files, validate size/format, store original binary assets and metadata in IndexedDB, list and resolve by stable ID, and verify reload and deduplication. Prototype the FaustWasm soundfile binding and measure decoded memory requirements.
+- **8.2 — Sample Player (planned):** integrate asset references into graph commands, snapshots, persistence and history; implement independent playheads, amplitude/rate modulation, playback modes, bounded loop region and click-safe looping. Validate nested graphs, live edits and resource-aware runtime replacement.
+- **8.3 — Waveform editor (planned):** reusable waveform preview with region selection, playhead telemetry and relink/missing-asset feedback; reuse design tokens and shared parameter controls.
+- **8.4 — Portable patch packages (planned):** versioned `.orbit` archives containing the graph document and required binary assets; safe transactional import, deduplication, missing-asset handling and backwards-compatible JSON patches.
+- **8.5 — Granular Generator (planned):** overlapping grains, positional and grain-parameter modulation, bounded polyphony and CPU/memory tests.
+- **8.6 — Wavetable Generator (planned):** extract or import periodic tables, prepare anti-aliased mip levels, implement morph/interpolation and pitch/phase modulation.
+- **8.7 — Envelope Follower (planned):** general audio-to-modulation processor with adjustable attack/release and output scaling; test routing into existing parameters.
 
 Deliverable: import a voice recording, persist and reuse it in multiple independent nodes or nested drones, share a self-contained patch, and transform the same source into evolving granular and wavetable textures. Existing Phase 6/7 effects work remains on the roadmap.
 
@@ -2397,8 +2578,9 @@ The core model should be independently unit testable without a browser or Faust.
 | Phase | Frequency changes advance existing phase instead of accidentally resetting it. |
 | Sample rate | Oscillator frequency and tempo sync correct at both 44.1 and 48 kHz. |
 | Transport | 120 BPM quarter note = 0.5 seconds; synchronized LFOs share expected phase/reset. |
-| Envelope and rhythmic events (planned) | Oscillator edges trigger one AD each, exact duration/endpoints at 44.1/48 kHz, retrigger from current value, gate-off release, shared trigger fan-out, typed routing and nested persistence, no phantom pulses across transport wraps/replacements and no graph revisions on runtime actions. |
-| Pitch and instruments (planned) | Reference-note conversion and exact octave/harmonic ratios, compatible additive Hz and pitch modes, sample-aligned pitch/gate/trigger/velocity, no graph commits on note actions, independent voices, valid editable templates and bounded CPU/headroom. |
+| Envelope and rhythmic events (partial: AD and typed adapters implemented) | Oscillator edges trigger one AD each, exact duration/endpoints at 44.1/48 kHz, retrigger from current value, gate-off release, shared trigger fan-out, typed routing and nested persistence, no phantom pulses across transport wraps/replacements and no graph revisions on runtime actions. |
+| Pitch and instruments (partial: shared pitch tracking implemented) | Reference-note conversion and exact octave/harmonic ratios, compatible additive Hz and pitch modes, sample-aligned pitch/gate/trigger/velocity, no graph commits on note actions, independent voices, valid editable templates and bounded CPU/headroom. |
+| Keyboard performance / continuous sequencing (7.2.8 — planned) | Keyboard isolation, latched pitch, exact multi-bar loop boundaries, quantized recording and holds/rests, glide, atomic pattern edits, generation-safe runtime updates, no per-note compilation and no interruption of continuous drone state. |
 | Audio pitch shifting (Phase 6.20, planned) | Single-tone and mixed-chord spectral peaks follow the same transposition ratio at 44.1/48 kHz, sustained duration/tempo preserved, latency and alias/sideband quality measured, silent and bounded output under extreme modulation, transparent dry/zero shift, click-safe audition, independent instances and bounded CPU/memory. |
 | Resonators and modal synthesis (planned) | Compiled impulse responses at 44.1/48 kHz match tuned center and amplitude T60, silence does not self-oscillate, repeated excitation retains ringing state, rapid modulation stays finite/stable, modal frequency and independent decays match configuration, and template/bank state round-trips with undo and persistence. |
 | Fan-out | One output can feed several processors without duplicating generator runtime state. |
@@ -2411,13 +2593,13 @@ The core model should be independently unit testable without a browser or Faust.
 | Compile revisions | Stale results cannot replace a newer successful runtime. |
 | DSP failure | Last valid runtime remains active; error is displayed to the user. |
 | Presets | Two instances have independent parameters and DSP state. |
-| Node audition (planned) | Mute last node in one mixer lane while preserving other lanes; mute fan-out including composite and modulation outputs; bypass eligible effects with unchanged dry signal; retain DSP state, parameters and wiring, verify smooth transitions without recompilation, mute precedence, undo/redo and compatible persistence. |
-| Individual node presets (planned) | Validate every shipped configuration; reject invalid batch without mutation; application preserves identities and wiring, emits one revision and undo entry; base-only updates avoid recompilation; custom groups survive reload and library edits do not alter existing nodes. |
-| Signal analysis (planned) | Compare master samples with taps on/off; no observation-channel leakage, phase reset or graph compile on view changes; verify root/nested port mapping, weighted input and post-mute/bypass output, known waveform/FFT/peak/RMS, slow LFO history, stale-frame rejection, hidden-view cleanup and bounded resources. |
-| Processor response (Phase 6.18.5) | EQ center gain, Q bandwidth, filter modes and Nyquist limits match offline Faust measurements at 44.1/48 kHz; distinguish base/effective estimates, live spectra and stopped previews. |
+| Node audition (implemented) | Mute last node in one mixer lane while preserving other lanes; mute fan-out including composite and modulation outputs; bypass eligible effects with unchanged dry signal; retain DSP state, parameters and wiring, verify smooth transitions without recompilation, mute precedence, undo/redo and compatible persistence. |
+| Individual node presets (implemented) | Validate every shipped configuration; reject invalid batch without mutation; application preserves identities and wiring, emits one revision and undo entry; base-only updates avoid recompilation; custom groups survive reload and library edits do not alter existing nodes. |
+| Signal analysis (implemented core; advanced analysis planned) | Compare master samples with taps on/off; no observation-channel leakage, phase reset or graph compile on view changes; verify root/nested port mapping, weighted input and post-mute/bypass output, known waveform/FFT/peak/RMS, slow LFO history, stale-frame rejection, hidden-view cleanup and bounded resources. |
+| Processor response (Phase 6.18.5 — implemented) | EQ center gain, Q bandwidth, filter modes and Nyquist limits match offline Faust measurements at 44.1/48 kHz; distinguish base/effective estimates, live spectra and stopped previews. |
 | Analyzer sink (planned) | Analyzer-only branches are observable but silent at the master; explicit graph edits round-trip with undo and persistence; visualization preferences restore without changing graph topology or audio. |
 | Patch documentation (planned) | Notes, aliases, labels and groups round-trip with root/nested layouts and named snapshots; old documents restore empty annotations, invalid data is rejected atomically, annotation history and text editing remain independent of graph history, and graph revision, compilation and playback generation stay unchanged. |
-| Connection visualization (Phase 6.19.5) | Badge units and signs match committed receiving-port semantics; zero/dormant states remain distinct; labels follow cable midpoints behind nodes and obey visibility preferences; the editor clamps to usable canvas geometry; display changes leave graph and playback unchanged, while explicit Apply commits one amount change and undo/redo restores its badge. |
+| Connection visualization (Phase 6.19.5 — implemented core) | Badge units and signs match committed receiving-port semantics; zero/dormant states remain distinct; labels follow cable midpoints behind nodes and obey visibility preferences; the editor clamps to usable canvas geometry; display changes leave graph and playback unchanged, while explicit Apply commits one amount change and undo/redo restores its badge. |
 | Output safety | Controlled master gain, no unexpected discontinuity when changing base values. |
 | Persistence | Save/load nested graph and layout with stable IDs and equivalent connectivity. |
 | Audio assets (planned) | Import and reload binary recordings, share immutable data across nodes, preserve IDs through undo/redo, handle quota and missing assets without corrupting patches. |
@@ -2447,22 +2629,26 @@ Use OfflineAudioContext or an appropriate offline DSP renderer for deterministic
 - Prefer combined/flattened Faust processing for the long term; verify initial simpler execution first.
 - Observe actual graph signals through bounded passive taps and shared analysis subscriptions; keep live telemetry and chart settings separate from DSP graph state. Use response calculations matching the real DSP rather than simulated live audio.
 
-### To decide during implementation
+<a id="to-decide-during-implementation"></a>
 
-| Question | Initial recommendation |
-|---|---|
-| Runtime partitioning | Start fixed small Faust graph, then prototype whole-graph compilation; partition only if justified. |
-| Parameter mapping | Explicit target scale and units; linear, cents, dB, then custom mappings. |
-| Audio/modulation compatibility | Explicit port semantics with safe adapters; allow audio-rate FM. |
-| Multiple input connections | Per-port policy; explicit mixer for complex audio routing. |
-| Feedback | Reject cycles first; add explicitly delayed feedback after tests. |
-| Rack count | One Input Rack and one Output Rack per composite initially. |
-| Transport sync | Define phase lock/reset versus rate sync separately. |
-| Topology changes | Prepare/compile asynchronously, preserve last good runtime, fade swap; improve state transfer later. |
-| Preset templates | Independent copies initially; linked/versioned definitions later. |
-| Undo history | Store reversible commands/change sets, including multi-graph operations. |
-| Discrete parameters | Distinct configuration contract where continuous modulation is inappropriate. |
-| Signal tap capacity | Prototype fixed channels versus precompiled selectable slots with explicit master isolation; profile before choosing a bounded capacity, never recompile for ordinary plot mode/visibility changes. |
+### Original design questions and current resolution
+
+The table preserves the initial recommendations for context; the status column distinguishes decisions already made from questions that still need further implementation.
+
+| Question | Initial recommendation | Current resolution |
+|---|---|---|
+| Runtime partitioning | Start fixed small Faust graph, then prototype whole-graph compilation; partition only if justified. | Whole-graph compilation and nested flattening implemented; alternative partitioning remains optional. |
+| Parameter mapping | Explicit target scale and units; linear, cents, dB, then custom mappings. | Explicit units, scale, display scale and bounded modulation implemented; semitone mapping in 7.2.2. |
+| Audio/modulation compatibility | Explicit port semantics with safe adapters; allow audio-rate FM. | Typed ports and validation implemented, including explicit event adapters in 7.1.2. |
+| Multiple input connections | Per-port policy; explicit mixer for complex audio routing. | Per-port fan-in and weighted mono mixer implemented. |
+| Feedback | Reject cycles first; add explicitly delayed feedback after tests. | Editable cycles still rejected; delay/reverb internal feedback implemented, explicit graph feedback planned. |
+| Rack count | One Input Rack and one Output Rack per composite initially. | One input and one output rack per composite implemented, editable stable ports. |
+| Transport sync | Define phase lock/reset versus rate sync separately. | Free and synchronized oscillator timing implemented; long-duration sequence precision extension planned. |
+| Topology changes | Prepare/compile asynchronously, preserve last good runtime, fade swap; improve state transfer later. | Worker compilation, revision rejection, last-good recovery and crossfade implemented; arbitrary state transfer planned. |
+| Preset templates | Independent copies initially; linked/versioned definitions later. | Independent composite instances and individual parameter presets implemented; linked/versioned composite reuse planned. |
+| Undo history | Store reversible commands/change sets, including multi-graph operations. | Snapshot-based bounded graph history and grouped gestures implemented; annotation history planned. |
+| Discrete parameters | Distinct configuration contract where continuous modulation is inappropriate. | Structural choice metadata and conditional activation implemented. |
+| Signal tap capacity | Prototype fixed channels versus precompiled selectable slots with explicit master isolation; profile before choosing a bounded capacity, never recompile for ordinary plot mode/visibility changes. | Bounded auxiliary channels and isolated master implemented; multi-drone profiling and advanced analysis planned. |
 
 ## 16. References and glossary
 
