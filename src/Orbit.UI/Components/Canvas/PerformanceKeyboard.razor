@@ -1,4 +1,5 @@
 @namespace Orbit.UI.Components.Canvas
+@using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
 @using Orbit.Application.Graphs.Snapshots
 @using Orbit.Application.Models
@@ -26,7 +27,7 @@
             <button type="button" class="secondary" @onclick="ResetAsync">Reset pitch</button>
         </div>
         <div class="performance-piano" role="group" aria-label="On-screen piano">
-        @foreach (var pianoKey in PerformanceKeyboardLayout.Keys)
+            @foreach (var pianoKey in PerformanceKeyboardLayout.Keys)
             {
                 var note = PerformanceKeyboardLayout.Note(octave, pianoKey);
                 <button @key="pianoKey.Code" type="button" class="@(pianoKey.Black ? "performance-black-key" : "performance-white-key")"
