@@ -498,7 +498,7 @@ Future root and nested canvases share the same viewport, node frame, port connec
 
 ### Frequency control design note
 
-The current oscillator frequency control spans 0.01–20,000 Hz linearly. For LFO use this makes useful slow rates occupy almost none of the slider travel. A future rate-oriented control should provide a convenient 0.01–100 Hz modulation range (possibly logarithmic or with coarse/fine editing) without changing the generator's underlying audio-rate frequency capability. The period is `1 / frequency`: higher rates produce shorter cycles, but can become too fast to observe or use as slow modulation.
+The oscillator frequency control covers the complete 0.01–20,000 Hz range on a segmented logarithmic rail. The first 20% covers 0.01–40 Hz for sub-audio/LFO use, the middle 65% covers 40–1,000 Hz for musical tuning, and the last 15% covers 1,000–20,000 Hz. Drag or use the keyboard to adjust the frequency, or type an exact Hz value in the number field. The predicted modulation band and moving effective-value marker use the same rail mapping; all numeric readouts, modulation amounts, audio processing, patches and presets retain their original physical Hz values. Other parameters remain linear unless their definitions opt in to a display scale. The period is `1 / frequency`: higher rates produce shorter cycles and may be too fast to track visually.
 
 ## Composite graph foundation (Phase 5)
 

@@ -10,6 +10,23 @@ namespace Orbit.Domain.Tests;
 public sealed class ParameterTests
 {
     [Fact]
+    public void DisplayScaleMetadataIsImmutableAndSeparateFromModulation()
+    {
+        var (_, _, frequency) = CreateSine();
+        Assert.Equal(ParameterScale.Linear, frequency.Definition.Scale);
+        Assert.Equal(4, frequency.Definition.DisplayScale!.Anchors.Count);
+        var anchors = new ParameterDisplayAnchor[] { new(0, 1), new(1, 10) };
+        var scale = new ParameterDisplayScale(anchors);
+        anchors[0] = new(0, 2);
+        Assert.Equal(1, scale.Anchors[0].Value);
+        Assert.Throws<ArgumentException>(() => new ParameterDisplayScale(new(0, 0), new(1, 10)));
+        Assert.Throws<ArgumentException>(() => new ParameterDisplayScale(new(0, 1), new(0.5, 11), new(1, 10)));
+        Assert.Throws<ArgumentException>(() => new ParameterDisplayScale(new(0, 1), new(0.5, 5), new(0.5, 10), new(1, 20)));
+        Assert.Throws<ArgumentException>(() => new Parameter(Guid.NewGuid(),
+            frequency.Definition with { DisplayScale = scale }, Guid.NewGuid()));
+    }
+
+    [Fact]
     public void OscillatorContinuousParametersExposeTheirOwnModulationSockets()
     {
         var node = new OscillatorGenerator(Guid.NewGuid());

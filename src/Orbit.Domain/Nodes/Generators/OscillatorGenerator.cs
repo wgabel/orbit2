@@ -16,6 +16,7 @@ public sealed class OscillatorGenerator : SignalNode, IGenerator
         "frequency", "Frequency", 440, 0.01, 20_000,
         ParameterUnit.Hertz, ParameterScale.Linear, CanModulate: true)
     {
+        DisplayScale = new(new(0, 0.01), new(0.20, 40), new(0.85, 1_000), new(1, 20_000)),
         ActiveWhen = new("timing", (int)OscillatorTimingMode.Free)
     };
 

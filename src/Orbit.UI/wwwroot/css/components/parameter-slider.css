@@ -81,6 +81,8 @@
 }
 .parameter-track input:disabled { cursor: default; }
 .parameter-details, .parameter-modulation { display: flex; justify-content: space-between; gap: var(--semantic-space-compact); }
+.parameter-scale-details { position: relative; margin-inline: var(--component-slider-rail-inset); }
+.parameter-scale-tick { position: absolute; transform: translateX(-50%); }
 .parameter-modulation { color: var(--component-slider-modulation-color); font-size: var(--semantic-typography-caption); font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce) {
     .parameter-effective-marker { transition: none; }

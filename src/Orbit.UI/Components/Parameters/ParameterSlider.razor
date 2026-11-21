@@ -23,17 +23,31 @@
                 <span class="parameter-effective-marker" style="@MarkerStyle(effective)"></span>
             }
         </div>
-        <input type="range" min="@Format(Definition.Minimum)" max="@Format(Definition.Maximum)"
-               step="@Format(Step)" value="@Format(Value)" @oninput="EditRangeAsync"
+        <input type="range" min="@Format(RangeMinimum)" max="@Format(RangeMaximum)"
+               step="@Format(RangeStep)" value="@Format(RangeValue)" @oninput="EditRangeAsync"
                @onpointerdown="BeginPointer" @onpointerup="EndPointerAsync" @onpointercancel="EndPointerAsync"
                @onlostpointercapture="EndPointerAsync" @onchange="EndPointerAsync" @onblur="EndGestureAsync"
                @onkeydown="BeginKeyboard" @onkeyup="EndKeyboard"
-               aria-label="@Definition.Name" aria-describedby="@DescriptionId" />
+               aria-label="@Definition.Name" aria-valuetext="@($"{Format(Value)} {UnitLabel}")" aria-describedby="@DescriptionId" />
     </div>
-    <div id="@DescriptionId" class="parameter-details">
-        <span>@Format(Definition.Minimum) @UnitLabel</span>
-        <span>@Format(Definition.Maximum) @UnitLabel</span>
-    </div>
+    @if (Definition.DisplayScale is { } display)
+    {
+        <div id="@DescriptionId" class="parameter-details parameter-scale-details">
+            <span>@TickLabel(Definition.Minimum)</span>
+            @foreach (var anchor in display.Anchors.Skip(1).SkipLast(1))
+            {
+                <span class="parameter-scale-tick" style="@($"left:{FormatLive(Position(anchor.Value))}%")">@TickLabel(anchor.Value)</span>
+            }
+            <span>@TickLabel(Definition.Maximum)</span>
+        </div>
+    }
+    else
+    {
+        <div id="@DescriptionId" class="parameter-details">
+            <span>@Format(Definition.Minimum) @UnitLabel</span>
+            <span>@Format(Definition.Maximum) @UnitLabel</span>
+        </div>
+    }
     @if (IsModulated || ModulationRange.HasValue)
     {
         <div class="parameter-modulation">

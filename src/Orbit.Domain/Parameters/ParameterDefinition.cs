@@ -14,6 +14,10 @@ public sealed record ParameterDefinition(
     ParameterScale Scale,
     bool CanModulate)
 {
+    /// <summary>Optional logarithmic display rail; null preserves linear editing.
+    /// Independent of the DSP modulation scale and physical base-value bounds.</summary>
+    public ParameterDisplayScale? DisplayScale { get; init; }
+
     /// <summary>Optional discrete values. Choices are non-modulatable and not smoothed.</summary>
     public IReadOnlyList<ParameterChoice>? Choices { get; init; }
 

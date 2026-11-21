@@ -40,6 +40,24 @@ try {
     const amplitude = articles.nth(1).locator(".parameter-slider").filter({ has: page.getByRole("spinbutton", { name: "Amplitude (normalized)" }) });
     const marker = frequency.locator(".parameter-effective-marker");
     await frequency.getByText("Modulation: 340–540 Hz").waitFor({ timeout: 30000 });
+    // Physical frequency and visual coordinates are deliberately different.
+    const frequencyRange = frequency.getByRole("slider", { name: "Frequency" });
+    const frequencyInput = frequency.getByRole("spinbutton", { name: "Frequency (Hz)" });
+    const frequencyPosition = value => {
+        const anchors = [[0, 0.01], [0.2, 40], [0.85, 1000], [1, 20000]];
+        const index = value <= 40 ? 0 : value <= 1000 ? 1 : 2;
+        const [start, minimum] = anchors[index], [end, maximum] = anchors[index + 1];
+        return start + (end - start) * Math.log(value / minimum) / Math.log(maximum / minimum);
+    };
+    assert.equal(await frequencyRange.getAttribute("min"), "0");
+    assert.equal(await frequencyRange.getAttribute("max"), "1");
+    assert.ok(Math.abs(Number(await frequencyRange.inputValue()) - frequencyPosition(440)) < 0.0001);
+    const band = await frequency.locator(".parameter-band").evaluate(element => ({
+        left: parseFloat(element.style.left), width: parseFloat(element.style.width)
+    }));
+    assert.ok(Math.abs(band.left - frequencyPosition(340) * 100) < 0.02);
+    assert.ok(Math.abs(band.width - (frequencyPosition(540) - frequencyPosition(340)) * 100) < 0.02);
+    assert.equal(await frequency.locator(".parameter-scale-tick").allTextContents().then(text => text.join(",")), "40,1k");
     // Primary controls share one compact toolbar; the canvas consumes the
     // remaining screen height rather than using a fixed viewport fraction.
     const toolbar = page.locator(".canvas-caption");
@@ -81,6 +99,17 @@ try {
     await undoButton.click();
     assert.equal(await amplitudeInput.inputValue(), originalAmplitude);
     assert.equal(await undoButton.isEnabled(), false);
+    // Inverse mapping commits physical values and preserves ordinary history.
+    await frequencyRange.fill("0.2");
+    assert.equal(await frequencyInput.inputValue(), "40");
+    assert.equal(await frequencyRange.getAttribute("aria-valuetext"), "40 Hz");
+    await undoButton.click();
+    assert.equal(await frequencyInput.inputValue(), "440");
+    await frequencyRange.fill("0.85");
+    assert.equal(await frequencyInput.inputValue(), "1000");
+    await undoButton.click();
+    assert.equal(await frequencyInput.inputValue(), "440");
+    assert.equal(await undoButton.isEnabled(), false);
     // The shared catalog selector applies an entire configuration in one undo step.
     const rootPreset = articles.nth(1).getByRole("combobox", { name: "Preset for Oscillator" });
     assert.equal(await rootPreset.inputValue(), "");
@@ -93,6 +122,7 @@ try {
     await rootPreset.selectOption("oscillator-deep-sine");
     assert.equal(await rootPreset.inputValue(), "oscillator-deep-sine");
     assert.equal(await frequency.getByRole("spinbutton").inputValue(), "110");
+    assert.ok(Math.abs(Number(await frequencyRange.inputValue()) - frequencyPosition(110)) < 0.0001);
     assert.equal(await amplitudeInput.inputValue(), "0.2");
     assert.notEqual(await articles.nth(1).locator(".node-preset-description").innerText(), "No matching preset. Choose one to load.");
     assert.equal(await articles.nth(1).getAttribute("style"), rootPresetPosition);
@@ -239,6 +269,13 @@ try {
     assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
     assert.ok(Number(await beat.innerText()) >= firstBeat);
     await marker.waitFor({ timeout: 10000 });
+    const liveReading = await frequency.evaluate(element => ({
+        live: parseFloat(element.querySelector(".parameter-modulation span:last-child").textContent.replace("Live: ", "")),
+        left: parseFloat(element.querySelector(".parameter-effective-marker").style.left)
+    }));
+    assert.ok(Number.isFinite(liveReading.live));
+    assert.ok(Math.abs(liveReading.left - frequencyPosition(liveReading.live) * 100) < 0.03,
+        "Live marker must share the frequency display mapping");
     const firstPosition = await marker.getAttribute("style");
     let moved = false;
     for (let i = 0; i < 20 && !moved; i++) {

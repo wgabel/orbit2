@@ -744,7 +744,7 @@ Razor markup composes reusable components; code-behind handles presentation inte
 
 #### Parameter editor contract
 
-A parameter's immutable definition supplies its name, unit (Hz, ratio, dB, etc.), minimum, maximum, scale and modulation capability. The parameter instance supplies its editable base value. A range slider and number box edit that same value; invalid, non-finite or out-of-range input stays in the field with an explanatory message beneath it and is not committed to the graph. Use appropriate scales (linear initially, logarithmic/pitch-aware where required).
+A parameter's immutable definition supplies its name, unit (Hz, ratio, dB, etc.), minimum, maximum, modulation scale and capability. The parameter instance supplies its editable base value. A range slider and number box edit that same value; invalid, non-finite or out-of-range input stays in the field with an explanatory message beneath it and is not committed to the graph. Slider display scaling is independent of DSP modulation semantics.
 
 Modulation adds two read-only visual values to the editor:
 
@@ -755,7 +755,18 @@ For example, a frequency base of 440 Hz with a sine LFO at ±100 Hz displays a 3
 
 Live telemetry is a passive, display-rate snapshot (around 20–30 Hz initially, batched per graph when scaled up), not an application event for every sample. Audio processing never waits for the UI. Do not persist telemetry or write it back to editable parameter values. A stopped or unavailable processor has no live marker.
 
-**Frequency UX requirement:** the 0.01–20,000 Hz linear sine control is difficult to use for slow modulation. Preserve the generator's full audio-frequency capability, but provide an LFO-oriented 0.01–100 Hz editing range, potentially with logarithmic positioning or coarse/fine adjustment. Higher frequency means a shorter cycle (`T = 1 / f`); modulation faster than the display sampling rate may not visibly track every cycle. The display range is not a DSP limit.
+**Frequency display scale (implemented).** `ParameterDefinition.DisplayScale` is optional immutable metadata, validated by `Parameter`; absent metadata preserves the original linear rail. A display scale contains strictly increasing positive physical values and normalized positions, from 0 to 1, spanning the parameter's physical bounds. Consecutive anchors define logarithmic segments (two anchors provide a conventional logarithmic rail). `ParameterSliderScale` in Orbit.Presentation provides forward and inverse mappings. `ParameterSlider` uses normalized native range input for non-linear scales, translates edits to physical values before validation/commands, and maps the base thumb, predicted interval endpoints and effective marker through the same forward mapping. Numeric edits remain exact; newly dragged values are rounded to six significant digits for readable precision. The normalized range provides the physical value through accessible value text. Marker percentages are clamped at rail limits, not written back to model or DSP. The oscillator's anchors are (0%, 0.01 Hz), (20%, 40 Hz), (85%, 1,000 Hz), (100%, 20,000 Hz), preserving the full range while assigning 65% of travel to the most-used musical band. `ParameterScale.Linear` still specifies additive Hz modulation and does not change; display metadata is excluded from DSP topology comparison and is not serialized in patches or presets. No node-specific UI is required.
+
+~~~mermaid
+flowchart TD
+    R[Normalized slider position] -->|Inverse display scale| V[Physical base value]
+    V --> D[DSP modulation in physical units]
+    V --> M[Shared forward display scale]
+    D --> E[Effective value]
+    E --> M
+    B[Predicted physical bounds] --> M
+    M --> T[Thumb, band and marker]
+~~~
 
 The shared ParameterSlider is implemented in the editable node frames. The graph editor supports live base-value edits and effective modulation meters for reachable connected parameters. `GraphModulationRangeEstimator` calculates conservative parameter intervals from the committed snapshot using optional signal-bound rules on the registered DSP emitters. The weighted inputs are summed and clamped to parameter limits; unknown bounds propagate rather than inventing a range. `FaustNodeContext` inserts a passive meter after the effective value clamp, and the playback service maps its stable name to a parameter address. `GraphPlaybackControls` polls the service at 25 Hz; the workspace accepts only the matching graph revision and passes display data to the shared node frames. The base thumb is independent of the marker. Disconnected nodes can show predicted bounds but have no live sample.
 
@@ -1857,6 +1868,7 @@ Deliverable: choose or create a grouped configuration for any eligible node with
 
 - **6.18.1 — Observation infrastructure (implemented):** bounded Faust output taps, explicit master-channel isolation, graph-qualified manifest, generation-aware capture leases and analysis contracts. Offline/worklet regression coverage for master equivalence, nested routing, mute/bypass, leakage and bounded resources. Device-scale profiling and long-history capture remain later analysis work.
 - **6.18.2 — Oscilloscope and level meter (implemented):** reusable selected-node scope, browser-side time-domain display, peak/RMS, timebase, zero-crossing trigger and bounded slow-modulation history. Known sine, clipped and low-rate modulation regression coverage.
+- **Parameter editing UX refinement (implemented):** independent display-scale metadata, segmented logarithmic oscillator frequency rail and consistent modulation visualization; unchanged physical values and DSP semantics.
 - **6.18.3 — Spectrum analyzer:** reusable FFT display with frequency and dB axes, configurable window/resolution and smoothing, known fundamental/harmonic/noise tests, and shared capture with the oscilloscope.
 - **6.18.4 — Integrated and expanded views:** capability-driven shared `NodeVisualizationPanel`, compact collapsible plots, expand/mode/source controls, visible-only rendering, tokenized design and compatible per-graph layout persistence; no graph history or DSP restarts for display changes.
 - **6.18.5 — Processor response curves:** pure tested response providers matching the actual parametric EQ and filter DSP, base and instantaneous effective parameter response, sample-rate-aware frequency axis and stopped previews.

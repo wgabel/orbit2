@@ -29,6 +29,11 @@ public sealed class Parameter
         if (definition.RequiresRecompile && definition.CanModulate)
             throw new ArgumentException("A structural parameter cannot be modulated.", nameof(definition));
 
+        if (definition.DisplayScale is { } display &&
+            (definition.Choices is not null || display.Anchors[0].Value != definition.Minimum ||
+             display.Anchors[^1].Value != definition.Maximum))
+            throw new ArgumentException("Display scale must span the physical bounds of a continuous parameter.", nameof(definition));
+
         if (definition.Choices is { } choices &&
             (definition.CanModulate || choices.Count == 0 ||
              choices.Any(choice => !double.IsFinite(choice.Value) || choice.Value < definition.Minimum ||

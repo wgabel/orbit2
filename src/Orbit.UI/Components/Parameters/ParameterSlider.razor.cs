@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Orbit.Domain.Parameters;
+using Orbit.Presentation.Parameters;
 
 namespace Orbit.UI.Components.Parameters;
 
@@ -29,6 +30,11 @@ public partial class ParameterSlider
     private string? Error { get; set; }
 
     private string UnitLabel => ParameterUnitLabel.Format(Definition.Unit);
+    private bool HasDisplayScale => Definition.DisplayScale is not null;
+    private double RangeMinimum => HasDisplayScale ? 0 : Definition.Minimum;
+    private double RangeMaximum => HasDisplayScale ? 1 : Definition.Maximum;
+    private double RangeStep => HasDisplayScale ? 0.0001 : Step;
+    private double RangeValue => HasDisplayScale ? ParameterSliderScale.ToPosition(Definition, Value) : Value;
 
     protected override void OnParametersSet()
     {
@@ -67,12 +73,27 @@ public partial class ParameterSlider
         await GestureEnded.InvokeAsync(id);
     }
 
-    private Task EditRangeAsync(ChangeEventArgs args) => EditAsync(args, gestureId);
-    private Task EditNumberAsync(ChangeEventArgs args) => EditAsync(args, null);
-
-    private async Task EditAsync(ChangeEventArgs args, Guid? editGestureId)
+    private Task EditRangeAsync(ChangeEventArgs args)
     {
-        Draft = args.Value?.ToString() ?? "";
+        var input = args.Value?.ToString() ?? "";
+        if (!HasDisplayScale) return EditAsync(input, gestureId);
+        if (!double.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture, out var position) ||
+            !double.IsFinite(position) || position < 0 || position > 1)
+            return EditAsync("", gestureId);
+
+        // Round only newly dragged values to six significant digits. Keep
+        // exact anchors, numeric edits, presets and loaded values untouched.
+        var value = ParameterSliderScale.FromPosition(Definition, position);
+        if (!Definition.DisplayScale!.Anchors.Any(anchor => anchor.Value == value))
+            value = Math.Clamp(double.Parse(value.ToString("G6", CultureInfo.InvariantCulture),
+                CultureInfo.InvariantCulture), Definition.Minimum, Definition.Maximum);
+        return EditAsync(Format(value), gestureId);
+    }
+    private Task EditNumberAsync(ChangeEventArgs args) => EditAsync(args.Value?.ToString() ?? "", null);
+
+    private async Task EditAsync(string input, Guid? editGestureId)
+    {
+        Draft = input;
         if (!double.TryParse(Draft, NumberStyles.Float, CultureInfo.InvariantCulture, out var value)
             || !double.IsFinite(value))
         {
@@ -97,9 +118,10 @@ public partial class ParameterSlider
 
     // The native range edits base limits; modulation beyond them is clipped
     // visually, while the labels still show the full range and actual value.
-    private double Position(double value) => Definition.Maximum > Definition.Minimum
-        ? Math.Clamp((value - Definition.Minimum) / (Definition.Maximum - Definition.Minimum), 0, 1) * 100
-        : 0;
+    private double Position(double value) => ParameterSliderScale.ToPosition(Definition, value) * 100;
+
+    private static string TickLabel(double value) => value >= 1000 && value % 1000 == 0
+        ? $"{Format(value / 1000)}k" : Format(value);
 
     private string BandStyle(ParameterRange range)
     {

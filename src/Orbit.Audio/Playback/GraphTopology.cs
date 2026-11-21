@@ -29,5 +29,10 @@ internal static class GraphTopology
         original.OutputRackId == current.OutputRackId && Matches(original.Graph, current.Graph);
 
     private static ParameterSnapshot Structure(ParameterSnapshot parameter) =>
-        parameter.Definition.RequiresRecompile ? parameter : parameter with { BaseValue = 0 };
+        parameter with
+        {
+            BaseValue = parameter.Definition.RequiresRecompile ? parameter.BaseValue : 0,
+            Definition = parameter.Definition.DisplayScale is null ? parameter.Definition
+                : parameter.Definition with { DisplayScale = null }
+        };
 }
