@@ -38,40 +38,73 @@ public sealed class GridNodePlacementPolicy : INodePlacementPolicy
         }
     }
 
-    /// <summary>Use the grid slot as a conservative footprint for a new, not-yet-rendered frame.
+    /// <summary>Use measured shared width and grid height as the footprint for a new frame.
     /// Search the visible rectangle for space, preferring its center. Even if the view is
     /// crowded or smaller than one slot, the new frame's upper-left corner stays visible.</summary>
     public CanvasPoint FindVisiblePosition(CanvasBounds visibleBounds, IEnumerable<CanvasBounds> occupiedBounds)
     {
         if (!visibleBounds.IsValid) throw new ArgumentOutOfRangeException(nameof(visibleBounds));
         ArgumentNullException.ThrowIfNull(occupiedBounds);
-        var occupied = occupiedBounds.Where(bounds => bounds.IsValid && OverlapArea(bounds, visibleBounds) > 0).ToArray();
-        var width = Math.Min(columnSpacing, visibleBounds.Width);
+        var measured = occupiedBounds.Where(bounds => bounds.IsValid).ToArray();
+        // Node frames share one tokenized width; use the measured width when
+        // available instead of assuming the whole grid column is occupied.
+        var frameWidth = measured.Length == 0 ? columnSpacing : measured.Max(bounds => bounds.Width);
+        var searchBounds = new CanvasBounds(visibleBounds.Left, visibleBounds.Top,
+            visibleBounds.Right + frameWidth, visibleBounds.Bottom + rowSpacing);
+        var occupied = measured.Where(bounds => OverlapArea(bounds, searchBounds) > 0).ToArray();
+        var width = Math.Min(frameWidth, visibleBounds.Width);
         var height = Math.Min(rowSpacing, visibleBounds.Height);
         var availableX = visibleBounds.Width - width;
         var availableY = visibleBounds.Height - height;
         var center = new CanvasPoint(visibleBounds.Left + availableX / 2, visibleBounds.Top + availableY / 2);
         var best = center;
         var bestOverlap = double.PositiveInfinity;
+        var bestClipping = double.PositiveInfinity;
         var bestDistance = double.PositiveInfinity;
 
-        // A bounded search makes placement predictable even in large patches.
-        const int subdivisions = 8;
-        for (var row = 0; row <= subdivisions; row++)
-        for (var column = 0; column <= subdivisions; column++)
+        void Search(double verticalRange)
         {
-            var candidate = new CanvasPoint(visibleBounds.Left + availableX * column / subdivisions,
-                visibleBounds.Top + availableY * row / subdivisions);
-            var bounds = new CanvasBounds(candidate.X, candidate.Y, candidate.X + width, candidate.Y + height);
-            var overlap = occupied.Sum(node => OverlapArea(node, bounds));
-            var distance = Math.Pow(candidate.X - center.X, 2) + Math.Pow(candidate.Y - center.Y, 2);
-            if (overlap < bestOverlap || overlap == bestOverlap && distance < bestDistance)
+            // A bounded search makes placement predictable even in large patches.
+            // Include nearby frame edges so a narrow empty slot isn't missed
+            // merely because it lies between the regular candidate samples.
+            const int subdivisions = 8;
+            var xs = Enumerable.Range(0, subdivisions + 1)
+                .Select(column => visibleBounds.Left + availableX * column / subdivisions).ToHashSet();
+            var ys = Enumerable.Range(0, subdivisions + 1)
+                .Select(row => visibleBounds.Top + verticalRange * row / subdivisions).ToHashSet();
+            foreach (var obstacle in occupied.OrderBy(node => Math.Pow(node.Center.X - center.X, 2) +
+                         Math.Pow(node.Center.Y - center.Y, 2)).Take(12))
             {
-                best = candidate;
-                bestOverlap = overlap;
-                bestDistance = distance;
+                xs.Add(Math.Clamp(obstacle.Right, visibleBounds.Left, visibleBounds.Left + availableX));
+                xs.Add(Math.Clamp(obstacle.Left - frameWidth, visibleBounds.Left, visibleBounds.Left + availableX));
+                ys.Add(Math.Clamp(obstacle.Bottom, visibleBounds.Top, visibleBounds.Top + verticalRange));
+                ys.Add(Math.Clamp(obstacle.Top - rowSpacing, visibleBounds.Top, visibleBounds.Top + verticalRange));
+            }
+            foreach (var y in ys.Order())
+            foreach (var x in xs.Order())
+            {
+                var candidate = new CanvasPoint(x, y);
+                var bounds = new CanvasBounds(candidate.X, candidate.Y, candidate.X + frameWidth, candidate.Y + rowSpacing);
+                var overlap = occupied.Sum(node => OverlapArea(node, bounds));
+                var clipping = Math.Max(0, frameWidth * rowSpacing - OverlapArea(bounds, visibleBounds));
+                var distance = Math.Pow(candidate.X - center.X, 2) + Math.Pow(candidate.Y - center.Y, 2);
+                if (overlap < bestOverlap || overlap == bestOverlap &&
+                    (clipping < bestClipping || clipping == bestClipping && distance < bestDistance))
+                {
+                    best = candidate;
+                    bestOverlap = overlap;
+                    bestClipping = clipping;
+                    bestDistance = distance;
+                }
             }
         }
+
+        Search(availableY);
+        // If whole slots collide, allow the lower part of the new frame to
+        // extend below the viewport, keeping its draggable header on screen.
+        // Do not hide existing controls just to fit the new frame completely.
+        if (bestOverlap > 0)
+            Search(Math.Max(availableY, visibleBounds.Height - Math.Min(rowSpacing / 4, visibleBounds.Height)));
         return best;
     }
 

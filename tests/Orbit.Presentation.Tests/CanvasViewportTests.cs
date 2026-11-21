@@ -103,4 +103,15 @@ public sealed class CanvasViewportTests
         var tiny = new CanvasBounds(-800, -600, -770, -570);
         Assert.Equal(new CanvasPoint(tiny.Left, tiny.Top), policy.FindVisiblePosition(tiny, [tiny]));
     }
+
+    [Fact]
+    public void PrefersAVisibleHeaderAndPartiallyClippedFrameOverCoveringExistingControls()
+    {
+        var policy = new GridNodePlacementPolicy(columnSpacing: 100, rowSpacing: 100);
+        var view = new CanvasBounds(0, 0, 100, 150);
+        var existing = new CanvasBounds(0, 0, 100, 90);
+        var next = policy.FindVisiblePosition(view, [existing]);
+        Assert.InRange(next.Y, 90, 125);
+        Assert.True(next.Y + 100 > view.Bottom);
+    }
 }
