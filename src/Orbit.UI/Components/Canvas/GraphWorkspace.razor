@@ -1,6 +1,7 @@
 @namespace Orbit.UI.Components.Canvas
 @using Microsoft.AspNetCore.Components.Web
 @using Orbit.UI.Components.Analysis
+@using Orbit.Domain.Nodes.Composites
 
 @* One patch session and playback controller, with a reusable active canvas. *@
 @if (!initialized)
@@ -24,6 +25,10 @@ else
         <CanvasToolbar ZoomPercentage="@Canvas.Snapshot.Viewport.ZoomPercentage"
                        ZoomIn="@(() => canvasView!.ZoomIn())" ZoomOut="@(() => canvasView!.ZoomOut())"
                        Reset="@(() => canvasView!.ResetViewport())" Fit="@(() => canvasView!.FitAsync())" />
+        @if (Canvas.Snapshot.Graph.Nodes.FirstOrDefault(node => node.TypeKey == OutputRack.NodeType) is { } outputRack)
+        {
+            <button type="button" class="secondary" @onclick="() => canvasView!.FocusNodeAsync(outputRack.Id)">Locate output rack</button>
+        }
         <div class="workspace-toolbar toolbar-group">
         <label for="node-type">Add node</label>
         <select id="node-type" @bind="SelectedType">

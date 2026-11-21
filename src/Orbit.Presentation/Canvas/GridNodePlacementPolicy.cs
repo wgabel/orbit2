@@ -38,6 +38,15 @@ public sealed class GridNodePlacementPolicy : INodePlacementPolicy
         }
     }
 
+    // An output boundary must not wrap underneath a potentially very tall node.
+    public CanvasPoint FindOutputRackPosition(IEnumerable<CanvasPoint> occupiedPositions)
+    {
+        ArgumentNullException.ThrowIfNull(occupiedPositions);
+        var occupied = occupiedPositions.Select(point => point.RequireFinite(nameof(occupiedPositions))).ToArray();
+        return occupied.Length == 0 ? new CanvasPoint(0, 0) :
+            new CanvasPoint(occupied.Max(point => point.X) + columnSpacing, occupied.Min(point => point.Y));
+    }
+
     /// <summary>Use measured shared width and grid height as the footprint for a new frame.
     /// Search the visible rectangle for space, preferring its center. Even if the view is
     /// crowded or smaller than one slot, the new frame's upper-left corner stays visible.</summary>

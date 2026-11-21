@@ -44,7 +44,8 @@ public sealed class CanvasStateService : ICanvasStateService
         // Place the receiving rack at the end of a new child layout, so the
         // default signal flow reads left to right. Existing positions never move.
         foreach (var node in graph.Nodes.OrderBy(node => node.TypeKey == OutputRack.NodeType ? 1 : 0))
-            if (!positions.ContainsKey(node.Id)) positions.Add(node.Id, PlaceNode(positions));
+            if (!positions.ContainsKey(node.Id)) positions.Add(node.Id, node.TypeKey == OutputRack.NodeType
+                ? this.placement.FindOutputRackPosition(positions.Values).RequireFinite("placement") : PlaceNode(positions));
 
         var visualizations = new Dictionary<Guid, NodeVisualizationSettings>();
         foreach (var preference in saved?.Visualizations ?? [])

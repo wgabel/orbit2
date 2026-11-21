@@ -639,6 +639,13 @@ try {
     assert.ok(Number(await beat.innerText()) >= Number(frozenBeat));
     assert.equal(await page.locator("#node-type option[value='output.master']").count(), 0);
     assert.equal(await articles.count(), 4);
+    const outputRack = articles.filter({ has: page.locator(".node-header > span", { hasText: /^Output Rack$/ }) });
+    await outputRack.getByText("To parent graph · exposed outputs").waitFor();
+    await outputRack.getByRole("button", { name: "Input: Audio (Audio)" }).waitFor();
+    await page.getByRole("button", { name: "Locate output rack" }).click();
+    await outputRack.and(page.locator(".node-selected")).waitFor();
+    assert.match(await outputRack.getAttribute("class"), /node-selected/);
+    await page.getByRole("button", { name: "Fit", exact: true }).click();
     const rack = articles.filter({ hasText: "Input Parameters Rack" });
     await rack.getByRole("button", { name: "Output: Pitch (Modulation)" }).waitFor();
     const childFrequency = page.getByRole("spinbutton", { name: "Frequency (Hz)" });
@@ -868,10 +875,13 @@ try {
         await page.locator("#node-type").selectOption(type);
         const transform = await world.getAttribute("style");
         const existing = await articles.evaluateAll(nodes => Object.fromEntries(nodes.map(node => [node.dataset.nodeId, node.getAttribute("style")])));
-        const count = await articles.count();
         await page.getByRole("button", { name: "Add", exact: true }).click();
-        const added = articles.nth(count);
+        // Boundary racks paint above ordinary nodes, so DOM order no longer
+        // matches addition order in nested canvases. Identify the new node by ID.
+        const added = page.locator("article[data-node-id]" + Object.keys(existing)
+            .map(id => `:not([data-node-id='${id}'])`).join(""));
         await added.waitFor();
+        assert.equal(await added.count(), 1);
         assert.equal(await world.getAttribute("style"), transform, "Adding must not pan or zoom the canvas");
         const result = await added.evaluate(node => {
             const header = node.querySelector(".node-header").getBoundingClientRect();

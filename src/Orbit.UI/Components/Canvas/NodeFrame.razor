@@ -29,6 +29,14 @@
             }
         </div>
     </header>
+    @if (Node.TypeKey == OutputRack.NodeType)
+    {
+        <div class="node-boundary-description">To parent graph · exposed outputs</div>
+    }
+    else if (Node.TypeKey == InputRack.NodeType)
+    {
+        <div class="node-boundary-description">From parent graph · exposed inputs</div>
+    }
     <NodePresetSelector Node="@Node" OnApply="OnPresetApply" OnManage="OnManagePresets" CatalogRevision="@PresetCatalogRevision" />
     <RhythmicActionPanel Node="@Node" PatchId="@PatchId" GraphId="@GraphId" />
     <div class="node-ports">
