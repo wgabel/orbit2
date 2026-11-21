@@ -15,18 +15,22 @@ namespace Orbit.Presentation.Tests;
 /// <summary>Independent canvas state for multiple graphs of the same patch.</summary>
 public sealed class NestedCanvasStateTests
 {
-    [Fact]
-    public void ImpactOutputRackStartsInItsOwnColumnAndSavedPositionsArePreserved()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ImpactOutputRackStartsInItsOwnColumnAndSavedPositionsArePreserved(bool useCustomPlacement)
     {
         using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
         var impact = Add(session, session.GraphId, ImpactTemplate.PresetKey);
         var composite = impact.Composite!;
         var graph = composite.Graph;
-        var placement = new GridNodePlacementPolicy(columnSpacing: 320, rowSpacing: 360, columns: 4);
+        // Exercise both the normal navigation path (default policy) and an injected policy.
+        var placement = useCustomPlacement ? new GridNodePlacementPolicy(columnSpacing: 480, rowSpacing: 360, columns: 4) : null;
+        var columnSpacing = useCustomPlacement ? 480 : 320;
         using var canvas = new CanvasStateService(session, graph.Id, placement);
         var rack = canvas.Snapshot.NodePositions[composite.OutputRackId];
         Assert.All(canvas.Snapshot.NodePositions.Where(pair => pair.Key != composite.OutputRackId),
-            pair => Assert.True(rack.X >= pair.Value.X + 320));
+            pair => Assert.True(rack.X >= pair.Value.X + columnSpacing));
         var output = Assert.Single(graph.GetNode(composite.OutputRackId).Inputs);
         Assert.Equal("Audio", output.Name);
         Assert.Contains(graph.Connections, edge => edge.Destination == new PortAddress(composite.OutputRackId, output.Id));

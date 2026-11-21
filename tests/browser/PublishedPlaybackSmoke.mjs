@@ -643,6 +643,7 @@ try {
     await outputRack.getByText("To parent graph · exposed outputs").waitFor();
     await outputRack.getByRole("button", { name: "Input: Audio (Audio)" }).waitFor();
     await page.getByRole("button", { name: "Locate output rack" }).click();
+    await outputRack.and(page.locator(".node-selected")).waitFor();
     assert.match(await outputRack.getAttribute("class"), /node-selected/);
     await page.getByRole("button", { name: "Fit", exact: true }).click();
     const rack = articles.filter({ hasText: "Input Parameters Rack" });
