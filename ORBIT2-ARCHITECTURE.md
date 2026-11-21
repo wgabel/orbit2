@@ -926,6 +926,21 @@ flowchart TD
 
 **Custom persistence.** Define `INodePresetStorage` separately from `IPatchLibraryStorage`, with a browser adapter using the existing versioned IndexedDB interop and a dedicated logical store/namespace. Reuse validated serialization, transaction and error patterns where appropriate; never mix node presets with recovery records or named complete patches. Persist versioned data by stable ID, enforce unique names per node type (case-insensitive) and explicit overwrite semantics, and report storage failure without changing the current node. Custom presets survive reload and patch switching; eventually support portable individual JSON import/export with validation and conflict handling. Future audio-asset-valued configurations need explicit references and portability rules from Phase 8; scalar parameter presets do not embed recordings.
 
+**Implemented 6.17.5.** `NodePresetLibraryService` owns serialized library operations. The application-facing `INodePresetStorage` is implemented by `BrowserPatchStorage` through its existing versioned persistence module. A disjoint `node-presets:custom` key contains the whole array of versioned configurations, using the strict reader and reflection-free `NodePresetJsonWriter`. Save as generates a GUID; rename and overwrite preserve identity; only custom IDs of the current node type may be managed. The catalog validates complete parameters, group, IDs and case-insensitive names (including built-ins) before the IndexedDB transaction. A compare-and-replace inside that same read/write transaction prevents lost updates from another tab; a rejected write or invalid loaded document leaves the published catalog unchanged. Initial loading is independent of patch recovery, and the manager can explicitly reload the library. `NodePresetService` merges sorted custom entries after built-in groups and assigns a catalog revision only after a committed change or successful load. Matching keeps deterministic built-in-first precedence when two configurations are identical. No library ID is stored on a graph node.
+
+The shared `NodePresetSelector` opens one `NodePresetManager` panel at workspace level, scoped to the active node's immutable snapshot. It reuses the patch-manager panel styling and offers save as, rename, overwrite and delete without modifying node geometry. A catalog-revision parameter invalidates all visible selector matches even if their graph snapshots are unchanged. Workspace navigation or replacement closes the manager; the singleton library remains available across every canvas and patch. Library writes do not dispatch graph commands, change playback, or enter graph history; applying a preset still follows the existing atomic command.
+
+~~~mermaid
+flowchart TD
+    N[Current node snapshot] --> M[Shared preset manager]
+    M --> L[NodePresetLibraryService]
+    L --> V[Validate candidate catalog]
+    V --> S[IndexedDB compare-and-replace]
+    S --> C[Publish custom catalog revision]
+    C --> U[Refresh shared selectors]
+    U --> A[Apply preset command]
+~~~
+
 ### Signal analysis and visualization (planned Phase 6.18)
 
 Visualization is a shared observation system, not a DSP effect or a second audio engine. Distinguish actual live samples from a calculated/configured response. An oscillator's ideal shape is useful before playback; its live output can differ substantially due to modulation, anti-aliasing, mute and processing. Do not present a theoretical preview as measured audio.
@@ -1719,7 +1734,8 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented (6.17.1): immutable versioned individual node preset model, registry-derived validation and grouped embedded JSON catalog.
 - Implemented (6.17.2): atomic preset application through validated batch parameter changes, one revision/undo entry, and existing live playback.
 - Implemented (6.17.3): shared grouped node preset selector, description and exact base-configuration matching in every canvas.
-- Implemented (6.17.4): expanded data-only catalog of 65 built-in configurations across all eight eligible node types; custom library next.
+- Implemented (6.17.4): expanded data-only catalog of 65 built-in configurations across all eight eligible node types.
+- Implemented (6.17.5): custom preset library with stable IDs, explicit management, independent IndexedDB persistence and stale-write protection; portable presets next.
 - Planned (6.18): shared signal observation and visualization, integrated node plots, processor response curves and passive analyzer sinks.
 - Deferred: deployment-version detection and safe workspace-save/reload prompt for long-lived tabs whose versioned lazy modules have been removed by a later Pages deployment.
 - Add copies/preset reuse with independent instances.
@@ -1793,7 +1809,7 @@ Deliverable: audition or silence entire linear lanes by muting their final node,
 - **6.17.2 — Atomic application (implemented):** validated multi-parameter graph operation and `ApplyNodePresetCommand`, one committed revision and undo entry; tested nested nodes, dormant connections, audition state and live playback updates/replacements.
 - **6.17.3 — Shared selector (implemented):** compact accessible grouped `NodePresetSelector`, descriptions, base-configuration matching/modified state, shared token styling, and root/nested browser coverage; no node-specific UI.
 - **6.17.4 — Built-in content (implemented):** 65 configurations with meaningful usage groups for all eight eligible generators and processors, including chorus; validate, apply and match every shipped preset in CI.
-- **6.17.5 — Custom library:** persistent `Custom` group for every eligible node type, save as, explicit overwrite, rename/delete and independent instances; IndexedDB reload and workspace-switch coverage.
+- **6.17.5 — Custom library (implemented):** persistent `Custom` group for every eligible node type, save as, explicit overwrite, rename/delete and independent instances; IndexedDB reload and workspace-switch coverage.
 - **6.17.6 — Portable node presets:** versioned JSON import/export with transactional validation, conflict handling and backwards compatibility.
 
 Deliverable: choose or create a grouped configuration for any eligible node without changing its identity or wiring; apply in one undoable operation during playback and reuse across patches. Custom composite graph templates (including internal wiring and exposed racks) remain separate Phase 7 work, with a consistent catalog experience.

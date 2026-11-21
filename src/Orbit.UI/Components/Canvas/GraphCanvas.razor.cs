@@ -20,6 +20,8 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter] public EventCallback<ParameterEditRequest> OnParameterEdit { get; set; }
     [Parameter] public EventCallback<NodeAuditionRequest> OnAudition { get; set; }
     [Parameter] public EventCallback<NodePresetApplyRequest> OnPresetApply { get; set; }
+    [Parameter] public EventCallback<Guid> OnManagePresets { get; set; }
+    [Parameter] public long PresetCatalogRevision { get; set; }
     [Parameter] public EventCallback<Guid> OnParameterGestureEnded { get; set; }
     [Parameter] public EventCallback<Guid> OnOpenComposite { get; set; }
     [Parameter] public EventCallback<Guid> OnEditRack { get; set; }

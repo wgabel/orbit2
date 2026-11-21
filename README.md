@@ -591,7 +591,7 @@ Use **B** on Gain, Filter, Parametric EQ, Delay, Reverb or Chorus to hear the un
 
 ### Individual node preset foundation (Phase 6.17.1)
 
-The application now has a read-only `NodePresetService` catalog of versioned, complete base parameter configurations keyed by stable node type and preset ID. Built-ins are grouped by usage and stored in embedded JSON arrays in `src/Orbit.Infrastructure/Presets/BuiltIn/`. Ten initial configurations cover oscillator, noise, gain, filter, EQ, delay, reverb and chorus, with a reserved empty Custom group per eligible type. Configurations include discrete and dormant values, but no instance identities, wiring, mute/bypass state, layout or live samples. `NodePresetValidator` uses the registered parameter definitions to reject incomplete, invalid or incompatible presets. The complete catalog is validated by unit tests and at app startup. Add data to the appropriate JSON resource without registering a new node or changing DSP.
+The application has a `NodePresetService` catalog of versioned, complete base parameter configurations keyed by stable node type and preset ID. Read-only built-ins are grouped by usage and stored in embedded JSON arrays in `src/Orbit.Infrastructure/Presets/BuiltIn/`. Ten initial configurations cover oscillator, noise, gain, filter, EQ, delay, reverb and chorus, with a reserved Custom group per eligible type. Configurations include discrete and dormant values, but no instance identities, wiring, mute/bypass state, layout or live samples. `NodePresetValidator` uses the registered parameter definitions to reject incomplete, invalid or incompatible presets. The complete catalog is validated by unit tests and at app startup. Add data to the appropriate JSON resource without registering a new node or changing DSP.
 
 ### Atomic node preset application (Phase 6.17.2)
 
@@ -604,7 +604,7 @@ session.Execute(new ApplyNodePresetCommand(graphId, nodeId,
 
 ### Shared node preset selector (Phase 6.17.3)
 
-Eligible generators and processors now show a **Preset** selector just below their header, on every canvas. Choose a grouped configuration to apply it immediately as one graph edit, including during playback. Its usage description appears below the control (hover for the full text). The selector shows **Modified / no preset** if the current base settings do not exactly match a catalog entry. Manual edits and undo/redo update the selected name; modulation, mute and bypass do not affect matching. The Custom group is visible but empty until the custom library is implemented. Composites, racks and nodes without configurable parameters do not show the selector.
+Eligible generators and processors now show a **Preset** selector just below their header, on every canvas. Choose a grouped configuration to apply it immediately as one graph edit, including during playback. Its usage description appears below the control (hover for the full text). The selector shows **Modified / no preset** if the current base settings do not exactly match a catalog entry. Manual edits and undo/redo update the selected name; modulation, mute and bypass do not affect matching. The Custom group stays visible even if empty. Composites, racks and nodes without configurable parameters do not show the selector.
 
 ### Expanded built-in presets (Phase 6.17.4)
 
@@ -621,7 +621,13 @@ The catalog contains 65 built-in presets, including the ten original configurati
 | Reverb | 8 | Soft Chamber, Long Wash, Subtle Glue |
 | Chorus | 7 | Subtle Double, Slow Drift, Wet Vibrato |
 
-These configurations use the existing selector, graph commands and audio engine without new DSP or node-specific UI. The tests apply and match every shipped preset and generate a reachable Faust graph. Sound depends on routing, modulation and input levels; leave headroom when layering or using resonance and feedback. Custom saving and portable presets follow in Phases 6.17.5–6.17.6.
+These configurations use the existing selector, graph commands and audio engine without new DSP or node-specific UI. The tests apply and match every shipped preset and generate a reachable Faust graph. Sound depends on routing, modulation and input levels; leave headroom when layering or using resonance and feedback.
+
+### Custom node preset library (Phase 6.17.5)
+
+Click **…** beside the node's Preset selector to open its shared custom preset manager. Enter a unique name (up to 80 characters) and optional description, then choose **Save as** to capture the node's complete base configuration. Select an existing custom preset in the manager to rename it, explicitly overwrite its values with the current node settings, or delete it. Name uniqueness is case-insensitive within each node type. Built-ins cannot be edited. Close the manager to choose the saved preset in the Custom group on any compatible node. If several presets have identical values, the selector displays the first exact match in catalog order (built-ins first).
+
+The library is browser-local IndexedDB data independent of named patches and autosave. Custom presets are available after reload and when switching patches; saving, renaming, overwriting and deleting never change the graph or its undo history. If another tab changes the library before a write, reload the library and retry. A storage or validation failure preserves the existing configurations. Portable preset JSON import/export follows in Phase 6.17.6.
 
 ### Chorus (Phase 6.15)
 

@@ -14,6 +14,7 @@ using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Nodes.Processors;
 using Orbit.Presentation.Canvas;
 using Orbit.Application.Persistence;
+using Orbit.Application.Presets;
 using Orbit.Domain.Timing;
 
 namespace Orbit.UI.Components.Canvas;
@@ -26,11 +27,17 @@ public partial class GraphWorkspace : IDisposable
     [Inject] private PatchPersistenceService Persistence { get; set; } = default!;
     [Inject] private IMusicalTransportService Transport { get; set; } = default!;
     [Inject] private NodeRegistry Registry { get; set; } = default!;
+    [Inject] private NodePresetService PresetCatalog { get; set; } = default!;
+    [Inject] private NodePresetLibraryService PresetLibrary { get; set; } = default!;
     private bool initialized;
     private bool autosaveEnabled = true;
     private bool disposed;
     private double tempo = MusicalTransport.DefaultTempo;
     private string? PersistenceError { get; set; }
+    private string? PresetLibraryError { get; set; }
+    private (Guid GraphId, Guid NodeId)? managingPresets;
+    private GraphNodeSnapshot? ManagingPresetNode => managingPresets is { } address && address.GraphId == Canvas.Snapshot.GraphId
+        ? Canvas.Snapshot.Graph.Nodes.SingleOrDefault(node => node.Id == address.NodeId) : null;
     private IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
     private static readonly IReadOnlyDictionary<ParameterAddress, double> EmptyValues = new Dictionary<ParameterAddress, double>();
     private long rangeRevision = -1;
@@ -88,6 +95,8 @@ public partial class GraphWorkspace : IDisposable
             autosaveEnabled = false;
             PersistenceError = $"Saved patch could not be restored; autosave is disabled: {exception.Message}";
         }
+        try { await PresetLibrary.LoadAsync(); }
+        catch (Exception exception) { PresetLibraryError = $"Custom presets could not be loaded: {exception.Message}"; }
         if (disposed) { Navigation?.Dispose(); session?.Dispose(); return; }
         if (session is null)
         {
@@ -153,6 +162,7 @@ public partial class GraphWorkspace : IDisposable
             rangeRevision = -1;
             telemetry = null;
             editingRack = null;
+            managingPresets = null;
             SelectedType = OscillatorGenerator.NodeType;
             Error = PersistenceError = null;
             autosaveEnabled = true;
@@ -213,6 +223,7 @@ public partial class GraphWorkspace : IDisposable
         Error = null;
         session.CompleteHistoryGesture();
         CloseRackEditor();
+        ClosePresetManager();
         Navigation.OpenChild(nodeId);
     }
 
@@ -221,6 +232,7 @@ public partial class GraphWorkspace : IDisposable
         Error = null;
         session.CompleteHistoryGesture();
         CloseRackEditor();
+        ClosePresetManager();
         Navigation.NavigateTo(graphId);
     }
 
@@ -233,6 +245,16 @@ public partial class GraphWorkspace : IDisposable
     }
 
     private void CloseRackEditor() => editingRack = null;
+
+    private void OpenPresetManager(Guid graphId, Guid nodeId)
+    {
+        if (graphId != Canvas.Snapshot.GraphId) return;
+        var node = Canvas.Snapshot.Graph.Nodes.SingleOrDefault(candidate => candidate.Id == nodeId);
+        if (node is not null && PresetCatalog.Supports(node.TypeKey)) managingPresets = (graphId, nodeId);
+    }
+
+    private void ClosePresetManager() => managingPresets = null;
+    private void OnPresetLibraryChanged() => PresetLibraryError = null;
 
     // The reusable editor receives validation feedback at the affected control.
     // A stale callback cannot mutate a different canvas after navigation.
@@ -270,6 +292,7 @@ public partial class GraphWorkspace : IDisposable
         try
         {
             CloseRackEditor();
+            ClosePresetManager();
             var result = operation();
             if (result.SubscriberErrors.Count > 0)
                 Error = "History was committed, but a view failed to update: " + result.SubscriberErrors[0].Message;

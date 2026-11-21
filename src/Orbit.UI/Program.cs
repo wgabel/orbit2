@@ -41,9 +41,11 @@ builder.Services.AddSingleton(BuiltInNodes.CreateEditorRegistry());
 builder.Services.AddSingleton<INodePresetCatalog, EmbeddedNodePresetCatalog>();
 builder.Services.AddSingleton<NodePresetValidator>();
 builder.Services.AddSingleton<NodePresetService>();
+builder.Services.AddSingleton<INodePresetStorage>(services => services.GetRequiredService<BrowserPatchStorage>());
+builder.Services.AddSingleton<NodePresetLibraryService>();
 
 // Start the host, resolve dependencies and render the registered root component.
 var host = builder.Build();
-// Validate the shipped catalog before rendering, even before the selector is introduced.
+// Validate the shipped catalog before rendering; the workspace loads browser-local presets.
 _ = host.Services.GetRequiredService<NodePresetService>();
 await host.RunAsync();

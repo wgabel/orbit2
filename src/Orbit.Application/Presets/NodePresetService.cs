@@ -8,6 +8,9 @@ public sealed class NodePresetService
     private readonly NodePresetValidator validator;
     private readonly Dictionary<string, NodePreset> byId = new(StringComparer.Ordinal);
     private readonly Dictionary<string, IReadOnlyList<NodePresetGroup>> byType = new(StringComparer.Ordinal);
+    private IReadOnlyDictionary<string, NodePreset> custom = new Dictionary<string, NodePreset>(StringComparer.Ordinal);
+    private readonly Dictionary<string, IReadOnlyList<NodePresetGroup>> mergedGroups = new(StringComparer.Ordinal);
+    public long Revision { get; private set; }
     private static readonly IReadOnlyList<NodePresetGroup> EmptyCustom = Array.AsReadOnly(
         new[] { new NodePresetGroup(NodePreset.CustomGroup, Array.Empty<NodePreset>()) });
 
@@ -30,17 +33,59 @@ public sealed class NodePresetService
                     Array.AsReadOnly(group.OrderBy(preset => preset.Name, StringComparer.OrdinalIgnoreCase)
                         .ThenBy(preset => preset.Id, StringComparer.Ordinal).ToArray())))
                 .OrderBy(group => group.Name, StringComparer.OrdinalIgnoreCase)
-                .Concat(EmptyCustom).ToArray();
+                .ToArray();
             byType.Add(type.Key, Array.AsReadOnly(groups));
         }
     }
 
     public bool Supports(string nodeType) => validator.Supports(nodeType);
 
-    public IReadOnlyList<NodePresetGroup> GetGroups(string nodeType) =>
-        byType.TryGetValue(nodeType, out var groups) ? groups : Supports(nodeType) ? EmptyCustom : Array.Empty<NodePresetGroup>();
+    public IReadOnlyList<NodePresetGroup> GetGroups(string nodeType)
+    {
+        if (!Supports(nodeType)) return Array.Empty<NodePresetGroup>();
+        if (mergedGroups.TryGetValue(nodeType, out var cached)) return cached;
+        var presets = custom.Values.Where(preset => preset.NodeType == nodeType)
+            .OrderBy(preset => preset.Name, StringComparer.OrdinalIgnoreCase).ThenBy(preset => preset.Id, StringComparer.Ordinal).ToArray();
+        var groups = byType.GetValueOrDefault(nodeType) ?? [];
+        var merged = Array.AsReadOnly(groups.Concat(presets.Length == 0 ? EmptyCustom :
+            [new NodePresetGroup(NodePreset.CustomGroup, Array.AsReadOnly(presets))]).ToArray());
+        mergedGroups.Add(nodeType, merged);
+        return merged;
+    }
 
-    public NodePreset GetPreset(string id) => byId[id];
+    public NodePreset GetPreset(string id) => byId.TryGetValue(id, out var builtIn) ? builtIn : custom[id];
+
+    public IReadOnlyList<NodePreset> GetCustomPresets(string nodeType) => GetGroups(nodeType).LastOrDefault()?.Presets ?? [];
+
+    internal IReadOnlyList<NodePreset> CustomPresets => Array.AsReadOnly(custom.Values.ToArray());
+
+    internal void ValidateCustomPresets(IReadOnlyList<NodePreset> presets)
+    {
+        var ids = new HashSet<string>(byId.Keys, StringComparer.Ordinal);
+        var names = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        foreach (var preset in byId.Values.Concat(presets))
+        {
+            if (!names.TryGetValue(preset.NodeType, out var typeNames))
+                names.Add(preset.NodeType, typeNames = new(StringComparer.OrdinalIgnoreCase));
+            if (!typeNames.Add(preset.Name)) throw new ArgumentException($"A preset named '{preset.Name}' already exists for this node type.");
+        }
+        foreach (var preset in presets)
+        {
+            validator.Validate(preset);
+            if (preset.Group != NodePreset.CustomGroup || !Guid.TryParseExact(preset.Id, "D", out var id) ||
+                id == Guid.Empty || id.ToString("D") != preset.Id)
+                throw new ArgumentException("Invalid custom preset identity or group.");
+            if (!ids.Add(preset.Id)) throw new ArgumentException($"Duplicate preset ID '{preset.Id}'.");
+        }
+    }
+
+    internal void ReplaceCustomPresets(IReadOnlyList<NodePreset> presets)
+    {
+        ValidateCustomPresets(presets);
+        custom = presets.ToDictionary(preset => preset.Id, StringComparer.Ordinal);
+        mergedGroups.Clear();
+        Revision++;
+    }
 
     /// <summary>Resolve an exact configuration match using stored base values, including inactive values.</summary>
     public NodePreset? FindMatchingPreset(GraphNodeSnapshot node) => GetGroups(node.TypeKey)

@@ -41,6 +41,23 @@ export function writeNamed(name, json, overwrite) {
     return transact("readwrite", store => overwrite ? store.put(json, namedPrefix + name) : store.add(json, namedPrefix + name));
 }
 export function deleteNamed(name) { return transact("readwrite", store => store.delete(namedPrefix + name)); }
+
+// The complete custom library has its own key, independent of recovery and named patches.
+// Comparing inside the same readwrite transaction prevents lost edits from other tabs.
+const nodePresetKey = "node-presets:custom";
+export function loadNodePresets() { return transact("readonly", store => store.get(nodePresetKey)); }
+export function replaceNodePresets(expectedJson, json) {
+    return transact("readwrite", store => {
+        let matched = false;
+        const request = store.get(nodePresetKey);
+        request.onsuccess = () => {
+            matched = (request.result ?? null) === expectedJson;
+            if (matched) store.put(json, nodePresetKey);
+        };
+        return { get result() { return matched; } };
+    });
+}
+
 export function download(name, json) {
     const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
     const anchor = document.createElement("a");

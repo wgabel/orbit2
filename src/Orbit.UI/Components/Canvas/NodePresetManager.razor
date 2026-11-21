@@ -1,0 +1,30 @@
+@namespace Orbit.UI.Components.Canvas
+
+<section class="workspace-library-panel node-preset-manager" role="region" aria-label="Custom preset manager">
+    <div class="workspace-toolbar">
+        <strong>Custom presets · @Node.Name</strong>
+        <button type="button" class="secondary" @onclick="OnClose" disabled="@Busy">Close</button>
+    </div>
+    <p class="workspace-notice">Save the current base settings, including inactive values. Library edits do not change the patch.</p>
+    <label for="preset-name">Preset name</label>
+    <input id="preset-name" type="text" maxlength="80" @bind="Name" @bind:event="oninput" disabled="@Busy" />
+    <label for="preset-description">Description (optional, for new presets)</label>
+    <input id="preset-description" type="text" @bind="Description" @bind:event="oninput" disabled="@Busy" />
+    <button type="button" @onclick="SaveAsync" disabled="@(Busy || !Library.IsLoaded)">Save as</button>
+    <label for="saved-node-preset">Saved custom preset</label>
+    <select id="saved-node-preset" @bind="SelectedId" disabled="@Busy">
+        <option value="">Select a custom preset</option>
+        @foreach (var preset in Catalog.GetCustomPresets(Node.TypeKey))
+        {
+            <option value="@preset.Id">@preset.Name</option>
+        }
+    </select>
+    <div class="workspace-toolbar">
+        <button type="button" class="secondary" @onclick="RenameAsync" disabled="@(!CanManage)">Rename to preset name</button>
+        <button type="button" class="secondary" @onclick="OverwriteAsync" disabled="@(!CanManage)">Overwrite with current settings</button>
+        <button type="button" class="secondary" @onclick="DeleteAsync" disabled="@(!CanManage)">Delete selected preset</button>
+        <button type="button" class="secondary" @onclick="RefreshAsync" disabled="@Busy">Reload library</button>
+    </div>
+    @if (Message is not null) { <p class="workspace-notice">@Message</p> }
+    @if (Error is not null) { <p class="parameter-error" role="alert">@Error</p> }
+</section>

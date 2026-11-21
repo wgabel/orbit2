@@ -10,8 +10,11 @@ public partial class NodePresetSelector
     [Inject] private NodePresetService Catalog { get; set; } = default!;
     [Parameter, EditorRequired] public GraphNodeSnapshot Node { get; set; } = default!;
     [Parameter] public EventCallback<NodePresetApplyRequest> OnApply { get; set; }
+    [Parameter] public EventCallback<Guid> OnManage { get; set; }
+    [Parameter] public long CatalogRevision { get; set; }
 
     private GraphNodeSnapshot? previousNode;
+    private long previousRevision = -1;
     private NodePreset? matchingPreset;
     private IReadOnlyList<NodePresetGroup> Groups { get; set; } = [];
     private string InputId => $"node-preset-{Node.Id:N}";
@@ -23,8 +26,9 @@ public partial class NodePresetSelector
     protected override void OnParametersSet()
     {
         // Layout and telemetry refreshes reuse the immutable node snapshot.
-        if (ReferenceEquals(previousNode, Node)) return;
+        if (ReferenceEquals(previousNode, Node) && previousRevision == CatalogRevision) return;
         previousNode = Node;
+        previousRevision = CatalogRevision;
         Groups = Catalog.GetGroups(Node.TypeKey);
         matchingPreset = Catalog.FindMatchingPreset(Node);
     }

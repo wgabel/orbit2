@@ -27,7 +27,7 @@
             }
         </div>
     </header>
-    <NodePresetSelector Node="@Node" OnApply="OnPresetApply" />
+    <NodePresetSelector Node="@Node" OnApply="OnPresetApply" OnManage="OnManagePresets" CatalogRevision="@PresetCatalogRevision" />
     <div class="node-ports">
         <div class="node-inputs">
             @foreach (var port in Node.Inputs)

@@ -9,6 +9,11 @@
     flex: 1;
     font-size: var(--semantic-typography-label);
 }
+.node-preset-heading .node-preset-manage {
+    flex-shrink: 0;
+    padding: var(--component-slider-input-padding-block) var(--component-slider-input-padding-inline);
+    font-size: var(--semantic-typography-label);
+}
 .node-preset-heading select:focus-visible {
     outline: var(--semantic-border-focus-width) solid var(--semantic-color-selected);
     outline-offset: var(--semantic-border-focus-offset);

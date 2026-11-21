@@ -23,6 +23,8 @@
                     </optgroup>
                 }
             </select>
+            <button type="button" class="secondary node-preset-manage" aria-label="@($"Manage presets for {Node.Name}")"
+                    title="Manage custom presets" @onclick="() => OnManage.InvokeAsync(Node.Id)">…</button>
         </div>
         <div id="@DescriptionId" class="node-preset-description" title="@Description">@Description</div>
     </div>

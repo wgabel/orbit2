@@ -44,6 +44,14 @@ else
     {
         <p class="parameter-error workspace-error" role="alert">@PersistenceError</p>
     }
+    @if (PresetLibraryError is not null)
+    {
+        <p class="parameter-error workspace-error" role="alert">@PresetLibraryError</p>
+    }
+    @if (ManagingPresetNode is { } presetNode)
+    {
+        <NodePresetManager @key="(graphId, presetNode.Id)" Node="@presetNode" OnClose="ClosePresetManager" OnLibraryChanged="OnPresetLibraryChanged" />
+    }
     @if (SelectedConnection is { } connection)
     {
         <ConnectionAmountEditor @key="(graphId, connection.Id)" Graph="@Canvas.Snapshot.Graph"
@@ -59,6 +67,7 @@ else
                  OnParameterGestureEnded="@(id => CompleteParameterGesture(graphId, id))"
                  OnAudition="@(request => SetNodeAudition(graphId, request))"
                  OnPresetApply="@(request => ApplyNodePreset(graphId, request))"
+                 OnManagePresets="@(nodeId => OpenPresetManager(graphId, nodeId))" PresetCatalogRevision="@PresetCatalog.Revision"
                  OnOpenComposite="@(nodeId => OpenComposite(graphId, nodeId))"
                  OnEditRack="@(nodeId => OpenRackEditor(graphId, nodeId))"
                  ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" BeatsPerMinute="@tempo" />
