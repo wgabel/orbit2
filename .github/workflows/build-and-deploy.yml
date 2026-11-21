@@ -57,6 +57,7 @@ jobs:
       - name: Compile and render generated graph
         env:
           ORBIT_GRAPH_PROBE_DIR: ${{ runner.temp }}/orbit-graph-probe
+          ORBIT_FAUST_DIR: ${{ runner.temp }}/orbit-faust/node_modules/@grame/faustwasm
         run: |
           dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj --configuration Release -- "$ORBIT_GRAPH_PROBE_DIR"
           npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts "$ORBIT_GRAPH_PROBE_DIR/program.dsp" "$ORBIT_GRAPH_PROBE_DIR/compiled"

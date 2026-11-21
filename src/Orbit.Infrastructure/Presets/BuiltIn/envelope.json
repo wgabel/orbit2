@@ -1,0 +1,7 @@
+[
+  { "schemaVersion": 1, "id": "envelope-impact-pitch", "nodeType": "generator.envelope", "name": "Impact pitch", "group": "Percussion", "description": "Fast curved pitch transient.", "parameters": { "attack": 1, "decay": 120, "attack-curve": 1, "decay-curve": 3 } },
+  { "schemaVersion": 1, "id": "envelope-impact-amplitude", "nodeType": "generator.envelope", "name": "Impact amplitude", "group": "Percussion", "description": "Smooth onset and a half-second tail.", "parameters": { "attack": 8, "decay": 500, "attack-curve": 1, "decay-curve": 3 } },
+  { "schemaVersion": 1, "id": "envelope-short-pluck", "nodeType": "generator.envelope", "name": "Short pluck", "group": "Percussion", "description": "Short sharp decay for plucked sounds.", "parameters": { "attack": 3, "decay": 180, "attack-curve": 1, "decay-curve": 4 } },
+  { "schemaVersion": 1, "id": "envelope-slow-swell", "nodeType": "generator.envelope", "name": "Slow swell", "group": "Motion", "description": "Gently rising multi-second modulation.", "parameters": { "attack": 2000, "decay": 3000, "attack-curve": 2, "decay-curve": 2 } },
+  { "schemaVersion": 1, "id": "envelope-linear-ramp", "nodeType": "generator.envelope", "name": "Linear ramp", "group": "Motion", "description": "Symmetric linear attack and decay.", "parameters": { "attack": 250, "decay": 250, "attack-curve": 1, "decay-curve": 1 } }
+]

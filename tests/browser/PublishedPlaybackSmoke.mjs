@@ -1074,6 +1074,47 @@ try {
     assert.match(await responseStatus.innerText(), /^Playing revision \d+$/);
     await responsePage.getByRole("button", { name: "Stop", exact: true }).click();
     await responseStatus.filter({ hasText: /Ready/ }).waitFor();
+
+    // The AD generator uses the normal canvas, preset, range and live-control paths.
+    await responsePage.getByRole("button", { name: "Patches", exact: true }).click();
+    await responseManager.getByRole("button", { name: "New patch" }).click();
+    await responseManager.getByText("New workspace created.", { exact: true }).waitFor();
+    await responseManager.getByRole("button", { name: "Close", exact: true }).click();
+    await responsePage.locator(".canvas-count").filter({ hasText: "1 nodes · 0 connections" }).waitFor();
+    const trigger = await addResponseNode("generator.oscillator");
+    const envelope = await addResponseNode("generator.envelope");
+    const carrier = await addResponseNode("generator.oscillator");
+    await trigger.getByRole("spinbutton", { name: "Frequency (Hz)" }).fill("1");
+    await trigger.getByRole("combobox", { name: "Waveform" }).selectOption({ label: "Square" });
+    const attack = envelope.getByRole("spinbutton", { name: "Attack (ms)", exact: true });
+    const decay = envelope.getByRole("spinbutton", { name: "Decay (ms)", exact: true });
+    await envelope.getByRole("combobox", { name: "Preset for AD Envelope" }).selectOption("envelope-impact-pitch");
+    assert.equal(await attack.inputValue(), "1");
+    assert.equal(await decay.inputValue(), "120");
+    await envelope.getByRole("combobox", { name: "Preset for AD Envelope" }).selectOption("envelope-impact-amplitude");
+    assert.equal(await attack.inputValue(), "8");
+    assert.equal(await decay.inputValue(), "500");
+    await carrier.getByRole("spinbutton", { name: "Amplitude (normalized)", exact: true }).fill("0");
+    await trigger.getByRole("button", { name: "Output: Signal (Audio)" }).press("Enter");
+    await envelope.getByRole("button", { name: "Input: Signal trigger (Modulation)" }).press("Enter");
+    await envelope.getByRole("button", { name: "Output: Envelope (Modulation)" }).press("Enter");
+    await carrier.getByRole("button", { name: "Input: Amplitude (Modulation)" }).press("Enter");
+    await carrier.getByRole("button", { name: "Output: Signal (Audio)" }).press("Enter");
+    await master.getByRole("button", { name: "Input: Audio (Audio)" }).press("Enter");
+    await responsePage.locator(".canvas-count").filter({ hasText: "4 nodes · 3 connections" }).waitFor();
+    const ampSlider = carrier.locator(".parameter-slider").filter({ has: responsePage.getByRole("spinbutton", { name: "Amplitude (normalized)", exact: true }) });
+    await ampSlider.getByLabel("Predicted modulation range").filter({ hasText: "0–1" }).waitFor();
+    await envelope.locator(".node-visualization-panel").getByRole("button", { name: "Show plot" }).press("Enter");
+    await envelope.locator(".signal-scope[data-view-mode='waveform']").waitFor();
+    await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
+    await responsePage.getByRole("button", { name: "Play patch" }).click();
+    await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
+    await ampSlider.getByLabel("Live effective value").waitFor({ timeout: 15000 });
+    await attack.fill("25");
+    await decay.fill("250");
+    assert.match(await responseStatus.innerText(), /^Playing revision \d+$/);
+    await responsePage.getByRole("button", { name: "Stop", exact: true }).click();
+    await responseStatus.filter({ hasText: /Ready/ }).waitFor();
     await responsePage.close();
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {

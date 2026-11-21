@@ -84,11 +84,11 @@ public sealed class NodePresetTests
             var graphId = session.GraphId;
             var target = session.Execute(new AddNodeCommand(graphId, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
             var master = session.Execute(new AddNodeCommand(graphId, MasterOutput.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
-            if (target.Inputs.SingleOrDefault(port => port.SignalType == SignalType.Audio) is { } input)
+            if (target.Inputs.SingleOrDefault(port => port.SignalType == SignalType.Audio || port.Key == EnvelopeGenerator.TriggerPortKey) is { } input)
             {
                 var source = session.Execute(new AddNodeCommand(graphId, OscillatorGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
                 session.Execute(new ConnectNodesCommand(graphId, new PortAddress(source.Id, source.Outputs.Single().Id),
-                    new PortAddress(target.Id, input.Id), 0.2));
+                    new PortAddress(target.Id, input.Id), input.Key == EnvelopeGenerator.TriggerPortKey ? 1 : 0.2));
             }
             if (target.Outputs.Single().SignalType == SignalType.Modulation)
             {
