@@ -43,6 +43,7 @@ public partial class GraphWorkspace : IDisposable
     private long rangeRevision = -1;
     private Guid rangeGraphId;
     private GraphParameterTelemetry? telemetry;
+    private int? responseSampleRate;
     private IReadOnlyDictionary<ParameterAddress, double> EffectiveValues =>
         telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision
             ? frame.GetValues(Canvas.Snapshot.GraphId) : EmptyValues;
@@ -227,6 +228,8 @@ public partial class GraphWorkspace : IDisposable
 
     private void OnTelemetryChanged(GraphParameterTelemetry? frame) =>
         telemetry = frame;
+
+    private void OnSampleRateChanged(int? sampleRate) => responseSampleRate = sampleRate;
 
     private string DescribeType(string type) => catalog.Describe(type);
 

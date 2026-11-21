@@ -419,6 +419,11 @@ try {
                     const low = response(100), center = response(1000), high = response(8000);
                     set(filter.resonance, 4);
                     const resonant = response(1000);
+                    set(filter.cutoff, 20000);
+                    set(filter.resonance, 0.707);
+                    const nearNyquist = response(19000);
+                    set(filter.cutoff, 1000);
+                    set(filter.resonance, 4);
                     set(filter.modulation, 1);
                     const [stress] = processor.render([], rate * 2);
                     let stressPeak = 0;
@@ -426,7 +431,7 @@ try {
                         if (!Number.isFinite(sample)) throw new Error("Unstable audio-rate modulated filter");
                         stressPeak = Math.max(stressPeak, Math.abs(sample));
                     }
-                    results.push({ mode: filter.mode, rate, low, center, high, resonant, stressPeak });
+                    results.push({ mode: filter.mode, rate, low, center, high, resonant, nearNyquist, stressPeak });
                 }
             }
             return results;
@@ -434,6 +439,9 @@ try {
     }, filters);
     for (const r of filterResults) {
         console.log("Filter response", r);
+        const predicted = filters.find(filter => filter.mode === r.mode).predictions.find(point => point.rate === r.rate);
+        for (const key of ["low", "center", "high", "resonant", "nearNyquist"])
+            assert.ok(Math.abs(r[key] - predicted[key]) < 0.015, `${r.mode} ${r.rate} ${key}: measured ${r[key]}, calculated ${predicted[key]}`);
         assert.ok(r.stressPeak < 5, "Extreme modulation must remain finite and bounded in the probe");
         if (r.mode === "LowPass") assert.ok(r.low > 0.95 && r.high < 0.04 && r.resonant > 3.8);
         if (r.mode === "HighPass") assert.ok(r.low < 0.04 && r.high > 0.95 && r.resonant > 3.8);
@@ -485,6 +493,9 @@ try {
     }, eq);
     for (const result of eqResults) {
         console.log("Parametric EQ response", result);
+        const predicted = eq.predictions.find(point => point.rate === result.rate);
+        for (const key of ["flat", "boost", "low", "high", "broad", "narrow", "cut", "moved"])
+            assert.ok(Math.abs(result[key] - predicted[key]) < 0.08, `EQ ${result.rate} ${key}: measured ${result[key]}, calculated ${predicted[key]}`);
         assert.ok(Math.abs(result.flat) < 0.1);
         assert.ok(Math.abs(result.boost - 12) < 0.2 && Math.abs(result.cut + 12) < 0.2);
         assert.ok(Math.abs(result.moved + 12) < 0.2);

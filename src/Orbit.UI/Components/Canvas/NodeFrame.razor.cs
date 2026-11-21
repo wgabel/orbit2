@@ -24,6 +24,7 @@ public partial class NodeFrame
     [Parameter] public NodeVisualRole Role { get; set; }
     [Parameter] public bool Selected { get; set; }
     [Parameter] public double BeatsPerMinute { get; set; } = MusicalTransport.DefaultTempo;
+    [Parameter] public int? SampleRate { get; set; }
     [Parameter] public PortAddress? PendingSource { get; set; }
     [Parameter] public EventCallback<PointerEventArgs> OnHeaderPointerDown { get; set; }
     [Parameter] public EventCallback<PortAddress> OnPortActivate { get; set; }

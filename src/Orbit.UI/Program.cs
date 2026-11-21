@@ -31,6 +31,7 @@ builder.Services.AddSingleton<IMusicalTransportService, MusicalTransportService>
 var emitters = BuiltInFaustEmitters.Create();
 builder.Services.AddSingleton(new FaustGraphCompiler(emitters));
 builder.Services.AddSingleton<IGraphModulationRangeEstimator>(new GraphModulationRangeEstimator(emitters));
+builder.Services.AddSingleton<IProcessorResponseAnalyzer, ProcessorResponseAnalyzer>();
 builder.Services.AddSingleton<FaustGraphPlaybackService>();
 builder.Services.AddSingleton<IGraphPlaybackService>(services => services.GetRequiredService<FaustGraphPlaybackService>());
 builder.Services.AddSingleton<ISignalAnalysisService>(services => services.GetRequiredService<FaustGraphPlaybackService>());

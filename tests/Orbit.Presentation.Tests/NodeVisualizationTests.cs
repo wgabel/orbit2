@@ -4,6 +4,7 @@ using Orbit.Application.Graphs.Events;
 using Orbit.Application.Graphs.Sessions;
 using Orbit.Application.Persistence;
 using Orbit.Domain.Nodes.Generators;
+using Orbit.Domain.Nodes.Processors;
 using Orbit.Domain.Parameters;
 using Orbit.Presentation.Canvas;
 using Xunit;
@@ -12,6 +13,33 @@ namespace Orbit.Presentation.Tests;
 
 public sealed class NodeVisualizationTests
 {
+    [Fact]
+    public void ResponseModeIsAvailableOnlyForSupportedProcessorsAndRoundTrips()
+    {
+        var registry = BuiltInNodes.CreateEditorRegistry();
+        using var session = new PatchSession(registry);
+        var oscillator = session.Execute(new AddNodeCommand(session.GraphId, OscillatorGenerator.NodeType))
+            .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        var filter = session.Execute(new AddNodeCommand(session.GraphId, FilterProcessor.NodeType))
+            .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        var eq = session.Execute(new AddNodeCommand(session.GraphId, ParametricEqProcessor.NodeType))
+            .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        using var navigation = new CanvasNavigationService(session);
+        var settings = NodeVisualizationSettings.Default with { Visible = true, Mode = "response" };
+        var before = session.Snapshot;
+        navigation.ActiveCanvas.SetVisualization(oscillator.Id, settings);
+        navigation.ActiveCanvas.SetVisualization(filter.Id, settings);
+        navigation.ActiveCanvas.SetVisualization(eq.Id, settings);
+        Assert.Equal("waveform", navigation.ActiveCanvas.Snapshot.VisualizationFor(oscillator.Id).Mode);
+        Assert.Same(before, session.Snapshot);
+        var serializer = new PatchDocumentSerializer();
+        var document = serializer.Deserialize(serializer.Serialize(serializer.Capture(session, 120, session.GraphId, navigation.CaptureLayouts())));
+        using var restored = serializer.Restore(document, registry);
+        using var loaded = new CanvasNavigationService(restored, layouts: document.CanvasLayouts);
+        Assert.Equal(settings, loaded.ActiveCanvas.Snapshot.VisualizationFor(filter.Id));
+        Assert.Equal(settings, loaded.ActiveCanvas.Snapshot.VisualizationFor(eq.Id));
+    }
+
     [Fact]
     public void LayoutPreferencesDoNotEditGraphAndRestoreAfterNodeUndo()
     {

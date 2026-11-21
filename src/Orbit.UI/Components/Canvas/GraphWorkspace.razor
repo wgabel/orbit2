@@ -35,7 +35,7 @@ else
         <button type="button" disabled="@(addingNode || switchingWorkspace)" @onclick="AddNodeAsync">Add</button>
         <button type="button" class="secondary" disabled="@(!HasSelection)" @onclick="DeleteSelection">Delete selected</button>
         </div>
-        <GraphPlaybackControls @key="workspaceGeneration" @ref="playbackControls" Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" TempoChanged="OnTempoChanged" Disabled="switchingWorkspace" />
+        <GraphPlaybackControls @key="workspaceGeneration" @ref="playbackControls" Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" TempoChanged="OnTempoChanged" SampleRateChanged="OnSampleRateChanged" Disabled="switchingWorkspace" />
     </div>
     @if (Error is not null)
     {
@@ -68,12 +68,12 @@ else
                  OnManagePresets="@(nodeId => OpenPresetManagerAsync(graphId, nodeId))" PresetCatalogRevision="@PresetCatalog.Revision"
                  OnOpenComposite="@(nodeId => OpenComposite(graphId, nodeId))"
                  OnEditRack="@(nodeId => OpenRackEditor(graphId, nodeId))"
-                 ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" BeatsPerMinute="@tempo" />
+                 ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" BeatsPerMinute="@tempo" SampleRate="@responseSampleRate" />
     @if (ScopeNode is { } scopeNode)
     {
         <NodeVisualizationPanel @key="(workspaceGeneration, graphId, scopeNode.Id)" PatchId="@session.GraphId"
                           GraphId="@graphId" Node="@scopeNode" Expanded="true" Settings="@Canvas.Snapshot.VisualizationFor(scopeNode.Id)"
-                          BeatsPerMinute="@tempo"
+                          BeatsPerMinute="@tempo" SampleRate="@responseSampleRate" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues"
                           SettingsChanged="@(settings => UpdateScopeSettings(graphId, scopeNode.Id, settings))" OnExpand="CloseScope" />
     }
 </section>

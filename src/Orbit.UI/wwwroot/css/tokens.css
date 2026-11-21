@@ -113,6 +113,9 @@
     --component-scope-width: 28rem;
     --component-scope-plot-height: 8rem;
     --component-scope-compact-plot-height: 72px;
+    --component-scope-response-axis-width: 2rem;
+    --component-scope-response-line-width: 2px;
+    --component-scope-response-line-dash: 4px;
     --component-scope-level-height: 0.5rem;
     --component-node-min-width: 240px;
     --component-node-border-radius: 6px;

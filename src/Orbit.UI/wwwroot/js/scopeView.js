@@ -56,7 +56,10 @@ class ScopeView {
     }
 
     #settingsChanged = event => {
-        if (event.target === this.#mode) this.#modeChanged();
+        if (event.target === this.#mode) {
+            this.#modeChanged();
+            this.#visibilityChanged();
+        }
         else if (![this.#timebase, this.#trigger, this.#fftSize, this.#fftWindow, this.#fftSmoothing].includes(event.target)) return;
         // One coherent configuration snapshot, including rapid consecutive changes.
         this.#resolver.invokeMethodAsync("ChangeSettings", this.#mode.value, this.#timebase.value,
@@ -83,7 +86,7 @@ class ScopeView {
         this.#spectrumKey = null;
     }
 
-    #active() { return !this.#disposed && this.#visible && !document.hidden && this.#root.isConnected; }
+    #active() { return !this.#disposed && this.#visible && !document.hidden && this.#root.isConnected && this.#mode.value !== "response"; }
     #visibilityChanged = () => {
         if (!this.#active()) {
             cancelAnimationFrame(this.#animation);

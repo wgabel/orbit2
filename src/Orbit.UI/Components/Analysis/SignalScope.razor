@@ -7,6 +7,10 @@
                 <option value="waveform">Waveform</option>
                 <option value="spectrum">Spectrum</option>
                 <option value="level">Level</option>
+                @if (ResponseAvailable)
+                {
+                    <option value="response">Frequency response</option>
+                }
             </select>
         </label>
     </div>

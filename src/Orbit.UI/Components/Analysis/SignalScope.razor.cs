@@ -14,6 +14,7 @@ public partial class SignalScope : IAsyncDisposable
     [Inject] private ScopeBrowserAssets BrowserAssets { get; set; } = default!;
     [Parameter, EditorRequired] public SignalObservationAddress Address { get; set; }
     [Parameter] public bool Compact { get; set; }
+    [Parameter] public bool ResponseAvailable { get; set; }
     [Parameter] public double? CycleSeconds { get; set; }
     [Parameter, EditorRequired] public NodeVisualizationSettings Settings { get; set; } = NodeVisualizationSettings.Default;
     [Parameter] public EventCallback<NodeVisualizationSettings> SettingsChanged { get; set; }

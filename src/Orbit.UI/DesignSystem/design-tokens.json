@@ -153,6 +153,9 @@
       "width": "28rem",
       "plot-height": "8rem",
       "compact-plot-height": "72px",
+      "response-axis-width": "2rem",
+      "response-line-width": "2px",
+      "response-line-dash": "4px",
       "level-height": "0.5rem"
     },
     "node": {
