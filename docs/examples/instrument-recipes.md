@@ -4,6 +4,8 @@
 
 Related: [pitch control](../instruments/pitch-control.md) · [envelopes](../audio/envelopes.md) · [physical modelling](../instruments/physical-modelling.md) · [composite nodes](../editor/composite-nodes.md).
 
+These recipes address individual sounds. For combining voices into a structured musical piece, see [generative ambient composition](generative-ambient-composition.md).
+
 <a id="musical-instrument-synthesis-and-physical-modelling-planned-phase-72"></a>
 
 #### Musical instrument synthesis and physical modelling (Phase 7.2 — partial)
