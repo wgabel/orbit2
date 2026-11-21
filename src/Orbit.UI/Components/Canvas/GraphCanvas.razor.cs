@@ -147,9 +147,7 @@ public partial class GraphCanvas : IAsyncDisposable
                 var kind = destination.Inputs
                     .Single(port => port.Id == edge.Destination.PortId).SignalType;
                 var curve = BezierConnection.Between(start, end);
-                var center = new CanvasPoint(
-                    (curve.Start.X + 3 * curve.Control1.X + 3 * curve.Control2.X + curve.End.X) / 8,
-                    (curve.Start.Y + 3 * curve.Control1.Y + 3 * curve.Control2.Y + curve.End.Y) / 8);
+                var center = curve.At(0.5);
                 result.Add(new ConnectionVisual(edge.Id, PathBetween(start, end), kind,
                     Snapshot.SelectedConnectionIds.Contains(edge.Id),
                     !destination.IsInputActive(edge.Destination.PortId), edge.Amount,
