@@ -11,7 +11,12 @@ public sealed class EnvelopeFaustEmitter : IFaustNodeEmitter
     public ParameterRange? EstimateOutputRange(SignalRangeContext context) => new(0, 1);
 
     public string Emit(FaustNodeContext context) => FaustEnvelopeSegments.EmitAd(
-        FaustSchmittEdge.Emit(context.Input(EnvelopeGenerator.TriggerPortKey)),
+        context.ConstantParameter(EnvelopeGenerator.TriggerSourceKey) switch
+        {
+            1 => context.Input(EnvelopeGenerator.EventTriggerPortKey),
+            2 => FaustSchmittEdge.Emit(context.Input(EnvelopeGenerator.GatePortKey)),
+            _ => FaustSchmittEdge.Emit(context.Input(EnvelopeGenerator.TriggerPortKey))
+        },
         context.Parameter(EnvelopeGenerator.AttackKey), context.Parameter(EnvelopeGenerator.DecayKey),
         context.Parameter(EnvelopeGenerator.AttackCurveKey), context.Parameter(EnvelopeGenerator.DecayCurveKey));
 }

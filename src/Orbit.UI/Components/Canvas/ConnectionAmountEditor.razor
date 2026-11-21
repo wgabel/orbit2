@@ -10,6 +10,13 @@
          @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true"
          @onwheel:stopPropagation="true" @onkeydown="HandleKeyDown" @onkeydown:stopPropagation="true">
     <strong>@RouteName</strong>
+    @if (IsEvent)
+    {
+        <p class="workspace-notice">Rhythmic event · unity connection. No amount control.</p>
+        <button type="button" class="secondary" @onclick="OnCancel">Close</button>
+    }
+    else
+    {
     <div class="workspace-toolbar">
         <label for="@InputId">@AmountLabel (@UnitLabel)</label>
         <input id="@InputId" type="number" step="any" value="@Draft" @oninput="EditDraft"
@@ -19,4 +26,5 @@
     </div>
     <ValidationMessage Message="@Error" MessageId="@ErrorId" />
     <p class="workspace-notice">@Explanation</p>
+    }
 </section>

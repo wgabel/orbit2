@@ -365,6 +365,51 @@ File.WriteAllText(Path.Combine(args[0], "envelope.json"), JsonSerializer.Seriali
     pitch = Tap(impactPitch), amplitude = Tap(impactAmp), trigger = Tap(impactTrigger)
 }));
 
+// Compare direct and rack-routed event fan-out through the actual compiler.
+var rhythms = new[] { SignalType.Trigger, SignalType.Gate }.Select(kind =>
+{
+    var rhythmRegistry = BuiltInNodes.CreateRegistry();
+    rhythmRegistry.Register(CompositeNode.NodeType, id => new CompositeNode(id, "Rhythm route",
+        [new ExposedPort(Guid.NewGuid(), "In", kind)], [new ExposedPort(Guid.NewGuid(), "Out", kind)]));
+    using var rhythm = new PatchSession(rhythmRegistry);
+    var graph = rhythm.GraphId;
+    GraphNodeSnapshot AddRhythm(string type) => rhythm.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+    void WireRhythm(GraphNodeSnapshot from, GraphNodeSnapshot to, string key, double amount = 1) => rhythm.Execute(new ConnectNodesCommand(graph,
+        new(from.Id, from.Outputs.Single().Id), new(to.Id, to.Inputs.Single(p => p.Key == key).Id), amount));
+    void SetRhythm(GraphNodeSnapshot node, string key, double value) => rhythm.Execute(new SetParameterValueCommand(graph, Address(node, key), value));
+    var oscillator = AddRhythm(OscillatorGenerator.NodeType);
+    SetRhythm(oscillator, "frequency", 2); SetRhythm(oscillator, "waveform", (int)OscillatorWaveform.Square);
+    var adapter = AddRhythm(kind == SignalType.Trigger ? SignalToTriggerGenerator.NodeType : SignalToGateGenerator.NodeType);
+    var route = AddRhythm(CompositeNode.NodeType);
+    var inner = route.Composite!;
+    rhythm.Execute(new ConnectNodesCommand(inner.Graph.Id, new(inner.InputRackId, route.Inputs[0].Id), new(inner.OutputRackId, route.Outputs[0].Id)));
+    var first = AddRhythm(EnvelopeGenerator.NodeType); var second = AddRhythm(EnvelopeGenerator.NodeType);
+    var voice = AddRhythm(OscillatorGenerator.NodeType); var output = AddRhythm(MasterOutput.NodeType);
+    var mode = kind == SignalType.Trigger ? 1 : 2;
+    var key = kind == SignalType.Trigger ? EnvelopeGenerator.EventTriggerPortKey : EnvelopeGenerator.GatePortKey;
+    foreach (var node in new[] { first, second })
+    {
+        SetRhythm(node, EnvelopeGenerator.TriggerSourceKey, mode);
+        SetRhythm(node, EnvelopeGenerator.AttackKey, 8); SetRhythm(node, EnvelopeGenerator.DecayKey, 100);
+    }
+    WireRhythm(oscillator, adapter, RhythmicAdapter.InputKey);
+    WireRhythm(adapter, route, route.Inputs[0].Key);
+    WireRhythm(adapter, first, key); WireRhythm(route, second, key);
+    WireRhythm(first, voice, "amplitude-modulation-in", 0.5); WireRhythm(second, voice, "frequency-modulation-in", 100);
+    WireRhythm(voice, output, "audio-in");
+    var compiled = FaustGraphCompiler.CreateBuiltIn().Compile(rhythm.Snapshot, SignalTapManifest.MaxAuxiliaryChannels);
+    int Channel(GraphNodeSnapshot n) => compiled.SignalTaps.Channels[new(graph, graph, n.Id, n.Outputs[0].Id, PortDirection.Output)];
+    return new { kind = kind.ToString(), source = compiled.Source, values = compiled.InitialControlValues(), adapter = Channel(adapter),
+        route = Channel(route), first = Channel(first), second = Channel(second),
+        mute = compiled.AuditionControls.Single(c => c.NodeId == adapter.Id && c.Kind == NodeAuditionKind.Mute).Name,
+        routeMute = compiled.AuditionControls.Single(c => c.NodeId == route.Id && c.Kind == NodeAuditionKind.Mute).Name };
+}).ToArray();
+File.WriteAllText(Path.Combine(args[0], "rhythms.json"), JsonSerializer.Serialize(new
+{
+    directSource = $"import(\"stdfaust.lib\"); process(signal) = ({FaustSchmittEdge.Emit("signal")}), ({FaustSchmittEdge.EmitGate("signal")});",
+    rhythms
+}));
+
 GraphNodeSnapshot TempoAdd(Guid graph, string type) =>
     tempoSession.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
 

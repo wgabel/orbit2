@@ -2,7 +2,7 @@ namespace Orbit.Domain.Ports;
 
 /// <summary>
 /// Describes a port's intended use, not its sample buffer implementation.
-/// Trigger, gate and clock are reserved for later DSP support.
+/// Trigger/Clock are one-sample pulses; Gate is a held binary level.
 /// </summary>
 public enum SignalType
 {
@@ -11,4 +11,9 @@ public enum SignalType
     Trigger,
     Gate,
     Clock
+}
+
+public static class SignalTypeExtensions
+{
+    public static bool IsEvent(this SignalType type) => type is SignalType.Trigger or SignalType.Gate or SignalType.Clock;
 }

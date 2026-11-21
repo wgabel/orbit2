@@ -40,6 +40,7 @@ public partial class ConnectionAmountEditor : IAsyncDisposable
     private ParameterSnapshot? TargetParameter => Destination.Parameters.SingleOrDefault(parameter =>
         parameter.ModulationPortId == Connection.Destination.PortId);
     private bool IsModulation => DestinationPort.SignalType == SignalType.Modulation;
+    private bool IsEvent => DestinationPort.SignalType.IsEvent();
     private string RouteName => $"{Source.Name}: {SourcePort.Name} → {Destination.Name}: {DestinationPort.Name}";
     private string AmountLabel => IsModulation ? "Modulation depth" : "Audio gain";
     private string UnitLabel => TargetParameter is { } target
@@ -65,6 +66,7 @@ public partial class ConnectionAmountEditor : IAsyncDisposable
 
     private void Apply()
     {
+        if (IsEvent) return;
         if (!double.TryParse(Draft, NumberStyles.Float, CultureInfo.InvariantCulture, out var amount)
             || !double.IsFinite(amount))
         {

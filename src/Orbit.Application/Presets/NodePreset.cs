@@ -40,6 +40,9 @@ public sealed class NodePreset
             values.Add(OscillatorGenerator.PitchTrackingKey, 0);
             values.Add(OscillatorGenerator.PitchKey, 0);
         }
+        if (nodeType == EnvelopeGenerator.NodeType && values.Count == 4 &&
+            new[] { EnvelopeGenerator.AttackKey, EnvelopeGenerator.DecayKey, EnvelopeGenerator.AttackCurveKey, EnvelopeGenerator.DecayCurveKey }.All(values.ContainsKey))
+            values.Add(EnvelopeGenerator.TriggerSourceKey, 0);
         Parameters = new ReadOnlyDictionary<string, double>(values);
     }
 

@@ -30,7 +30,7 @@ public sealed class EnvelopeTests
         Assert.Equal(FanInPolicy.Single, trigger.FanIn);
         Assert.Equal(SignalType.Modulation, trigger.SignalType);
         Assert.DoesNotContain(envelope.Parameters, p => p.ModulationPortId == trigger.Id);
-        Assert.All(envelope.Parameters, p => { Assert.NotNull(p.ModulationPortId); Assert.False(p.Definition.RequiresRecompile); });
+        Assert.All(envelope.Parameters.Where(p => p.Definition.Key != EnvelopeGenerator.TriggerSourceKey), p => { Assert.NotNull(p.ModulationPortId); Assert.False(p.Definition.RequiresRecompile); });
         var input = new PortAddress(envelope.Id, trigger.Id);
         var edge = graph.Connect(new PortAddress(osc.Id, osc.Outputs.Single().Id), input);
         Assert.Equal(1, edge.Amount);

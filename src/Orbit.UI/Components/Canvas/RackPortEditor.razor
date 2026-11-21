@@ -23,9 +23,12 @@
         <select id="new-rack-port-type" @bind="NewSignalType">
             <option value="@SignalType.Modulation">Modulation</option>
             <option value="@SignalType.Audio">Audio</option>
+            <option value="@SignalType.Trigger">Trigger</option>
+            <option value="@SignalType.Gate">Gate</option>
+            <option value="@SignalType.Clock">Clock</option>
         </select>
         <label for="new-rack-port-fanin">Receiving socket</label>
-        <select id="new-rack-port-fanin" @bind="NewFanIn">
+        <select id="new-rack-port-fanin" @bind="NewFanIn" disabled="@NewSignalType.IsEvent()">
             <option value="@FanInPolicy.Single">Single source</option>
             <option value="@FanInPolicy.Sum">Sum sources</option>
         </select>

@@ -111,6 +111,14 @@ public sealed class FaustNodeContext
 
     internal string InputSignal(Guid portId)
     {
+        if (Node.Inputs.Single(port => port.Id == portId).SignalType.IsEvent())
+        {
+            var edges = incoming[new PortAddress(Node.Id, portId)].ToArray();
+            if (edges.Length == 0) return "0.0";
+            if (edges.Length != 1 || edges[0].Amount != 1 || !signals.TryGetValue(edges[0].Source, out var signal))
+                throw new FaustCompilationException("Rhythmic input must have one unity source.");
+            return signal;
+        }
         var terms = incoming[new PortAddress(Node.Id, portId)].OrderBy(edge => edge.Id).Select(edge =>
         {
             if (!signals.TryGetValue(edge.Source, out var signal))

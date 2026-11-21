@@ -7,7 +7,7 @@ using Orbit.Domain.Ports;
 namespace Orbit.UI.Components.Canvas;
 
 /// <summary>Transient form state for either boundary rack. The editor never
-/// changes graph snapshots and exposes only mono audio/modulation port creation.</summary>
+/// changes graph snapshots and exposes mono continuous and rhythmic ports.</summary>
 public partial class RackPortEditor
 {
     [Parameter, EditorRequired] public Guid GraphId { get; set; }
@@ -19,7 +19,12 @@ public partial class RackPortEditor
     private PortDirection Direction => IsInputRack ? PortDirection.Input : PortDirection.Output;
     private IReadOnlyList<PortDefinition> Ports => IsInputRack ? Rack.Outputs : Rack.Inputs;
     private string NewName { get; set; } = "";
-    private SignalType NewSignalType { get; set; } = SignalType.Modulation;
+    private SignalType signalType = SignalType.Modulation;
+    private SignalType NewSignalType
+    {
+        get => signalType;
+        set { signalType = value; if (value.IsEvent()) NewFanIn = FanInPolicy.Single; }
+    }
     private FanInPolicy NewFanIn { get; set; } = FanInPolicy.Single;
     private string? Error { get; set; }
 

@@ -46,7 +46,8 @@ public sealed class SignalGraphValidator
         if (ports.Any(port => port.Id == Guid.Empty ||
                 string.IsNullOrWhiteSpace(port.Key) || string.IsNullOrWhiteSpace(port.Name) ||
                 port.ChannelCount < 1 || !Enum.IsDefined(port.SignalType) ||
-                !Enum.IsDefined(port.Direction) || !Enum.IsDefined(port.FanIn)))
+                !Enum.IsDefined(port.Direction) || !Enum.IsDefined(port.FanIn) ||
+                port.SignalType.IsEvent() && (port.ChannelCount != 1 || port.FanIn != FanInPolicy.Single)))
             throw new GraphValidationException("Every port needs a valid definition.");
 
         if (ports.Select(port => port.Id).Distinct().Count() != ports.Length ||
@@ -96,6 +97,7 @@ public sealed class SignalGraphValidator
 
         if (!AreCompatible(output, input))
             throw new GraphValidationException("Port signal types or channel counts are incompatible.");
+        ValidateConnectionAmount(connection.Amount, input.SignalType);
 
         if (graph.Connections.Any(existing => existing.Id == connection.Id ||
             (existing.Source == connection.Source && existing.Destination == connection.Destination)))
@@ -110,10 +112,12 @@ public sealed class SignalGraphValidator
     }
 
     /// <summary>Signed, finite coefficients are valid for existing and new edges.</summary>
-    public static void ValidateConnectionAmount(double amount)
+    public static void ValidateConnectionAmount(double amount, SignalType type = SignalType.Audio)
     {
         if (!double.IsFinite(amount))
             throw new GraphValidationException("Connection amount must be a finite number.");
+        if (type.IsEvent() && amount != 1)
+            throw new GraphValidationException("Rhythmic event connections must have unity amount (1).");
     }
 
     // A mono audio oscillator can drive a modulation input at any rate. The
@@ -121,6 +125,7 @@ public sealed class SignalGraphValidator
     private static bool AreCompatible(PortDefinition output, PortDefinition input) =>
         output.ChannelCount == input.ChannelCount &&
         (output.SignalType == input.SignalType ||
+            (output.SignalType == SignalType.Clock && input.SignalType == SignalType.Trigger) ||
             (output.SignalType == SignalType.Audio && input.SignalType == SignalType.Modulation));
 
     private static bool CreatesCycle(SignalGraph graph, Guid sourceId, Guid destinationId)

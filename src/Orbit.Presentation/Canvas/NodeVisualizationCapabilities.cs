@@ -11,7 +11,7 @@ public static class NodeVisualizationCapabilities
 {
     public static IEnumerable<PortDefinition> EligiblePorts(GraphNodeSnapshot node) =>
         node.Outputs.Concat(node.Inputs.Where(port => node.IsInputActive(port.Id)))
-            .Where(port => port.ChannelCount == 1 && port.SignalType is SignalType.Audio or SignalType.Modulation);
+            .Where(port => port.ChannelCount == 1);
 
     public static PortDefinition? ResolvePort(GraphNodeSnapshot node, Guid? preferredPortId) =>
         EligiblePorts(node).FirstOrDefault(port => port.Id == preferredPortId) ?? EligiblePorts(node).FirstOrDefault();
@@ -29,7 +29,7 @@ public static class NodeVisualizationCapabilities
         return settings with
         {
             PortId = node.Outputs.Concat(node.Inputs).Any(port => port.Id == settings.PortId &&
-                port.ChannelCount == 1 && port.SignalType is SignalType.Audio or SignalType.Modulation) ? settings.PortId : null,
+                port.ChannelCount == 1) ? settings.PortId : null,
             Mode = settings.Mode == "response" && SupportsResponse(node) ? "response" : Choice(settings.Mode, "waveform", "spectrum", "level"),
             Timebase = settings.Timebase == "cycle" && SupportsCycle(node, settings.PortId) ? "cycle" :
                 Choice(settings.Timebase, "0.02", "0.005", "0.05", "1", "5", "10"),

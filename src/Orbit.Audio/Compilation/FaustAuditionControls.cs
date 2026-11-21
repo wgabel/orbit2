@@ -1,5 +1,6 @@
 using Orbit.Application.Graphs.Snapshots;
 using Orbit.Domain.Nodes;
+using Orbit.Domain.Ports;
 
 namespace Orbit.Audio.Compilation;
 
@@ -16,12 +17,18 @@ internal sealed class FaustAuditionControls(List<string> definitions)
         var expression = wet;
         if (node.BypassInputKey is { } key)
         {
-            var blend = GetControl(NodeAuditionKind.Bypass, node, origin);
+            var blend = $"orbit_audition_ramp({GetControl(NodeAuditionKind.Bypass, node, origin)})";
             // Multiplication keeps the wet computation running even at full bypass.
             expression = $"((1.0 - {blend}) * ({wet}) + {blend} * {context.Input(key)})";
         }
         if (node.SupportsMute)
-            expression = $"({expression}) * {GetControl(NodeAuditionKind.Mute, node, origin)}";
+        {
+            var mute = GetControl(NodeAuditionKind.Mute, node, origin);
+            // A mixed-output composite shares one raw control but only continuous routes slew.
+            expression = node.Outputs.Single().SignalType.IsEvent()
+                ? $"({expression}) * ({mute} >= 0.5)"
+                : $"({expression}) * orbit_audition_ramp({mute})";
+        }
         return expression;
     }
 
@@ -32,7 +39,7 @@ internal sealed class FaustAuditionControls(List<string> definitions)
         var name = $"{kind.ToString().ToLowerInvariant()}_{origin.GraphId:N}_{origin.NodeId:N}";
         var defaultValue = kind == NodeAuditionKind.Mute ? 1 : 0;
         controls.Add(address, new(origin.GraphId, origin.NodeId, kind, name, FaustAuditionControl.Target(kind, node)));
-        definitions.Add($"{name} = orbit_audition_ramp(hslider(\"{name}\", {defaultValue}, 0, 1, 1));");
+        definitions.Add($"{name} = hslider(\"{name}\", {defaultValue}, 0, 1, 1);");
         return name;
     }
 

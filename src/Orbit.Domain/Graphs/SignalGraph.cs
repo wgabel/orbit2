@@ -112,7 +112,8 @@ public sealed class SignalGraph
     public SignalConnection SetConnectionAmount(Guid connectionId, double amount)
     {
         var previous = GetConnection(connectionId);
-        SignalGraphValidator.ValidateConnectionAmount(amount);
+        var type = GetNode(previous.Destination.NodeId).Inputs.Single(port => port.Id == previous.Destination.PortId).SignalType;
+        SignalGraphValidator.ValidateConnectionAmount(amount, type);
         if (previous.Amount == amount) return previous;
         var updated = previous with { Amount = amount };
         connections[connections.IndexOf(previous)] = updated;

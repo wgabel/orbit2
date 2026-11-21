@@ -30,16 +30,16 @@ public abstract class SignalNode : ISignalNode
 
         // Activation depends only on a local, unconditional structural choice.
         // This avoids recursive conditions or per-sample structural changes.
-        foreach (var parameter in Parameters)
+        foreach (var activation in Parameters.Select(parameter => parameter.Definition.ActiveWhen)
+            .Concat(Inputs.Select(port => port.ActiveWhen)).OfType<ParameterActivation>())
         {
-            if (parameter.Definition.ActiveWhen is not { } activation) continue;
             foreach (var condition in activation.Conditions())
             {
                 var selector = Parameters.SingleOrDefault(candidate => candidate.Definition.Key == condition.SelectorKey);
                 if (selector is null || selector.Definition.ActiveWhen is not null ||
                     !selector.Definition.RequiresRecompile || selector.Definition.Choices is null ||
                     !selector.Definition.IsValidBaseValue(condition.EqualsValue))
-                    throw new ArgumentException("Parameter activation requires a valid unconditional structural choice.", nameof(parameters));
+                    throw new ArgumentException("Activation requires a valid unconditional structural choice.", nameof(parameters));
             }
         }
     }
