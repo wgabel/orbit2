@@ -1616,6 +1616,95 @@ flowchart TD
 
 **Acceptance.** Test actual compiled Faust at 44.1/48 kHz: falling/constant/disconnected input, oscillator rising edges, exact segment timing/endpoints and bounded amplitude, onset slope, retrigger continuity, early gate release, sustain, looping with zero-duration safeguards, shared trigger alignment across nested graphs, typed route validation and persistence, tempo/division/reset/wrap behavior, manual action latency and stale generation rejection, and no recompile or graph/history mutation on events. Render the worked pitch/amplitude patch offline to verify its frequency and level trajectories and distinguish clipping from amplitude jumps. Published browser tests cover shared editors/visualizations, presets, live parameter changes and transient actions. These features are planned; current Orbit2 has only continuous oscillator/noise sources and no envelope or typed event DSP nodes yet.
 
+### Musical instrument synthesis and physical modelling (planned Phase 7.2)
+
+**Goal and scope.** Build editable synthesized instrument approximations from reusable oscillators, noise, filters, effects, envelopes, pitch controllers and resonators. Do not create a separate DSP class for each instrument. An instrument template is an ordinary composite graph with stable named rack inputs, independent state and an audio output. Preserve the possibility of opening it, inspecting its components, changing routing and saving a new configuration. This is sound design, not a claim of exact reproduction of acoustic instruments. Sample-based approximations and hybrid instruments can additionally use Phase 8 assets later.
+
+#### Existing capabilities and worked instrument patches
+
+Start with a built-in example-patch/composite catalog using existing nodes and the existing registered template mechanism. No DSP node or event source is needed for these initial sustained versions. Examples contain documented settings and safe gain staging, not just a name on an oscillator preset. Add the Phase 6.19 notes and labels when available; independent examples can ship before that work. Starting configurations are illustrative and should be adjusted by listening and examining the shared scope/FFT, not treated as measured acoustic spectra.
+
+| Instrument | Existing synthesis recipe | Later improvement |
+|---|---|---|
+| Organ | Additive bank of sines at a fundamental and integer multiples, weighted mixer, chorus/reverb. | Pitch tracking, gate, independent drawbar-style macro controls. |
+| Flute | Dominant sine at 220 Hz (amplitude 0.3), second harmonic at 440 Hz (0.05), quiet white noise (0.03) through a band-pass around 1.8 kHz with Q 2, summed with modest reverb. | Breath/vibrato controls, shaped attack/release and consistent relative pitch tracking. |
+| Analog brass | Saw/triangle layers, resonant low-pass, EQ and reverb. | Separate amplitude/filter envelopes and velocity-dependent brightness. |
+| Bowed strings | Detuned saw/triangle oscillator layers, resonant filtering, chorus and reverb. | Bow-like excitation, slow attack, vibrato and resonant body. |
+| Didgeridoo / vocal drone | Low sawtooth around 65 Hz, quiet brown noise, independently tuned parallel band-pass filters or EQ bands and slowly moving cutoff. | Several independently controllable vocal/formant resonances and breath excitation. |
+| Handpan, bell, gong and struck wood | Approximate a fixed-pitch ring with an oscillator bank or filtered noise; natural repeated strikes require envelope or impulse excitation. | Damped modal resonators with independent frequency, decay and level; velocity and trigger input. |
+| Piano / plucked strings | Limited with continuous oscillators; do not market a static harmonic patch as a natural piano. | Short excitation, multiple decaying modes, later string/waveguide or sample hybrid modelling. |
+
+An organ example at 130.81 Hz uses five sine voices at ratios 1:2:3:4:5 and amplitudes 0.30, 0.15, 0.10, 0.05 and 0.025. Its fundamental and harmonics can be mixed before effects with sufficient peak headroom. A flute example uses both tonal and breath lanes; later an ADSR can shape the tonal amplitude while a separate envelope controls the breath lane. Apply vibrato to the shared pitch reference rather than modifying only the fundamental when harmonic tuning must remain intact.
+
+~~~mermaid
+flowchart TD
+    P[Shared pitch] --> A[Fundamental oscillator]
+    P --> B[Harmonic oscillators]
+    A --> M[Weighted mixer]
+    B --> M
+    N[Noise] --> F[Breath filter]
+    F --> M
+    M --> G[Envelope-controlled gain]
+    G --> R[Reverb]
+    R --> O[Audio output]
+~~~
+
+#### Reusable musical pitch and note control
+
+Existing frequency modulation is linear Hz. Multiplying or adding the same Hz depth to several different-frequency oscillators does not generally preserve musical intervals. Keep all existing free/BPM timing, frequency ports, base values, connections and additive behavior compatible. Introduce shared pure pitch conversion and an explicit pitch-tracking mode or capability for pitched generators and resonators, with semantic modulation input measured in semitones (fine tuning in cents). Define one convention: `p=0` means the configured base tuning; `f = f_base * 2^(p/12)` for semitone offset p. Fine offsets can be fractional. A separate existing linear-Hz input is added after pitch scaling where supported; clamp the final physical frequency to its existing valid/sample-rate range. The order must be identical in DSP and prediction. Default pitch tracking off for existing patches; inactive connection/settings are retained with the conditional parameter system. Use shared parameter definitions, display mapping and live values, not a note-specific UI in each oscillator. Musical note names and optional Hz readout can be derived by a pure tuning utility; changing the tuning mode must not silently reinterpret previously saved Hz amounts.
+
+After Phase 7.1 typed events, add a generic monophonic `NoteSource` or equivalent composable runtime sources. Store note/tuning/velocity configuration in the graph, but treat key press/release as transient actions. The first version implements a reference MIDI-note-number convention (A4 = 440 Hz, note 69) without requiring hardware MIDI: emit a held semitone offset `noteNumber - 69`, Gate, one-sample Trigger and velocity 0–1. Pitch and velocity use ordinary continuous modulation connections with explicit unit semantics; Gate/Trigger reuse the typed contracts. A single pitch source can drive multiple generators with different base frequencies and resonators with different ratios, preserving intervals. If one multi-output node requires compiler work, introduce general output-address lowering with per-instance state reuse and tests; do not duplicate the note state machine in independent DSP emitters. Begin with an accessible on-screen keyboard/manual note action and clearly defined last-note priority, repeated note, legato/retrigger and key-release rules. Optional hardware MIDI is a separate browser input adapter using the same application event contract, not a Domain dependency.
+
+~~~mermaid
+flowchart TD
+    K[Keyboard or sequencer] --> N[Note source]
+    N -->|Pitch offset| S[Pitched oscillator bank]
+    N -->|Gate or trigger| E[Shared envelope]
+    N -->|Velocity| G[Gain or excitation]
+    E --> G
+    S --> G
+    G --> O[Audio output]
+~~~
+
+Runtime note actions are generation-qualified and scheduled on the shared sample timeline, following Phase 7.1 event delivery. Do not rebuild or recompile the graph for notes, change persisted base settings, or record note-on/off in graph undo history. Pitch/velocity update coherently with gate/trigger on the intended sample; stop, navigation/runtime replacement, losing input focus or disconnection must not leave a stuck gate. Reject stale events and bound queues. Keep a held note's sound stable across ordinary parameter edits; failed structural replacements retain the last-good runtime. Test note-to-Hz mapping, exact octaves, harmonic ratios under vibrato, monotonic pitch modulation, conditional connections and accurate range estimation. Full polyphonic note allocation is deferred until monophonic performance is reliable.
+
+#### Resonator processor and modal synthesis
+
+A resonator is an **audio-input processor**, not an oscillator that always generates a sound. An impulse or noise burst supplies excitation; the internal resonant state rings at its tuned frequency even after input returns to zero. A sustained input may continue exciting it. This makes body resonances and struck instruments possible without a recording. Begin with one `processor.resonator` using the existing node registry, common parameter UI, modulation, bypass/dry contract where appropriate and shared visualization. It is useful by itself for ringing textures and as a component of modal synthesis.
+
+| Initial parameter | Meaning and implementation |
+|---|---|
+| Frequency (Hz) | Resonant center frequency with the normal non-linear display scale and optional shared pitch tracking; bounded below Nyquist. |
+| Decay (seconds, T60) | Time for free-decaying amplitude to fall by 60 dB; positive, finite, bounded (initial proposal 0.02–20 s, tuned through profiling). |
+| Excitation gain | Linear control of input energy into the resonator; bounded and modulatable. |
+| Output gain / mix | Explicit level/headroom and optional dry/wet audition using existing effect contracts; no undocumented automatic loudness normalization. |
+
+In `Orbit.Audio`, implement a reusable sample-rate-aware damped second-order mode; one candidate is the complex state recurrence `z[n] = r * exp(i*theta) * z[n-1] + g*x[n]`, with real or imaginary output explicitly chosen and documented, `theta = 2*pi*f/Fs`, and `r = exp(-ln(1000)/(T60*Fs))`. For fixed coefficients a free amplitude decays to 0.001 after T60; poles stay inside the unit circle for finite positive decay. Derive a real-valued equivalent for Faust, share coefficients with any pure response provider and compare against compiled DSP. A selected normalization convention must explicitly distinguish impulse response from sustained-input resonant gain; longer decay can increase steady-state level, so bound excitation and document headroom. Do not substitute an arbitrary high-Q low-pass or tune Q as if it were independently specified decay. Verify stable coefficient changes (frequency, decay), finite ranges and smoothing under audio-rate modulation; the rotation-state form with bounded radius preserves a useful stability invariant even with time-varying coefficients. Keep all inner feedback sample-delayed inside the emitter, not a cycle in the editable graph. Initial state is zero; silence alone does not self-oscillate. Retain resonant state for ordinary live base edits, and document possible tail loss during topology replacement. Use conservative prediction only when provable; otherwise mark output range unknown. No fake acoustic output should enter signal analysis.
+
+**Modal synthesis** models a vibrating object as several independently tuned decaying modes. First build an editable composite `Modal Instrument` with regular individual resonators connected in parallel to one excitation input and summed with per-mode weights. This proves the model and uses existing graph/rack/mixer infrastructure. A reusable compact `ModalResonatorBank` processor can follow when the composite becomes cumbersome or profiling justifies sharing computation. It reuses the same mode algorithm, not a second synth engine. Its bounded immutable mode definitions contain stable per-mode IDs, frequency ratio (or fixed Hz), decay/T60 and relative gain. A common base pitch tunes the whole bank, with explicit brightness/decay/intensity macros where meaningful. Bound mode count (initially 4–16), define fixed versus tracking mode and safe frequency limits, preserve identity on edits, and validate mode payloads through graph commands, snapshots, JSON and history. Structural changes such as mode count or definitions may recompile/crossfade; common continuous controls use existing live parameter updates. Either extend presets with a separately versioned validated mode payload later or store the initial mode combinations as composite templates; never silently drop them from scalar presets. Begin with editable ordinary nodes and reuse the shared response/analysis views for configured versus measured resonances; add a specialized mode-table editor only if generic parameters/composite editing cannot express the data well.
+
+~~~mermaid
+flowchart TD
+    T[Trigger or note velocity] --> E[Short AD envelope]
+    N[Noise burst] --> X[Excitation gain]
+    E --> X
+    X --> R1[Low mode]
+    X --> R2[Middle mode]
+    X --> R3[High mode]
+    R1 --> M[Weighted mixer]
+    R2 --> M
+    R3 --> M
+    M --> O[Audio output]
+~~~
+
+Use a very short AD-controlled white noise burst or a bounded pulse from the rhythmic infrastructure for a strike. The latter needs an explicit audio-excitation adapter rather than an implicit Trigger-to-Audio wire. Example synthetic handpan-like modes at 220, 440 and 660 Hz with respective T60 values around 1.5, 0.8 and 0.4 s and decreasing gains give a tuned ring that changes naturally over time. These are starting values for an approximation, not a measured handpan model. An inharmonic metal/bell template can use non-integer frequency ratios and longer independent decays; a wood template shorter T60 values and quieter upper modes. Velocity controls energy at the excitation input; multiple strikes superpose in the resonator states according to their excitation and headroom. Resonators must not be reset for every strike. Consider bowed/plucked-string waveguides, tube models and formant banks only after the simpler resonators have been measured; advanced models need independent stability and performance criteria.
+
+#### Reuse, polyphony and verification
+
+Use ordinary composite templates with named macro-style rack inputs (`Pitch`, `Gate`, `Velocity`, `Brightness`, `Excitation`, etc., exposing only applicable ports), shared preset catalog and annotation features. For rate-dependent tuning, a pitched bank receives the same semitone signal, not one Hz amount per oscillator guessed from a UI. Phase 7.1 ADSR enables held instruments, and AD/pulses enable strikes. Begin with monophonic templates, then design a bounded polyphonic voice allocator (fixed precompiled voice capacity, explicit voice stealing/release and peak headroom). Note actions must activate existing voice states rather than add/remove graph nodes, allocate in the audio callback or recompile per key. Independent notes retain independent envelopes and resonator tails; polyphonic performance must be profiled before promising a large voice count. Hardware MIDI, sequencer-driven pitch and sample hybrids reuse the same pitch/note/action interface when available.
+
+Keep Domain node definitions/validation independent from browser/Faust, Application contracts/commands and template registry independent from the renderer, pure pitch/coefficient math and emitters in Audio, worklet event delivery in Infrastructure, and readable projection/controls in Presentation/UI. Maintain immutable snapshot and portable persistence compatibility. Compile and render deterministic impulse/noise fixtures at 44.1/48 kHz: verify resonant center/decay T60, zero-input silence, frequency tracking, spectral ratios, stable fast modulation, independent per-mode decays, retrigger superposition, finite bounds and no unintended master clipping or instability. Test live note/gate timing, no graph mutation per note, stale events, nested racks, voice independence and bounded CPU/memory. Reuse the shared scope and spectrum for actual signal and processor response views for configured stationary response. No new sample observation channels are required for synthesis. Annotated example patches and listening checks complement, but do not replace, numerical regression tests.
+
 ### Sample-based synthesis and audio assets (planned Phase 8)
 
 Imported recordings (voice, instruments, field recordings) are reusable immutable assets, not graph parameters or DSP source code. A `SamplePlayer` generator reads an asset and emits an ordinary audio signal, allowing the same routing, modulation, nesting and effects as oscillator generators. Other sample-based generators reuse the asset subsystem.
@@ -2111,6 +2200,7 @@ Deliverable: a musician can open a previously saved or shared complex patch, ide
 
 - More filters, EQ, delay, chorus, flanger, compression and reverb.
 - Random, step sequencers, automation, explicit feedback; reuse the Phase 7.1 event and envelope infrastructure.
+- Musical pitch/note control, resonator and modal instrument templates; reuse Phase 7.1 articulations and existing composite graphs (Phase 7.2).
 - Additional routing adapters and channel handling; extend Phase 6.18 observation infrastructure to multichannel signals and future node types.
 - Group/ungroup nodes; versioned reusable graph definitions.
 - Improve graph swap continuity, compile cache and performance profiling.
@@ -2129,6 +2219,18 @@ Deliverable: a scalable modular environment, adding functionality through node d
 - **7.1.7 — Custom multi-point envelopes:** bounded versioned breakpoint definitions, reusable segment evaluation, atomic edit/history and compatible persistence; documented loop and trigger behavior.
 
 Deliverable: an oscillator can repeatedly trigger a percussion envelope without any new timing node; later explicit trigger, gate and clock nodes can drive several independently shaped envelopes or other event consumers in sample-aligned fashion. Phase 6.18 visualization remains the shared display foundation; sequencers and sample playback reuse the event contracts.
+
+#### Phase 7.2 — Musical instrument synthesis and physical modelling (planned)
+
+- **7.2.1 — Existing-node instrument templates:** editable organ, flute, brass, string and didgeridoo approximations using harmonic oscillators, filtered noise, mixers, effects and safe gain staging; validate worked patches and document settings. Can ship before envelopes or other Phase 7.2 steps.
+- **7.2.2 — Musical pitch tracking:** pure note/Hz/semitone/cents conversion, explicit backwards-compatible pitch tracking on pitched generators, shared audio-rate mapping and range prediction, preserved harmonic intervals, stable tuning and conditional connections.
+- **7.2.3 — Monophonic note source:** sample-aligned pitch/gate/trigger/velocity outputs, on-screen note actions and generic multi-output lowering where required; reuse Phase 7.1 event delivery and ADSR, no recompilation or graph history on note events. Define release/retrigger, legato and focus-loss behavior.
+- **7.2.4 — Resonator processor:** reusable damped-mode Faust emitter with independently modulatable frequency, decay/T60 and excitation/output gain, stable sample-rate-aware coefficient math, compatible persistence/presets and impulse/spectrum/stability regression tests. Independent of note-source work; ordinary signals can excite it.
+- **7.2.5 — Modal synthesis:** parallel resonator composite first, then bounded configurable modal bank if needed; short AD/noise or pulse excitation, independent tuned/inharmonic mode ratios and decays, shared pitch and velocity, handpan-like, bell, gong and wood templates, response and spectrum views.
+- **7.2.6 — Playable instrument templates and polyphony:** add reusable note-controlled organ, flute, brass, bowed-string and modal instruments with expressive rack inputs, annotated recipes, optional browser MIDI adapter and bounded precompiled voice allocation once monophonic timing is proven. Profile CPU/memory, voice stealing and independent releases before increasing voice counts.
+- **7.2.7 — Further physical models:** investigate string/waveguide, tube/formant and hybrid sample excitation models only after verified resonator/modal performance, with explicit stability, tuning and resource acceptance criteria.
+
+Deliverable: play and edit a synthesized instrument as an ordinary Orbit2 graph; excite a handpan-like modal bank with short bursts and different pitches/velocities; use the same pitch, gate, envelope and resonator components for sustained and percussive sounds without hardcoded instrument-specific DSP. Phase 8 later adds recorded assets and hybrid techniques.
 
 ### Phase 8 — Audio assets and sample-based synthesis (planned)
 
@@ -2156,6 +2258,8 @@ The core model should be independently unit testable without a browser or Faust.
 | Sample rate | Oscillator frequency and tempo sync correct at both 44.1 and 48 kHz. |
 | Transport | 120 BPM quarter note = 0.5 seconds; synchronized LFOs share expected phase/reset. |
 | Envelope and rhythmic events (planned) | Oscillator edges trigger one AD each, exact duration/endpoints at 44.1/48 kHz, retrigger from current value, gate-off release, shared trigger fan-out, typed routing and nested persistence, no phantom pulses across transport wraps/replacements and no graph revisions on runtime actions. |
+| Pitch and instruments (planned) | Reference-note conversion and exact octave/harmonic ratios, compatible additive Hz and pitch modes, sample-aligned pitch/gate/trigger/velocity, no graph commits on note actions, independent voices, valid editable templates and bounded CPU/headroom. |
+| Resonators and modal synthesis (planned) | Compiled impulse responses at 44.1/48 kHz match tuned center and amplitude T60, silence does not self-oscillate, repeated excitation retains ringing state, rapid modulation stays finite/stable, modal frequency and independent decays match configuration, and template/bank state round-trips with undo and persistence. |
 | Fan-out | One output can feed several processors without duplicating generator runtime state. |
 | Composite | Flattening a subgraph produces equivalent routing to a flat graph. |
 | Rack ports | Add/remove/rename/reorder updates both views; rename/reorder retains connections. |
