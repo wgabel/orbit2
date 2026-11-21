@@ -875,10 +875,13 @@ try {
         await page.locator("#node-type").selectOption(type);
         const transform = await world.getAttribute("style");
         const existing = await articles.evaluateAll(nodes => Object.fromEntries(nodes.map(node => [node.dataset.nodeId, node.getAttribute("style")])));
-        const count = await articles.count();
         await page.getByRole("button", { name: "Add", exact: true }).click();
-        const added = articles.nth(count);
+        // Boundary racks paint above ordinary nodes, so DOM order no longer
+        // matches addition order in nested canvases. Identify the new node by ID.
+        const added = page.locator("article[data-node-id]" + Object.keys(existing)
+            .map(id => `:not([data-node-id='${id}'])`).join(""));
         await added.waitFor();
+        assert.equal(await added.count(), 1);
         assert.equal(await world.getAttribute("style"), transform, "Adding must not pan or zoom the canvas");
         const result = await added.evaluate(node => {
             const header = node.querySelector(".node-header").getBoundingClientRect();
