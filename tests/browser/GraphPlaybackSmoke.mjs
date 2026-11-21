@@ -24,6 +24,7 @@ const reverb = JSON.parse(await readFile(resolve(directory, "reverb.json"), "utf
 const chorus = JSON.parse(await readFile(resolve(directory, "chorus.json"), "utf8"));
 const mute = JSON.parse(await readFile(resolve(directory, "mute.json"), "utf8"));
 const observation = JSON.parse(await readFile(resolve(directory, "observation.json"), "utf8"));
+const dynamicTaps = JSON.parse(await readFile(resolve(directory, "dynamic-taps.json"), "utf8"));
 const pitch = JSON.parse(await readFile(resolve(directory, "pitch.json"), "utf8"));
 const rhythmic = JSON.parse(await readFile(resolve(directory, "rhythmic-sources.json"), "utf8"));
 const root = resolve("src/Orbit.Infrastructure/wwwroot/audio");
@@ -196,6 +197,71 @@ try {
         assert.ok(result.bypassError < 1e-6, "Bypass tap did not observe dry signal");
         assert.ok(result.weightedError < 1e-5, "Rack tap did not observe weighted route");
     }
+    // Exercise the actual worklet parameter -> passive ACK -> fresh analyzer path
+    // for a graph larger than the physical slot budget.
+    const dynamicResults = await page.evaluate(async fixture => {
+        const { FaustCompilerClient } = await import('/Faust/FaustCompilerClient.js');
+        const { FaustMonoDspGenerator } = await import('/generated/modulated-sine/faustwasm/index.js');
+        const { FaustNodeFactory } = await import('/Faust/FaustNodeFactory.js');
+        const { FaustOutputMonitor } = await import('/Faust/FaustOutputMonitor.js');
+        const { SignalCapture } = await import('/Components/SignalCapture.js');
+        const compiler = new FaustCompilerClient(() => new Worker('/Faust/FaustCompilerWorker.js', {type:'module'}));
+        const context = new AudioContext();
+        let node, capture, monitor;
+        try {
+            await context.resume();
+            const factory = new FaustNodeFactory(null, new Map(), () => new FaustMonoDspGenerator(), compiler);
+            node = await factory.create(context, 'DynamicTaps', fixture.values, fixture.source);
+            monitor = new FaustOutputMonitor(node);
+            capture = new SignalCapture(context, node, fixture.channels, {
+                selectorCount: fixture.count,
+                write: (slot, token) => factory.setParameters(node, {[`orbit_tap_select_${slot}`]: token}),
+                ack: slot => monitor.getTapAcknowledgement(slot)
+            });
+            capture.connectMaster(context.destination);
+            const observe = (lease, selector) => capture.observe(lease, selector, 'live-dynamic');
+            const frequency = frame => {
+                const samples = frame.samples, crossings = [];
+                for (let i = 1; i < samples.length; i++) if (samples[i-1] <= 0 && samples[i] > 0)
+                    crossings.push(i - 1 - samples[i-1] / (samples[i] - samples[i-1]));
+                return (crossings.length - 1) * frame.sampleRate / (crossings.at(-1) - crossings[0]);
+            };
+            async function read(lease, selector) {
+                const deadline = performance.now() + 4000;
+                do {
+                    const result = observe(lease, selector);
+                    if (result.frame) return frequency(result.frame);
+                    await new Promise(resolve => setTimeout(resolve, 20));
+                } while (performance.now() < deadline);
+                throw new Error(`Timed out waiting for selector ${selector} acknowledgement and fresh samples`);
+            }
+            const idle = capture.getDiagnostics(), frequencies = [];
+            for (const oscillator of fixture.oscillators) {
+                frequencies.push(await read('individual', oscillator.selector));
+                capture.release('individual');
+            }
+            const first = fixture.oscillators.slice(0, 8);
+            const concurrent = await Promise.all(first.map((oscillator, i) => read(`view${i}`, oscillator.selector)));
+            const ninth = observe('ninth', fixture.oscillators[8].selector).availability;
+            await read('alias', first[0].selector);
+            capture.release('view0');
+            const shared = observe('ninth', fixture.oscillators[8].selector).availability;
+            capture.release('alias');
+            const reused = await read('ninth', fixture.oscillators[8].selector);
+            return {idle, frequencies, concurrent, ninth, shared, reused};
+        } finally {
+            capture?.dispose(); monitor?.dispose(); node?.disconnect(); node?.destroy(); compiler.dispose(); await context.close();
+        }
+    }, dynamicTaps);
+    console.log('Dynamic live tap fixture', dynamicResults);
+    assert.deepEqual(dynamicResults.idle, {occupiedSlots:0, freeSlots:8, activeLeases:0});
+    for (const [i, frequency] of dynamicResults.frequencies.entries())
+        assert.ok(Math.abs(frequency - dynamicTaps.oscillators[i].frequency) < 1, 'Incorrect individually selected live tap');
+    for (const [i, frequency] of dynamicResults.concurrent.entries())
+        assert.ok(Math.abs(frequency - dynamicTaps.oscillators[i].frequency) < 1, 'Incorrect concurrent live tap');
+    assert.equal(dynamicResults.ninth, 4);
+    assert.equal(dynamicResults.shared, 4);
+    assert.ok(Math.abs(dynamicResults.reused - dynamicTaps.oscillators[8].frequency) < 1, 'Reused slot retained stale audio');
     const result = await page.evaluate(async ({ source, manifest }) => {
         const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
         const { FaustNodeFactory } = await import("/Faust/FaustNodeFactory.js");
