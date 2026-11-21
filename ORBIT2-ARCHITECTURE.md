@@ -1082,6 +1082,51 @@ flowchart TD
 
 The only direction from the signal graph to annotations is reconciliation of identity/membership. No reverse dependency into the audio path is introduced. Test root and nested note edits, independent identities, undo/redo, visible placement at pan/zoom, bounds and fit, keyboard isolation, deletion/restoration, invalid import rejection, old documents, named snapshots and reload. Verify unchanged graph revision, signal node/edge count, compiler identity and active playback generation for every annotation action, including edits while playing. Ship a small annotated example patch when the shared documentation features are ready.
 
+#### Connection amount badges and inline editing (planned Phase 6.19.5)
+
+Every connection already owns a signed finite `SignalConnection.Amount`. Make this configured value readable directly on its cable, without requiring the user to select each connection. The badge is a derived presentation of the committed edge, distinct from the optional human-authored connection description in Phase 6.19.2. It never introduces a second copy of the amount, a new signal port, or a modulation destination.
+
+| Receiving destination | Example badge | Meaning |
+|---|---|---|
+| Frequency / cutoff parameter | `+100 Hz` | Multiply the source by 100 Hz before adding to the base value. |
+| Normalized amplitude / mix | `−0.3` | Inverted modulation coefficient, not the current effective amplitude. |
+| Parametric EQ gain | `+6 dB` | Additive depth in the receiving parameter's unit, not an audio-route gain. |
+| Phase parameter | `+90°` | Additive depth in degrees. |
+| Audio input or intermediate rack/modulation route | `×0.5` | Dimensionless multiplier; the final parameter unit applies only at its direct input. |
+| Future typed event route | `Trigger`, `Gate` or `Clock` | Unity event semantics; no ordinary amount control. |
+
+Extract shared destination/amount semantics and formatting from `ConnectionAmountEditor` into reusable presentation helpers, resolving the graph-qualified source and destination, target parameter, unit, active state and actual default amount (currently 1). Use the existing parameter unit vocabulary; display short, readable signed values, with full precision and route name available in the accessible label/inspector. A positive depth means a positive coefficient, not necessarily a positive signal; actual contribution depends on source amplitude, polarity and upstream routing. Do not label an audio multiplier as dB or present a depth as a measured live value. No special cases by node type.
+
+**Visual placement and visibility.** Extend `ConnectionVisual` and the existing `ConnectionLayer`/`ConnectionPath` projection with the badge data and stable connection ID. Evaluate the same cubic `BezierConnection` used by the wire at its midpoint (and nearby candidate positions when necessary) in world coordinates; project using the same `CanvasViewport`. Render one reusable, tokenized badge component, preferably an HTML button overlay aligned with the SVG cable, so pointer and keyboard behavior do not depend on SVG text hit testing. Labels follow live node movement, backwards cables, panning and zoom without separate topology or continuous DOM polling. Keep text legible and hit targets usable in screen space. Do not enlarge node frames or draw new signal connectors. Avoid overlapping nodes, ports and existing badges using deterministic screen-space placement, prioritizing selected connections and reducing unselected labels when necessary. Hidden/colliding labels must remain discoverable by selecting the cable. Reuse measured bounds and avoid additional audio/animation work for labels; do not allocate a per-edge signal analyser.
+
+Add a compact **Connection labels** toolbar choice with four modes, scoped to each root/nested canvas and persisted as an optional `SavedCanvas` preference (default All):
+
+- **All:** show eligible configured amounts, subject to viewport, zoom and collision limits.
+- **Modified:** show amounts differing from the actual connection creation default (currently 1); selected connections also show their value.
+- **Selected:** show selected connection amounts only.
+- **Off:** hide all badges, retaining normal cable selection and the inspector.
+
+At low zoom suppress unselected badges automatically using a shared configurable threshold; retain an eligible selected badge when practical. Use existing signal colors and semantic surface/focus tokens. A negative amount displays its sign, a zero amount has a visibly faded line and `0`/`×0` label (not a distinct mute state), dormant connections keep their dashed style and show an explicit inactive indicator when labelled, and selection remains visually distinguishable. Zero and dormant are not interchangeable; amount edits and resets preserve edge identity and dormant settings. User-authored descriptions may be displayed as secondary text or a tooltip rather than competing with the numeric badge.
+
+**Interaction and history.** Clicking a badge selects its existing connection exactly as clicking the wire does, using the same graph-qualified selection and `ConnectionAmountEditor` initially. Subsequently host that same editor in a bounded, accessible floating panel next to the selected cable, using screen-space anchoring and clamping to the visible editor; no duplicate form/validation or second editor. Keep the draft and Apply/Cancel semantics, stop pointer/keyboard propagation during editing, avoid obscuring the active cable where possible, and close safely on navigation, deletion, Escape or selection change. An amount edit still dispatches `SetConnectionAmountCommand` once on explicit Apply, preserving validation, graph revision, undo/redo, range updates and existing playback replacement/crossfade. Display-mode changes, selection, badge positioning and opening/closing the form are layout changes only and never advance graph revision or compile DSP. The badge always displays the latest committed amount, not a partially typed input; undo/redo, imports and graph edits automatically refresh it.
+
+**Optional individual contribution insight.** In the selected editor, reuse existing `GraphModulationRangeEstimator` source-bound / weighted-input rules (extract a shared per-edge projection if needed) to display the configured contribution interval independently of the other incoming edges. For a bipolar unit sine with depth +100 Hz and base 440 Hz, the contribution is −100…+100 Hz; 340…540 Hz is merely the resulting interval if that is the only modulation and no clamp applies. Show unknown bounds honestly and distinguish dormant/zero contributions. The combined clamped parameter range remains the existing slider's responsibility. No extra DSP capture, sample arrays or continuous updates are needed for a predicted interval. Defer measured per-edge telemetry until justified; future live readouts must distinguish configured amount, predicted contribution and actual signal.
+
+~~~mermaid
+flowchart TD
+    G[Committed graph snapshot] --> P[Connection presentation]
+    V[Canvas geometry and preferences] --> P
+    P --> B[Amount badge on cable]
+    B --> S[Select existing connection]
+    S --> E[Shared amount editor]
+    E --> A[Explicit Apply]
+    A --> C[SetConnectionAmountCommand]
+    C --> G
+    C --> D[Existing history and playback]
+~~~
+
+Test exact destination units and signed amounts, zero versus dormant styling, typed-event restrictions when available, stable graph-qualified IDs, Bézier anchoring under node drag/pan/zoom, collision priority, all four display modes, nested canvas persistence and legacy documents, accessible selection and keyboard isolation, no graph/audio changes for display actions, and exactly one validated graph/history entry on Apply with badge refresh after undo/redo. Verify that hidden labels do not disable cable hit testing and that long labels or dense patches do not create layout overflow. The initial badges can be delivered independently of notes, descriptions and groups; preserve the planned 6.19 numbering.
+
 ## 8. Input and output racks
 
 The user's proposed solution is the standard interface between canvases: a special internal Input Rack node with named ports that automatically appear as input sockets on the composite node in the parent canvas. The corresponding internal sockets are outputs, allowing external signals to be routed to any compatible internal node.
@@ -1961,7 +2006,7 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented (6.17.5): custom preset library with stable IDs, explicit management, independent IndexedDB persistence and stale-write protection.
 - Implemented (6.17.6): portable individual JSON presets with preview, compatibility validation and explicit conflict choices; signal observation next.
 - Planned (6.18): shared signal observation and visualization, integrated node plots, processor response curves and passive analyzer sinks.
-- Planned (6.19): presentation-only notes, node/connection descriptions, visual groups and searchable patch documentation.
+- Planned (6.19): presentation-only notes, node/connection descriptions, visual groups, searchable patch documentation and connection amount badges with inline editing.
 - Deferred: deployment-version detection and safe workspace-save/reload prompt for long-lived tabs whose versioned lazy modules have been removed by a later Pages deployment.
 - Add copies/preset reuse with independent instances.
 
@@ -2058,6 +2103,7 @@ Deliverable: inspect an oscillator waveform, harmonics, modulation and levels di
 - **6.19.2 — Node and connection descriptions:** presentation-only aliases, attached descriptions and wire labels keyed by stable graph/node/connection IDs; consistent shared editors, dormant/deleted target reconciliation and undo restoration.
 - **6.19.3 — Visual groups:** explicit member references, named/color-coded background regions, resize and atomic movement of members, annotation history and persistence; no new signal graph, rack, audio behavior or implicit deletion of members.
 - **6.19.4 — Patch overview and discovery:** optional title, description, usage instructions and tags in the portable document; patch manager metadata display/search/filter and compatible import/export; annotated example patches, including an impact recipe when AD envelopes are available.
+- **6.19.5 — Connection visualization and inline editing:** shared committed amount badge with destination units, signed/zero/dormant states, Bézier anchoring and collision-aware layout, All/Modified/Selected/Off display preference and automatic zoom suppression; select the existing editor from the badge, then reuse it in an anchored floating panel with explicit Apply and optional per-edge predicted contribution. Verify display-only isolation and ordinary graph undo/redo for actual amount edits in root and nested canvases. Badges may be implemented independently of other Phase 6.19 steps.
 
 Deliverable: a musician can open a previously saved or shared complex patch, identify its sections, understand modulation intent and recover design notes without altering sound or reading source code.
 
@@ -2126,6 +2172,7 @@ The core model should be independently unit testable without a browser or Faust.
 | Processor response (planned) | EQ center gain, Q bandwidth, filter modes and Nyquist limits match offline Faust measurements at 44.1/48 kHz; distinguish base/effective estimates, live spectra and stopped previews. |
 | Analyzer sink (planned) | Analyzer-only branches are observable but silent at the master; explicit graph edits round-trip with undo and persistence; visualization preferences restore without changing graph topology or audio. |
 | Patch documentation (planned) | Notes, aliases, labels and groups round-trip with root/nested layouts and named snapshots; old documents restore empty annotations, invalid data is rejected atomically, annotation history and text editing remain independent of graph history, and graph revision, compilation and playback generation stay unchanged. |
+| Connection visualization (planned) | Badge units and signs match committed receiving-port semantics; zero/dormant states remain distinct; labels follow cables, obey display/zoom/collision preferences and stay inside usable canvas geometry; display changes leave graph and playback unchanged, while explicit Apply commits one amount change and undo/redo restores its badge. |
 | Output safety | Controlled master gain, no unexpected discontinuity when changing base values. |
 | Persistence | Save/load nested graph and layout with stable IDs and equivalent connectivity. |
 | Audio assets (planned) | Import and reload binary recordings, share immutable data across nodes, preserve IDs through undo/redo, handle quota and missing assets without corrupting patches. |

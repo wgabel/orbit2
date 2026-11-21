@@ -441,6 +441,8 @@ For a unit-amplitude bipolar sine, depth 100 into a 440 Hz frequency gives 340�
 
 `SignalGraph.SetConnectionAmount` replaces the immutable edge in place, retaining ID, endpoints and order. The session commits one revision and publishes `ConnectionAmountChanged` with the before/after records. Invalid or unchanged values do not commit. The canvas retains the selection; range estimation and playback receive the new snapshot. As amounts are presently source literals, a reachable changed amount recompiles and crossfades while playing. Explicit Apply avoids recompiling each intermediate keystroke.
 
+**Planned Phase 6.19.5:** compact badges on cables will display committed amounts in destination units (e.g. `+100 Hz`, `−0.3`, `×0.5`), distinguish zero and dormant connections, and support All/Modified/Selected/Off with automatic zoom/overlap handling. Selecting a badge will reuse the existing amount editor, later as an anchored floating panel with optional predicted individual contribution. Display changes are layout-only; edits still require explicit Apply. See the [connection visualization design](ORBIT2-ARCHITECTURE.md#connection-amount-badges-and-inline-editing-planned-phase-6195).
+
 ## Faust graph compiler (Phase 4)
 
 `Orbit.Audio` is a plain .NET library that consumes a committed `GraphSnapshot` and produces a `FaustGraphProgram`: Faust source plus graph ID, revision and stable host control mappings. It does not load WASM, own the browser audio device or have any dependency on the canvas.
