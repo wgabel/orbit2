@@ -1106,15 +1106,28 @@ try {
     await ampSlider.getByLabel("Predicted modulation range").filter({ hasText: "0–1" }).waitFor();
     await envelope.locator(".node-visualization-panel").getByRole("button", { name: "Show plot" }).press("Enter");
     await envelope.locator(".signal-scope[data-view-mode='waveform']").waitFor();
+    const envelopeView = envelope.getByRole("combobox", { name: "Analysis view" });
+    await envelopeView.selectOption("envelope");
+    const envelopePreview = envelope.locator(".envelope-preview");
+    await envelopePreview.locator('[data-envelope-stage="Attack"]').filter({ hasText: "8 ms" }).waitFor();
+    await envelopePreview.locator('[data-envelope-playhead="unavailable"]').waitFor();
+    await envelope.getByRole("button", { name: "Expand plot" }).press("Enter");
+    const expandedEnvelope = responsePage.getByRole("region", { name: "Signal scope" });
+    await expandedEnvelope.locator('.envelope-preview[data-envelope-mode="Ad"]').waitFor();
+    await expandedEnvelope.getByRole("button", { name: "Close scope" }).press("Enter");
+    await envelopePreview.waitFor();
     await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
     await responsePage.getByRole("button", { name: "Play patch" }).click();
     await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
     await ampSlider.getByLabel("Live effective value").waitFor({ timeout: 15000 });
+    await envelopePreview.locator('[data-envelope-playhead]:not([data-envelope-playhead="unavailable"])').waitFor({ timeout: 15000 });
     await attack.fill("25");
     await decay.fill("250");
+    await envelopePreview.locator('[data-envelope-stage="Decay"]').filter({ hasText: "250 ms" }).waitFor();
     assert.match(await responseStatus.innerText(), /^Playing revision \d+$/);
     await responsePage.getByRole("button", { name: "Stop", exact: true }).click();
     await responseStatus.filter({ hasText: /Ready/ }).waitFor();
+    await envelopePreview.locator('[data-envelope-playhead="unavailable"]').waitFor();
     // Explicit rhythmic routing retains the old oscillator-trigger wire but disables its DSP path.
     const edgeAdapter = await addResponseNode("generator.signal-to-trigger");
     await envelope.getByRole("combobox", { name: "Trigger source" }).selectOption("1");
@@ -1172,6 +1185,7 @@ try {
     // Gate socket and Loop ignores (without deleting) all event routes.
     const envMode = envelope.getByRole("combobox", { name: "Envelope mode" });
     await envMode.selectOption("1");
+    await envelopePreview.locator('[data-envelope-stage="Hold"]').filter({ hasText: "until gate closes" }).waitFor();
     await envelope.getByRole("spinbutton", { name: "Release (ms)", exact: true }).waitFor();
     assert.equal(await envelope.getByRole("spinbutton", { name: "Decay (ms)", exact: true }).count(), 0);
     assert.equal(await envelope.getByRole("combobox", { name: "Trigger source" }).count(), 0);
@@ -1181,6 +1195,7 @@ try {
     await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
     let modeRevision = await responseStatus.innerText();
     await envMode.selectOption("2");
+    await envelope.locator('.envelope-preview[data-envelope-mode="Adsr"]').waitFor();
     await envelope.getByRole("spinbutton", { name: "Sustain (normalized)", exact: true }).waitFor();
     assert.equal(await envelope.getByRole("spinbutton", { name: "Release (ms)", exact: true }).inputValue(), "1500");
     await responseStatus.filter({ hasText: /^Playing revision \d+$/, hasNotText: modeRevision }).waitFor({ timeout: 30000 });
@@ -1189,6 +1204,7 @@ try {
     await responseStatus.filter({ hasText: /^Playing revision \d+$/, hasNotText: modeRevision }).waitFor({ timeout: 30000 });
     modeRevision = await responseStatus.innerText();
     await envMode.selectOption("3");
+    await envelope.locator('.envelope-preview[data-envelope-mode="Loop"]').waitFor();
     await envelope.getByRole("spinbutton", { name: "Rest (ms)", exact: true }).waitFor();
     await envelope.getByRole("button", { name: "Input: Gate (Gate) — inactive in current mode" }).waitFor();
     assert.equal(await envelope.getByRole("spinbutton", { name: "Release (ms)", exact: true }).count(), 0);

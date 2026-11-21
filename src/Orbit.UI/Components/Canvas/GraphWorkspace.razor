@@ -68,12 +68,12 @@ else
                  OnManagePresets="@(nodeId => OpenPresetManagerAsync(graphId, nodeId))" PresetCatalogRevision="@PresetCatalog.Revision"
                  OnOpenComposite="@(nodeId => OpenComposite(graphId, nodeId))"
                  OnEditRack="@(nodeId => OpenRackEditor(graphId, nodeId))"
-                 ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" BeatsPerMinute="@tempo" SampleRate="@responseSampleRate" />
+                 ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" EnvelopePlayheads="@EnvelopePlayheads" BeatsPerMinute="@tempo" SampleRate="@responseSampleRate" />
     @if (ScopeNode is { } scopeNode)
     {
         <NodeVisualizationPanel @key="(workspaceGeneration, graphId, scopeNode.Id)" PatchId="@session.GraphId"
                           GraphId="@graphId" Node="@scopeNode" Expanded="true" Settings="@Canvas.Snapshot.VisualizationFor(scopeNode.Id)"
-                          BeatsPerMinute="@tempo" SampleRate="@responseSampleRate" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues"
+                          BeatsPerMinute="@tempo" SampleRate="@responseSampleRate" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" Playhead="@EnvelopePlayheads.GetValueOrDefault(scopeNode.Id)"
                           SettingsChanged="@(settings => UpdateScopeSettings(graphId, scopeNode.Id, settings))" OnExpand="CloseScope" />
     }
 </section>

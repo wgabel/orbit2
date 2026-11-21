@@ -108,15 +108,19 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
             playback.RequestedRevision != playback.Result.AppliedRevision) return null;
         var revision = playback.Result.AppliedRevision;
         var controls = playback.Controls;
-        if (!controls.Any(control => control.MeterName is not null)) return null;
+        var envelopeMeters = playback.Program.EnvelopeMeters;
+        var generation = playback.Generation;
+        if (!controls.Any(control => control.MeterName is not null) && envelopeMeters.Count == 0) return null;
         var outputs = await engine.GetOutputValuesAsync(SoundId(graphId));
         // Do not attach values from an old or crossfading worklet to a new graph.
         if (outputs is null || playback.Stopping || !active.TryGetValue(graphId, out var current) ||
             !ReferenceEquals(current, playback) || playback.RequestedRevision != revision ||
-            playback.Result.AppliedRevision != revision) return null;
+            playback.Result.AppliedRevision != revision || playback.Generation != generation) return null;
         var addresses = controls.Where(control => control.MeterName is not null)
             .ToDictionary(control => control.MeterName!, StringComparer.Ordinal);
         var values = new Dictionary<Guid, Dictionary<ParameterAddress, double>>();
+        var envelopeAddresses = envelopeMeters.ToDictionary(meter => meter.Name, StringComparer.Ordinal);
+        var playheads = new Dictionary<Guid, Dictionary<Guid, EnvelopePlayhead>>();
         foreach (var (path, value) in outputs)
         {
             var name = path[(path.LastIndexOf('/') + 1)..];
@@ -126,12 +130,20 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
                     values.Add(control.GraphId, local = new Dictionary<ParameterAddress, double>());
                 local[control.Address] = value;
             }
+            else if (envelopeAddresses.TryGetValue(name, out var meter) && EnvelopePlayhead.Decode(value) is { } playhead)
+            {
+                if (!playheads.TryGetValue(meter.GraphId, out var local))
+                    playheads.Add(meter.GraphId, local = new Dictionary<Guid, EnvelopePlayhead>());
+                local[meter.NodeId] = playhead;
+            }
         }
-        return values.Count == 0 ? null : new(graphId, revision,
+        return values.Count == 0 && playheads.Count == 0 ? null : new(graphId, revision,
             values.Remove(graphId, out var rootValues) ? rootValues : new Dictionary<ParameterAddress, double>())
         {
             ChildValues = values.ToDictionary(pair => pair.Key,
-                pair => (IReadOnlyDictionary<ParameterAddress, double>)pair.Value)
+                pair => (IReadOnlyDictionary<ParameterAddress, double>)pair.Value),
+            EnvelopePlayheads = playheads.ToDictionary(pair => pair.Key,
+                pair => (IReadOnlyDictionary<Guid, EnvelopePlayhead>)pair.Value)
         };
     }
 

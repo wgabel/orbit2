@@ -23,6 +23,7 @@ This document consolidates the design discussions for Orbit 2: the original brow
 | AD envelope and typed Trigger/Gate/Clock ports/adapters | Implemented · 7.1.1–7.1.2 | Section 10; [PR #7](https://github.com/wgabel/orbit2/pull/7), [#8](https://github.com/wgabel/orbit2/pull/8) |
 | Manual Trigger, timed Gate and Clock sources | Implemented · 7.1.3 | Section 10; [PR #10](https://github.com/wgabel/orbit2/pull/10) |
 | AR/ADSR/Loop envelope modes | Implemented · 7.1.4 | Section 10; [PR #12](https://github.com/wgabel/orbit2/pull/12) |
+| Envelope curve, measured output and live stage | Implemented · 7.1.5 | Section 10; envelope visualization |
 | Playable note source, continuous keyboard transposer, sequencer, resonators, polyphony | Planned · remaining Phase 7 | Section 10; [PR #9](https://github.com/wgabel/orbit2/pull/9) is design documentation only |
 | Post-mixer pitch shifter; recorded audio assets and sample synthesis | Planned · 6.20, Phase 8 | Section 10 |
 
@@ -1777,7 +1778,7 @@ Rebind subscriptions atomically to the latest accepted runtime and manifest on g
 
 #### Envelope generators and rhythmic triggers (Phase 7.1 — partial)
 
-**Status:** 7.1.1 AD envelope, 7.1.2 typed ports/adapters, 7.1.3 rhythmic sources (PR #10) and 7.1.4 AR/ADSR/Loop (PR #12) implemented; advanced visualization and custom envelopes planned. AD presets, an impact composite and initial AR/ADSR/Loop presets are implemented; additional envelope presets and worked patches (7.1.6) remain partial.
+**Status:** 7.1.1 AD envelope, 7.1.2 typed ports/adapters, 7.1.3 rhythmic sources (PR #10), 7.1.4 AR/ADSR/Loop (PR #12) and 7.1.5 envelope visualization implemented; custom envelopes planned. AD presets, an impact composite and initial AR/ADSR/Loop presets are implemented; additional envelope presets and worked patches (7.1.6) remain partial.
 
 **Purpose and boundaries.** Introduce one registered `EnvelopeGenerator` (`generator.envelope`) with a unipolar modulation output (0–1 by default). It generates a time-dependent control signal, not a sound oscillator, and is independent of its destinations. It can drive amplitude, linear-Hz frequency, filter cutoff, gain, effect mix or any other compatible parameter; the target retains its own units, clamp and modulation depth. Do not embed a separate envelope implementation in every oscillator or effect. This is unrelated to the existing browser `AudioEnvelope`, which manages playback voice fades and graph replacements.
 
@@ -1864,6 +1865,10 @@ flowchart TD
 **Layering and UX.** Keep `EnvelopeGenerator`, parameter/port definitions and validation in Domain; registry/presets and runtime action contracts in Application; reusable edge detector, segment math, state machine and emitters in Audio; browser transport/event delivery in Infrastructure. Use `NodeFrame`, ordinary conditional parameter editors, tokenized event sockets, a capability-driven trigger action (where applicable) and the shared Phase 6.18 visualization panel for the configured envelope curve and optionally its measured output/playhead. Static preview is valid while stopped; live telemetry is generation-qualified, not persisted and never drives DSP. Provide built-in AD impact, slow swell and ADSR examples using the preset catalog, plus a complete impact example patch with wiring. Custom envelope definitions will need immutable versioned point data and atomic history once implemented; they are distinct from live playhead telemetry.
 
 **Acceptance.** Test actual compiled Faust at 44.1/48 kHz: falling/constant/disconnected input, oscillator rising edges, exact segment timing/endpoints and bounded amplitude, onset slope, retrigger continuity, early gate release, sustain, looping with zero-duration safeguards, shared trigger alignment across nested graphs, typed route validation and persistence, tempo/division/reset/wrap behavior, manual action latency and stale generation rejection, and no recompile or graph/history mutation on events. Render the worked pitch/amplitude patch offline to verify its frequency and level trajectories and distinguish clipping from amplitude jumps. Published browser tests cover shared editors/visualizations, presets, live parameter changes and transient actions. Phases 7.1.1–4 provide continuous AD, typed event conversion/routing, rhythmic runtime sources and gate-aware AR/ADSR and Loop envelopes; preview visualization, broader presets/worked patches and custom envelope definitions remain future work.
+
+**Implemented Phase 7.1.5 — Envelope visualization.** In the Envelope node, Show plot → View → Envelope curve displays the configured trajectory from rest, with normalized level (0–1) and proportional timed segments in milliseconds. The same view expands using the shared scope panel. AR and ADSR hold until the gate closes: the shaded hold width is illustrative, not a fixed duration. Loop includes its configured rest only when nonzero. Curve exponents use the same rising and falling power formulas as the DSP. Base edits and presets update the preview even while stopped. The measured output underneath is the existing bounded signal scope, independent of the preview; expand to change its timebase. It shows the actual routed modulation, including early releases, retriggers, modulation and mute, rather than synthesizing a waveform from the settings.
+
+The Faust envelope state machine exposes a passive graph-qualified stage/progress bargraph (`e_<compiled-node-id>`). The stage is encoded as 0 idle, 1 attack, 2 decay, 3 hold, 4 release, 5 rest, plus half the elapsed fraction of the latched duration. The playback service maps the meter to its original graph and node through the compiler manifest and accepts telemetry only for the current applied revision and playback generation. Display polling is diagnostic, so very short stages may pass between refreshes; it does not predict or drive transitions. The marker projects actual stage progress onto the configured curve (not an assertion of actual amplitude or elapsed configured time under modulation). No meter is available for unreachable nodes or stopped playback; the static preview remains available, and the existing signal capture capacity applies to measured output. The mode preference is portable canvas presentation state (`envelope`), validated only for Envelope nodes. Neither opening, closing, expanding nor switching the view changes graph history, compilation or DSP state. Regression tests compare instrumented and uninstrumented DSP sample-for-sample and check the stage reports, preview geometry, persistence and browser interactions.
 
 <a id="musical-instrument-synthesis-and-physical-modelling-planned-phase-72"></a>
 
@@ -2337,7 +2342,7 @@ Keep identifiers stable even when independent milestones ship out of numerical o
 | Foundation and editor | 1–5; 6.1–6.17 | Deferred version-aware reload / additional graph reuse |
 | Visualization | 6.18.1–6.18.5 | 6.18.6 analyzer sink, 6.18.7 advanced comparisons and profiling |
 | Patch organization | 6.19.5 core | 6.19.1–6.19.4 notes, descriptions, groups, discovery; optional badge refinements |
-| Rhythmic articulation | 7.1.1–7.1.4 (PRs #10, #12) | 7.1.5–7.1.7 |
+| Rhythmic articulation | 7.1.1–7.1.5 | 7.1.6–7.1.7 |
 | Keyboard and sequencing | 7.2.2 shared pitch | 7.2.8a–c live pitch, long transport, recording; 7.2.3 and 7.2.8d when event/gated articulation is ready |
 | Instruments | Existing oscillator/effect capabilities and AD impact preset | 7.2.1 recipes/templates, 7.2.4 resonator, 7.2.5 modal synthesis, 7.2.6 polyphony, 7.2.7 physical models |
 | Standalone audio transposition | Design only | 6.20.1–6.20.2; independent of keyboard tracking |
@@ -2529,13 +2534,13 @@ Deliverable: a scalable modular environment, adding functionality through node d
 
 <a id="phase-71--envelope-generators-and-rhythmic-triggers-planned"></a>
 
-#### Phase 7.1 — Envelope generators and rhythmic triggers (partial: 7.1.1–7.1.4 implemented)
+#### Phase 7.1 — Envelope generators and rhythmic triggers (partial: 7.1.1–7.1.5 implemented)
 
 - **7.1.1 — Oscillator-driven AD envelope (implemented):** reusable sample-rate edge detector, continuous oscillator trigger input, shared AD segment state machine, configurable durations/curves, unipolar range prediction, shared parameter UI, five presets, editable impact patch and compiled DSP timing/continuity tests. No dedicated trigger source required.
 - **7.1.2 — Typed rhythmic ports and adapters (implemented):** Trigger, Gate and Clock contracts, explicit continuous-signal edge/gate adapters, single-source unity event links, nested rack/flattening/validation/persistence support and tokenized event sockets; preserve the existing oscillator trigger route with conditional source selection.
 - **7.1.3 — Rhythmic sources (implemented — PR #10):** manual trigger and gate runtime actions, free/BPM clock using shared transport, gate duration and trigger fan-out; no graph revision or recompilation on events; generation-safe worklet delivery and timing tests.
 - **7.1.4 — AR, ADSR and Loop (implemented — PR #12):** gate-aware stage transitions, sustain/release, repeat/rest and rapid retrigger continuity using the same envelope node and conditional parameters; compatible AD migration, initial presets and multi-rate DSP tests.
-- **7.1.5 — Envelope visualization (planned):** configured curve, optional live measured output/playhead and compact/expanded shared visualization; no graph mutation or DSP dependency on display.
+- **7.1.5 — Envelope visualization (implemented):** configured curve, live measured output and DSP stage/progress playhead, compact/expanded shared visualization and portable view preferences; no graph mutation or DSP dependency on display.
 - **7.1.6 — Presets and worked patches (partial — AD presets and impact composite delivered in 7.1.1, initial AR/ADSR/Loop presets in 7.1.4):** grouped AD/percussion, AR/swell, ADSR/voice, rhythmic modulation presets and independently routed multi-envelope impact examples, validated in CI.
 - **7.1.7 — Custom multi-point envelopes (planned):** bounded versioned breakpoint definitions, reusable segment evaluation, atomic edit/history and compatible persistence; documented loop and trigger behavior.
 

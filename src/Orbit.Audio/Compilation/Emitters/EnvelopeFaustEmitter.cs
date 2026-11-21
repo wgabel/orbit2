@@ -28,6 +28,6 @@ public sealed class EnvelopeFaustEmitter : IFaustNodeEmitter
             ? context.Parameter(key, initializeAtTarget: mode != EnvelopeMode.Ad) : dormant;
         return FaustEnvelopeSegments.Emit(mode, signal, Control(EnvelopeGenerator.AttackKey), Control(EnvelopeGenerator.DecayKey),
             Control(EnvelopeGenerator.AttackCurveKey), Control(EnvelopeGenerator.DecayCurveKey), Control(EnvelopeGenerator.ReleaseKey),
-            Control(EnvelopeGenerator.ReleaseCurveKey), Control(EnvelopeGenerator.SustainKey), Control(EnvelopeGenerator.RestKey));
+            Control(EnvelopeGenerator.ReleaseCurveKey), Control(EnvelopeGenerator.SustainKey), Control(EnvelopeGenerator.RestKey), context.EnvelopeMeter());
     }
 }

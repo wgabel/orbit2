@@ -20,6 +20,7 @@ public static class NodeVisualizationCapabilities
         node.TypeKey == OscillatorGenerator.NodeType && ResolvePort(node, preferredPortId)?.Direction == PortDirection.Output;
 
     public static bool SupportsResponse(GraphNodeSnapshot node) => ProcessorResponseCapabilities.Supports(node.TypeKey);
+    public static bool SupportsEnvelope(GraphNodeSnapshot node) => node.TypeKey == EnvelopeGenerator.NodeType;
 
     // Persisted preferences are optional. Unsupported values fall back to a safe default.
     // Keep a dormant port preference so it can resume when the port becomes active again.
@@ -30,7 +31,8 @@ public static class NodeVisualizationCapabilities
         {
             PortId = node.Outputs.Concat(node.Inputs).Any(port => port.Id == settings.PortId &&
                 port.ChannelCount == 1) ? settings.PortId : null,
-            Mode = settings.Mode == "response" && SupportsResponse(node) ? "response" : Choice(settings.Mode, "waveform", "spectrum", "level"),
+            Mode = settings.Mode == "response" && SupportsResponse(node) ? "response" :
+                settings.Mode == "envelope" && SupportsEnvelope(node) ? "envelope" : Choice(settings.Mode, "waveform", "spectrum", "level"),
             Timebase = settings.Timebase == "cycle" && SupportsCycle(node, settings.PortId) ? "cycle" :
                 Choice(settings.Timebase, "0.02", "0.005", "0.05", "1", "5", "10"),
             Trigger = Choice(settings.Trigger, "rising", "falling", "free"),

@@ -10,6 +10,9 @@ public sealed record GraphParameterTelemetry(Guid GraphId, long Revision,
     public IReadOnlyDictionary<Guid, IReadOnlyDictionary<ParameterAddress, double>> ChildValues { get; init; }
         = new Dictionary<Guid, IReadOnlyDictionary<ParameterAddress, double>>();
 
+    public IReadOnlyDictionary<Guid, IReadOnlyDictionary<Guid, EnvelopePlayhead>> EnvelopePlayheads { get; init; }
+        = new Dictionary<Guid, IReadOnlyDictionary<Guid, EnvelopePlayhead>>();
+
     public IReadOnlyDictionary<ParameterAddress, double> GetValues(Guid graphId) =>
         graphId == GraphId ? Values : ChildValues.TryGetValue(graphId, out var values)
             ? values : new Dictionary<ParameterAddress, double>();

@@ -31,7 +31,9 @@
         @if (Expanded || Settings.Visible && !ExpandedElsewhere)
         {
             var supportsResponse = NodeVisualizationCapabilities.SupportsResponse(Node);
-            @if (supportsResponse)
+            var supportsEnvelope = NodeVisualizationCapabilities.SupportsEnvelope(Node);
+            var externalMode = supportsResponse || supportsEnvelope;
+            @if (externalMode)
             {
                 <div class="scope-controls workspace-toolbar @(!Expanded ? "scope-compact" : "")">
                     <label>View
@@ -39,7 +41,14 @@
                             <option value="waveform">Waveform</option>
                             <option value="spectrum">Spectrum</option>
                             <option value="level">Level</option>
-                            <option value="response">Frequency response</option>
+                            @if (supportsResponse)
+                            {
+                                <option value="response">Frequency response</option>
+                            }
+                            @if (supportsEnvelope)
+                            {
+                                <option value="envelope">Envelope curve</option>
+                            }
                         </select>
                     </label>
                 </div>
@@ -48,6 +57,16 @@
             {
                 <ProcessorResponseView Node="@Node" Compact="@(!Expanded)"
                                        SampleRate="@SampleRate" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" />
+            }
+            else if (Settings.Mode == "envelope" && supportsEnvelope)
+            {
+                <EnvelopePreviewView Node="@Node" Compact="@(!Expanded)" Playhead="@Playhead" />
+                <small class="response-notice">Measured output · actual modulation</small>
+                var output = Node.Outputs.Single();
+                var address = new SignalObservationAddress(PatchId, GraphId, Node.Id, output.Id, output.Direction);
+                <SignalScope @key="(address, Settings.Mode)" Address="@address" Compact="@(!Expanded)"
+                             Settings="@(Settings with { Mode = "waveform" })" SettingsChanged="ChangeEnvelopeScopeSettings"
+                             ExternalModeControl="true" />
             }
             else
             {
@@ -61,8 +80,8 @@
                     </select>
                 </label>
                 var address = new SignalObservationAddress(PatchId, GraphId, Node.Id, selected.Id, selected.Direction);
-                <SignalScope @key="(address, supportsResponse ? Settings.Mode : null)" Address="@address" Compact="@(!Expanded)" Settings="@Settings" SettingsChanged="SettingsChanged"
-                    ExternalModeControl="@supportsResponse"
+                <SignalScope @key="(address, externalMode ? Settings.Mode : null)" Address="@address" Compact="@(!Expanded)" Settings="@Settings" SettingsChanged="SettingsChanged"
+                    ExternalModeControl="@externalMode"
                     CycleSeconds="@(NodeVisualizationCapabilities.SupportsCycle(Node, selected.Id) ? CycleTiming.ForNode(Node, BeatsPerMinute)?.Seconds : null)" />
             }
         }
@@ -80,11 +99,15 @@
     [Parameter] public int? SampleRate { get; set; }
     [Parameter] public IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
     [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();
+    [Parameter] public EnvelopePlayhead? Playhead { get; set; }
     [Parameter] public EventCallback<NodeVisualizationSettings> SettingsChanged { get; set; }
     [Parameter] public EventCallback OnExpand { get; set; }
 
     private Task Toggle() => SettingsChanged.InvokeAsync(Settings with { Visible = !Settings.Visible });
-    private Task ChangeMode(string mode) => SettingsChanged.InvokeAsync(Settings with { Mode = mode });
+    private Task ChangeMode(string mode) => SettingsChanged.InvokeAsync(mode == "envelope" && Settings.Timebase == "0.02"
+        ? Settings with { Mode = mode, Timebase = "1", Trigger = "free" } : Settings with { Mode = mode });
+    private Task ChangeEnvelopeScopeSettings(NodeVisualizationSettings settings) => Settings.Mode == "envelope"
+        ? SettingsChanged.InvokeAsync(settings with { Mode = "envelope" }) : Task.CompletedTask;
     private Task ChangePort(ChangeEventArgs args) => Guid.TryParse(args.Value?.ToString(), out var portId)
         ? SettingsChanged.InvokeAsync(Settings with { PortId = portId }) : Task.CompletedTask;
 }

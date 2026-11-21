@@ -47,6 +47,10 @@ public partial class GraphWorkspace : IDisposable
     private IReadOnlyDictionary<ParameterAddress, double> EffectiveValues =>
         telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision
             ? frame.GetValues(Canvas.Snapshot.GraphId) : EmptyValues;
+    private IReadOnlyDictionary<Guid, EnvelopePlayhead> EnvelopePlayheads =>
+        telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision &&
+        frame.EnvelopePlayheads.TryGetValue(Canvas.Snapshot.GraphId, out var playheads)
+            ? playheads : new Dictionary<Guid, EnvelopePlayhead>();
     private IPatchSession session = default!;
     private IDisposable? subscription;
     private CanvasNavigationService Navigation { get; set; } = default!;
