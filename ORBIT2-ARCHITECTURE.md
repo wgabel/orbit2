@@ -782,6 +782,56 @@ flowchart TD
     S --> D[Existing Faust compiler]
 ~~~
 
+### Individual node presets (planned Phase 6.16)
+
+A node preset is a reusable immutable configuration of an existing registered node type, not a new node type, a factory, a DSP implementation, a patch or a live link to another node. Initially support leaf generators and processors with editable parameters; racks, master output without editable parameters, and composite graph definitions are not individual preset targets. Custom composite definitions remain a separate graph-template feature.
+
+Use a versioned data-only `NodePreset` containing a stable preset ID, node type key, name, group, optional usage description and a map of stable parameter definition keys to validated base values. Include discrete structural selections and inactive conditional parameters so selecting a preset restores the complete configuration, including dormant settings. Do not store instance GUIDs, connections, connection amounts, positions, effective modulation samples or DSP state. The current patch stores its actual base values, not a dependency on the preset library. Editing or deleting a preset cannot change nodes that previously used it.
+
+~~~json
+{
+  "schemaVersion": 1,
+  "id": "reverb-dark-ambient",
+  "nodeType": "processor.reverb",
+  "name": "Dark Ambient",
+  "group": "Atmospheric",
+  "description": "Long, dark reverb for evolving drones.",
+  "parameters": { "decay": 8.0, "damping": 0.8, "mix": 0.65 }
+}
+~~~
+
+**Catalog and responsibilities.** Put the immutable model, catalog, validator and `NodePresetService` in `Orbit.Application/Presets`. Keep factory registration in `NodeRegistry`; use its stable type keys and parameter definitions to validate preset compatibility. Ship built-in presets as versioned JSON resources per node type, loaded by infrastructure through an application-facing catalog contract. Adding another built-in configuration must not require changes to C#, Faust or Razor. The service merges read-only built-ins with the custom library, groups by usage label and sorts consistently. Reserve the `Custom` group for user-created presets; do not allow imported content to impersonate built-ins. Use stable IDs rather than display names as selection keys; validate names, group labels, schema, duplicate IDs and finite in-range values. Explicitly reject incompatible or incomplete configurations unless a versioned migration supplies missing values.
+
+| Node | Example usage groups | Example presets |
+|---|---|---|
+| Oscillator | Bass, Modulation, Drones | Sub Bass, Slow LFO, Deep Sine, Bright Saw |
+| Noise | Atmosphere, Texture | Wind, Deep Rumble, Bright Hiss |
+| Filter | Tone shaping, Resonance | Warm Low-pass, Gentle High-pass, Vocal Resonance |
+| Parametric EQ | Tone shaping, Corrective | Warmth, Presence, Remove Muddiness |
+| Delay | Rhythmic, Atmospheric | Quarter Note, Triplet, Long Echo |
+| Reverb | Spaces, Atmospheric | Small Room, Large Hall, Dark Ambient |
+| Chorus (planned) | Thickening, Texture | Gentle Chorus, Deep Ensemble |
+
+Examples describe intended usage, not a guarantee of a particular sound without suitable input/routing. Each supported node also exposes `Custom` even when empty. Presets should demonstrate meaningful settings, sensible output headroom and compatible parameter modes; factory defaults remain available independently.
+
+**Atomic application.** Introduce `ApplyNodePresetCommand` targeting a graph ID and node ID with a validated type-key/value configuration. A domain batch parameter operation resolves and validates every key, value and target before mutating anything, including structural choices and stored inactive values. A failed or unchanged configuration produces no revision. A successful application preserves node, parameter and port IDs, connections and layout; publishes one `GraphChangeSet` with the individual `ParameterChanged` facts; records one undo entry; and triggers existing audio, range projection and autosave subscribers once. Do not loop through separate session commands. Topology comparison already distinguishes base-only changes from structural changes, so ordinary presets update active controls and structural choices use the existing crossfade policy. No preset-specific logic belongs in DSP or audio infrastructure. Existing pending slider history is finalized before a distinct preset application.
+
+~~~mermaid
+flowchart TD
+    B[Built-in JSON catalog] --> S[Node preset service]
+    C[(Custom preset library)] --> S
+    S --> U[Grouped preset selector]
+    U --> A[Apply preset command]
+    A --> P[Patch session and validation]
+    P --> H[One undo entry]
+    P --> D[Existing audio update]
+    P --> V[Canvas and autosave]
+~~~
+
+**Presentation.** Add a shared `NodePresetSelector` inside `NodeFrame`, below the header, using design tokens and the same component at every canvas level. Render groups via a compact accessible selector, provide a usage description and allow loading a preset without extra permanent toolbars. Show an unselected/modified state when the current base configuration does not match a preset; modulation alone does not mark it modified. Saving captures the current base configuration from an immutable snapshot. Built-ins cannot be overwritten, renamed or deleted; users can apply them, adjust values and save a new custom preset. Management actions (save as, deliberate overwrite, rename, delete) belong to a compact shared menu/dialog, not per-node implementations. Editing the preset library is separate from graph undo/redo; applying a preset is a graph edit.
+
+**Custom persistence.** Define `INodePresetStorage` separately from `IPatchLibraryStorage`, with a browser adapter using the existing versioned IndexedDB interop and a dedicated logical store/namespace. Reuse validated serialization, transaction and error patterns where appropriate; never mix node presets with recovery records or named complete patches. Persist versioned data by stable ID, enforce unique names per node type (case-insensitive) and explicit overwrite semantics, and report storage failure without changing the current node. Custom presets survive reload and patch switching; eventually support portable individual JSON import/export with validation and conflict handling. Future audio-asset-valued configurations need explicit references and portability rules from Phase 8; scalar parameter presets do not embed recordings.
+
 ## 8. Input and output racks
 
 The user's proposed solution is the standard interface between canvases: a special internal Input Rack node with named ports that automatically appear as input sockets on the composite node in the parent canvas. The corresponding internal sockets are outputs, allowing external signals to be routed to any compatible internal node.
@@ -1490,6 +1540,7 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented (6.13): mono feedback delay with free and synchronized timing, fractional delay, audio-rate modulation and live shared BPM.
 - Implemented (6.14): mono algorithmic reverb with audio-rate decay, damping and wet mix, bounded feedback combs and all-pass diffusion.
 - Next: chorus; later add additional waveforms, sample-scheduled transport commands and rhythmic clock/trigger nodes.
+- Planned (6.16): universal individual node presets, following the chorus processor. See the incremental preset roadmap below.
 - Deferred: deployment-version detection and safe workspace-save/reload prompt for long-lived tabs whose versioned lazy modules have been removed by a later Pages deployment.
 - Add copies/preset reuse with independent instances.
 
@@ -1548,6 +1599,17 @@ flowchart TD
 
 Deliverable: several independently configurable drones from one reusable modular architecture.
 
+#### Phase 6.16 — Individual node presets (planned)
+
+- **6.16.1 — Model and catalog:** define versioned immutable parameter configurations, stable IDs and type/key validation; load grouped built-in JSON definitions independently of node factories.
+- **6.16.2 — Atomic application:** validated multi-parameter graph operation and `ApplyNodePresetCommand`, one committed revision and undo entry; verify nested nodes, dormant connections and live DSP behavior.
+- **6.16.3 — Shared selector:** compact grouped `NodePresetSelector`, descriptions, matching/modified state, existing design tokens and accessibility; no node-specific UI.
+- **6.16.4 — Built-in content:** meaningful usage groups and example presets for all eligible existing generators and processors, including chorus; validate all shipped data in CI.
+- **6.16.5 — Custom library:** persistent `Custom` group for every eligible node type, save as, explicit overwrite, rename/delete and independent instances; IndexedDB reload and workspace-switch coverage.
+- **6.16.6 — Portable node presets:** versioned JSON import/export with transactional validation, conflict handling and backwards compatibility.
+
+Deliverable: choose or create a grouped configuration for any eligible node without changing its identity or wiring; apply in one undoable operation during playback and reuse across patches. Custom composite graph templates (including internal wiring and exposed racks) remain separate Phase 7 work, with a consistent catalog experience.
+
 ### Phase 7 — Advanced functionality and performance
 
 - More filters, EQ, delay, chorus, flanger, compression and reverb.
@@ -1594,6 +1656,7 @@ The core model should be independently unit testable without a browser or Faust.
 | Compile revisions | Stale results cannot replace a newer successful runtime. |
 | DSP failure | Last valid runtime remains active; error is displayed to the user. |
 | Presets | Two instances have independent parameters and DSP state. |
+| Individual node presets (planned) | Validate every shipped configuration; reject invalid batch without mutation; application preserves identities and wiring, emits one revision and undo entry; base-only updates avoid recompilation; custom groups survive reload and library edits do not alter existing nodes. |
 | Output safety | Controlled master gain, no unexpected discontinuity when changing base values. |
 | Persistence | Save/load nested graph and layout with stable IDs and equivalent connectivity. |
 | Audio assets (planned) | Import and reload binary recordings, share immutable data across nodes, preserve IDs through undo/redo, handle quota and missing assets without corrupting patches. |
