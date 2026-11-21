@@ -370,6 +370,15 @@ public partial class GraphWorkspace : IDisposable
             Execute(new SetPitchPatternStepsCommand(graphId, nodeId, new int[NoteSequencerGenerator.Capacity]));
     }
 
+    private bool CommitPitchTake(Guid graphId, Guid nodeId, PitchRecordingTake take)
+    {
+        if (disposed || Canvas.Snapshot.GraphId != graphId || PerformanceTarget is not { } target || target.Id != nodeId)
+            return false;
+        var reference = (int)target.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.ReferenceKey).BaseValue;
+        return take.MatchesSource(PitchPattern.FromNode(target), reference) &&
+            Execute(new SetPitchPatternStepsCommand(graphId, nodeId, take.CaptureSteps()));
+    }
+
     private void SetNodeAudition(Guid graphId, NodeAuditionRequest request)
     {
         if (graphId != Canvas.Snapshot.GraphId) return;

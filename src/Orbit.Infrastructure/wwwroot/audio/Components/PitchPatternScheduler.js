@@ -19,8 +19,13 @@ export class PitchPatternScheduler {
 
     setPattern(pattern) {
         if (!validPitchPattern(pattern)) return false;
+        // Slot-only edits (including a committed take) change future onsets, not
+        // the already-passed boundary of the currently sounding step.
+        const previous = this.pattern;
+        const sameTiming = previous.loop && pattern.loop && previous.count === pattern.count &&
+            previous.free === pattern.free && previous.ticks === pattern.ticks && previous.seconds === pattern.seconds;
         this.pattern = pattern;
-        this.dirty = true;
+        if (!sameTiming) this.dirty = true;
         return true;
     }
 
