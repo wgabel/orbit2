@@ -424,7 +424,7 @@ try {
         });
         assert.ok(point, "Expected an exposed part of the cable to select");
         await page.mouse.click(point.x, point.y);
-        await target.locator("xpath=..").and(page.locator(".connection-selected")).waitFor({ timeout: 4000 });
+        await target.locator("xpath=..").and(page.locator(".connection-selected")).waitFor({ state: "attached", timeout: 4000 });
     };
     // Remove the original LFO-to-frequency connection, then connect to amplitude.
     await selectVisibleWire(wire);
