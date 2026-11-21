@@ -117,11 +117,14 @@ public partial class GraphPlaybackControls : IAsyncDisposable
             cancellation.Cancel();
             await observer;
             await SynchronizeTransportAsync(false);
+            // Disarm natural completion/failure before exposing Ready. Explicit
+            // Stop already disarmed synchronously; a second notification could
+            // invalidate a newly armed target after the previous lifetime.
+            if (!disposed && !IsStopping) await PlaybackStopped.InvokeAsync();
             IsActive = false;
             IsStopping = false;
             state = PlaybackState.Idle;
             await PublishTelemetryAsync(null);
-            if (!disposed) await PlaybackStopped.InvokeAsync();
         }
     }
 

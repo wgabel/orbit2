@@ -1089,11 +1089,15 @@ try {
     await responsePage.bringToFront();
     await responsePage.locator('.performance-keyboard[data-keyboard-ready="true"]').waitFor();
     await performance.getByRole("button", { name: "Arm keyboard" }).click();
+    await performance.getByRole("button", { name: "Disarm keyboard" }).waitFor();
     await responsePage.getByRole("button", { name: "Play patch" }).click();
     await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
     const keyboardRevision = await responseStatus.innerText();
     await performance.locator('[data-live-pitch-offset="0"]').waitFor();
-    await performance.getByRole("button", { name: "Play C4 (A)" }).click();
+    assert.equal(await performance.getAttribute("data-armed"), "true", await performance.innerText());
+    const middleC = performance.locator('[data-midi-note="60"]');
+    assert.equal(await middleC.getAttribute("aria-label"), "Play C4 (A)");
+    await middleC.click();
     await performance.locator('[data-live-pitch-offset="-9"]').waitFor();
     await responsePage.locator('.performance-keyboard[data-armed="true"]').waitFor();
     await performance.focus();

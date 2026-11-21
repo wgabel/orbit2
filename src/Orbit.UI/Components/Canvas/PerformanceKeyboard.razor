@@ -26,13 +26,13 @@
             <button type="button" class="secondary" @onclick="ResetAsync">Reset pitch</button>
         </div>
         <div class="performance-piano" role="group" aria-label="On-screen piano">
-            @foreach (var key in PerformanceKeyboardLayout.Keys)
+        @foreach (var pianoKey in PerformanceKeyboardLayout.Keys)
             {
-                var note = PerformanceKeyboardLayout.Note(octave, key);
-                <button @key="key.Code" type="button" class="@(key.Black ? "performance-black-key" : "performance-white-key")"
-                        data-midi-note="@note" aria-label="Play @MusicalPitch.NoteName(note) (@key.Hint)"
+                var note = PerformanceKeyboardLayout.Note(octave, pianoKey);
+                <button @key="pianoKey.Code" type="button" class="@(pianoKey.Black ? "performance-black-key" : "performance-white-key")"
+                        data-midi-note="@note" aria-label="@($"Play {MusicalPitch.NoteName(note)} ({pianoKey.Hint})")"
                         disabled="@(!NoteSequencerGenerator.IsPlayable(note, Reference))" @onclick="() => SendAsync(new(PerformanceNoteKind.NoteOn, note))">
-                    <span>@MusicalPitch.NoteName(note)</span><small>@key.Hint</small>
+                    <span>@MusicalPitch.NoteName(note)</span><small>@pianoKey.Hint</small>
                 </button>
             }
         </div>
@@ -68,8 +68,8 @@
         armed = !armed;
         held.Clear();
         notice = null;
-        if (adapter is not null) await adapter.InvokeVoidAsync("clear");
         focusRequested = armed;
+        if (adapter is not null) await adapter.InvokeVoidAsync("clear");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
