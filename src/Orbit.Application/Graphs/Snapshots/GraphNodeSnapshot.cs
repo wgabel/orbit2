@@ -23,9 +23,8 @@ public sealed record GraphNodeSnapshot(
     public bool IsParameterActive(ParameterSnapshot parameter) =>
         IsActive(parameter.Definition.ActiveWhen);
 
-    private bool IsActive(ParameterActivation? condition) => condition is null ||
-        condition.Conditions().All(required => Parameters.Any(selector => selector.Definition.Key == required.SelectorKey &&
-            selector.BaseValue == required.EqualsValue));
+    private bool IsActive(ParameterActivation? condition) => condition is null || condition.Matches(key =>
+        Parameters.SingleOrDefault(selector => selector.Definition.Key == key)?.BaseValue);
 
     /// <summary>Inputs follow their explicit activation and their associated parameter, if any.</summary>
     public bool IsInputActive(Guid portId) =>

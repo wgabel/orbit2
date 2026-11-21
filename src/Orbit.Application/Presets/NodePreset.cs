@@ -43,6 +43,9 @@ public sealed class NodePreset
         if (nodeType == EnvelopeGenerator.NodeType && values.Count == 4 &&
             new[] { EnvelopeGenerator.AttackKey, EnvelopeGenerator.DecayKey, EnvelopeGenerator.AttackCurveKey, EnvelopeGenerator.DecayCurveKey }.All(values.ContainsKey))
             values.Add(EnvelopeGenerator.TriggerSourceKey, 0);
+        if (nodeType == EnvelopeGenerator.NodeType && values.Count == 5 && EnvelopeGenerator.LegacyAdParameterKeys.All(values.ContainsKey))
+            foreach (var definition in EnvelopeGenerator.ModeExtensionDefinitions)
+                values.Add(definition.Key, definition.DefaultValue);
         Parameters = new ReadOnlyDictionary<string, double>(values);
     }
 
