@@ -4,6 +4,7 @@
 @using Orbit.Domain.Nodes.Composites
 @using Orbit.Domain.Nodes
 @using Orbit.UI.Components.Parameters
+@using Orbit.Presentation.Canvas
 @using Microsoft.AspNetCore.Components.Web
 
 @* Shared node shell: header is the drag handle; ports and parameter editors
@@ -66,6 +67,7 @@
                 @if (parameter.Definition.Choices is not null)
                 {
                     <ParameterChoiceEditor @key="parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue"
+                          Readout="@ParameterReadout.ForChoice(Node, parameter, BeatsPerMinute)"
                           ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))" />
                 }
                 else

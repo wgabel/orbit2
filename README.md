@@ -280,6 +280,8 @@ flowchart TD
 
 Changing timing mode is a structural edit and crossfades to the new program. Changing musical division is a discrete live control; it intentionally reinterprets the current beat relative to the selected cycle length (it can change phase immediately). Tempo edits preserve beat position without recompiling. Free and synchronized settings are remembered independently. Noise remains a separate generator family.
 
+In synchronized mode the oscillator shows a read-only **Synchronized frequency** in Hz below Musical division. It follows the committed patch tempo and division even when playback is stopped and inside nested graphs. It does not change the stored free frequency or create a new modulation input.
+
 ### Noise generator (Phase 6.5)
 
 Choose **Noise** in Add node, then select White (broadband), Pink (approximately equal power per octave), or Brown (bass-weighted). Amplitude defaults to 0.2 and supports audio-rate modulation from 0–1. Connect Signal to audio or a modulation input in any canvas. Unlike a periodic oscillator, noise has no frequency, phase or transport controls.

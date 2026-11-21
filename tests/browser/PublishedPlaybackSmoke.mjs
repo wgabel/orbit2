@@ -33,7 +33,7 @@ try {
     const page = await browser.newPage();
     page.on("pageerror", error => console.error(error.message));
     await page.goto("http://127.0.0.1:" + server.address().port);
-    const status = page.getByRole("status");
+    const status = page.locator(".playback-toolbar").getByRole("status");
     const play = page.getByRole("button", { name: "Play patch" });
     const articles = page.locator("article");
     const frequency = articles.nth(1).locator(".parameter-slider").filter({ has: page.getByRole("spinbutton", { name: "Frequency (Hz)" }) });
@@ -221,12 +221,22 @@ try {
     assert.equal(await articles.nth(1).locator(".port-dormant").count(), 1);
     assert.equal(await frequency.count(), 0);
     assert.equal(await articles.nth(1).getByLabel("Musical division").inputValue(), "2");
+    const synchronizedFrequency = articles.nth(1).locator("output[aria-label='Synchronized frequency']");
+    await synchronizedFrequency.filter({ hasText: /^1\.5 Hz$/ }).waitFor();
+    await tempo.fill("120");
+    await applyTempo.click();
+    await synchronizedFrequency.filter({ hasText: /^2 Hz$/ }).waitFor();
+    assert.equal(await status.innerText(), `Playing revision ${initialRevision + 1}`);
+    await tempo.fill("90");
+    await applyTempo.click();
+    await synchronizedFrequency.filter({ hasText: /^1\.5 Hz$/ }).waitFor();
     await timing.selectOption("0");
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 1}$`) }).waitFor({ timeout: 15000 });
     assert.equal(await page.locator(".connection-dormant").count(), 0);
     assert.equal(await wire.count(), 1);
     assert.equal(await articles.nth(1).getByRole("spinbutton", { name: "Frequency (Hz)" }).inputValue(), "330");
+    assert.equal(await synchronizedFrequency.count(), 0);
     await marker.waitFor({ timeout: 10000 });
     // Unconnected nodes do not require a new worklet.
     await page.getByRole("button", { name: "Add", exact: true }).click();
@@ -361,7 +371,10 @@ try {
     const division = tempoLfo.getByLabel("Musical division");
     await division.waitFor();
     assert.equal(await division.inputValue(), "2");
+    const tempoLfoFrequency = tempoLfo.locator("output[aria-label='Synchronized frequency']");
+    await tempoLfoFrequency.filter({ hasText: /^1\.5 Hz$/ }).waitFor();
     await division.selectOption("3");
+    await tempoLfoFrequency.filter({ hasText: /^0\.75 Hz$/ }).waitFor();
     await tempoLfo.getByRole("button", { name: "Output: Signal (Audio)" }).press("Enter");
     await drone.getByRole("button", { name: "Input: Gain (Modulation)" }).press("Enter");
     await play.click();
@@ -369,6 +382,7 @@ try {
     await transportState.filter({ hasText: "Running" }).waitFor();
     await division.selectOption("4");
     assert.equal(await division.inputValue(), "4");
+    await tempoLfoFrequency.filter({ hasText: /^0\.375 Hz$/ }).waitFor();
     await page.getByRole("button", { name: "Stop", exact: true }).click();
     await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 10000 });
     const prefix = `/_content/Orbit.Infrastructure/audio-${version}/`;
@@ -428,9 +442,15 @@ try {
     assert.equal(await page.locator(".canvas-world").getAttribute("style"), savedTransform);
     await rack.getByRole("button", { name: "Output: Cutoff (Modulation)" }).waitFor();
     assert.equal(await play.isEnabled(), true);
+    await childPreset.selectOption("oscillator-quarter-pulse");
+    await page.locator("output[aria-label='Synchronized frequency']").filter({ hasText: /^1\.5 Hz$/ }).waitFor();
+    await undoButton.click();
+    await childFrequency.waitFor();
+    assert.equal(await childFrequency.inputValue(), "330");
     await breadcrumbs.getByRole("button", { name: "Patch" }).click();
     await drone.getByRole("button", { name: "Input: Cutoff (Modulation)" }).waitFor();
     assert.equal(await division.inputValue(), "4");
+    await tempoLfoFrequency.filter({ hasText: /^0\.375 Hz$/ }).waitFor();
     // Named saves are independent of recovery and imported/exported documents.
     await page.getByRole("button", { name: "Patches", exact: true }).click();
     const manager = page.locator(".patch-manager");

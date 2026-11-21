@@ -61,6 +61,6 @@ else
                  OnPresetApply="@(request => ApplyNodePreset(graphId, request))"
                  OnOpenComposite="@(nodeId => OpenComposite(graphId, nodeId))"
                  OnEditRack="@(nodeId => OpenRackEditor(graphId, nodeId))"
-                 ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" />
+                 ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" BeatsPerMinute="@tempo" />
 </section>
 }

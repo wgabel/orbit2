@@ -12,5 +12,12 @@
             }
         </select>
     </div>
+    @if (Readout is { } readout)
+    {
+        <div class="parameter-details">
+            <span>@readout.Label</span>
+            <output aria-label="@readout.Label" for="@InputId">@FormatReadout(readout)</output>
+        </div>
+    }
     <ValidationMessage Message="@Error" MessageId="@ErrorId" />
 </div>

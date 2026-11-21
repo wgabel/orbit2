@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Orbit.Application.Graphs.Snapshots;
 using Orbit.Domain.Ports;
 using Orbit.Domain.Parameters;
+using Orbit.Domain.Timing;
 using Orbit.Presentation.Canvas;
 
 namespace Orbit.UI.Components.Canvas;
@@ -15,6 +16,7 @@ public partial class NodeFrame
     [Parameter] public CanvasPoint Position { get; set; }
     [Parameter] public NodeVisualRole Role { get; set; }
     [Parameter] public bool Selected { get; set; }
+    [Parameter] public double BeatsPerMinute { get; set; } = MusicalTransport.DefaultTempo;
     [Parameter] public PortAddress? PendingSource { get; set; }
     [Parameter] public EventCallback<PointerEventArgs> OnHeaderPointerDown { get; set; }
     [Parameter] public EventCallback<PortAddress> OnPortActivate { get; set; }

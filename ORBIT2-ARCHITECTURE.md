@@ -489,6 +489,16 @@ frequencyHz = BPM / (60 * beatsPerCycle)
 
 At 120 BPM, one cycle per beat is 2 Hz; one cycle per 4/4 bar is 0.5 Hz.
 
+The oscillator's synchronized frequency is also projected in the editor: the workspace supplies its committed BPM through the shared canvas to `NodeFrame`; `ParameterReadout` derives the value from the active division in the immutable node snapshot using `MusicalTime`. The shared `ParameterChoiceEditor` renders the optional readout below the choice. It is a calculated rate (including while stopped), not measured telemetry, a graph parameter or a stored value. The free frequency and its dormant connections remain unchanged. The readout updates with tempo, division, preset application and workspace restoration without a separate subscription or DSP update.
+
+~~~mermaid
+flowchart TD
+    T[Committed workspace BPM] --> R[ParameterReadout]
+    N[Active division in node snapshot] --> R
+    R --> M[Shared MusicalTime conversion]
+    M --> U[Choice editor: read-only Hz]
+~~~
+
 Tempo changes affect musical time, not audio sample rate. Integrate beat position over time so that tempo changes do not imply an arbitrary phase jump. Define whether a synchronized modulator is locked to the shared transport position or free-running at a synced rate. Two LFOs with the same frequency are not necessarily in phase unless they share an initial phase/reference or reset event.
 
 The audio clock can continue while musical transport is stopped, allowing effects tails and free-running signals. The transport's start/stop/reset semantics need to be deliberate.
