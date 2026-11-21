@@ -321,9 +321,11 @@ var pitchSource = PitchAdd(PitchControlGenerator.NodeType);
 var pitchMixer = PitchAdd(MixerProcessor.NodeType);
 var pitchMaster = PitchAdd(MasterOutput.NodeType);
 var pitchFrequencies = new[] { 110d, 165d, 220d };
+var pitchVoices = new List<GraphNodeSnapshot>();
 foreach (var hz in pitchFrequencies)
 {
     var voice = PitchAdd(OscillatorGenerator.NodeType);
+    pitchVoices.Add(voice);
     PitchSet(voice, "frequency", hz);
     PitchSet(voice, "amplitude", 0.1);
     PitchSet(voice, OscillatorGenerator.PitchTrackingKey, 1);
@@ -335,6 +337,7 @@ var pitchProgram = FaustGraphCompiler.CreateBuiltIn().Compile(pitchSession.Snaps
 File.WriteAllText(Path.Combine(args[0], "pitch.json"), JsonSerializer.Serialize(new
 {
     source = pitchProgram.Source, values = pitchProgram.InitialControlValues(), frequencies = pitchFrequencies,
+    frequencyMeters = pitchVoices.Select(voice => pitchProgram.Controls.Single(c => c.Address == Address(voice, "frequency")).MeterName).ToArray(),
     transpose = pitchProgram.Controls.Single(c => c.Address == Address(pitchSource, PitchControlGenerator.SemitonesKey)).Name,
     cents = pitchProgram.Controls.Single(c => c.Address == Address(pitchSource, PitchControlGenerator.CentsKey)).Name
 }));

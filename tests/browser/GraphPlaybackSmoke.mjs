@@ -905,6 +905,8 @@ try {
             for (const rate of [44100, 48000]) {
                 const processor = await new FaustMonoDspGenerator().createOfflineProcessor(rate, 128, { ...compiled, soundfiles: {} });
                 const set = (name, value) => processor.setParamValue(processor.getParams().find(path => path.endsWith("/" + name)), value);
+                const meters = new Map();
+                processor.setOutputParamHandler((path, value) => meters.set(path.split('/').at(-1), value));
                 for (const [name, value] of Object.entries(pitch.values)) set(name, value);
                 let previous = null;
                 for (const [semitones, cents] of [[0, 0], [12, 0], [-12, 0], [7, 50]]) {
@@ -925,7 +927,8 @@ try {
                     });
                     const discontinuity = previous === null ? 0 : Math.abs(audio[0] - previous);
                     previous = audio.at(-1);
-                    results.push({ rate, semitones, cents, magnitudes, discontinuity });
+                    const meterError = Math.max(...pitch.frequencyMeters.map((name, index) => Math.abs(meters.get(name) - pitch.frequencies[index] * ratio)));
+                    results.push({ rate, semitones, cents, magnitudes, discontinuity, meterError });
                 }
             }
             return results;
@@ -935,6 +938,7 @@ try {
         console.log("Shared musical pitch", result);
         assert.ok(result.magnitudes.every(value => Math.abs(value - 0.1) < 0.01), "All three tones must follow one pitch ratio");
         assert.ok(result.discontinuity < 0.04, "Live pitch changes preserve the existing oscillator phase");
+        assert.ok(result.meterError < 0.1, "Frequency telemetry follows the actual transposed Hz");
     }
 } finally {
     await browser?.close();

@@ -1053,13 +1053,24 @@ try {
     await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
     await responsePage.getByRole("button", { name: "Play patch" }).click();
     await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
-    await freqSliderA.getByLabel("Live effective value").filter({ hasText: /^220 Hz$/ }).waitFor();
-    await freqSliderB.getByLabel("Live effective value").filter({ hasText: /^330 Hz$/ }).waitFor();
+    const waitForLiveHz = async (voice, expected) => {
+        const nodeId = await voice.getAttribute("data-node-id");
+        // Faust's smoothed single-precision controls settle within a few
+        // hundredths of a Hertz, not necessarily on the exact decimal string.
+        await responsePage.waitForFunction(({ nodeId, expected }) => {
+            const node = document.querySelector(`article[data-node-id='${nodeId}']`);
+            const slider = [...(node?.querySelectorAll('.parameter-slider') ?? [])].find(element => element.querySelector('label')?.textContent.includes('Frequency'));
+            const text = slider?.querySelector('[aria-label="Live effective value"]')?.textContent;
+            return Math.abs(parseFloat(text) - expected) < 0.1;
+        }, { nodeId, expected }, { timeout: 15000 });
+    };
+    await waitForLiveHz(pitchA, 220);
+    await waitForLiveHz(pitchB, 330);
     await transpose.fill("-12");
     await rangeA.filter({ hasText: "55–55 Hz" }).waitFor();
     await rangeB.filter({ hasText: "82.5–82.5 Hz" }).waitFor();
-    await freqSliderA.getByLabel("Live effective value").filter({ hasText: /^55 Hz$/ }).waitFor();
-    await freqSliderB.getByLabel("Live effective value").filter({ hasText: /^82.5 Hz$/ }).waitFor();
+    await waitForLiveHz(pitchA, 55);
+    await waitForLiveHz(pitchB, 82.5);
     assert.match(await responseStatus.innerText(), /^Playing revision \d+$/);
     await responsePage.getByRole("button", { name: "Stop", exact: true }).click();
     await responseStatus.filter({ hasText: /Ready/ }).waitFor();
