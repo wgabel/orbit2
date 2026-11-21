@@ -188,7 +188,7 @@ try {
     const rootPresetPosition = await articles.nth(1).getAttribute("style");
     await rootPreset.selectOption("oscillator-deep-sine");
     assert.equal(await rootPreset.inputValue(), "oscillator-deep-sine");
-    assert.equal(await frequency.getByRole("spinbutton").inputValue(), "110");
+    assert.equal(await frequencyInput.inputValue(), "110");
     assert.ok(Math.abs(Number(await frequencyRange.inputValue()) - frequencyPosition(110)) < 0.0001);
     assert.equal(await amplitudeInput.inputValue(), "0.2");
     assert.notEqual(await articles.nth(1).locator(".node-preset-description").innerText(), "No matching preset. Choose one to load.");
@@ -199,7 +199,7 @@ try {
     assert.equal(await rootPreset.inputValue(), "oscillator-deep-sine");
     await undoButton.click();
     assert.equal(await rootPreset.inputValue(), "");
-    assert.equal(await frequency.getByRole("spinbutton").inputValue(), "440");
+    assert.equal(await frequencyInput.inputValue(), "440");
     assert.equal(await amplitudeInput.inputValue(), originalAmplitude);
     assert.equal(await undoButton.isEnabled(), false);
     // Custom library edits are independent of the graph, with explicit management actions.
@@ -230,7 +230,7 @@ try {
     await presetManager.getByText("Renamed to My renamed carrier.", { exact: true }).waitFor();
     assert.equal(await rootPreset.locator(`option[value='${customId}']`).innerText(), "My renamed carrier");
     await presetManager.getByRole("button", { name: "Close" }).click();
-    await frequency.getByRole("spinbutton").fill("333");
+    await frequencyInput.fill("333");
     await manageRootPresets.click();
     await presetManager.getByLabel("Saved custom preset").selectOption(customId);
     await presetManager.getByRole("button", { name: "Overwrite with current settings" }).click();
@@ -268,7 +268,7 @@ try {
     await importPresetFile(Buffer.from(JSON.stringify({ ...portablePreset, parameters: { ...portablePreset.parameters, frequency: 334 } })));
     await presetManager.getByRole("button", { name: "Replace My renamed carrier", exact: true }).click();
     await presetManager.getByText("Imported My renamed carrier.", { exact: true }).waitFor();
-    assert.equal(await frequency.getByRole("spinbutton").inputValue(), "333");
+    assert.equal(await frequencyInput.inputValue(), "333");
     // Removing the library entry and importing the original file restores the original ID.
     await presetManager.getByRole("button", { name: "Delete selected preset" }).click();
     await presetManager.getByText("Custom preset deleted; current node unchanged.", { exact: true }).waitFor();
@@ -279,11 +279,11 @@ try {
     assert.equal(await rootPreset.inputValue(), customId);
     await presetManager.getByRole("button", { name: "Close" }).click();
     await undoButton.click();
-    assert.equal(await frequency.getByRole("spinbutton").inputValue(), "440");
+    assert.equal(await frequencyInput.inputValue(), "440");
     await rootPreset.selectOption(customId);
-    assert.equal(await frequency.getByRole("spinbutton").inputValue(), "333");
+    assert.equal(await frequencyInput.inputValue(), "333");
     await undoButton.click();
-    assert.equal(await frequency.getByRole("spinbutton").inputValue(), "440");
+    assert.equal(await frequencyInput.inputValue(), "440");
     assert.equal(await undoButton.isEnabled(), false);
     const muteSource = articles.nth(0).getByRole("button", { name: /^Mute / });
     const beforeMuteTransform = await articles.nth(0).getAttribute("style");
@@ -811,7 +811,7 @@ try {
     await presetManager.getByText("Custom preset deleted; current node unchanged.", { exact: true }).waitFor();
     await presetManager.getByRole("button", { name: "Close" }).click();
     assert.equal(await rootPreset.locator(`option[value='${customId}']`).count(), 0);
-    assert.equal(await frequency.getByRole("spinbutton").inputValue(), "333");
+    assert.equal(await frequencyInput.inputValue(), "333");
     assert.equal(await rootPreset.inputValue(), "");
     assert.ok(requests.has(`/_content/Orbit.Infrastructure/persistence-${version}/patchStorage.js`));
     assert.ok([...requests].every(path => !path.startsWith("/_content/Orbit.Infrastructure/persistence/")));
