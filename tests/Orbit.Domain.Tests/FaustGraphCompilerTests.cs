@@ -47,6 +47,26 @@ public sealed class FaustGraphCompilerTests
     }
 
     [Fact]
+    public void DynamicCatalogIncludesNestedAliasesWithOnlyOnePhysicalSlot()
+    {
+        using var patch = new NestedFaustPatch();
+        var graph = patch.Session.Snapshot;
+        var tapped = compiler.Compile(graph, 1, dynamicTaps: true);
+        var master = graph.Nodes.Single(n => n.TypeKey == MasterOutput.NodeType);
+        var outer = graph.Nodes.Single(n => n.Composite is not null);
+        var child = graph.GetGraph(patch.ChildId);
+        var leaf = child.GetNode(patch.Frequency.NodeId);
+        var ids = tapped.SignalTaps.ObservationIds;
+        Assert.Equal(2, tapped.SignalTaps.ChannelCount);
+        Assert.True(tapped.SignalTaps.SelectorCount > 1);
+        Assert.Equal(0, ids[new(graph.Id, graph.Id, master.Id, master.Inputs[0].Id, PortDirection.Input)]);
+        Assert.Equal(0, ids[new(graph.Id, graph.Id, outer.Id, outer.Outputs[0].Id, PortDirection.Output)]);
+        Assert.Contains(new SignalObservationAddress(graph.Id, child.Id, leaf.Id, leaf.Outputs[0].Id, PortDirection.Output), ids.Keys);
+        Assert.DoesNotContain(tapped.InitialControlValues().Keys, key => key.StartsWith("orbit_tap_"));
+        Assert.Equal(tapped.Source, compiler.Compile(graph, 1, dynamicTaps: true).Source);
+    }
+
+    [Fact]
     public void ChorusAllParametersAreLiveAndModulatable()
     {
         using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());

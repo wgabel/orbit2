@@ -12,7 +12,7 @@ export class AudioOutput {
         this.#envelope = envelope;
     }
 
-    createVoice(context, sourceNode, channels = 1) {
+    createVoice(context, sourceNode, channels = 1, routing = null) {
         if (this.#context !== context) {
             this.dispose();
             this.#context = context;
@@ -24,7 +24,7 @@ export class AudioOutput {
         voiceGain.gain.value = 0;
         let capture;
         try {
-            capture = new SignalCapture(context, sourceNode, channels);
+            capture = new SignalCapture(context, sourceNode, channels, routing);
             capture.connectMaster(voiceGain);
             voiceGain.connect(this.#masterGain);
         } catch (error) {

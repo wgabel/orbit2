@@ -51,6 +51,17 @@ var amplitude = program.Controls.Single(control => control.Address == new Parame
     oscillator.Parameters.Single(parameter => parameter.Definition.Key == "amplitude").Id));
 File.WriteAllText(Path.Combine(args[0], "program.dsp"), program.Source);
 var observed = FaustGraphCompiler.CreateBuiltIn().Compile(session.Snapshot, SignalTapManifest.MaxAuxiliaryChannels);
+var nestedDynamic = FaustGraphCompiler.CreateBuiltIn().Compile(session.Snapshot, 8, dynamicTaps: true);
+int NestedSelector(Guid graph, Guid node, Guid port, PortDirection direction) => nestedDynamic.SignalTaps.ObservationIds[new(root, graph, node, port, direction)];
+File.WriteAllText(Path.Combine(args[0], "dynamic-nested-taps.json"), JsonSerializer.Serialize(new
+{
+    source = nestedDynamic.Source, monoSource = program.Source, values = nestedDynamic.InitialControlValues(),
+    count = nestedDynamic.SignalTaps.SelectorCount,
+    lfo = NestedSelector(root, lfo.Id, lfo.Outputs[0].Id, PortDirection.Output),
+    weighted = NestedSelector(root, drone.Id, drone.Inputs[0].Id, PortDirection.Input),
+    rackAlias = NestedSelector(child, composite.InputRackId, drone.Inputs[0].Id, PortDirection.Output),
+    masterAlias = NestedSelector(root, drone.Id, drone.Outputs[0].Id, PortDirection.Output)
+}));
 File.WriteAllText(Path.Combine(args[0], "observation.json"), JsonSerializer.Serialize(new
 {
     source = observed.Source, values = observed.InitialControlValues(), channels = observed.SignalTaps.ChannelCount,
@@ -508,6 +519,38 @@ File.WriteAllText(Path.Combine(args[0], "rhythmic-sources.json"), JsonSerializer
     clockSource = $"import(\"stdfaust.lib\"); process(beat,reset,choice) = {FaustRhythmicSources.SynchronizedClock("beat", "reset", "choice")};",
     freeSource = $"import(\"stdfaust.lib\"); process = {FaustRhythmicSources.FreeClock("2.0")};",
     gateSource = $"import(\"stdfaust.lib\"); process(input,ms) = {FaustRhythmicSources.TimedGate("input", "ms")};"
+}));
+
+// More reachable signals than auxiliary slots; each oscillator has a distinct frequency.
+using var tapSession = new PatchSession(BuiltInNodes.CreateRegistry());
+var tapGraph = tapSession.GraphId;
+GraphNodeSnapshot TapAdd(string type) => tapSession.Execute(new AddNodeCommand(tapGraph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+void TapWire(GraphNodeSnapshot from, GraphNodeSnapshot to) => tapSession.Execute(new ConnectNodesCommand(tapGraph,
+    new(from.Id, from.Outputs[0].Id), new(to.Id, to.Inputs.Single(p => p.Key == "audio-in").Id)));
+var tapMixer = TapAdd(MixerProcessor.NodeType);
+var tapMaster = TapAdd(MasterOutput.NodeType);
+TapWire(tapMixer, tapMaster);
+var tapOscillators = Enumerable.Range(0, 12).Select(i =>
+{
+    var osc = TapAdd(OscillatorGenerator.NodeType);
+    tapSession.Execute(new SetParameterValueCommand(tapGraph, Address(osc, "frequency"), 100 + i * 50));
+    tapSession.Execute(new SetParameterValueCommand(tapGraph, Address(osc, "amplitude"), 0.05));
+    TapWire(osc, tapMixer);
+    return osc;
+}).ToArray();
+var tapDisconnected = TapAdd(OscillatorGenerator.NodeType);
+var tapCompiler = FaustGraphCompiler.CreateBuiltIn();
+var dynamicTap = tapCompiler.Compile(tapSession.Snapshot, 8, dynamicTaps: true);
+var monoTap = tapCompiler.Compile(tapSession.Snapshot);
+int Selector(GraphNodeSnapshot n) => dynamicTap.SignalTaps.ObservationIds[new(tapGraph, tapGraph, n.Id, n.Outputs[0].Id, PortDirection.Output)];
+File.WriteAllText(Path.Combine(args[0], "dynamic-taps.json"), JsonSerializer.Serialize(new
+{
+    source = dynamicTap.Source, monoSource = monoTap.Source, values = dynamicTap.InitialControlValues(),
+    count = dynamicTap.SignalTaps.SelectorCount, channels = dynamicTap.SignalTaps.ChannelCount,
+    oscillators = tapOscillators.Select((osc, i) => new { selector = Selector(osc), frequency = 100 + i * 50 }),
+    master = dynamicTap.SignalTaps.ObservationIds[new(tapGraph, tapGraph, tapMaster.Id, tapMaster.Inputs[0].Id, PortDirection.Input)],
+    mixer = Selector(tapMixer),
+    disconnected = dynamicTap.SignalTaps.ObservationIds.ContainsKey(new(tapGraph, tapGraph, tapDisconnected.Id, tapDisconnected.Outputs[0].Id, PortDirection.Output))
 }));
 
 GraphNodeSnapshot TempoAdd(Guid graph, string type) =>

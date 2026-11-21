@@ -88,6 +88,11 @@ public sealed class BrowserAudioEngine(IJSRuntime javaScriptRuntime) : IAudioEng
     public async Task<SignalObservationFrame?> ReadSignalAsync(string soundId, Guid generation, Guid subscriptionId, int channel) =>
         await GetAudioModule().InvokeAsync<SignalObservationFrame?>("readSignal", soundId, generation, subscriptionId, channel);
 
+    public bool SupportsDynamicTaps => true;
+
+    public async Task<SignalObservationResult> ReadObservationAsync(string soundId, Guid generation, Guid subscriptionId, int selector) =>
+        await GetAudioModule().InvokeAsync<SignalObservationResult>("readObservation", soundId, generation, subscriptionId, selector);
+
     public async Task ReleaseSignalAsync(string soundId, Guid subscriptionId)
     {
         if (audioModule is not null)

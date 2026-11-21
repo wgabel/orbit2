@@ -47,3 +47,44 @@ test("master isolation, shared analyzer leases, bounded windows and teardown", (
     capture.dispose();
     assert.deepEqual(links, [[source, splitter, 0]]);
 });
+
+test('dynamic taps allocate only on demand, share aliases, refuse ninth, and wait for fresh assignment', () => {
+    const writes = [], acks = new Map();
+    const makeNode = () => ({ connect() {}, disconnect() {} });
+    const context = { currentTime: 0, sampleRate: 48000, state: 'running',
+        createChannelSplitter: () => makeNode(),
+        createAnalyser: () => ({ ...makeNode(), getFloatTimeDomainData(samples) { samples.fill(0.25); } }) };
+    const routing = { selectorCount: 15, write: (slot, token) => writes.push([slot, token]), ack: slot => acks.get(slot) };
+    const capture = new SignalCapture(context, makeNode(), 9, routing);
+    const observe = (lease, selector) => capture.observe(lease, selector, 'generation');
+    assert.deepEqual(writes, []);
+    assert.deepEqual(capture.getDiagnostics(), { occupiedSlots: 0, freeSlots: 8, activeLeases: 0 });
+    for (let selector = 1; selector <= 15; selector++) {
+        assert.equal(observe('individual', selector).availability, 2);
+        const [slot, token] = writes.at(-1);
+        assert.equal(slot, 1);
+        assert.equal(token % 16, selector);
+        context.currentTime += 1;
+        assert.equal(observe('individual', selector).availability, 2); // previous ACK is stale
+        acks.set(slot, token);
+        assert.equal(observe('individual', selector).availability, 2); // fresh full buffer required
+        context.currentTime += 0.2;
+        assert.equal(observe('individual', selector).availability, 3);
+        capture.release('individual');
+        assert.deepEqual(writes.at(-1), [1, 0]);
+    }
+    for (let i = 1; i <= 8; i++) assert.equal(observe(`view${i}`, i).availability, 2);
+    const count = writes.length;
+    assert.equal(observe('alias', 1).availability, 2);
+    assert.equal(writes.length, count);
+    assert.deepEqual(observe('ninth', 15), { availability: 4, frame: null, reason: 'slots', occupiedSlots: 8, freeSlots: 0, activeLeases: 9 });
+    assert.equal(observe('master', 0).availability, 2);
+    assert.equal(observe('unrouted', 16).availability, 1);
+    capture.release('view1');
+    assert.equal(observe('ninth', 15).availability, 4);
+    capture.release('alias');
+    assert.equal(observe('ninth', 15).availability, 2);
+    assert.equal(writes.at(-1)[0], 1);
+    capture.dispose();
+    assert.deepEqual(writes.slice(-8).map(([, token]) => token), Array(8).fill(0));
+});

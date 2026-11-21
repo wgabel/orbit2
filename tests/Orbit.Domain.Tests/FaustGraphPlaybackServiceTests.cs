@@ -192,12 +192,16 @@ public sealed class FaustGraphPlaybackServiceTests
         var playing = service.PlayAsync(graph);
         var initial = Assert.IsType<PlaybackRequest>(engine.Request);
         Assert.InRange(initial.OutputChannels, 2, 9);
+        Assert.True(initial.TapSelectorCount > 0);
         var binding = service.Resolve(address);
         Assert.Equal(SignalObservationAvailability.Available, binding.Availability);
         Assert.Equal(initial.Generation, binding.Generation);
         Assert.Equal(initial.SoundId, binding.SoundId);
         Assert.Equal(SignalObservationAvailability.Unavailable, service.Resolve(address with { PortId = Guid.NewGuid() }).Availability);
         Assert.Equal(initial.Generation, (await subscription.ReadAsync()).Frame!.Generation);
+        engine.CapacityReached = true;
+        Assert.Equal(SignalObservationAvailability.Capacity, (await subscription.ReadAsync()).Availability);
+        engine.CapacityReached = false;
         patch.Session.Execute(new SetParameterValueCommand(patch.ChildId, patch.Frequency, 330));
         await service.UpdateAsync(patch.Session.Snapshot);
         Assert.Equal(initial.Generation, (await subscription.ReadAsync()).Frame!.Generation);
@@ -564,9 +568,14 @@ public sealed class FaustGraphPlaybackServiceTests
 
     private sealed class CapturingEngine : RecordingEngine, ISignalCapture
     {
+        public bool SupportsDynamicTaps => true;
+        public bool CapacityReached { get; set; }
         public List<Guid> Released { get; } = [];
         public Task<SignalObservationFrame?> ReadSignalAsync(string soundId, Guid generation, Guid subscriptionId, int channel) =>
             Task.FromResult<SignalObservationFrame?>(new(generation, 48000, 1, [0.1f]));
+        public async Task<SignalObservationResult> ReadObservationAsync(string soundId, Guid generation, Guid subscriptionId, int selector) =>
+            CapacityReached ? new(SignalObservationAvailability.Capacity) : new(SignalObservationAvailability.Available,
+                await ReadSignalAsync(soundId, generation, subscriptionId, selector));
         public Task ReleaseSignalAsync(string soundId, Guid subscriptionId)
         {
             Released.Add(subscriptionId);
