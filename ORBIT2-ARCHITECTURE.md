@@ -5,7 +5,7 @@
 **Target repository:** [wgabel/orbit2](https://github.com/wgabel/orbit2)  
 **Original design date:** 2026-11-20
 
-This document consolidates the design discussions for Orbit 2: the original browser boilerplate, separation of responsibilities, signal generation, modulation, audio processing, clocks, hierarchical node canvases, exposed input/output racks, and event-driven editing. It is intended as a reference for implementing the next iterations, not a claim that every proposed system already exists. Earlier implementation sketches, design rationale, examples and acceptance criteria are preserved even when later implementation records supersede the initial wording. The README remains the practical build/run guide.
+This document consolidates the design discussions for Orbit 2: the original browser boilerplate, separation of responsibilities, signal generation, modulation, audio processing, clocks, hierarchical node canvases, exposed input/output racks, and event-driven editing. It is intended as a reference for implementing the next iterations, not a claim that every proposed system already exists. Earlier implementation sketches, design rationale, examples and acceptance criteria are preserved even when later implementation records supersede the initial wording. The README remains the practical build/run guide. [Performance monitoring and diagnostics](performance.md) is the dedicated specification for measuring audio reliability, latency, DSP load/headroom, editor responsiveness, compilation and benchmark regressions (Phase 7.3).
 
 ## Reading guide and current implementation
 
@@ -1597,6 +1597,8 @@ When swapping graphs, use an appropriate short fade/crossfade and preserve state
 - Avoid abrupt parameter changes, accidental phase resets and unsafe feedback.
 - Measure CPU and underruns with representative complex patches, including multiple drones.
 
+**Performance specification (planned Phase 7.3):** see [performance.md](performance.md) for the Performance Monitor, precise metric definitions and availability limits, browser/Faust instrumentation, latency and underrun measurements, UI and compiler timings, benchmark patches, troubleshooting examples, and regression/acceptance criteria. Monitoring is passive and separate from graph state, playback and signal observation; it must not create audible paths or change sound.
+
 ### Audio processors and effects
 
 #### Resonant filter implementation (Phase 6.7 — implemented)
@@ -2330,6 +2332,7 @@ Keep identifiers stable even when independent milestones ship out of numerical o
 | Keyboard and sequencing | 7.2.2 shared pitch | 7.2.8a–c live pitch, long transport, recording; 7.2.3 and 7.2.8d when event/gated articulation is ready |
 | Instruments | Existing oscillator/effect capabilities and AD impact preset | 7.2.1 recipes/templates, 7.2.4 resonator, 7.2.5 modal synthesis, 7.2.6 polyphony, 7.2.7 physical models |
 | Standalone audio transposition | Design only | 6.20.1–6.20.2; independent of keyboard tracking |
+| Performance and diagnostics | Existing clock, playback lifecycle and signal observation foundations | 7.3.1–7.3.4 passive monitor, compilation/UI metrics and profiling; 7.3.5 musical timing; 7.3.6 reports and regressions ([specification](performance.md)) |
 | Audio assets | Design only | Phase 8 |
 
 The most direct drone-performance path is 7.2.2 (delivered) → 7.2.8a–c. Gated instruments depend on rhythmic sources, ADSR and monophonic note delivery. Presentation-only annotations, dedicated analysis and the post-mixer pitch shifter can proceed independently.
@@ -2544,6 +2547,19 @@ Deliverable: an oscillator can repeatedly trigger a percussion envelope without 
 
 Deliverable: play and edit a synthesized instrument as an ordinary Orbit2 graph; excite a handpan-like modal bank with short bursts and different pitches/velocities; use the same pitch, gate, envelope and resonator components for sustained and percussive sounds without hardcoded instrument-specific DSP; perform and loop quantized pitch progressions over rhythmic or multi-minute ambient timescales without interrupting continuous drones. Phase 8 later adds recorded assets and hybrid techniques.
 
+#### Phase 7.3 — Performance monitoring, profiling and diagnostics (planned)
+
+The detailed implementation and usage contract lives in [performance.md](performance.md), not in this roadmap. The monitor distinguishes measured/estimated/unsupported metrics, stays read-only and measures audio reliability separately from UI and signal quality.
+
+- **7.3.1 — Passive Performance Monitor (planned):** shared compact toolbar/expanded diagnostics, sample rate and context state, browser-reported latency and supported underrun statistics, feature detection, local session baselines and bounded slow collection.
+- **7.3.2 — Compilation and runtime diagnostics (planned):** C# source generation, worker round trip, worklet creation, replacement and control-only update timing; accepted/stale revisions, active/retiring voices, graph complexity and analyzer resource counts.
+- **7.3.3 — Editor performance (planned):** foreground FPS/frame-gap and supported long-task metrics, independent observer lifecycle and bounded history; no changes to graph or audio.
+- **7.3.4 — DSP profiling and benchmarks (planned):** deterministic representative fixtures and offline throughput, external live renderer measurements, optional validated low-overhead worklet timing if supported; relative node costs and baseline before expensive DSP/polyphony.
+- **7.3.5 — Input latency and musical timing (planned):** generation-qualified action and applied-frame measurements, output-timestamp estimate, scheduled event error and long-loop drift tests once the relevant event/keyboard/sequence paths exist.
+- **7.3.6 — Reports, stress and regression diagnostics (planned):** opt-in bounded local reports, history, safe reproducible stress fixtures, long-running resource cleanup and comparable CI trends; prioritize measured bottlenecks.
+
+Deliverable: a musician can inspect audio latency and reliability while safely editing a patch, identify performance pressure and distinguish it from clipping or DSP discontinuities; developers can reproduce and compare performance regressions without changing sound. The first four increments do not depend on NoteSource, ADSR or polyphony. No ordinary browser API is assumed to expose an exact whole-renderer CPU or physical key-to-speaker latency measurement.
+
 ### Phase 8 — Audio assets and sample-based synthesis (planned)
 
 - **8.1 — Audio asset library (planned):** import browser-decodable audio files, validate size/format, store original binary assets and metadata in IndexedDB, list and resolve by stable ID, and verify reload and deduplication. Prototype the FaustWasm soundfile binding and measure decoded memory requirements.
@@ -2592,6 +2608,7 @@ The core model should be independently unit testable without a browser or Faust.
 | Patch documentation (planned) | Notes, aliases, labels and groups round-trip with root/nested layouts and named snapshots; old documents restore empty annotations, invalid data is rejected atomically, annotation history and text editing remain independent of graph history, and graph revision, compilation and playback generation stay unchanged. |
 | Connection visualization (Phase 6.19.5 — implemented core) | Badge units and signs match committed receiving-port semantics; zero/dormant states remain distinct; labels follow cable midpoints behind nodes and obey visibility preferences; the editor clamps to usable canvas geometry; display changes leave graph and playback unchanged, while explicit Apply commits one amount change and undo/redo restores its badge. |
 | Output safety | Controlled master gain, no unexpected discontinuity when changing base values. |
+| Performance and diagnostics (7.3 — planned) | Feature-detected metrics with explicit scope/availability, no monitoring-induced graph/audio changes, session/generation correctness, bounded resources and reproducible throughput/real-time comparisons; see [performance.md](performance.md). |
 | Persistence | Save/load nested graph and layout with stable IDs and equivalent connectivity. |
 | Audio assets (planned) | Import and reload binary recordings, share immutable data across nodes, preserve IDs through undo/redo, handle quota and missing assets without corrupting patches. |
 | Sample playback (planned) | Verify pitch/rate at 44.1/48 kHz, independent playheads, interpolation, loop bounds/crossfades, reverse and one-shot termination; reject stale asset loads during live replacement. |
