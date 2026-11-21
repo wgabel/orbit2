@@ -40,7 +40,7 @@ public partial class GraphCanvas : IAsyncDisposable
         get => Snapshot.ConnectionLabels;
         set => State.SetConnectionLabels(value);
     }
-    private bool ShowBadge(ConnectionVisual wire) => labelMode switch
+    private bool ShowBadge(ConnectionVisual wire) => LabelMode switch
     {
         Orbit.Application.Persistence.ConnectionLabelMode.Off => false,
         Orbit.Application.Persistence.ConnectionLabelMode.Selected => wire.Selected,
