@@ -2,6 +2,8 @@
 
 [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Instrument recipes](instrument-recipes.md) · [Worked drone](drone.md)
 
+Guide introduced in [PR #22](https://github.com/wgabel/orbit2/pull/22) (documentation only; existing node implementation references are in the linked technical modules).
+
 ## 1. The structure of a musical piece
 
 An ambient piece is more than a sustained sound with reverb. It can have a theme, harmony, rhythm, contrasting textures and a beginning, development and ending, even without a conventional drum beat. Generative composition delegates some of the decisions to the patch (e.g. when notes happen or how brightness changes), while the composer determines the musical vocabulary and the overall journey.
