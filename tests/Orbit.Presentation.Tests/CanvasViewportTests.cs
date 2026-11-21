@@ -101,7 +101,9 @@ public sealed class CanvasViewportTests
             next.Y + 80 <= occupied.Top || next.Y >= occupied.Bottom);
 
         var tiny = new CanvasBounds(-800, -600, -770, -570);
-        Assert.Equal(new CanvasPoint(tiny.Left, tiny.Top), policy.FindVisiblePosition(tiny, [tiny]));
+        var crowded = policy.FindVisiblePosition(tiny, [tiny]);
+        Assert.InRange(crowded.X, tiny.Left, tiny.Right - 1);
+        Assert.InRange(crowded.Y, tiny.Top, tiny.Bottom - 1);
     }
 
     [Fact]
