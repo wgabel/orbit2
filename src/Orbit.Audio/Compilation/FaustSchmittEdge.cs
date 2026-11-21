@@ -1,0 +1,13 @@
+namespace Orbit.Audio.Compilation;
+
+/// <summary>One sample pulse on a high crossing after a low sample; initially unarmed.</summary>
+public static class FaustSchmittEdge
+{
+    public static string Emit(string input) => $$"""
+        ((armed : mem) * (x >= 0.1)) with {
+            x = {{input}};
+            armed = update ~ _;
+            update(previous) = select2(x <= 0.0, select2(x >= 0.1, previous, 0), 1);
+        }
+        """;
+}

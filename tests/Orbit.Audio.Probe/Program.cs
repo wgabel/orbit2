@@ -342,6 +342,29 @@ File.WriteAllText(Path.Combine(args[0], "pitch.json"), JsonSerializer.Serialize(
     cents = pitchProgram.Controls.Single(c => c.Address == Address(pitchSource, PitchControlGenerator.CentsKey)).Name
 }));
 
+// Direct signal fixture exercises the exact production state machine with sample-accurate
+// arbitrary edges and controls. The impact fixture exercises normal nested graph routing.
+var ad = FaustEnvelopeSegments.EmitAd(FaustSchmittEdge.Emit("signal"), "a", "d", "ac", "dc");
+using var impactSession = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+var impactGraph = impactSession.GraphId;
+var impact = impactSession.Execute(new AddNodeCommand(impactGraph, ImpactTemplate.PresetKey)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+var impactMaster = impactSession.Execute(new AddNodeCommand(impactGraph, MasterOutput.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+impactSession.Execute(new ConnectNodesCommand(impactGraph, new PortAddress(impact.Id, impact.Outputs.Single().Id),
+    new PortAddress(impactMaster.Id, impactMaster.Inputs.Single().Id)));
+var impactProgram = FaustGraphCompiler.CreateBuiltIn().Compile(impactSession.Snapshot, SignalTapManifest.MaxAuxiliaryChannels);
+var impactChild = impact.Composite!.Graph;
+var envelopes = impactChild.Nodes.Where(n => n.TypeKey == EnvelopeGenerator.NodeType).ToArray();
+var impactPitch = envelopes.Single(n => n.Parameters.Single(p => p.Definition.Key == EnvelopeGenerator.AttackKey).BaseValue == 1);
+var impactAmp = envelopes.Single(n => n.Id != impactPitch.Id);
+var impactTrigger = impactChild.Nodes.Single(n => n.TypeKey == OscillatorGenerator.NodeType && n.Parameters.Single(p => p.Definition.Key == "frequency").BaseValue == 1);
+int Tap(GraphNodeSnapshot node) => impactProgram.SignalTaps.Channels[new SignalObservationAddress(impactGraph, impactChild.Id, node.Id, node.Outputs.Single().Id, PortDirection.Output)];
+File.WriteAllText(Path.Combine(args[0], "envelope.json"), JsonSerializer.Serialize(new
+{
+    directSource = $"import(\"stdfaust.lib\"); process(signal,a,d,ac,dc) = {ad};",
+    source = impactProgram.Source, values = impactProgram.InitialControlValues(),
+    pitch = Tap(impactPitch), amplitude = Tap(impactAmp), trigger = Tap(impactTrigger)
+}));
+
 GraphNodeSnapshot TempoAdd(Guid graph, string type) =>
     tempoSession.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
 
