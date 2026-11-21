@@ -30,6 +30,10 @@ public partial class ParameterSlider
     private string? Error { get; set; }
 
     private string UnitLabel => ParameterUnitLabel.Format(Definition.Unit);
+    private string PredictedRangeText => ModulationRange is { } bounds
+        ? $"{FormatLive(bounds.Minimum)}–{FormatLive(bounds.Maximum)} {UnitLabel}" : "unknown";
+    private string EffectiveValueText => EffectiveValue is double current && double.IsFinite(current)
+        ? $"{FormatLive(current)} {UnitLabel}" : "—";
     private bool HasDisplayScale => Definition.DisplayScale is not null;
     private double RangeMinimum => HasDisplayScale ? 0 : Definition.Minimum;
     private double RangeMaximum => HasDisplayScale ? 1 : Definition.Maximum;

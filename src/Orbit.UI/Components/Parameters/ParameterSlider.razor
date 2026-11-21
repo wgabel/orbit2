@@ -51,22 +51,14 @@
     @if (IsModulated || ModulationRange.HasValue)
     {
         <div class="parameter-modulation">
-            @if (ModulationRange is { } bounds)
-            {
-                <span>Modulation: @FormatLive(bounds.Minimum)–@FormatLive(bounds.Maximum) @UnitLabel</span>
-            }
-            else
-            {
-                <span>Modulation: unknown</span>
-            }
-            @if (EffectiveValue is double current && double.IsFinite(current))
-            {
-                <span>Live: @FormatLive(current) @UnitLabel</span>
-            }
-            else
-            {
-                <span>Live: —</span>
-            }
+            <div class="parameter-modulation-reading">
+                <span>Modulation</span>
+                <output aria-label="Predicted modulation range" aria-live="off" title="@PredictedRangeText">@PredictedRangeText</output>
+            </div>
+            <div class="parameter-modulation-reading">
+                <span>Live</span>
+                <output aria-label="Live effective value" aria-live="off" title="@EffectiveValueText">@EffectiveValueText</output>
+            </div>
         </div>
     }
 </div>

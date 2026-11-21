@@ -60,7 +60,7 @@
 .node-bypassed .node-parameters { opacity: var(--component-node-muted-opacity); }
 .node-ports { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--component-node-port-gap); padding-block: var(--component-node-padding); }
 .node-inputs, .node-outputs { display: grid; align-content: start; gap: var(--component-node-port-gap); min-width: 0; }
-.node-parameters { display: grid; gap: var(--component-node-parameter-gap); padding: var(--component-node-padding); border-top: var(--semantic-border-width) solid var(--semantic-color-border); }
+.node-parameters { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--component-node-parameter-gap); padding: var(--component-node-padding); border-top: var(--semantic-border-width) solid var(--semantic-color-border); }
 .node-parameters .parameter-heading input { min-width: 0; max-width: 45%; }
 .node-parameters .parameter-heading label { min-width: 0; overflow-wrap: anywhere; }
 .node-actions { display: grid; padding: var(--component-node-padding); border-top: var(--semantic-border-width) solid var(--semantic-color-border); }

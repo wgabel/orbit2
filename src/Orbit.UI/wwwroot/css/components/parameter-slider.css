@@ -1,6 +1,6 @@
 /* Shared parameter editor: base thumb, predicted band, and live DSP marker.
    Dynamic percentages are supplied by the component; all visual constants are tokens. */
-.parameter-slider { display: grid; gap: var(--semantic-space-tight); }
+.parameter-slider { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: var(--semantic-space-tight); }
 .parameter-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--semantic-space-compact); }
 .parameter-heading label { color: var(--semantic-color-text); font-size: var(--semantic-typography-label); }
 .parameter-unit, .parameter-details { color: var(--semantic-color-muted); font-size: var(--semantic-typography-caption); }
@@ -80,10 +80,29 @@
     border-radius: var(--semantic-radius-round);
 }
 .parameter-track input:disabled { cursor: default; }
-.parameter-details, .parameter-modulation { display: flex; justify-content: space-between; gap: var(--semantic-space-compact); }
+.parameter-details { display: flex; justify-content: space-between; gap: var(--semantic-space-compact); }
 .parameter-scale-details { position: relative; margin-inline: var(--component-slider-rail-inset); }
 .parameter-scale-tick { position: absolute; transform: translateX(-50%); }
-.parameter-modulation { color: var(--component-slider-modulation-color); font-size: var(--semantic-typography-caption); font-variant-numeric: tabular-nums; }
+.parameter-modulation {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: var(--semantic-space-compact);
+    color: var(--component-slider-modulation-color);
+    font-size: var(--semantic-typography-caption);
+    font-variant-numeric: tabular-nums;
+}
+.parameter-modulation-reading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--semantic-space-tight);
+    min-width: 0;
+}
+.parameter-modulation-reading > span, .parameter-modulation-reading > output {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 @media (prefers-reduced-motion: reduce) {
     .parameter-effective-marker { transition: none; }
 }

@@ -40,7 +40,33 @@ try {
     const frequency = articles.nth(1).locator(".parameter-slider").filter({ has: page.getByRole("spinbutton", { name: "Frequency (Hz)" }) });
     const amplitude = articles.nth(1).locator(".parameter-slider").filter({ has: page.getByRole("spinbutton", { name: "Amplitude (normalized)" }) });
     const marker = frequency.locator(".parameter-effective-marker");
-    await frequency.getByText("Modulation: 340–540 Hz").waitFor({ timeout: 30000 });
+    const predictedFrequency = frequency.getByLabel("Predicted modulation range");
+    await predictedFrequency.filter({ hasText: "340–540 Hz" }).waitFor({ timeout: 30000 });
+    // Probe the real readout CSS with deliberately wide values without altering
+    // the live Blazor DOM or graph. The clone shares the node's fixed width.
+    const readoutSizes = await frequency.evaluate(slider => {
+        const copy = slider.closest("article").cloneNode(true);
+        copy.style.visibility = "hidden";
+        slider.closest("article").parentElement.append(copy);
+        try {
+            const readings = copy.querySelector(".parameter-slider:has([aria-label='Frequency']) .parameter-modulation");
+            const range = readings.querySelector("[aria-label='Predicted modulation range']");
+            const live = readings.querySelector("[aria-label='Live effective value']");
+            return [["340–540 Hz", "—"], ["0.01–20000 Hz", "999.99 Hz"], ["19999.99–20000 Hz", "19999.99 Hz"],
+                ["unknown", "-123456789.99 normalized"]].map(([predicted, effective]) => {
+                range.textContent = predicted;
+                live.textContent = effective;
+                const row = readings.getBoundingClientRect();
+                const within = [range, live].every(output => {
+                    const rect = output.getBoundingClientRect();
+                    return rect.left >= row.left - 1 && rect.right <= row.right + 1 && output.scrollHeight <= output.clientHeight + 1;
+                });
+                return { height: readings.offsetHeight, nodeHeight: copy.offsetHeight, within };
+            });
+        } finally { copy.remove(); }
+    });
+    assert.ok(readoutSizes.every(size => size.within && size.height === readoutSizes[0].height && size.nodeHeight === readoutSizes[0].nodeHeight),
+        `Readout height must be independent of value length: ${JSON.stringify(readoutSizes)}`);
     // Physical frequency and visual coordinates are deliberately different.
     const frequencyRange = frequency.getByRole("slider", { name: "Frequency" });
     const frequencyInput = frequency.getByRole("spinbutton", { name: "Frequency (Hz)" });
@@ -254,10 +280,10 @@ try {
     await muteSource.click();
     assert.equal(await muteSource.getAttribute("aria-pressed"), "true");
     assert.equal(await articles.nth(0).getAttribute("style"), beforeMuteTransform);
-    await frequency.getByText("Modulation: 440–440 Hz").waitFor();
+    await predictedFrequency.filter({ hasText: "440–440 Hz" }).waitFor();
     await undoButton.click();
     assert.equal(await muteSource.getAttribute("aria-pressed"), "false");
-    await frequency.getByText("Modulation: 340–540 Hz").waitFor();
+    await predictedFrequency.filter({ hasText: "340–540 Hz" }).waitFor();
     assert.equal(await articles.last().getByRole("button", { name: /^Mute / }).count(), 0);
     const bypassGain = articles.nth(2).getByRole("button", { name: "Bypass Gain" });
     const muteGain = articles.nth(2).getByRole("button", { name: "Mute Gain" });
@@ -303,17 +329,21 @@ try {
     assert.ok(Number(await beat.innerText()) >= firstBeat);
     await marker.waitFor({ timeout: 10000 });
     const liveReading = await frequency.evaluate(element => ({
-        live: parseFloat(element.querySelector(".parameter-modulation span:last-child").textContent.replace("Live: ", "")),
+        live: parseFloat(element.querySelector('[aria-label="Live effective value"]').textContent),
         left: parseFloat(element.querySelector(".parameter-effective-marker").style.left)
     }));
     assert.ok(Number.isFinite(liveReading.live));
     assert.ok(Math.abs(liveReading.left - frequencyPosition(liveReading.live) * 100) < 0.03,
         "Live marker must share the frequency display mapping");
     const firstPosition = await marker.getAttribute("style");
+    const readoutHeight = await frequency.locator(".parameter-modulation").evaluate(element => element.offsetHeight);
+    const nodeHeight = await articles.nth(1).evaluate(element => element.offsetHeight);
     let moved = false;
-    for (let i = 0; i < 20 && !moved; i++) {
+    for (let i = 0; i < 10 || (i < 20 && !moved); i++) {
         await page.waitForTimeout(100);
-        moved = (await marker.getAttribute("style")) !== firstPosition;
+        moved ||= (await marker.getAttribute("style")) !== firstPosition;
+        assert.equal(await frequency.locator(".parameter-modulation").evaluate(element => element.offsetHeight), readoutHeight);
+        assert.equal(await articles.nth(1).evaluate(element => element.offsetHeight), nodeHeight, "Live telemetry must not resize a node");
     }
     assert.ok(moved, "Live frequency marker did not move");
     // The shared scope renders actual browser capture without changing graph revision.
@@ -433,16 +463,16 @@ try {
     await amountEditor.getByRole("button", { name: "Apply amount" }).click();
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
-    await frequency.getByText("Modulation: 415–465 Hz").waitFor();
+    await predictedFrequency.filter({ hasText: "415–465 Hz" }).waitFor();
     // History is a fresh committed revision even while the worklet is running.
     await page.getByRole("button", { name: "Undo", exact: true }).click();
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
-    await frequency.getByText("Modulation: 340–540 Hz").waitFor();
+    await predictedFrequency.filter({ hasText: "340–540 Hz" }).waitFor();
     await page.getByRole("button", { name: "Redo", exact: true }).click();
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
-    await frequency.getByText("Modulation: 415–465 Hz").waitFor();
+    await predictedFrequency.filter({ hasText: "415–465 Hz" }).waitFor();
     await marker.waitFor({ timeout: 10000 });
     assert.equal(await wire.count(), 1);
     assert.equal(await play.isEnabled(), false);
@@ -558,7 +588,7 @@ try {
     const rack = articles.filter({ hasText: "Input Parameters Rack" });
     await rack.getByRole("button", { name: "Output: Pitch (Modulation)" }).waitFor();
     const childFrequency = page.getByRole("spinbutton", { name: "Frequency (Hz)" });
-    await page.getByText("Modulation: 439–441 Hz").waitFor({ timeout: 10000 });
+    await page.getByLabel("Predicted modulation range").filter({ hasText: "439–441 Hz" }).waitFor({ timeout: 10000 });
     await childFrequency.locator("xpath=../..").locator(".parameter-effective-marker").waitFor({ timeout: 10000 });
     assert.equal(await rack.locator(".node-preset-selector").count(), 0);
     const childPreset = page.getByRole("combobox", { name: "Preset for Oscillator" });
