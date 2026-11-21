@@ -20,10 +20,11 @@ public sealed class MusicalTransportServiceTests
         Assert.False(tempo.IsPlaying);
         Assert.Null(tempo.Clock);
         Assert.Equal(1, tempo.GetFrequency(MusicalDivision.QuarterNote));
-        Assert.Equal(tempo, await service.ResetAsync());
+        var reset = tempo with { ResetGeneration = 1 };
+        Assert.Equal(reset, await service.ResetAsync());
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.SetTempoAsync(301));
         Assert.Equal(0, clock.Reads);
-        Assert.Equal(tempo, await service.SynchronizeAsync(false));
+        Assert.Equal(reset, await service.SynchronizeAsync(false));
     }
 
     [Theory]

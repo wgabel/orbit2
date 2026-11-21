@@ -25,6 +25,7 @@ const chorus = JSON.parse(await readFile(resolve(directory, "chorus.json"), "utf
 const mute = JSON.parse(await readFile(resolve(directory, "mute.json"), "utf8"));
 const observation = JSON.parse(await readFile(resolve(directory, "observation.json"), "utf8"));
 const pitch = JSON.parse(await readFile(resolve(directory, "pitch.json"), "utf8"));
+const rhythmic = JSON.parse(await readFile(resolve(directory, "rhythmic-sources.json"), "utf8"));
 const root = resolve("src/Orbit.Infrastructure/wwwroot/audio");
 const server = createServer(async (request, response) => {
     try {
@@ -50,6 +51,64 @@ try {
     page.on("console", message => console.log("browser", message.type(), message.text()));
     page.on("pageerror", error => console.log("browser page error", error.message));
     await page.goto("http://127.0.0.1:" + server.address().port);
+    // Real worklet -> typed Faust inputs -> tapped event streams. Count samples
+    // on the audio thread, not through a display-rate analyser or meter.
+    const rhythmResult = await page.evaluate(async fixture => {
+        const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
+        const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
+        const { FaustNodeFactory } = await import("/Faust/FaustNodeFactory.js");
+        const { RhythmicActionSource } = await import("/Components/RhythmicActionSource.js");
+        const { TransportSignalSource } = await import("/Components/TransportSignalSource.js");
+        const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
+        const context = new AudioContext();
+        const transport = new TransportSignalSource();
+        let node, actions, capture;
+        try {
+            await context.resume();
+            const factory = new FaustNodeFactory(null, new Map(), () => new FaustMonoDspGenerator(), compiler);
+            node = await factory.create(context, "RhythmicGraph", fixture.values, fixture.source);
+            actions = await RhythmicActionSource.create(context, node, fixture.actions, fixture.phaseChannels);
+            await transport.connect(context, node, actions.node, fixture.phaseChannels);
+            const url = URL.createObjectURL(new Blob([`class Probe extends AudioWorkletProcessor {
+                constructor(options) { super(); this.channels = options.processorOptions; this.count = [0,0,0,0]; }
+                process(inputs) {
+                    if (!inputs[0]?.length) return true;
+                    let changed = false;
+                    this.channels.forEach((channel, index) => {
+                        for (const sample of inputs[0][channel] ?? []) if (sample === 1) { this.count[index]++; changed = true; }
+                    });
+                    if (changed) this.port.postMessage(this.count);
+                    return true;
+                }
+            } registerProcessor('rhythmic-test-probe', Probe);`], {type: 'text/javascript'}));
+            try { await context.audioWorklet.addModule(url); } finally { URL.revokeObjectURL(url); }
+            capture = new AudioWorkletNode(context, 'rhythmic-test-probe', {
+                numberOfInputs: 1, numberOfOutputs: 1, channelCount: fixture.channels, channelCountMode: 'explicit', channelInterpretation: 'discrete',
+                outputChannelCount: [1], processorOptions: [fixture.manual, fixture.manualGate, fixture.clock, fixture.clockGate]
+            });
+            let counts = [0,0,0,0];
+            capture.port.onmessage = ({data}) => counts = data;
+            node.connect(capture); capture.connect(context.destination);
+            // Let the worklets settle for a quantum, then deliver a burst of distinct actions.
+            await new Promise(resolve => setTimeout(resolve, 100));
+            const idle = [...counts];
+            const accepted = [actions.send(fixture.manualIndex, 1), actions.send(fixture.manualIndex, 1), actions.send(fixture.manualIndex, 1), actions.send(fixture.gateIndex, 1), actions.send(fixture.gateIndex, 2)];
+            transport.setSnapshot({beatsPerMinute: 120, beatPosition: 11.5, isPlaying: true, clock: {currentSample: Math.round(context.currentTime * context.sampleRate), sampleRate: context.sampleRate}});
+            const deadline = performance.now() + 4000;
+            while ((counts[0] < 3 || counts[3] < Math.round(context.sampleRate * .05)) && performance.now() < deadline)
+                await new Promise(resolve => setTimeout(resolve, 30));
+            return {idle, accepted, counts, rate: context.sampleRate};
+        } finally {
+            transport.dispose(); actions?.dispose(); capture?.disconnect(); capture?.port.close(); node?.disconnect(); node?.destroy();
+            compiler.dispose(); await context.close();
+        }
+    }, rhythmic);
+    console.log("Rhythmic worklet fixture", rhythmResult);
+    assert.deepEqual(rhythmResult.idle, [0,0,0,0]);
+    assert.ok(rhythmResult.accepted.every(Boolean));
+    assert.equal(rhythmResult.counts[0], 3, "Rapid manual actions were lost or duplicated");
+    assert.ok(rhythmResult.counts[1] >= 1 && rhythmResult.counts[1] <= Math.round(rhythmResult.rate * .1), "Manual gate failed to open or close");
+    assert.ok(rhythmResult.counts[2] >= 1 && rhythmResult.counts[3] >= Math.round(rhythmResult.rate * .05), "Clock did not drive the gate through the real transport worklet");
     // Compare the same actual nested DSP with and without passive taps, then
     // prove the browser splitter excludes a deliberately louder auxiliary channel.
     const observationResults = await page.evaluate(async ({ source, observation }) => {

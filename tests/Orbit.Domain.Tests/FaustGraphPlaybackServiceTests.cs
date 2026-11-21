@@ -19,6 +19,75 @@ namespace Orbit.Domain.Tests;
 public sealed class FaustGraphPlaybackServiceTests
 {
     [Fact]
+    public async Task ManualActionsUseReachableNestedManifestWithoutMutatingTheGraph()
+    {
+        using var patch = new NestedFaustPatch();
+        var session = patch.Session;
+        var child = patch.ChildId;
+        var carrier = session.Snapshot.GetGraph(child).GetNode(patch.Frequency.NodeId);
+        var trigger = NestedFaustPatch.Add(session, child, ManualTriggerGenerator.NodeType);
+        var gate = NestedFaustPatch.Add(session, child, GateGenerator.NodeType);
+        var clock = NestedFaustPatch.Add(session, child, ClockGenerator.NodeType);
+        var orphan = NestedFaustPatch.Add(session, child, ManualTriggerGenerator.NodeType);
+        void Wire(Orbit.Application.Graphs.Snapshots.GraphNodeSnapshot from, Orbit.Application.Graphs.Snapshots.GraphNodeSnapshot to, string key, double amount = 1) =>
+            session.Execute(new ConnectNodesCommand(child, new(from.Id, from.Outputs[0].Id), new(to.Id, to.Inputs.Single(p => p.Key == key).Id), amount));
+        void Set(Orbit.Application.Graphs.Snapshots.GraphNodeSnapshot node, string key, double value) =>
+            session.Execute(new SetParameterValueCommand(child, new(node.Id, node.Parameters.Single(p => p.Definition.Key == key).Id), value));
+        foreach (var source in new[] { trigger, gate, clock })
+        {
+            var ad = NestedFaustPatch.Add(session, child, EnvelopeGenerator.NodeType);
+            Set(ad, EnvelopeGenerator.TriggerSourceKey, source == gate ? 2 : 1);
+            Wire(source, ad, source == gate ? EnvelopeGenerator.GatePortKey : EnvelopeGenerator.EventTriggerPortKey);
+            Wire(ad, carrier, "amplitude-modulation-in", 0.2);
+        }
+        var engine = new RhythmicEngine();
+        var service = new FaustGraphPlaybackService(FaustGraphCompiler.CreateBuiltIn(), engine);
+        var graph = session.Snapshot;
+        Assert.False(await service.SendAsync(graph.Id, child, trigger.Id, RhythmicAction.Fire));
+        var playing = service.PlayAsync(graph);
+        var initial = engine.Request!;
+        Assert.Equal(2, initial.TransportInputChannels);
+        Assert.Equal(2, initial.RhythmicInputs!.Count);
+        Assert.All(initial.RhythmicInputs, input => Assert.Equal(child, input.GraphId));
+        int triggerIndex = initial.RhythmicInputs.ToList().FindIndex(input => input.NodeId == trigger.Id);
+        Assert.True(await service.SendAsync(graph.Id, child, trigger.Id, RhythmicAction.Fire));
+        Assert.True(await service.SendAsync(graph.Id, child, trigger.Id, RhythmicAction.Fire));
+        Assert.False(await service.SendAsync(graph.Id, child, trigger.Id, RhythmicAction.Close));
+        Assert.False(await service.SendAsync(graph.Id, graph.Id, trigger.Id, RhythmicAction.Fire));
+        Assert.False(await service.SendAsync(graph.Id, child, orphan.Id, RhythmicAction.Fire));
+        Assert.Equal(2, engine.Actions.Count);
+        Assert.All(engine.Actions, action => Assert.Equal((initial.Generation, triggerIndex, RhythmicAction.Fire), action));
+        Assert.True(await service.SendAsync(graph.Id, child, gate.Id, RhythmicAction.Close));
+        Assert.Equal(graph.Revision, session.Snapshot.Revision);
+        Assert.Empty(engine.Updates); Assert.Empty(engine.Replacements);
+        Set(gate, GateGenerator.DurationKey, 250);
+        await service.UpdateAsync(session.Snapshot);
+        Assert.Single(engine.Updates); Assert.Empty(engine.Replacements);
+        Set(gate, GateGenerator.SourceKey, 1);
+        Wire(clock, gate, GateGenerator.TriggerPortKey);
+        await service.UpdateAsync(session.Snapshot);
+        var replacement = Assert.Single(engine.Replacements);
+        Assert.NotEqual(initial.Generation, replacement.Generation);
+        Assert.Single(replacement.RhythmicInputs!);
+        Assert.False(await service.SendAsync(graph.Id, child, gate.Id, RhythmicAction.Fire));
+        Assert.True(await service.SendAsync(graph.Id, child, trigger.Id, RhythmicAction.Fire));
+        Assert.Equal(replacement.Generation, engine.Actions.Last().Generation);
+        await service.StopAsync(graph.Id);
+        await playing;
+        Assert.False(await service.SendAsync(graph.Id, child, trigger.Id, RhythmicAction.Fire));
+    }
+
+    private sealed class RhythmicEngine : RecordingEngine, IRhythmicActionSink
+    {
+        public List<(Guid Generation, int Index, RhythmicAction Action)> Actions { get; } = [];
+        public Task<bool> SendRhythmicActionAsync(string soundId, Guid generation, int index, RhythmicAction action)
+        {
+            Actions.Add((generation, index, action));
+            return Task.FromResult(true);
+        }
+    }
+
+    [Fact]
     public async Task SignalSubscriptionsFollowAcceptedGenerationsWithoutRecompiling()
     {
         using var patch = new NestedFaustPatch();

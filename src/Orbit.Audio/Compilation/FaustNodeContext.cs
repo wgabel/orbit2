@@ -29,6 +29,19 @@ public sealed class FaustNodeContext
 
     public bool RequiresTransportBeat { get; private set; }
     public bool RequiresTransportTempo { get; private set; }
+    public bool RequiresTransportReset { get; private set; }
+    public bool? ManualRhythmicInput { get; private set; }
+
+    public string TransportReset
+    {
+        get { RequiresTransportBeat = RequiresTransportReset = true; return "orbit_reset"; }
+    }
+
+    public string RhythmicActionInput(bool allowClose)
+    {
+        ManualRhythmicInput = allowClose;
+        return $"action_{Node.Id:N}";
+    }
 
     /// <summary>Request the shared beat input only if this emitted node uses transport.</summary>
     public string TransportBeat

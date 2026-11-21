@@ -1,4 +1,5 @@
 import { SignalCapture } from "./Components/SignalCapture.js";
+import { RhythmicActionSource } from "./Components/RhythmicActionSource.js";
 
 // Coordinates logical playback lifetimes. A playback may have two voices
 // during a crossfade; DSP factories, voices and envelopes own their mechanics.
@@ -8,15 +9,18 @@ export class AudioEngine {
     #output;
     #createMonitor;
     #transport;
+    #createActions;
+    #actions = new WeakMap();
     #active = new Map();
     #disposed = false;
 
-    constructor(contextManager, nodeFactory, output, createMonitor, transport = null) {
+    constructor(contextManager, nodeFactory, output, createMonitor, transport = null, createActions = RhythmicActionSource.create) {
         this.#contextManager = contextManager;
         this.#nodeFactory = nodeFactory;
         this.#output = output;
         this.#createMonitor = createMonitor;
         this.#transport = transport;
+        this.#createActions = createActions;
     }
 
     async play(request) {
@@ -105,6 +109,7 @@ export class AudioEngine {
             const old = playback.current;
             const transition = { startTime: playback.context.currentTime + 0.01, duration: 0.05 };
             playback.current = this.#startVoice(playback, node, request, transition);
+            this.#actions.get(old.node)?.deactivate();
             // New reads belong exclusively to the accepted replacement.
             for (const id of playback.subscriptions ?? []) old.voice.releaseSignal?.(id);
             playback.subscriptions?.clear();
@@ -122,6 +127,12 @@ export class AudioEngine {
         if (!playback) return "idle";
         if (playback.cancelled) return "stopping";
         return playback.current ? "playing" : "starting";
+    }
+
+    sendRhythmicAction(soundId, generation, index, action) {
+        const playback = this.#active.get(soundId), current = playback?.current;
+        if (!current || playback.cancelled || playback.replacing || current.generation !== generation || playback.context?.state !== 'running') return false;
+        return this.#actions.get(current.node)?.send(index, action) ?? false;
     }
 
     // Only values of existing controls may change; this never recreates a node.
@@ -175,6 +186,7 @@ export class AudioEngine {
         const playback = this.#active.get(soundId);
         if (playback) {
             playback.cancelled = true;
+            for (const instance of playback.voices) this.#actions.get(instance.node)?.deactivate();
             for (const id of playback.subscriptions ?? []) playback.current?.voice.releaseSignal?.(id);
             playback.subscriptions?.clear();
             for (const instance of playback.voices) instance.voice.stop();
@@ -197,9 +209,14 @@ export class AudioEngine {
         try {
             if (typeof node.getNumOutputs === "function" && node.getNumOutputs() !== (request.outputChannels ?? 1))
                 throw new Error("Unexpected Faust output channel count.");
+            const phaseChannels = request.transportInputChannels ?? (request.requiresTransport && node.numberOfInputs ? 1 : 0);
+            const inputs = request.rhythmicInputs ?? [];
+            if (typeof node.getNumInputs === 'function' && node.getNumInputs() !== phaseChannels + inputs.length)
+                throw new Error('Unexpected Faust input channel count.');
+            if (inputs.length) this.#actions.set(node, await this.#createActions(context, node, inputs, phaseChannels));
             if (request.requiresTransport) {
                 if (!this.#transport) throw new Error("Transport signal source is unavailable.");
-                await this.#transport.connect(context, node);
+                await this.#transport.connect(context, node, this.#actions.get(node)?.node ?? node, phaseChannels);
             }
             return node;
         } catch (error) {
@@ -210,7 +227,13 @@ export class AudioEngine {
 
     #destroyNode(node) {
         this.#transport?.disconnect(node);
+        this.#disposeActions(node);
         try { node.disconnect(); } finally { node.destroy?.(); }
+    }
+
+    #disposeActions(node) {
+        this.#actions.get(node)?.dispose();
+        this.#actions.delete(node);
     }
 
     #startVoice(playback, node, request, transition) {
@@ -223,6 +246,7 @@ export class AudioEngine {
             instance.finished = Promise.resolve(lifetime).finally(() => {
                 playback.voices.delete(instance);
                 this.#transport?.disconnect(node);
+                this.#disposeActions(node);
                 try { monitor.dispose(); } finally { voice.dispose(); }
             });
             // A retiring voice may finish before the main loop observes it.
@@ -234,6 +258,7 @@ export class AudioEngine {
             finally {
                 if (voice) {
                     this.#transport?.disconnect(node);
+                    this.#disposeActions(node);
                     voice.dispose();
                 } else this.#destroyNode(node);
             }
@@ -248,6 +273,8 @@ export class AudioEngine {
             (request.outputChannels != null && (!Number.isInteger(request.outputChannels) ||
                 request.outputChannels < 1 || request.outputChannels > SignalCapture.MaxChannels)) ||
             (request.source != null && (typeof request.source !== "string" || !request.source.trim())) ||
+            (request.transportInputChannels != null && (!Number.isInteger(request.transportInputChannels) || request.transportInputChannels < 0 || request.transportInputChannels > 2)) ||
+            (request.rhythmicInputs != null && (!Array.isArray(request.rhythmicInputs) || request.rhythmicInputs.length > 30)) ||
             (request.parameters != null &&
                 (typeof request.parameters !== "object" || Array.isArray(request.parameters)))) {
             throw new Error("Invalid audio playback request.");

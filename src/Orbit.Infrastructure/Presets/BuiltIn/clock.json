@@ -1,0 +1,7 @@
+[
+  { "schemaVersion": 1, "id": "clock-quarter", "nodeType": "generator.clock", "name": "Quarter notes", "group": "Synchronized", "description": "One pulse each quarter-note beat.", "parameters": { "timing": 1, "frequency": 2, "division": 2 } },
+  { "schemaVersion": 1, "id": "clock-sixteenth", "nodeType": "generator.clock", "name": "Sixteenths", "group": "Synchronized", "description": "Four pulses per beat.", "parameters": { "timing": 1, "frequency": 2, "division": 0 } },
+  { "schemaVersion": 1, "id": "clock-bar", "nodeType": "generator.clock", "name": "One bar", "group": "Synchronized", "description": "One pulse per four quarter notes.", "parameters": { "timing": 1, "frequency": 2, "division": 4 } },
+  { "schemaVersion": 1, "id": "clock-one-hz", "nodeType": "generator.clock", "name": "One second", "group": "Free", "description": "One pulse each second independent of tempo.", "parameters": { "timing": 0, "frequency": 1, "division": 2 } },
+  { "schemaVersion": 1, "id": "clock-slow", "nodeType": "generator.clock", "name": "Slow drone", "group": "Free", "description": "One pulse every twenty seconds.", "parameters": { "timing": 0, "frequency": 0.05, "division": 2 } }
+]

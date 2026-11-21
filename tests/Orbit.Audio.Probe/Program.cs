@@ -410,6 +410,46 @@ File.WriteAllText(Path.Combine(args[0], "rhythms.json"), JsonSerializer.Serializ
     rhythms
 }));
 
+// Actual mixed transport/manual graph: a clock feeds a timed gate, and two
+// independent manual channels feed separate envelope paths into one carrier.
+using var sourcesSession = new PatchSession(BuiltInNodes.CreateRegistry());
+var sourcesGraph = sourcesSession.GraphId;
+GraphNodeSnapshot AddSource(string type) => sourcesSession.Execute(new AddNodeCommand(sourcesGraph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+void SetSource(GraphNodeSnapshot node, string key, double value) => sourcesSession.Execute(new SetParameterValueCommand(sourcesGraph, Address(node, key), value));
+void WireSource(GraphNodeSnapshot from, GraphNodeSnapshot to, string key, double amount = 1) => sourcesSession.Execute(new ConnectNodesCommand(sourcesGraph,
+    new(from.Id, from.Outputs[0].Id), new(to.Id, to.Inputs.Single(p => p.Key == key).Id), amount));
+var sourceClock = AddSource(ClockGenerator.NodeType);
+var clockGate = AddSource(GateGenerator.NodeType); SetSource(clockGate, GateGenerator.SourceKey, 1); SetSource(clockGate, GateGenerator.DurationKey, 50);
+WireSource(sourceClock, clockGate, GateGenerator.TriggerPortKey);
+var manual = AddSource(ManualTriggerGenerator.NodeType);
+var manualGate = AddSource(GateGenerator.NodeType); SetSource(manualGate, GateGenerator.DurationKey, 100);
+var sourceVoice = AddSource(OscillatorGenerator.NodeType); SetSource(sourceVoice, "amplitude", 0);
+var sourceMaster = AddSource(MasterOutput.NodeType); WireSource(sourceVoice, sourceMaster, "audio-in");
+foreach (var rhythmic in new[] { manual, manualGate, clockGate })
+{
+    var env = AddSource(EnvelopeGenerator.NodeType);
+    bool gateSignal = rhythmic.Outputs[0].SignalType == SignalType.Gate;
+    SetSource(env, EnvelopeGenerator.TriggerSourceKey, gateSignal ? 2 : 1);
+    SetSource(env, EnvelopeGenerator.DecayKey, 100);
+    WireSource(rhythmic, env, gateSignal ? EnvelopeGenerator.GatePortKey : EnvelopeGenerator.EventTriggerPortKey);
+    WireSource(env, sourceVoice, "amplitude-modulation-in", 0.25);
+}
+var sourcesProgram = FaustGraphCompiler.CreateBuiltIn().Compile(sourcesSession.Snapshot, SignalTapManifest.MaxAuxiliaryChannels);
+int SourceChannel(GraphNodeSnapshot node) => sourcesProgram.SignalTaps.Channels[new(sourcesGraph, sourcesGraph, node.Id, node.Outputs[0].Id, PortDirection.Output)];
+File.WriteAllText(Path.Combine(args[0], "rhythmic-sources.json"), JsonSerializer.Serialize(new
+{
+    source = sourcesProgram.Source, values = sourcesProgram.InitialControlValues(),
+    phaseChannels = sourcesProgram.TransportInputChannels,
+    actions = sourcesProgram.RhythmicInputs.Select(input => new { graphId = input.GraphId, nodeId = input.NodeId, allowClose = input.AllowClose }),
+    manualIndex = sourcesProgram.RhythmicInputs.ToList().FindIndex(input => input.NodeId == manual.Id),
+    gateIndex = sourcesProgram.RhythmicInputs.ToList().FindIndex(input => input.NodeId == manualGate.Id),
+    manual = SourceChannel(manual), manualGate = SourceChannel(manualGate), clock = SourceChannel(sourceClock), clockGate = SourceChannel(clockGate),
+    channels = sourcesProgram.SignalTaps.ChannelCount,
+    clockSource = $"import(\"stdfaust.lib\"); process(beat,reset,choice) = {FaustRhythmicSources.SynchronizedClock("beat", "reset", "choice")};",
+    freeSource = $"import(\"stdfaust.lib\"); process = {FaustRhythmicSources.FreeClock("2.0")};",
+    gateSource = $"import(\"stdfaust.lib\"); process(input,ms) = {FaustRhythmicSources.TimedGate("input", "ms")};"
+}));
+
 GraphNodeSnapshot TempoAdd(Guid graph, string type) =>
     tempoSession.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
 

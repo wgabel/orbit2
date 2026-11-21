@@ -11,7 +11,7 @@ namespace Orbit.Audio.Playback;
 /// <summary>Maps a committed graph to an engine request. The compiler and
 /// engine are interchangeable dependencies; the UI knows neither Faust nor JS.</summary>
 public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudioEngine engine)
-    : IGraphPlaybackService, ISignalAnalysisService
+    : IGraphPlaybackService, ISignalAnalysisService, IRhythmicActionService
 {
     // Leave headroom at the browser output in addition to graph-defined gain.
     private const double PlaybackVolume = 0.5;
@@ -86,6 +86,21 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
     }
 
     public Task<PlaybackState> GetStateAsync(Guid graphId) => engine.GetPlaybackStateAsync(SoundId(graphId));
+
+    public Task<bool> SendAsync(Guid patchId, Guid graphId, Guid nodeId, RhythmicAction action)
+    {
+        if (engine is not IRhythmicActionSink sink || !active.TryGetValue(patchId, out var playback) || playback.Stopping ||
+            playback.RequestedRevision != playback.Result.AppliedRevision || !Enum.IsDefined(action)) return Task.FromResult(false);
+        var generation = playback.Generation;
+        var inputs = playback.Program.RhythmicInputs;
+        for (var index = 0; index < inputs.Count; index++)
+        {
+            var input = inputs[index];
+            if (input.GraphId == graphId && input.NodeId == nodeId && (action == RhythmicAction.Fire || input.AllowClose))
+                return sink.SendRhythmicActionAsync(SoundId(patchId), generation, index, action);
+        }
+        return Task.FromResult(false);
+    }
 
     public async Task<GraphParameterTelemetry?> GetTelemetryAsync(Guid graphId)
     {
@@ -189,7 +204,8 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
         new(SoundId(program.GraphId), "OrbitGraph", PlaybackVolume,
             values ?? program.InitialControlValues(),
             Source: program.Source, RequiresTransport: program.RequiresTransport,
-            OutputChannels: program.SignalTaps.ChannelCount, Generation: generation);
+            OutputChannels: program.SignalTaps.ChannelCount, Generation: generation,
+            TransportInputChannels: program.TransportInputChannels, RhythmicInputs: program.RhythmicInputs);
 
     private static Dictionary<string, double> GetControlValues(GraphSnapshot graph, FaustGraphProgram program)
     {

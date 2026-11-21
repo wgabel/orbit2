@@ -1,0 +1,40 @@
+@namespace Orbit.UI.Components.Canvas
+@using Microsoft.AspNetCore.Components.Web
+@using Orbit.Application.Graphs.Snapshots
+@using Orbit.Application.Models
+@using Orbit.Application.Services
+@using Orbit.Domain.Nodes.Generators
+@inject IRhythmicActionService Actions
+
+@if (IsTrigger || IsManualGate)
+{
+    <div class="node-actions" @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true">
+        <button type="button" class="secondary" @onclick="() => SendAsync(RhythmicAction.Fire)">@(IsTrigger ? "Fire trigger" : "Open gate")</button>
+        @if (IsManualGate)
+        {
+            <button type="button" class="secondary" @onclick="() => SendAsync(RhythmicAction.Close)">Close gate</button>
+        }
+        @if (Notice is not null)
+        {
+            <span class="workspace-notice" role="status">@Notice</span>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public GraphNodeSnapshot Node { get; set; } = default!;
+    [Parameter] public Guid PatchId { get; set; }
+    [Parameter] public Guid GraphId { get; set; }
+    private string? Notice { get; set; }
+    private bool IsTrigger => Node.TypeKey == ManualTriggerGenerator.NodeType;
+    private bool IsManualGate => Node.TypeKey == GateGenerator.NodeType && Node.Parameters.Single(p => p.Definition.Key == GateGenerator.SourceKey).BaseValue == 0;
+
+    private async Task SendAsync(RhythmicAction action)
+    {
+        try
+        {
+            Notice = await Actions.SendAsync(PatchId, GraphId, Node.Id, action) ? null : "Connect this source and play the patch; retry if updating or busy.";
+        }
+        catch (Exception exception) { Notice = $"Action unavailable: {exception.Message}"; }
+    }
+}

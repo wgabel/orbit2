@@ -147,7 +147,7 @@ test("edits during compilation are coalesced and applied before the voice starts
     await playback;
 });
 
-function replacementSetup() {
+function replacementSetup(createActions) {
     const events = [];
     const nodes = [];
     const voices = [];
@@ -178,9 +178,38 @@ function replacementSetup() {
         }
     };
     const engine = new AudioEngine({ getRunningContext: async () => context }, nodeFactory, output,
-        node => ({ getSnapshot: () => ({ name: node.name }), dispose: () => events.push(["monitor", node.name]) }));
-    return { engine, events, nodes, voices, nodeFactory, makeNode };
+        node => ({ getSnapshot: () => ({ name: node.name }), dispose: () => events.push(["monitor", node.name]) }), null, createActions);
+    return { engine, events, nodes, voices, nodeFactory, makeNode, context };
 }
+
+test("rhythmic commands target only the accepted running generation", async () => {
+    const actions = [];
+    const {engine, nodeFactory, makeNode, context} = replacementSetup(async (_context, node) => ({
+        send: (index, action) => { actions.push([node.name, index, action]); return true; },
+        deactivate: () => actions.push([node.name, 'deactivate']), dispose: () => actions.push([node.name, 'dispose'])
+    }));
+    const rhythm = {...request, generation: 'original', rhythmicInputs: [{allowClose: true}]};
+    const playing = engine.play(rhythm);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(engine.sendRhythmicAction(rhythm.soundId, 'original', 0, 1), true);
+    assert.equal(engine.sendRhythmicAction(rhythm.soundId, 'stale', 0, 1), false);
+    context.state = 'suspended';
+    assert.equal(engine.sendRhythmicAction(rhythm.soundId, 'original', 0, 1), false);
+    context.state = 'running';
+    let complete;
+    nodeFactory.create = () => new Promise(resolve => { complete = resolve; });
+    const replacing = engine.replace({...rhythm, processor: 'next', generation: 'next'}, 1);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(engine.sendRhythmicAction(rhythm.soundId, 'original', 0, 1), false);
+    complete(makeNode('next'));
+    assert.equal(await replacing, true);
+    assert.equal(engine.sendRhythmicAction(rhythm.soundId, 'original', 0, 1), false);
+    assert.equal(engine.sendRhythmicAction(rhythm.soundId, 'next', 0, 2), true);
+    engine.stop(rhythm.soundId);
+    await playing;
+    assert.equal(engine.sendRhythmicAction(rhythm.soundId, 'next', 0, 1), false);
+    assert.deepEqual(actions, [[request.processor, 0, 1], [request.processor, 'deactivate'], [request.processor, 'dispose'], ['next', 0, 2], ['next', 'deactivate'], ['next', 'dispose']]);
+});
 
 test("replacement crossfades on one clock and does not end the logical playback", async () => {
     const { engine, events } = replacementSetup();

@@ -19,6 +19,9 @@ public static class BuiltInNodes
         registry.Register(EnvelopeGenerator.NodeType, id => new EnvelopeGenerator(id), "AD Envelope");
         registry.Register(SignalToTriggerGenerator.NodeType, id => new SignalToTriggerGenerator(id), "Signal to Trigger");
         registry.Register(SignalToGateGenerator.NodeType, id => new SignalToGateGenerator(id), "Signal to Gate");
+        registry.Register(ManualTriggerGenerator.NodeType, id => new ManualTriggerGenerator(id), "Manual Trigger");
+        registry.Register(GateGenerator.NodeType, id => new GateGenerator(id), "Gate");
+        registry.Register(ClockGenerator.NodeType, id => new ClockGenerator(id), "Clock");
         registry.Register(NoiseGenerator.NodeType, id => new NoiseGenerator(id), "Noise");
         registry.Register(GainProcessor.NodeType, id => new GainProcessor(id), "Gain");
         registry.Register(MixerProcessor.NodeType, id => new MixerProcessor(id), "Mixer");
