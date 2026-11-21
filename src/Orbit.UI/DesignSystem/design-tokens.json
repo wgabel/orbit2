@@ -177,7 +177,9 @@
       "width": "2px",
       "hit-width": "12px",
       "selected-width": "3px",
-      "draft-dash": "6px"
+      "draft-dash": "6px",
+      "badge-max-width": "12rem",
+      "label-select-max-width": "7rem"
     },
     "workspace": {
       "max-width": "100%",
