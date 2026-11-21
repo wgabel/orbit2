@@ -4,6 +4,8 @@
 
 Related: [composite nodes](../editor/composite-nodes.md) · [persistence and history](../editor/persistence-and-history.md) · [pitch control](../instruments/pitch-control.md).
 
+For using drones as layers of a longer musical piece, see [generative ambient composition](generative-ambient-composition.md).
+
 ## 12. Worked patch example
 
 A concrete example that can be used as a reference for the first-to-later implementation.
