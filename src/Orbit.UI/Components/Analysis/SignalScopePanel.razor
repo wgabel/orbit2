@@ -1,0 +1,45 @@
+@namespace Orbit.UI.Components.Analysis
+@using Orbit.Application.Graphs.Snapshots
+@using Orbit.Application.Models
+@using Orbit.Domain.Ports
+@using Microsoft.AspNetCore.Components.Web
+
+<section class="signal-scope-panel" aria-label="Signal scope">
+    <div class="scope-header">
+        <strong>@Node.Name · Scope</strong>
+        <button type="button" class="secondary" @onclick="OnClose">Close scope</button>
+    </div>
+    <label class="workspace-toolbar">
+        Signal
+        <select aria-label="Scope signal" @bind="selectedPortId">
+            @foreach (var port in Ports)
+            {
+                <option value="@port.Id">@port.Direction: @port.Name</option>
+            }
+        </select>
+    </label>
+    @if (Ports.FirstOrDefault(port => port.Id == selectedPortId) is { } selected)
+    {
+        var address = new SignalObservationAddress(PatchId, GraphId, Node.Id, selected.Id, selected.Direction);
+        <SignalScope @key="address" Address="@address" />
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public Guid PatchId { get; set; }
+    [Parameter, EditorRequired] public Guid GraphId { get; set; }
+    [Parameter, EditorRequired] public GraphNodeSnapshot Node { get; set; } = default!;
+    [Parameter] public EventCallback OnClose { get; set; }
+    private Guid selectedPortId;
+    private IEnumerable<PortDefinition> Ports => EligiblePorts(Node);
+
+    public static IEnumerable<PortDefinition> EligiblePorts(GraphNodeSnapshot node) =>
+        node.Outputs.Concat(node.Inputs.Where(port => node.IsInputActive(port.Id)))
+            .Where(port => port.ChannelCount == 1);
+
+    protected override void OnParametersSet()
+    {
+        if (!Ports.Any(port => port.Id == selectedPortId))
+            selectedPortId = Ports.FirstOrDefault()?.Id ?? Guid.Empty;
+    }
+}

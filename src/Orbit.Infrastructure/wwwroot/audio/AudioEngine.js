@@ -146,6 +146,14 @@ export class AudioEngine {
     }
 
     readSignal(soundId, generation, subscription, channel) {
+        return this.#readSignal(soundId, generation, subscription, channel, false);
+    }
+
+    readSignalWindow(soundId, generation, subscription, channel) {
+        return this.#readSignal(soundId, generation, subscription, channel, true);
+    }
+
+    #readSignal(soundId, generation, subscription, channel, fullWindow) {
         const playback = this.#active.get(soundId);
         const current = playback?.current;
         if (!current || playback.cancelled || current.generation !== generation) return null;
@@ -153,7 +161,8 @@ export class AudioEngine {
         if (!playback.subscriptions.has(subscription) && playback.subscriptions.size >= SignalCapture.MaxLeases)
             return null;
         playback.subscriptions.add(subscription);
-        return current.voice.readSignal?.(subscription, channel, generation) ?? null;
+        return (fullWindow ? current.voice.readSignalWindow?.(subscription, channel, generation)
+            : current.voice.readSignal?.(subscription, channel, generation)) ?? null;
     }
 
     releaseSignal(soundId, subscription) {

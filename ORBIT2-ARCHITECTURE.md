@@ -1322,7 +1322,21 @@ The conservative signal range is the input range expanded to include zero (initi
 
 **Phase 6.18.1 implementation.** Live playback enables up to eight auxiliary channels; the compiler's default mono-only mode remains available for offline comparisons and engines without capture support. The master input maps to channel zero, before the playback gain/envelope. The immutable manifest is keyed by patch, owning graph, node, port, direction and channel. Flattened endpoint aliases reuse compiled expressions; output candidates precede inputs in deterministic identity order, identical expressions share a slot, and omitted addresses report unavailable. No new dependency roots are introduced. The fixed conservative cap (nine total channels) is a prototype limit, not a device-specific performance guarantee.
 
-The playback service also implements `ISignalAnalysisService`; both interfaces resolve to the same singleton. Each subscription lazily acquires a capture lease when read. Browser `SignalCapture` isolates master channel zero via a channel splitter for multichannel programs and allocates one analyser per requested channel, shared by at most 32 leases per voice. The diagnostic time-domain window is 1024 samples and is reusable in the browser; explicit reads copy a bounded window with sample rate and context time (not an exact sample-frame timestamp). Subsequent plot rendering will remain browser-side. Playback generation IDs change only on accepted voice replacement, not base edits or display subscriptions. Reads reject mismatched generations, warm-up is pending, and stop/replacement releases previous leases; a failed replacement leaves the last-good voice and manifest intact.
+The playback service also implements `ISignalAnalysisService`; both interfaces resolve to the same singleton. Each subscription lazily acquires a capture lease when read. Browser `SignalCapture` isolates master channel zero via a channel splitter for multichannel programs and allocates one analyser per requested channel, shared by at most 32 leases per voice. The diagnostic time-domain window is 1024 samples; Phase 6.18.2 extends the shared browser buffer to 8192 samples for coherent short windows, while diagnostic reads still copy only 1024 samples with sample rate and context time (not an exact sample-frame timestamp). Playback generation IDs change only on accepted voice replacement, not base edits or display subscriptions. Reads reject mismatched generations, warm-up is pending, and stop/replacement releases previous leases; a failed replacement leaves the last-good voice and manifest intact.
+
+**Phase 6.18.2 implementation.** The selected-node scope is a reusable overlay, separate from graph history and node-specific editors. `SignalScopePanel` chooses eligible graph-qualified mono ports; `SignalScope` owns a browser renderer and resolves a lightweight binding every 250 ms while visible. The renderer calls the same versioned audio module as playback directly, reads shared typed arrays at up to 30 Hz and never moves waveform samples through Blazor. A generation/source change, missing window, hidden view or disposal clears the bounded history; visibility changes release leases. Short windows use a newest complete zero-crossing or free-running window, with per-pixel min/max decimation. Long history stores up to 1000 ten-millisecond extrema buckets, skips overlapping samples and leaves gaps on missed windows. Timing is approximate audio-context time, not an exact render-frame timestamp. Peak/RMS use the latest 20 ms and 0 dBFS at unit amplitude, independent of selected timebase. The view is stopped/unavailable until real capture is ready. Compact node integration and expanded mode persistence remain Phase 6.18.4.
+
+~~~mermaid
+flowchart TD
+    P[Selected port address] --> B[Accepted binding]
+    B --> C[Shared browser capture]
+    C --> W[Window and trigger]
+    C --> H[Bounded min/max history]
+    C --> L[Peak and RMS]
+    W --> D[Canvas renderer]
+    H --> D
+    L --> D
+~~~
 
 ~~~mermaid
 flowchart TD
@@ -1842,7 +1856,7 @@ Deliverable: choose or create a grouped configuration for any eligible node with
 #### Phase 6.18 — Signal analysis and visualization (planned)
 
 - **6.18.1 — Observation infrastructure (implemented):** bounded Faust output taps, explicit master-channel isolation, graph-qualified manifest, generation-aware capture leases and analysis contracts. Offline/worklet regression coverage for master equivalence, nested routing, mute/bypass, leakage and bounded resources. Device-scale profiling and long-history capture remain later analysis work.
-- **6.18.2 — Oscilloscope and level meter:** reusable time-domain sample display, peak/RMS, timebase, trigger and bounded slow-modulation history; validate known sine, clipped and low-rate modulation signals.
+- **6.18.2 — Oscilloscope and level meter (implemented):** reusable selected-node scope, browser-side time-domain display, peak/RMS, timebase, zero-crossing trigger and bounded slow-modulation history. Known sine, clipped and low-rate modulation regression coverage.
 - **6.18.3 — Spectrum analyzer:** reusable FFT display with frequency and dB axes, configurable window/resolution and smoothing, known fundamental/harmonic/noise tests, and shared capture with the oscilloscope.
 - **6.18.4 — Integrated and expanded views:** capability-driven shared `NodeVisualizationPanel`, compact collapsible plots, expand/mode/source controls, visible-only rendering, tokenized design and compatible per-graph layout persistence; no graph history or DSP restarts for display changes.
 - **6.18.5 — Processor response curves:** pure tested response providers matching the actual parametric EQ and filter DSP, base and instantaneous effective parameter response, sample-rate-aware frequency axis and stopped previews.

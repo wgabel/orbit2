@@ -123,6 +123,16 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
     public ISignalObservationSubscription Subscribe(SignalObservationAddress address) =>
         new SignalSubscription(this, address);
 
+    public SignalObservationBinding Resolve(SignalObservationAddress address)
+    {
+        if (engine is not ISignalCapture ||
+            !active.TryGetValue(address.PatchId, out var playback) || playback.Stopping)
+            return new(SignalObservationAvailability.Inactive);
+        return playback.Program.SignalTaps.Channels.TryGetValue(address, out var channel)
+            ? new(SignalObservationAvailability.Available, SoundId(address.PatchId), playback.Generation, channel)
+            : new(SignalObservationAvailability.Unavailable);
+    }
+
     private async Task<SignalObservationResult> ReadSignalAsync(SignalObservationAddress address, Guid subscriptionId)
     {
         if (engine is not ISignalCapture capture ||

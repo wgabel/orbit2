@@ -149,6 +149,11 @@
       "marker-duration": "{semantic.motion.meter-duration}",
       "marker-easing": "{semantic.motion.meter-easing}"
     },
+    "scope": {
+      "width": "28rem",
+      "plot-height": "8rem",
+      "level-height": "0.5rem"
+    },
     "node": {
       "min-width": "240px",
       "border-radius": "6px",

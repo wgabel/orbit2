@@ -13,3 +13,7 @@ public sealed record SignalObservationFrame(
 
 public sealed record SignalObservationResult(SignalObservationAvailability Availability,
     SignalObservationFrame? Frame = null);
+
+/// <summary>Ephemeral routing descriptor for a browser-side view; never persisted in a graph.</summary>
+public sealed record SignalObservationBinding(SignalObservationAvailability Availability,
+    string? SoundId = null, Guid Generation = default, int Channel = 0);

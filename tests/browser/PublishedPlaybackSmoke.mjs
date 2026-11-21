@@ -246,6 +246,24 @@ try {
         moved = (await marker.getAttribute("style")) !== firstPosition;
     }
     assert.ok(moved, "Live frequency marker did not move");
+    // The shared scope renders actual browser capture without changing graph revision.
+    await articles.nth(1).locator(".node-header > span").click();
+    await page.getByRole("button", { name: "Show scope", exact: true }).click();
+    const scope = page.getByRole("region", { name: "Signal scope", exact: true });
+    await scope.locator("[data-scope-status]").filter({ hasText: /Live/ }).waitFor({ timeout: 15000 });
+    const peakText = await scope.locator("[data-peak]").innerText();
+    assert.match(peakText, /-?\d+\.\d dBFS/);
+    const rms = Number.parseFloat(await scope.locator("[data-rms]").innerText());
+    assert.ok(Number.isFinite(rms) && rms <= Number.parseFloat(peakText));
+    await scope.getByRole("combobox", { name: "Scope timebase" }).selectOption("5");
+    await scope.locator("[data-scope-status]").filter({ hasText: "History" }).waitFor();
+    assert.equal(await scope.getByRole("combobox", { name: "Scope trigger" }).isDisabled(), true);
+    await scope.getByRole("combobox", { name: "Scope timebase" }).selectOption("0.005");
+    await scope.locator("[data-scope-status]").filter({ hasText: /Live/ }).waitFor();
+    await scope.getByRole("combobox", { name: "Scope trigger" }).selectOption("falling");
+    assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
+    await scope.getByRole("button", { name: "Close scope" }).click();
+    await scope.waitFor({ state: "detached" });
     // Select the existing modulation wire, edit depth and retain its identity.
     const wire = page.locator(".connection-modulation .connection-hit");
     await wire.scrollIntoViewIfNeeded();

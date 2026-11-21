@@ -1,0 +1,42 @@
+.signal-scope-panel {
+    position: absolute;
+    inset-block-end: var(--semantic-space-normal);
+    inset-inline-end: var(--semantic-space-normal);
+    z-index: var(--component-workspace-overlay-layer);
+    width: min(var(--component-scope-width), calc(100% - var(--semantic-space-normal) * 2));
+    max-height: calc(var(--component-workspace-viewport-height) - var(--semantic-space-normal) * 2);
+    overflow: auto;
+    display: grid;
+    gap: var(--semantic-space-compact);
+    padding: var(--semantic-space-normal);
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-surface);
+    background: var(--semantic-color-surface);
+}
+.scope-header, .scope-readouts {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--semantic-space-compact);
+}
+.signal-scope { display: grid; gap: var(--semantic-space-tight); }
+.scope-waveform {
+    display: block;
+    width: 100%;
+    height: var(--component-scope-plot-height);
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-control);
+}
+.scope-readouts, .scope-levels {
+    color: var(--semantic-color-muted);
+    font-size: var(--semantic-typography-caption);
+    font-variant-numeric: tabular-nums;
+}
+.scope-levels { display: grid; gap: var(--semantic-space-tight); }
+.scope-levels > div { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--semantic-space-compact); }
+.scope-levels meter { width: 100%; height: var(--component-scope-level-height); }
+.scope-levels meter::-webkit-meter-bar { background: var(--semantic-color-track); border: none; }
+.scope-levels meter::-webkit-meter-optimum-value { background: var(--semantic-color-modulation); }
+.scope-levels meter::-moz-meter-bar { background: var(--semantic-color-modulation); }
+.scope-levels output { color: var(--semantic-color-text); }
+.scope-levels output.scope-over { color: var(--semantic-color-error); font-weight: var(--semantic-typography-emphasis); }

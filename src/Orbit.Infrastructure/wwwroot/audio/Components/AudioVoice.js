@@ -18,6 +18,7 @@ export class AudioVoice {
     }
 
     readSignal(subscription, channel, generation) { return this.#capture?.read(subscription, channel, generation) ?? null; }
+    readSignalWindow(subscription, channel, generation) { return this.#capture?.readWindow(subscription, channel, generation) ?? null; }
     releaseSignal(subscription) { this.#capture?.release(subscription); }
 
     play(request, transition) {

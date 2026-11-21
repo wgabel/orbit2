@@ -27,11 +27,15 @@ test("master isolation, shared analyzer leases, bounded windows and teardown", (
     assert.equal(capture.read("first", 2, "generation"), null);
     assert.equal(capture.read("second", 2, "generation"), null);
     assert.equal(count, 1);
-    context.currentTime = 0.1;
+    context.currentTime = 0.2;
     const frame = capture.read("first", 2, "generation");
     assert.equal(frame.samples.length, 1024);
     assert.equal(frame.samples[0], 0.75);
     assert.equal(frame.generation, "generation");
+    const full = capture.readWindow("second", 2, "generation");
+    assert.equal(full.samples.length, SignalCapture.AnalysisWindowSize);
+    assert.equal(full.samples, capture.readWindow("first", 2, "generation").samples);
+    assert.equal(count, 1);
     assert.equal(links.at(-1)[2], 2);
     capture.release("first");
     assert.equal(links.length, 3);

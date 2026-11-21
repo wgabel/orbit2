@@ -63,6 +63,12 @@ public partial class GraphWorkspace : IDisposable
     private (Guid GraphId, Guid NodeId)? editingRack;
     private GraphNodeSnapshot? EditingRack => editingRack is { } address && address.GraphId == Canvas.Snapshot.GraphId
         ? Canvas.Snapshot.Graph.Nodes.SingleOrDefault(node => node.Id == address.NodeId) : null;
+    private bool scopeOpen;
+    private GraphNodeSnapshot? ScopeNode => Canvas.Snapshot.SelectedNodeIds.Count == 1
+        ? Canvas.Snapshot.Graph.Nodes.SingleOrDefault(node => node.Id == Canvas.Snapshot.SelectedNodeIds[0] &&
+            Orbit.UI.Components.Analysis.SignalScopePanel.EligiblePorts(node).Any()) : null;
+    private void ToggleScope() => scopeOpen = !scopeOpen;
+    private void CloseScope() => scopeOpen = false;
     private bool HasSelection => DeletableNodes.Any() ||
         Canvas.Snapshot.SelectedConnectionIds.Count > 0;
     private SignalConnection? SelectedConnection => Canvas.Snapshot.SelectedConnectionIds.Count == 1

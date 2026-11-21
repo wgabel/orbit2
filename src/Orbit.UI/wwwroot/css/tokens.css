@@ -110,6 +110,9 @@
     --component-slider-modulation-color: var(--semantic-color-modulation);
     --component-slider-marker-duration: var(--semantic-motion-meter-duration);
     --component-slider-marker-easing: var(--semantic-motion-meter-easing);
+    --component-scope-width: 28rem;
+    --component-scope-plot-height: 8rem;
+    --component-scope-level-height: 0.5rem;
     --component-node-min-width: 240px;
     --component-node-border-radius: 6px;
     --component-node-header-height: 32px;

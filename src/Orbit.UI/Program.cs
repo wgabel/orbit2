@@ -12,6 +12,7 @@ using Orbit.Infrastructure.Persistence;
 using Orbit.Application.Graphs;
 using Orbit.Application.Presets;
 using Orbit.Infrastructure.Presets;
+using Orbit.UI.Components.Analysis;
 
 // Application entry point and composition root. Blazor's browser bootstrap
 // script loads the .NET runtime, then runs these top-level C# statements.
@@ -33,6 +34,7 @@ builder.Services.AddSingleton<IGraphModulationRangeEstimator>(new GraphModulatio
 builder.Services.AddSingleton<FaustGraphPlaybackService>();
 builder.Services.AddSingleton<IGraphPlaybackService>(services => services.GetRequiredService<FaustGraphPlaybackService>());
 builder.Services.AddSingleton<ISignalAnalysisService>(services => services.GetRequiredService<FaustGraphPlaybackService>());
+builder.Services.AddSingleton(new ScopeBrowserAssets(BrowserAudioEngine.AudioModulePath));
 builder.Services.AddSingleton<BrowserPatchStorage>();
 builder.Services.AddSingleton<IPatchStorage>(services => services.GetRequiredService<BrowserPatchStorage>());
 builder.Services.AddSingleton<IPatchLibraryStorage>(services => services.GetRequiredService<BrowserPatchStorage>());

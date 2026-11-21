@@ -13,7 +13,7 @@ public sealed class BrowserAudioEngine(IJSRuntime javaScriptRuntime) : IAudioEng
 {
     // Deployments publish the entire relative-import tree under a unique URL.
     // An entry-only cache buster would still allow stale transitive imports.
-    private static readonly string AudioModulePath = BrowserModulePaths.GetPath("audio", "audio.js");
+    public static string AudioModulePath { get; } = BrowserModulePaths.GetPath("audio", "audio.js");
     private IJSObjectReference? audioModule;
     private Task<IJSObjectReference>? audioModuleTask;
 

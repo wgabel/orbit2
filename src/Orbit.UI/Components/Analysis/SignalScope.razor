@@ -1,0 +1,33 @@
+@namespace Orbit.UI.Components.Analysis
+
+<div class="signal-scope" @ref="root">
+    <div class="scope-controls workspace-toolbar">
+        <label>Timebase
+            <select data-timebase aria-label="Scope timebase">
+                <option value="0.005">5 ms</option>
+                <option value="0.02" selected>20 ms</option>
+                <option value="0.05">50 ms</option>
+                <option value="1">1 s</option>
+                <option value="5">5 s</option>
+                <option value="10">10 s</option>
+            </select>
+        </label>
+        <label>Trigger
+            <select data-trigger aria-label="Scope trigger">
+                <option value="free">Free</option>
+                <option value="rising" selected>Rising zero</option>
+                <option value="falling">Falling zero</option>
+            </select>
+        </label>
+    </div>
+    <canvas class="scope-waveform" aria-label="Live signal waveform"></canvas>
+    <div class="scope-readouts">
+        <span data-scope-status>@(error ?? "Waiting for signal")</span>
+        <span data-scale>—</span>
+    </div>
+    <div class="scope-levels" aria-label="Level meter, last 20 milliseconds">
+        <div><span>Peak</span><meter data-peak-meter min="-60" max="0" value="-60" aria-label="Peak level (dBFS)"></meter><output data-peak>—</output></div>
+        <div><span>RMS</span><meter data-rms-meter min="-60" max="0" value="-60" aria-label="RMS level (dBFS)"></meter><output data-rms>—</output></div>
+        <small>20 ms · 0 dBFS = ±1</small>
+    </div>
+</div>

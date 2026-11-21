@@ -641,7 +641,11 @@ Files must contain a single schema-1 custom preset with all registered parameter
 
 ### Signal observation infrastructure (Phase 6.18.1)
 
-The audio runtime now compiles up to eight host-only auxiliary observation channels from existing reachable signals, with channel zero reserved for the mono master before playback gain and envelope. Graph-qualified addresses resolve nested sockets and racks to real weighted input or post-mute/bypass output samples. The browser explicitly isolates channel zero; taps never feed speakers. The shared analysis service provides generation-checked, bounded sample windows and releases its browser analyzers with subscriptions or playback. This is infrastructure only: waveform and level-meter UI arrives in Phase 6.18.2. Addresses beyond the fixed capacity or outside the reachable graph are unavailable without changing playback.
+The audio runtime now compiles up to eight host-only auxiliary observation channels from existing reachable signals, with channel zero reserved for the mono master before playback gain and envelope. Graph-qualified addresses resolve nested sockets and racks to real weighted input or post-mute/bypass output samples. The browser explicitly isolates channel zero; taps never feed speakers. The shared analysis service provides generation-checked, bounded sample windows and releases its browser analyzers with subscriptions or playback. Addresses beyond the fixed capacity or outside the reachable graph are unavailable without changing playback.
+
+### Oscilloscope and level meter (Phase 6.18.2)
+
+Select a node by its header, then choose **Show scope** in the canvas toolbar. Choose a mono input or output (output is preferred by default). Start playback to inspect actual DSP samples. The scope provides 5/20/50 ms waveform windows with free-running or rising/falling zero-crossing trigger, and 1/5/10 s history for slow modulation. The history preserves min/max peaks in 10 ms buckets and displays gaps where samples were not captured. Peak and RMS meters report the latest 20 ms in dBFS (±1 is 0 dBFS); signals at or above full scale are highlighted. The waveform scales automatically to accommodate modulation outside ±1. Close the view to release its capture; changing source or display controls never edits the graph. Unavailable taps and stopped playback are shown explicitly.
 
 ### Chorus (Phase 6.15)
 

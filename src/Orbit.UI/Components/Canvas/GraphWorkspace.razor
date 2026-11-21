@@ -1,5 +1,6 @@
 @namespace Orbit.UI.Components.Canvas
 @using Microsoft.AspNetCore.Components.Web
+@using Orbit.UI.Components.Analysis
 
 @* One patch session and playback controller, with a reusable active canvas. *@
 @if (!initialized)
@@ -33,6 +34,7 @@ else
         </select>
         <button type="button" @onclick="AddNode">Add</button>
         <button type="button" class="secondary" disabled="@(!HasSelection)" @onclick="DeleteSelection">Delete selected</button>
+        <button type="button" class="secondary" disabled="@(ScopeNode is null)" @onclick="ToggleScope">@(scopeOpen ? "Hide scope" : "Show scope")</button>
         </div>
         <GraphPlaybackControls @key="workspaceGeneration" @ref="playbackControls" Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" TempoChanged="OnTempoChanged" Disabled="switchingWorkspace" />
     </div>
@@ -71,5 +73,10 @@ else
                  OnOpenComposite="@(nodeId => OpenComposite(graphId, nodeId))"
                  OnEditRack="@(nodeId => OpenRackEditor(graphId, nodeId))"
                  ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" BeatsPerMinute="@tempo" />
+    @if (scopeOpen && ScopeNode is { } scopeNode)
+    {
+        <SignalScopePanel @key="(workspaceGeneration, graphId, scopeNode.Id)" PatchId="@session.GraphId"
+                          GraphId="@graphId" Node="@scopeNode" OnClose="CloseScope" />
+    }
 </section>
 }

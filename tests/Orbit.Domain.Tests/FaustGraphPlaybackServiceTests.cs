@@ -29,30 +29,40 @@ public sealed class FaustGraphPlaybackServiceTests
         var address = new SignalObservationAddress(graph.Id, patch.ChildId, oscillator.Id,
             oscillator.Outputs[0].Id, PortDirection.Output);
         await using var subscription = service.Subscribe(address);
+        Assert.Equal(SignalObservationAvailability.Inactive, service.Resolve(address).Availability);
         Assert.Equal(SignalObservationAvailability.Inactive, (await subscription.ReadAsync()).Availability);
         var playing = service.PlayAsync(graph);
         var initial = Assert.IsType<PlaybackRequest>(engine.Request);
         Assert.InRange(initial.OutputChannels, 2, 9);
+        var binding = service.Resolve(address);
+        Assert.Equal(SignalObservationAvailability.Available, binding.Availability);
+        Assert.Equal(initial.Generation, binding.Generation);
+        Assert.Equal(initial.SoundId, binding.SoundId);
+        Assert.Equal(SignalObservationAvailability.Unavailable, service.Resolve(address with { PortId = Guid.NewGuid() }).Availability);
         Assert.Equal(initial.Generation, (await subscription.ReadAsync()).Frame!.Generation);
         patch.Session.Execute(new SetParameterValueCommand(patch.ChildId, patch.Frequency, 330));
         await service.UpdateAsync(patch.Session.Snapshot);
         Assert.Equal(initial.Generation, (await subscription.ReadAsync()).Frame!.Generation);
         Assert.Empty(engine.Replacements);
+        Assert.Equal(binding, service.Resolve(address));
         var waveform = oscillator.Parameters.Single(p => p.Definition.Key == "waveform");
         patch.Session.Execute(new SetParameterValueCommand(patch.ChildId,
             new ParameterAddress(oscillator.Id, waveform.Id), (int)OscillatorWaveform.Square));
         engine.AcceptReplacement = false;
         await service.UpdateAsync(patch.Session.Snapshot);
+        Assert.Equal(binding, service.Resolve(address));
         Assert.Equal(initial.Generation, (await subscription.ReadAsync()).Frame!.Generation);
         engine.AcceptReplacement = true;
         patch.Session.Execute(new SetParameterValueCommand(patch.ChildId,
             new ParameterAddress(oscillator.Id, waveform.Id), (int)OscillatorWaveform.Triangle));
         await service.UpdateAsync(patch.Session.Snapshot);
         Assert.NotEqual(initial.Generation, (await subscription.ReadAsync()).Frame!.Generation);
+        Assert.NotEqual(binding.Generation, service.Resolve(address).Generation);
         await subscription.DisposeAsync();
         Assert.Single(engine.Released);
         await service.StopAsync(graph.Id);
         await playing;
+        Assert.Equal(SignalObservationAvailability.Inactive, service.Resolve(address).Availability);
         Assert.Equal(SignalObservationAvailability.Inactive, (await subscription.ReadAsync()).Availability);
     }
 

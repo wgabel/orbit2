@@ -10,6 +10,7 @@ export class SignalCapture {
     static MaxChannels = 9;
     static MaxLeases = 32;
     static WindowSize = 1024;
+    static AnalysisWindowSize = 8192;
 
     constructor(context, source, channels) {
         this.#context = context;
@@ -28,6 +29,13 @@ export class SignalCapture {
     }
 
     read(subscription, channel, generation) {
+        const window = this.readWindow(subscription, channel, generation);
+        return window && { ...window, samples: Array.from(window.samples.subarray(-SignalCapture.WindowSize)) };
+    }
+
+    // Browser-only window; consumers read synchronously and never retain this
+    // reused buffer across capture ticks. The diagnostic interop remains small.
+    readWindow(subscription, channel, generation) {
         if (!Number.isInteger(channel) || channel < 0 || channel >= this.#channels) return null;
         if (this.#leases.has(subscription) && this.#leases.get(subscription) !== channel)
             this.release(subscription);
@@ -35,12 +43,13 @@ export class SignalCapture {
             if (this.#leases.size >= SignalCapture.MaxLeases) return null;
             if (!this.#analyzers.has(channel)) {
                 const node = this.#context.createAnalyser();
-                node.fftSize = SignalCapture.WindowSize;
+                node.fftSize = SignalCapture.AnalysisWindowSize;
                 const source = this.#splitter ?? this.#source;
                 source.connect(node, channel, 0);
                 this.#analyzers.set(channel, {
                     node, samples: new Float32Array(node.fftSize), count: 0,
-                    readyTime: this.#context.currentTime + node.fftSize / this.#context.sampleRate
+                    readyTime: this.#context.currentTime + node.fftSize / this.#context.sampleRate,
+                    lastTime: -1
                 });
             }
             this.#leases.set(subscription, channel);
@@ -48,9 +57,12 @@ export class SignalCapture {
         }
         const analyzer = this.#analyzers.get(channel);
         if (this.#context.state !== "running" || this.#context.currentTime < analyzer.readyTime) return null;
-        analyzer.node.getFloatTimeDomainData(analyzer.samples);
+        if (analyzer.lastTime !== this.#context.currentTime) {
+            analyzer.node.getFloatTimeDomainData(analyzer.samples);
+            analyzer.lastTime = this.#context.currentTime;
+        }
         return { generation, sampleRate: this.#context.sampleRate, time: this.#context.currentTime,
-            samples: Array.from(analyzer.samples) };
+            samples: analyzer.samples };
     }
 
     release(subscription) {
