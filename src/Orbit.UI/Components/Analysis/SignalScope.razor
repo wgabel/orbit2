@@ -1,16 +1,12 @@
 @namespace Orbit.UI.Components.Analysis
 
 <div class="signal-scope @(Compact ? "scope-compact" : "")" data-configured-mode="@Settings.Mode" data-cycle-seconds="@(CycleSeconds?.ToString("G", System.Globalization.CultureInfo.InvariantCulture))" @ref="root">
-    <div class="scope-controls workspace-toolbar">
+    <div class="scope-controls workspace-toolbar" hidden="@ExternalModeControl">
         <label>View
             <select data-analysis-mode aria-label="Analysis view" value="@Settings.Mode">
                 <option value="waveform">Waveform</option>
                 <option value="spectrum">Spectrum</option>
                 <option value="level">Level</option>
-                @if (ResponseAvailable)
-                {
-                    <option value="response">Frequency response</option>
-                }
             </select>
         </label>
     </div>

@@ -949,7 +949,7 @@ try {
         assert.match(await plot.locator("[data-response-rate]").innerText(), /Reference/);
         const fits = await plot.evaluate(element => {
             const frame = element.closest("article").getBoundingClientRect();
-            return [element, ...element.querySelectorAll("svg, select, .response-legend, .response-chart")].every(child => {
+            return [element, element.parentElement.querySelector("select[aria-label='Analysis view']"), ...element.querySelectorAll("svg, .response-legend, .response-chart")].every(child => {
                 const rect = child.getBoundingClientRect();
                 return rect.left >= frame.left - 1 && rect.right <= frame.right + 1;
             });
@@ -1001,7 +1001,10 @@ try {
     await responseFilter.getByRole("button", { name: "Expand plot" }).press("Enter");
     await expandedResponse.locator(".response-effective").waitFor({ timeout: 15000 });
     await expandedResponse.getByRole("combobox", { name: "Analysis view" }).selectOption("spectrum");
-    await expandedResponse.locator(".signal-scope[data-view-mode='spectrum']").waitFor();
+    await expandedResponse.locator(".signal-scope[data-view-mode='spectrum']").waitFor().catch(async error => {
+        console.error("Response to spectrum transition:", await expandedResponse.innerHTML());
+        throw error;
+    });
     await expandedResponse.getByRole("combobox", { name: "Analysis view" }).selectOption("response");
     await expandedResponse.locator(".response-effective").waitFor({ timeout: 15000 });
     await expandedResponse.getByRole("button", { name: "Close scope" }).click();

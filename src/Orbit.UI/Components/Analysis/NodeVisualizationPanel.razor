@@ -30,9 +30,23 @@
         </div>
         @if (Expanded || Settings.Visible && !ExpandedElsewhere)
         {
-            @if (Settings.Mode == "response" && NodeVisualizationCapabilities.SupportsResponse(Node))
+            var supportsResponse = NodeVisualizationCapabilities.SupportsResponse(Node);
+            @if (supportsResponse)
             {
-                <ProcessorResponseView Node="@Node" Compact="@(!Expanded)" Settings="@Settings" SettingsChanged="SettingsChanged"
+                <div class="scope-controls workspace-toolbar @(!Expanded ? "scope-compact" : "")">
+                    <label>View
+                        <select aria-label="Analysis view" @bind:get="Settings.Mode" @bind:set="ChangeMode">
+                            <option value="waveform">Waveform</option>
+                            <option value="spectrum">Spectrum</option>
+                            <option value="level">Level</option>
+                            <option value="response">Frequency response</option>
+                        </select>
+                    </label>
+                </div>
+            }
+            @if (Settings.Mode == "response" && supportsResponse)
+            {
+                <ProcessorResponseView Node="@Node" Compact="@(!Expanded)"
                                        SampleRate="@SampleRate" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" />
             }
             else
@@ -47,8 +61,8 @@
                     </select>
                 </label>
                 var address = new SignalObservationAddress(PatchId, GraphId, Node.Id, selected.Id, selected.Direction);
-                <SignalScope @key="address" Address="@address" Compact="@(!Expanded)" Settings="@Settings" SettingsChanged="SettingsChanged"
-                    ResponseAvailable="@NodeVisualizationCapabilities.SupportsResponse(Node)"
+                <SignalScope @key="(address, supportsResponse ? Settings.Mode : null)" Address="@address" Compact="@(!Expanded)" Settings="@Settings" SettingsChanged="SettingsChanged"
+                    ExternalModeControl="@supportsResponse"
                     CycleSeconds="@(NodeVisualizationCapabilities.SupportsCycle(Node, selected.Id) ? CycleTiming.ForNode(Node, BeatsPerMinute)?.Seconds : null)" />
             }
         }
@@ -70,6 +84,7 @@
     [Parameter] public EventCallback OnExpand { get; set; }
 
     private Task Toggle() => SettingsChanged.InvokeAsync(Settings with { Visible = !Settings.Visible });
+    private Task ChangeMode(string mode) => SettingsChanged.InvokeAsync(Settings with { Mode = mode });
     private Task ChangePort(ChangeEventArgs args) => Guid.TryParse(args.Value?.ToString(), out var portId)
         ? SettingsChanged.InvokeAsync(Settings with { PortId = portId }) : Task.CompletedTask;
 }

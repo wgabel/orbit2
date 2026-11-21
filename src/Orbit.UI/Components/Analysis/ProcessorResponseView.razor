@@ -1,16 +1,6 @@
 @namespace Orbit.UI.Components.Analysis
 
 <div class="processor-response @(Compact ? "scope-compact" : "")" data-configured-mode="response">
-    <div class="scope-controls workspace-toolbar">
-        <label>View
-            <select aria-label="Analysis view" value="response" @onchange="ChangeMode">
-                <option value="waveform">Waveform</option>
-                <option value="spectrum">Spectrum</option>
-                <option value="level">Level</option>
-                <option value="response">Frequency response</option>
-            </select>
-        </label>
-    </div>
     <div class="response-chart" role="img" aria-label="Calculated frequency response in decibels, logarithmic frequency in Hz">
         <div class="response-db-axis" aria-hidden="true">
             @foreach (var db in DbTicks)

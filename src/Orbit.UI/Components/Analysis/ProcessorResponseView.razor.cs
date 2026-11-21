@@ -2,7 +2,6 @@ using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Orbit.Application.Graphs.Snapshots;
 using Orbit.Application.Models;
-using Orbit.Application.Persistence;
 using Orbit.Application.Services;
 using Orbit.Domain.Parameters;
 
@@ -15,8 +14,6 @@ public partial class ProcessorResponseView
     [Parameter, EditorRequired] public GraphNodeSnapshot Node { get; set; } = default!;
     [Parameter] public bool Compact { get; set; }
     [Parameter] public int? SampleRate { get; set; }
-    [Parameter, EditorRequired] public NodeVisualizationSettings Settings { get; set; } = NodeVisualizationSettings.Default;
-    [Parameter] public EventCallback<NodeVisualizationSettings> SettingsChanged { get; set; }
     [Parameter] public IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
     [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();
 
@@ -67,6 +64,4 @@ public partial class ProcessorResponseView
     private static string FrequencyLabel(double frequency) => frequency >= 1000
         ? $"{(frequency / 1000).ToString("0.#", CultureInfo.InvariantCulture)}k" : Number(frequency);
 
-    private Task ChangeMode(ChangeEventArgs args) => args.Value?.ToString() is "waveform" or "spectrum" or "level" or "response"
-        ? SettingsChanged.InvokeAsync(Settings with { Mode = args.Value.ToString()! }) : Task.CompletedTask;
 }
