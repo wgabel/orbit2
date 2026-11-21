@@ -219,6 +219,15 @@ try {
                 ack: slot => monitor.getTapAcknowledgement(slot)
             });
             capture.connectMaster(context.destination);
+            // All oscillator frequency controls use the existing startup
+            // smoother. Measure established pitch rather than its intentional
+            // startup glide; the capture gate still tests the very first
+            // complete window following every selector assignment.
+            const settledAt = context.currentTime + 0.3;
+            const settleDeadline = performance.now() + 4000;
+            while (context.currentTime < settledAt && performance.now() < settleDeadline)
+                await new Promise(resolve => setTimeout(resolve, 20));
+            if (context.currentTime < settledAt) throw new Error('Audio clock did not advance');
             const observe = (lease, selector) => capture.observe(lease, selector, 'live-dynamic');
             const frequency = frame => {
                 const samples = frame.samples, crossings = [];
