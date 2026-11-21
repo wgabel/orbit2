@@ -31,7 +31,7 @@
         {
             <label class="scope-source">
                 Signal
-                <select aria-label="Scope signal" @bind:get="selected.Id" @bind:set="ChangePort">
+                <select aria-label="Scope signal" value="@selected.Id" @onchange="ChangePort">
                     @foreach (var port in NodeVisualizationCapabilities.EligiblePorts(Node))
                     {
                         <option value="@port.Id">@port.Direction: @port.Name</option>
@@ -55,5 +55,6 @@
     [Parameter] public EventCallback OnExpand { get; set; }
 
     private Task Toggle() => SettingsChanged.InvokeAsync(Settings with { Visible = !Settings.Visible });
-    private Task ChangePort(Guid portId) => SettingsChanged.InvokeAsync(Settings with { PortId = portId });
+    private Task ChangePort(ChangeEventArgs args) => Guid.TryParse(args.Value?.ToString(), out var portId)
+        ? SettingsChanged.InvokeAsync(Settings with { PortId = portId }) : Task.CompletedTask;
 }

@@ -17,12 +17,12 @@ public partial class SignalScope : IAsyncDisposable
     [Parameter, EditorRequired] public NodeVisualizationSettings Settings { get; set; } = NodeVisualizationSettings.Default;
     [Parameter] public EventCallback<NodeVisualizationSettings> SettingsChanged { get; set; }
 
-    private Task ChangeMode(string value) => SettingsChanged.InvokeAsync(Settings with { Mode = value });
-    private Task ChangeTimebase(string value) => SettingsChanged.InvokeAsync(Settings with { Timebase = value });
-    private Task ChangeTrigger(string value) => SettingsChanged.InvokeAsync(Settings with { Trigger = value });
-    private Task ChangeFftSize(string value) => SettingsChanged.InvokeAsync(Settings with { FftSize = value });
-    private Task ChangeWindow(string value) => SettingsChanged.InvokeAsync(Settings with { Window = value });
-    private Task ChangeSmoothing(string value) => SettingsChanged.InvokeAsync(Settings with { Smoothing = value });
+    private Task ChangeMode(ChangeEventArgs args) => SettingsChanged.InvokeAsync(Settings with { Mode = args.Value?.ToString() ?? Settings.Mode });
+    private Task ChangeTimebase(ChangeEventArgs args) => SettingsChanged.InvokeAsync(Settings with { Timebase = args.Value?.ToString() ?? Settings.Timebase });
+    private Task ChangeTrigger(ChangeEventArgs args) => SettingsChanged.InvokeAsync(Settings with { Trigger = args.Value?.ToString() ?? Settings.Trigger });
+    private Task ChangeFftSize(ChangeEventArgs args) => SettingsChanged.InvokeAsync(Settings with { FftSize = args.Value?.ToString() ?? Settings.FftSize });
+    private Task ChangeWindow(ChangeEventArgs args) => SettingsChanged.InvokeAsync(Settings with { Window = args.Value?.ToString() ?? Settings.Window });
+    private Task ChangeSmoothing(ChangeEventArgs args) => SettingsChanged.InvokeAsync(Settings with { Smoothing = args.Value?.ToString() ?? Settings.Smoothing });
 
     private ElementReference root;
     private IJSObjectReference? module;
@@ -47,7 +47,7 @@ public partial class SignalScope : IAsyncDisposable
             module = await JavaScript.InvokeAsync<IJSObjectReference>("import", BrowserAssets.ScopeModulePath);
             if (disposed) return;
             reference = DotNetObjectReference.Create(this);
-            view = await module.InvokeAsync<IJSObjectReference>("mountScope", root, BrowserAssets.AudioModulePath, reference, lease);
+            view = await module.InvokeAsync<IJSObjectReference>("mountScope", root, BrowserAssets.AudioModulePath, reference, lease, Settings);
         }
         catch (JSException)
         {

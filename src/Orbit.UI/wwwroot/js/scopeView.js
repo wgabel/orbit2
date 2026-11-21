@@ -5,9 +5,9 @@ import { prepareSignalCanvas } from "./signalPlot.js";
 
 // A browser-owned renderer: .NET resolves the accepted signal binding at a
 // sparse cadence; no sample arrays or animation frames cross JS interop.
-export async function mountScope(root, audioPath, resolver, lease) {
+export async function mountScope(root, audioPath, resolver, lease, settings) {
     const audio = await import(new URL(audioPath, document.baseURI).href);
-    return new ScopeView(root, audio, resolver, lease);
+    return new ScopeView(root, audio, resolver, lease, settings);
 }
 
 class ScopeView {
@@ -20,7 +20,7 @@ class ScopeView {
     #resolving = false;
     #lastClear = null;
 
-    constructor(root, audio, resolver, lease) {
+    constructor(root, audio, resolver, lease, settings) {
         this.#root = root; this.#audio = audio; this.#resolver = resolver; this.#lease = lease;
         this.#canvas = root.querySelector("canvas");
         this.#mode = root.querySelector("[data-analysis-mode]");
@@ -37,6 +37,13 @@ class ScopeView {
         this.#peakMeter = root.querySelector("[data-peak-meter]");
         this.#rmsMeter = root.querySelector("[data-rms-meter]");
         this.#scale = root.querySelector("[data-scale]");
+        // Restore the layout configuration before the first analysis frame.
+        this.#mode.value = settings.mode;
+        this.#timebase.value = settings.timebase;
+        this.#trigger.value = settings.trigger;
+        this.#fftSize.value = settings.fftSize;
+        this.#fftWindow.value = settings.window;
+        this.#fftSmoothing.value = settings.smoothing;
         this.#mode.addEventListener("change", this.#modeChanged);
         this.#modeChanged();
         this.#observer = new IntersectionObserver(entries => {

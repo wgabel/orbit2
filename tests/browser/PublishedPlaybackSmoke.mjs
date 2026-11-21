@@ -305,10 +305,13 @@ try {
     await panCanvas(-4000);
     await compact.locator("[data-scope-status]").filter({ hasText: /Live/ }).waitFor({ timeout: 15000 });
     await compact.getByRole("combobox", { name: "Analysis view" }).selectOption("spectrum");
+    await compact.locator('.signal-scope[data-configured-mode="spectrum"]').waitFor();
     await compact.locator("[data-scope-status]").filter({ hasText: /Spectrum · peak bin/ }).waitFor();
     await compact.getByRole("button", { name: "Expand plot" }).click();
     const scope = page.getByRole("region", { name: "Signal scope", exact: true });
     await scope.waitFor();
+    await scope.locator('.signal-scope[data-configured-mode="spectrum"]').waitFor();
+    await scope.locator('[data-view-mode="spectrum"]').waitFor();
     assert.equal(await compact.locator("canvas").count(), 0, "Expanded plot must replace its compact renderer");
     assert.equal(await scope.getByRole("combobox", { name: "Analysis view" }).inputValue(), "spectrum");
     await scope.getByRole("combobox", { name: "Analysis view" }).selectOption("waveform");
