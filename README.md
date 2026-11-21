@@ -579,6 +579,19 @@ session.Execute(new AddBoundaryPortCommand(childGraphId, PortDirection.Input,
 
 Changing an existing port's signal type, channel count or fan-in, and undo are future operations; in this version those properties are chosen when creating a port.
 
+### Chorus (Phase 6.15)
+
+Add **Chorus** to thicken an audio signal using two short modulated delay voices. Rate (0.05–5 Hz, default 0.6), depth (0–10 ms, default 3), base delay (5–40 ms, default 15) and wet mix (0–1, default 0.5) all support live modulation. Depth is the peak delay excursion around the base delay; it is bounded to keep both taps at least 1 ms from the present. With depth zero the effect is a fixed short delay; mix zero passes the original signal unchanged. With modulation the moving taps introduce pitch variations; the mono wet signal averages both voices. The internal phase continues through base edits. No feedback is used, so the effect does not accumulate echoes. Stereo chorus can follow when the graph supports multichannel DSP.
+
+~~~mermaid
+flowchart TD
+    A[Audio input] --> T[Two fractional delay taps]
+    L[Phase-offset modulation] --> T
+    T --> M[Dry/wet mix]
+    A --> M
+    M --> O[Audio output]
+~~~
+
 ### Reverb (Phase 6.14)
 
 Add **Reverb** to create a dense, decaying mono acoustic tail. Decay (RT60, 0.1–12 seconds, default 2.5) controls the approximate time for low-frequency reflections to decay by 60 dB. Damping (0–1, default 0.4) progressively absorbs high frequencies; wet mix (0–1, default 0.35) blends the original and reverberated audio. All three parameters support live modulation. The algorithm combines eight damped feedback delays and four all-pass diffusers with sample-rate-scaled lengths. The room geometry is fixed in this first implementation; longer decay increases sustain, not the physical size of the simulated space. Mix 0 bypasses the audible tail without discarding its state. Keep headroom for resonant accumulation; structural graph replacement may reset the tail.

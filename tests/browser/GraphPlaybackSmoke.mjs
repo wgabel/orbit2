@@ -21,6 +21,7 @@ const filters = JSON.parse(await readFile(resolve(directory, "filters.json"), "u
 const eq = JSON.parse(await readFile(resolve(directory, "eq.json"), "utf8"));
 const delays = JSON.parse(await readFile(resolve(directory, "delay.json"), "utf8"));
 const reverb = JSON.parse(await readFile(resolve(directory, "reverb.json"), "utf8"));
+const chorus = JSON.parse(await readFile(resolve(directory, "chorus.json"), "utf8"));
 const root = resolve("src/Orbit.Infrastructure/wwwroot/audio");
 const server = createServer(async (request, response) => {
     try {
@@ -533,6 +534,62 @@ try {
         assert.ok(result.dark.late.roughness < result.long.late.roughness * 0.5, "Damping must reduce late high-frequency energy");
         assert.ok(result.dry.late.rms < 1e-5, "Zero wet mix must remove the reverb tail");
         assert.ok(result.peak < 2);
+    }
+
+    const chorusResults = await page.evaluate(async chorus => {
+        const { FaustCompilerClient } = await import("/Faust/FaustCompilerClient.js");
+        const { FaustMonoDspGenerator } = await import("/generated/modulated-sine/faustwasm/index.js");
+        const compiler = new FaustCompilerClient(() => new Worker("/Faust/FaustCompilerWorker.js", { type: "module" }));
+        try {
+            const compiled = await compiler.compile(chorus.source);
+            const results = [];
+            for (const sampleRate of [44100, 48000]) {
+                const render = async (rate, depth, mix, modulation = 0) => {
+                    const processor = await new FaustMonoDspGenerator().createOfflineProcessor(sampleRate, 128, { ...compiled, soundfiles: {} });
+                    const set = (name, value) => processor.setParamValue(processor.getParams().find(path => path.endsWith("/" + name)), value);
+                    for (const [name, value] of Object.entries(chorus.values)) set(name, value);
+                    set(chorus.rate, rate); set(chorus.depth, depth); set(chorus.delay, 13); set(chorus.mix, mix);
+                    set(chorus.modulation, modulation);
+                    processor.render([], sampleRate);
+                    return processor.render([], sampleRate * 4)[0];
+                };
+                const dry = await render(1, 3, 0), delayed = await render(1, 0, 1);
+                const moving = await render(1, 0.5, 1), faster = await render(2, 0.5, 1);
+                const stress = await render(5, 10, 1, 1);
+                const tone = (audio, frequency) => {
+                    let real = 0, imaginary = 0;
+                    for (let i = 0; i < audio.length; i++) {
+                        const angle = 2 * Math.PI * frequency * i / sampleRate;
+                        real += audio[i] * Math.cos(angle); imaginary += audio[i] * Math.sin(angle);
+                    }
+                    return 2 * Math.hypot(real, imaginary) / audio.length;
+                };
+                const lag = 0.013 * sampleRate;
+                let errors = 0, count = 0;
+                for (let i = Math.ceil(lag) + 1; i < delayed.length; i++) {
+                    const index = i - lag, start = Math.floor(index), fraction = index - start;
+                    const expected = (1 - fraction) * dry[start] + fraction * dry[start + 1];
+                    errors += (expected - delayed[i]) ** 2; count++;
+                }
+                let peak = 0;
+                for (const sample of stress) {
+                    if (!Number.isFinite(sample)) throw new Error("Non-finite modulated chorus");
+                    peak = Math.max(peak, Math.abs(sample));
+                }
+                results.push({ sampleRate, dry: tone(dry, 440), delayError: Math.sqrt(errors / count),
+                    staticSideband: tone(delayed, 441), movingSideband: tone(moving, 441),
+                    fasterSideband: tone(faster, 442), fasterOffBand: tone(faster, 441), peak });
+            }
+            return results;
+        } finally { compiler.dispose(); }
+    }, chorus);
+    for (const result of chorusResults) {
+        console.log("Chorus response", result);
+        assert.ok(Math.abs(result.dry - 0.1) < 0.001, "Dry mix preserves carrier amplitude");
+        assert.ok(result.delayError < 0.002, "Zero depth is a fixed fractional delay");
+        assert.ok(result.staticSideband < 0.001 && result.movingSideband > 0.005, "Modulation produces pitch sidebands");
+        assert.ok(result.fasterSideband > 0.005 && result.fasterOffBand < 0.002, "Rate controls sideband spacing");
+        assert.ok(result.peak <= 0.101, "Convex delay blend remains within input amplitude bounds");
     }
 
     // All shapes now use the transport in synchronized mode. Supply the same

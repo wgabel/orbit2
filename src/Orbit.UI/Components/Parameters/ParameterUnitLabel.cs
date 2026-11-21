@@ -10,6 +10,7 @@ public static class ParameterUnitLabel
         ParameterUnit.Hertz => "Hz",
         ParameterUnit.Decibels => "dB",
         ParameterUnit.Seconds => "s",
+        ParameterUnit.Milliseconds => "ms",
         ParameterUnit.Cents => "cent",
         ParameterUnit.Degrees => "°",
         ParameterUnit.BeatsPerMinute => "BPM",

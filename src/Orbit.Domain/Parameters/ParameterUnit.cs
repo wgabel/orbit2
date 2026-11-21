@@ -10,5 +10,6 @@ public enum ParameterUnit
     Seconds,
     Degrees,
     BeatsPerMinute,
-    Ratio
+    Ratio,
+    Milliseconds
 }

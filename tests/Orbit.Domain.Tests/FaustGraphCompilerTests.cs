@@ -24,6 +24,27 @@ public sealed class FaustGraphCompilerTests
     private readonly FaustGraphCompiler compiler = FaustGraphCompiler.CreateBuiltIn();
 
     [Fact]
+    public void ChorusAllParametersAreLiveAndModulatable()
+    {
+        using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+        var source = Add(session, OscillatorGenerator.NodeType);
+        var chorus = Add(session, ChorusProcessor.NodeType);
+        var output = Add(session, MasterOutput.NodeType);
+        Connect(session, source, chorus, chorus.Inputs.Single(p => p.Key == "audio-in").Id, 0.1);
+        foreach (var parameter in chorus.Parameters)
+            Connect(session, source, chorus, parameter.ModulationPortId!.Value, 0.1);
+        Connect(session, chorus, output, output.Inputs.Single().Id, 1);
+        var initial = compiler.Compile(session.Snapshot);
+        Assert.False(initial.RequiresTransport);
+        foreach (var parameter in chorus.Parameters)
+        {
+            Assert.NotNull(Control(initial, chorus, parameter.Definition.Key).MeterName);
+            session.Execute(new SetParameterValueCommand(session.GraphId, new ParameterAddress(chorus.Id, parameter.Id), parameter.BaseValue + 0.1));
+        }
+        Assert.Equal(initial.Source, compiler.Compile(session.Snapshot).Source);
+    }
+
+    [Fact]
     public void ReverbControlsAreLiveAndIndependentlyModulatable()
     {
         using var session = new PatchSession(BuiltInNodes.CreateRegistry());

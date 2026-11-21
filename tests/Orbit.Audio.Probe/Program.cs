@@ -240,6 +240,25 @@ File.WriteAllText(Path.Combine(args[0], "reverb.json"), JsonSerializer.Serialize
     damping = ReverbControl(reverb, "damping"), mix = ReverbControl(reverb, "mix"), modulation = ReverbControl(modulation, "amplitude")
 }));
 
+filterSession.Execute(new RemoveNodeCommand(filterRoot, reverb.Id));
+var chorus = FilterAdd(ChorusProcessor.NodeType);
+FilterSet(carrier, "frequency", 440);
+FilterSet(carrier, "amplitude", 0.1);
+FilterConnect(carrier, chorus, "audio-in", 1);
+FilterConnect(modulation, chorus, "rate-modulation-in", 5);
+FilterConnect(modulation, chorus, "depth-modulation-in", 10);
+FilterConnect(modulation, chorus, "delay-modulation-in", 40);
+FilterConnect(modulation, chorus, "mix-modulation-in", 1);
+FilterConnect(chorus, filterMaster, "audio-in", 1);
+var chorusProgram = FaustGraphCompiler.CreateBuiltIn().Compile(filterSession.Snapshot);
+string ChorusControl(GraphNodeSnapshot node, string key) => chorusProgram.Controls.Single(c => c.Address == Address(node, key)).Name;
+File.WriteAllText(Path.Combine(args[0], "chorus.json"), JsonSerializer.Serialize(new
+{
+    source = chorusProgram.Source, values = chorusProgram.Controls.ToDictionary(c => c.Name, c => c.InitialValue),
+    rate = ChorusControl(chorus, "rate"), depth = ChorusControl(chorus, "depth"), delay = ChorusControl(chorus, "delay"),
+    mix = ChorusControl(chorus, "mix"), modulation = ChorusControl(modulation, "amplitude")
+}));
+
 GraphNodeSnapshot TempoAdd(Guid graph, string type) =>
     tempoSession.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
 
