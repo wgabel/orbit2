@@ -34,7 +34,6 @@ else
         </select>
         <button type="button" @onclick="AddNode">Add</button>
         <button type="button" class="secondary" disabled="@(!HasSelection)" @onclick="DeleteSelection">Delete selected</button>
-        <button type="button" class="secondary" disabled="@(ScopeNode is null)" @onclick="ToggleScope">@(scopeOpen ? "Hide scope" : "Show scope")</button>
         </div>
         <GraphPlaybackControls @key="workspaceGeneration" @ref="playbackControls" Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" TempoChanged="OnTempoChanged" Disabled="switchingWorkspace" />
     </div>
@@ -65,6 +64,7 @@ else
                         Dispatch="@DispatchRackCommand" OnClose="CloseRackEditor" />
     }
     <GraphCanvas @key="(workspaceGeneration, graphId)" @ref="canvasView" State="@Canvas" AutoFitOnFirstRender="@Navigation.IsFirstVisit"
+                 CanShowScope="@(ScopeNode is not null)" ScopeOpen="@scopeOpen" OnToggleScope="ToggleScope"
                  OnConnect="@(request => Connect(graphId, request))" OnParameterEdit="@(request => EditParameter(graphId, request))"
                  OnParameterGestureEnded="@(id => CompleteParameterGesture(graphId, id))"
                  OnAudition="@(request => SetNodeAudition(graphId, request))"

@@ -645,7 +645,7 @@ The audio runtime now compiles up to eight host-only auxiliary observation chann
 
 ### Oscilloscope and level meter (Phase 6.18.2)
 
-Select a node by its header, then choose **Show scope** in the canvas toolbar. Choose a mono input or output (output is preferred by default). Start playback to inspect actual DSP samples. The scope provides 5/20/50 ms waveform windows with free-running or rising/falling zero-crossing trigger, and 1/5/10 s history for slow modulation. The history preserves min/max peaks in 10 ms buckets and displays gaps where samples were not captured. Peak and RMS meters report the latest 20 ms in dBFS (±1 is 0 dBFS); signals at or above full scale are highlighted. The waveform scales automatically to accommodate modulation outside ±1. Close the view to release its capture; changing source or display controls never edits the graph. Unavailable taps and stopped playback are shown explicitly.
+Select a node by its header, then choose **Show scope** at the upper left of the canvas. Choose a mono input or output (output is preferred by default). Start playback to inspect actual DSP samples. The scope provides 5/20/50 ms waveform windows with free-running or rising/falling zero-crossing trigger, and 1/5/10 s history for slow modulation. The history preserves min/max peaks in 10 ms buckets and displays gaps where samples were not captured. Peak and RMS meters report the latest 20 ms in dBFS (±1 is 0 dBFS); signals at or above full scale are highlighted. The waveform scales automatically to accommodate modulation outside ±1. Close the view to release its capture; changing source or display controls never edits the graph. Unavailable taps and stopped playback are shown explicitly.
 
 ### Chorus (Phase 6.15)
 

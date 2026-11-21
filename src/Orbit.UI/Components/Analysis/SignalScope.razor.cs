@@ -10,7 +10,7 @@ public partial class SignalScope : IAsyncDisposable
 {
     [Inject] private IJSRuntime JavaScript { get; set; } = default!;
     [Inject] private ISignalAnalysisService Analysis { get; set; } = default!;
-    [Inject] private ScopeBrowserAssets Assets { get; set; } = default!;
+    [Inject] private ScopeBrowserAssets BrowserAssets { get; set; } = default!;
     [Parameter, EditorRequired] public SignalObservationAddress Address { get; set; }
 
     private ElementReference root;
@@ -36,7 +36,7 @@ public partial class SignalScope : IAsyncDisposable
             module = await JavaScript.InvokeAsync<IJSObjectReference>("import", "./js/scopeView.js");
             if (disposed) return;
             reference = DotNetObjectReference.Create(this);
-            view = await module.InvokeAsync<IJSObjectReference>("mountScope", root, Assets.AudioModulePath, reference, lease);
+            view = await module.InvokeAsync<IJSObjectReference>("mountScope", root, BrowserAssets.AudioModulePath, reference, lease);
         }
         catch (JSException)
         {

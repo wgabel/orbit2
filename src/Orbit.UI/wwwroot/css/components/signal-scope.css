@@ -1,3 +1,9 @@
+.canvas-scope-action {
+    position: absolute;
+    inset-block-start: var(--semantic-space-compact);
+    inset-inline-start: var(--semantic-space-compact);
+    font-size: var(--semantic-typography-label);
+}
 .signal-scope-panel {
     position: absolute;
     inset-block-end: var(--semantic-space-normal);

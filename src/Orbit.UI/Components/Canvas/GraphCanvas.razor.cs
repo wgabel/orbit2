@@ -26,6 +26,9 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter] public EventCallback<Guid> OnOpenComposite { get; set; }
     [Parameter] public EventCallback<Guid> OnEditRack { get; set; }
     [Parameter] public bool AutoFitOnFirstRender { get; set; } = true;
+    [Parameter] public bool CanShowScope { get; set; }
+    [Parameter] public bool ScopeOpen { get; set; }
+    [Parameter] public EventCallback OnToggleScope { get; set; }
     [Parameter] public double BeatsPerMinute { get; set; } = MusicalTransport.DefaultTempo;
     [Parameter] public IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
     [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();
