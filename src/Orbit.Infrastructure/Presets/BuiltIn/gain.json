@@ -7,5 +7,50 @@
     "group": "Gain staging",
     "description": "Halve the input amplitude to leave headroom for mixing.",
     "parameters": { "gain": 0.5 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "gain-unity",
+    "nodeType": "processor.gain",
+    "name": "Unity",
+    "group": "Gain staging",
+    "description": "Pass the input at its original amplitude.",
+    "parameters": { "gain": 1 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "gain-quarter-level",
+    "nodeType": "processor.gain",
+    "name": "Quarter Level",
+    "group": "Gain staging",
+    "description": "Reduce amplitude to one quarter for dense parallel layers.",
+    "parameters": { "gain": 0.25 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "gain-quiet-bed",
+    "nodeType": "processor.gain",
+    "name": "Quiet Bed",
+    "group": "Layering",
+    "description": "A low 0.12 gain for supporting harmonics and textures.",
+    "parameters": { "gain": 0.12 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "gain-subtle-layer",
+    "nodeType": "processor.gain",
+    "name": "Subtle Layer",
+    "group": "Layering",
+    "description": "Attenuate a very quiet layer without changing its waveform.",
+    "parameters": { "gain": 0.05 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "gain-modulation-center",
+    "nodeType": "processor.gain",
+    "name": "Modulation Center",
+    "group": "Modulation",
+    "description": "Begin at 0.65 gain; use a bipolar modulation cable for movement.",
+    "parameters": { "gain": 0.65 }
   }
 ]

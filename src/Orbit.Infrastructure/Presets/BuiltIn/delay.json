@@ -7,5 +7,68 @@
     "group": "Rhythmic",
     "description": "Tempo-synchronized echoes with moderate feedback.",
     "parameters": { "time": 0.3, "feedback": 0.35, "mix": 0.3, "timing": 1, "division": 2 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "delay-eighth-note",
+    "nodeType": "processor.delay",
+    "name": "Eighth Note",
+    "group": "Rhythmic",
+    "description": "Short synchronized repeats at eighth-note intervals.",
+    "parameters": { "time": 0.25, "feedback": 0.28, "mix": 0.3, "timing": 1, "division": 1 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "delay-triplet",
+    "nodeType": "processor.delay",
+    "name": "Triplet",
+    "group": "Rhythmic",
+    "description": "Quarter-note triplet echoes for overlapping rhythmic movement.",
+    "parameters": { "time": 0.33, "feedback": 0.42, "mix": 0.36, "timing": 1, "division": 5 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "delay-dotted-quarter",
+    "nodeType": "processor.delay",
+    "name": "Dotted Quarter",
+    "group": "Rhythmic",
+    "description": "Echoes every one and a half beats for syncopated repeat patterns.",
+    "parameters": { "time": 0.5, "feedback": 0.46, "mix": 0.38, "timing": 1, "division": 6 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "delay-slapback",
+    "nodeType": "processor.delay",
+    "name": "Slapback",
+    "group": "Short reflections",
+    "description": "A short 90 ms echo with very little feedback.",
+    "parameters": { "time": 0.09, "feedback": 0.08, "mix": 0.22, "timing": 0, "division": 2 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "delay-double-track",
+    "nodeType": "processor.delay",
+    "name": "Double Track",
+    "group": "Short reflections",
+    "description": "A quiet 26 ms delayed copy with no feedback for fixed doubling coloration.",
+    "parameters": { "time": 0.026, "feedback": 0, "mix": 0.3, "timing": 0, "division": 2 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "delay-long-echo",
+    "nodeType": "processor.delay",
+    "name": "Long Echo",
+    "group": "Atmospheric",
+    "description": "Slow 1.4 second repeats for spacious evolving sounds; allow headroom.",
+    "parameters": { "time": 1.4, "feedback": 0.58, "mix": 0.42, "timing": 0, "division": 2 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "delay-bar-echo",
+    "nodeType": "processor.delay",
+    "name": "Bar Echo",
+    "group": "Atmospheric",
+    "description": "A repeat once per four-beat bar for slowly unfolding rhythmic layers.",
+    "parameters": { "time": 1.6, "feedback": 0.52, "mix": 0.38, "timing": 1, "division": 4 }
   }
 ]

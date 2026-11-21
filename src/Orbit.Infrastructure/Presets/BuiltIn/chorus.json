@@ -7,5 +7,59 @@
     "group": "Thickening",
     "description": "Slow, shallow pitch movement for sustained tones.",
     "parameters": { "rate": 0.35, "depth": 2, "delay": 15, "mix": 0.3 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "chorus-deep-ensemble",
+    "nodeType": "processor.chorus",
+    "name": "Deep Ensemble",
+    "group": "Thickening",
+    "description": "Deeper slow pitch movement for a layered, sustained sound.",
+    "parameters": { "rate": 0.45, "depth": 7, "delay": 22, "mix": 0.5 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "chorus-subtle-double",
+    "nodeType": "processor.chorus",
+    "name": "Subtle Double",
+    "group": "Thickening",
+    "description": "Shallow, quiet modulation for a lightly doubled tonal layer.",
+    "parameters": { "rate": 0.22, "depth": 1, "delay": 18, "mix": 0.22 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "chorus-slow-drift",
+    "nodeType": "processor.chorus",
+    "name": "Slow Drift",
+    "group": "Texture",
+    "description": "A very slow, deep delay modulation for gentle drifting pitch.",
+    "parameters": { "rate": 0.08, "depth": 5, "delay": 24, "mix": 0.48 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "chorus-moving-metal",
+    "nodeType": "processor.chorus",
+    "name": "Moving Metal",
+    "group": "Texture",
+    "description": "Short modulated delays create shifting comb coloration on rich input.",
+    "parameters": { "rate": 0.8, "depth": 2.5, "delay": 6, "mix": 0.5 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "chorus-wet-vibrato",
+    "nodeType": "processor.chorus",
+    "name": "Wet Vibrato",
+    "group": "Modulated pitch",
+    "description": "Fully wet, deeper modulation makes the chorus voices' pitch movement more apparent.",
+    "parameters": { "rate": 2.2, "depth": 4, "delay": 18, "mix": 1 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "chorus-fast-shimmer",
+    "nodeType": "processor.chorus",
+    "name": "Fast Shimmer",
+    "group": "Modulated pitch",
+    "description": "Faster shallow modulation for a quivering, bright texture.",
+    "parameters": { "rate": 3.5, "depth": 1.4, "delay": 12, "mix": 0.42 }
   }
 ]

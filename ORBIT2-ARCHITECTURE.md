@@ -857,17 +857,20 @@ flowchart TD
     S --> G[Immutable usage groups]
 ~~~
 
-| Node | Example usage groups | Example presets |
-|---|---|---|
-| Oscillator | Bass, Modulation, Drones | Sub Bass, Slow LFO, Deep Sine, Bright Saw |
-| Noise | Atmosphere, Texture | Wind, Deep Rumble, Bright Hiss |
-| Filter | Tone shaping, Resonance | Warm Low-pass, Gentle High-pass, Vocal Resonance |
-| Parametric EQ | Tone shaping, Corrective | Warmth, Presence, Remove Muddiness |
-| Delay | Rhythmic, Atmospheric | Quarter Note, Triplet, Long Echo |
-| Reverb | Spaces, Atmospheric | Small Room, Large Hall, Dark Ambient |
-| Chorus | Thickening, Texture | Gentle Chorus, Deep Ensemble |
+| Node | Presets | Built-in usage groups | Example presets |
+|---|---:|---|---|
+| Oscillator | 14 | Bass, Drones, Harmonic layers, Modulation, Rhythmic modulation | Sub Bass, Slow LFO, Deep Sine, Bright Saw |
+| Noise | 7 | Atmosphere, Modulation, Texture | Wind, Deep Rumble, Bright Hiss |
+| Gain | 6 | Gain staging, Layering, Modulation | Half Level, Quiet Bed, Modulation Center |
+| Filter | 8 | Corrective, Resonance, Texture, Tone shaping | Warm Low-pass, Gentle High-pass, Vocal Resonance |
+| Parametric EQ | 7 | Corrective, Texture, Tone shaping | Warmth, Presence, Remove Muddiness |
+| Delay | 8 | Atmospheric, Rhythmic, Short reflections | Quarter Note, Triplet, Long Echo |
+| Reverb | 8 | Atmospheric, Spaces, Texture | Small Room, Large Hall, Dark Ambient |
+| Chorus | 7 | Modulated pitch, Texture, Thickening | Gentle Chorus, Deep Ensemble |
 
 Examples describe intended usage, not a guarantee of a particular sound without suitable input/routing. Each supported node also exposes `Custom` even when empty. Presets should demonstrate meaningful settings, sensible output headroom and compatible parameter modes; factory defaults remain available independently.
+
+**Implemented 6.17.4.** The embedded catalog now contains 65 presets across all eight eligible types. The 55 additions preserve the original ten IDs and configurations and introduce no new runtime mechanism or storage format. All entries include descriptions and complete stable-key values (including dormant parameters). CI validates every entry against the registry, applies it through the atomic graph command, checks exact selector matching and unchanged connections, and generates a reachable Faust graph for each configuration. Duplicate complete configurations within a node type would fail the matching test. Custom persistence is the next step.
 
 **Atomic application.** Introduce `ApplyNodePresetCommand` targeting a graph ID and node ID with a validated type-key/value configuration. A domain batch parameter operation resolves and validates every key, value and target before mutating anything, including structural choices and stored inactive values. A failed or unchanged configuration produces no revision. A successful application preserves node, parameter and port IDs, connections and layout; publishes one `GraphChangeSet` with the individual `ParameterChanged` facts; records one undo entry; and triggers existing audio, range projection and autosave subscribers once. Do not loop through separate session commands. Topology comparison already distinguishes base-only changes from structural changes, so ordinary presets update active controls and structural choices use the existing crossfade policy. No preset-specific logic belongs in DSP or audio infrastructure. Existing pending slider history is finalized before a distinct preset application.
 
@@ -1705,7 +1708,8 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented (6.16.2): explicit effect bypass capability, independent persisted state, shared click-safe audition controls, dry range projection and continuously running wet DSP.
 - Implemented (6.17.1): immutable versioned individual node preset model, registry-derived validation and grouped embedded JSON catalog.
 - Implemented (6.17.2): atomic preset application through validated batch parameter changes, one revision/undo entry, and existing live playback.
-- Implemented (6.17.3): shared grouped node preset selector, description and exact base-configuration matching in every canvas; expanded built-in content next.
+- Implemented (6.17.3): shared grouped node preset selector, description and exact base-configuration matching in every canvas.
+- Implemented (6.17.4): expanded data-only catalog of 65 built-in configurations across all eight eligible node types; custom library next.
 - Planned (6.18): shared signal observation and visualization, integrated node plots, processor response curves and passive analyzer sinks.
 - Deferred: deployment-version detection and safe workspace-save/reload prompt for long-lived tabs whose versioned lazy modules have been removed by a later Pages deployment.
 - Add copies/preset reuse with independent instances.
@@ -1778,7 +1782,7 @@ Deliverable: audition or silence entire linear lanes by muting their final node,
 - **6.17.1 — Model and catalog (implemented):** versioned immutable parameter configurations, stable IDs, registry-derived type/key validation and grouped embedded JSON resources with starter examples for all eligible node types.
 - **6.17.2 — Atomic application (implemented):** validated multi-parameter graph operation and `ApplyNodePresetCommand`, one committed revision and undo entry; tested nested nodes, dormant connections, audition state and live playback updates/replacements.
 - **6.17.3 — Shared selector (implemented):** compact accessible grouped `NodePresetSelector`, descriptions, base-configuration matching/modified state, shared token styling, and root/nested browser coverage; no node-specific UI.
-- **6.17.4 — Built-in content:** meaningful usage groups and example presets for all eligible existing generators and processors, including chorus; validate all shipped data in CI.
+- **6.17.4 — Built-in content (implemented):** 65 configurations with meaningful usage groups for all eight eligible generators and processors, including chorus; validate, apply and match every shipped preset in CI.
 - **6.17.5 — Custom library:** persistent `Custom` group for every eligible node type, save as, explicit overwrite, rename/delete and independent instances; IndexedDB reload and workspace-switch coverage.
 - **6.17.6 — Portable node presets:** versioned JSON import/export with transactional validation, conflict handling and backwards compatibility.
 

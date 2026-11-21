@@ -84,7 +84,9 @@ try {
     // The shared catalog selector applies an entire configuration in one undo step.
     const rootPreset = articles.nth(1).getByRole("combobox", { name: "Preset for Oscillator" });
     assert.equal(await rootPreset.inputValue(), "");
-    assert.equal(await rootPreset.locator("optgroup[label='Drones'] option").count(), 1);
+    assert.ok(await rootPreset.locator("optgroup[label='Drones'] option").count() >= 3);
+    assert.equal(await rootPreset.locator("optgroup[label='Bass'] option[value='oscillator-sub-bass']").count(), 1);
+    assert.equal(await rootPreset.locator("optgroup[label='Rhythmic modulation'] option[value='oscillator-bar-swell']").count(), 1);
     assert.equal(await rootPreset.locator("optgroup[label='Custom']").evaluate(group => group.disabled), true);
     assert.equal(await articles.last().locator(".node-preset-selector").count(), 0);
     const rootPresetPosition = await articles.nth(1).getAttribute("style");

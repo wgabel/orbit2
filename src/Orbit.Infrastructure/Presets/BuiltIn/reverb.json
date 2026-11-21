@@ -7,5 +7,68 @@
     "group": "Atmospheric",
     "description": "Long, dark reverb for evolving drones.",
     "parameters": { "decay": 8.0, "damping": 0.8, "mix": 0.65 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "reverb-small-room",
+    "nodeType": "processor.reverb",
+    "name": "Small Room",
+    "group": "Spaces",
+    "description": "Short damped reverberation with a subtle wet mix.",
+    "parameters": { "decay": 0.45, "damping": 0.5, "mix": 0.22 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "reverb-large-hall",
+    "nodeType": "processor.reverb",
+    "name": "Large Hall",
+    "group": "Spaces",
+    "description": "Longer open reverberant tail for sustained sounds.",
+    "parameters": { "decay": 4.5, "damping": 0.3, "mix": 0.4 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "reverb-soft-chamber",
+    "nodeType": "processor.reverb",
+    "name": "Soft Chamber",
+    "group": "Spaces",
+    "description": "A medium-length, warm tail with a restrained wet mix.",
+    "parameters": { "decay": 1.6, "damping": 0.65, "mix": 0.3 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "reverb-bright-ambient",
+    "nodeType": "processor.reverb",
+    "name": "Bright Ambient",
+    "group": "Atmospheric",
+    "description": "A long, lightly damped tail emphasizing the input's upper harmonics.",
+    "parameters": { "decay": 7, "damping": 0.15, "mix": 0.55 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "reverb-long-wash",
+    "nodeType": "processor.reverb",
+    "name": "Long Wash",
+    "group": "Atmospheric",
+    "description": "A near-maximum decay for a sustained wash; leave mixing headroom.",
+    "parameters": { "decay": 10.5, "damping": 0.45, "mix": 0.7 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "reverb-wet-texture",
+    "nodeType": "processor.reverb",
+    "name": "Wet Texture",
+    "group": "Texture",
+    "description": "Fully wet reverberation for a parallel texture lane; retain dry audio elsewhere.",
+    "parameters": { "decay": 3.2, "damping": 0.55, "mix": 1 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "reverb-subtle-glue",
+    "nodeType": "processor.reverb",
+    "name": "Subtle Glue",
+    "group": "Texture",
+    "description": "A low wet level to add a little shared ambience to a mixed drone.",
+    "parameters": { "decay": 1.3, "damping": 0.5, "mix": 0.12 }
   }
 ]

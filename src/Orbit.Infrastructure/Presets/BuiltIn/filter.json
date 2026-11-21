@@ -7,5 +7,68 @@
     "group": "Tone shaping",
     "description": "Soften upper harmonics without a pronounced resonant peak.",
     "parameters": { "mode": 0, "cutoff": 700, "resonance": 0.707 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "filter-dark-drone",
+    "nodeType": "processor.filter",
+    "name": "Dark Drone",
+    "group": "Tone shaping",
+    "description": "A low cutoff at 300 Hz for a subdued, bass-rich drone.",
+    "parameters": { "mode": 0, "cutoff": 300, "resonance": 0.707 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "filter-gentle-high-pass",
+    "nodeType": "processor.filter",
+    "name": "Gentle High-pass",
+    "group": "Corrective",
+    "description": "Reduce sub-bass buildup below 80 Hz in layered textures.",
+    "parameters": { "mode": 1, "cutoff": 80, "resonance": 0.707 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "filter-mains-notch",
+    "nodeType": "processor.filter",
+    "name": "50 Hz Notch",
+    "group": "Corrective",
+    "description": "A relatively narrow dip centered at 50 Hz to attenuate hum.",
+    "parameters": { "mode": 3, "cutoff": 50, "resonance": 5 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "filter-resonant-sweep",
+    "nodeType": "processor.filter",
+    "name": "Resonant Sweep",
+    "group": "Resonance",
+    "description": "A resonant low-pass; connect a slow LFO to cutoff and leave headroom.",
+    "parameters": { "mode": 0, "cutoff": 1200, "resonance": 2.2 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "filter-vocal-resonance",
+    "nodeType": "processor.filter",
+    "name": "Vocal Resonance",
+    "group": "Resonance",
+    "description": "Isolate a midrange band near 900 Hz for vowel-like coloration of rich input.",
+    "parameters": { "mode": 2, "cutoff": 900, "resonance": 2.5 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "filter-narrow-band",
+    "nodeType": "processor.filter",
+    "name": "Narrow Band",
+    "group": "Texture",
+    "description": "Extract a narrow band from noise or a harmonic-rich oscillator.",
+    "parameters": { "mode": 2, "cutoff": 2200, "resonance": 4 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "filter-moving-notch",
+    "nodeType": "processor.filter",
+    "name": "Moving Notch",
+    "group": "Texture",
+    "description": "A broad midrange notch ready for slowly modulated cutoff.",
+    "parameters": { "mode": 3, "cutoff": 1300, "resonance": 1.2 }
   }
 ]

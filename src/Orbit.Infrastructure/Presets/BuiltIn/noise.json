@@ -7,5 +7,59 @@
     "group": "Atmosphere",
     "description": "Quiet pink noise for adding texture behind a drone.",
     "parameters": { "color": 1, "amplitude": 0.08 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "noise-wind",
+    "nodeType": "generator.noise",
+    "name": "Wind",
+    "group": "Atmosphere",
+    "description": "Pink noise as a wind-like texture; modulate amplitude for gusts.",
+    "parameters": { "color": 1, "amplitude": 0.18 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "noise-deep-rumble",
+    "nodeType": "generator.noise",
+    "name": "Deep Rumble",
+    "group": "Atmosphere",
+    "description": "Bass-weighted brown noise for distant rumbling layers.",
+    "parameters": { "color": 2, "amplitude": 0.2 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "noise-bright-hiss",
+    "nodeType": "generator.noise",
+    "name": "Bright Hiss",
+    "group": "Texture",
+    "description": "White noise for a bright, diffuse hiss; shape it with a filter.",
+    "parameters": { "color": 0, "amplitude": 0.14 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "noise-fine-grain",
+    "nodeType": "generator.noise",
+    "name": "Fine Grain",
+    "group": "Texture",
+    "description": "A very quiet broadband layer behind a tonal sound.",
+    "parameters": { "color": 0, "amplitude": 0.035 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "noise-random-source",
+    "nodeType": "generator.noise",
+    "name": "Random Source",
+    "group": "Modulation",
+    "description": "Broadband random modulation; filter before routing to slow controls.",
+    "parameters": { "color": 0, "amplitude": 1 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "noise-low-weighted-modulation",
+    "nodeType": "generator.noise",
+    "name": "Low-weighted Modulation",
+    "group": "Modulation",
+    "description": "Brown noise for irregular modulation; adjust cable depth to taste.",
+    "parameters": { "color": 2, "amplitude": 0.7 }
   }
 ]

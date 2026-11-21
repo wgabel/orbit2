@@ -7,5 +7,59 @@
     "group": "Corrective",
     "description": "A moderate broad cut in the low-mid region of a layered sound.",
     "parameters": { "frequency": 300, "gain": -3, "q": 0.8 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "eq-remove-harshness",
+    "nodeType": "processor.parametric-eq",
+    "name": "Remove Harshness",
+    "group": "Corrective",
+    "description": "A broad upper-mid cut centered at 3500 Hz for sharp harmonics.",
+    "parameters": { "frequency": 3500, "gain": -4, "q": 0.9 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "eq-warmth",
+    "nodeType": "processor.parametric-eq",
+    "name": "Warmth",
+    "group": "Tone shaping",
+    "description": "A broad, gentle 3 dB low-mid boost centered at 180 Hz.",
+    "parameters": { "frequency": 180, "gain": 3, "q": 0.7 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "eq-presence",
+    "nodeType": "processor.parametric-eq",
+    "name": "Presence",
+    "group": "Tone shaping",
+    "description": "A modest upper-mid bell boost to bring harmonic detail forward.",
+    "parameters": { "frequency": 2500, "gain": 2.5, "q": 1 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "eq-hollow-midrange",
+    "nodeType": "processor.parametric-eq",
+    "name": "Hollow Midrange",
+    "group": "Tone shaping",
+    "description": "A broad 6 dB midrange cut to create space between low and high layers.",
+    "parameters": { "frequency": 1000, "gain": -6, "q": 0.5 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "eq-formant-peak",
+    "nodeType": "processor.parametric-eq",
+    "name": "Formant Peak",
+    "group": "Texture",
+    "description": "A focused midrange boost for formant-like coloration; use headroom.",
+    "parameters": { "frequency": 850, "gain": 5, "q": 3 }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "eq-spectral-sweep",
+    "nodeType": "processor.parametric-eq",
+    "name": "Spectral Sweep",
+    "group": "Texture",
+    "description": "A moderate sweeping bell when its frequency receives an LFO.",
+    "parameters": { "frequency": 1500, "gain": 4, "q": 1.5 }
   }
 ]

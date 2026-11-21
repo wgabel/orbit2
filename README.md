@@ -602,7 +602,24 @@ session.Execute(new ApplyNodePresetCommand(graphId, nodeId,
 
 ### Shared node preset selector (Phase 6.17.3)
 
-Eligible generators and processors now show a **Preset** selector just below their header, on every canvas. Choose a grouped configuration to apply it immediately as one graph edit, including during playback. Its usage description appears below the control (hover for the full text). The selector shows **Modified / no preset** if the current base settings do not exactly match a catalog entry. Manual edits and undo/redo update the selected name; modulation, mute and bypass do not affect matching. The Custom group is visible but empty until the custom library is implemented. Composites, racks and nodes without configurable parameters do not show the selector. Expanded built-in content, custom saving and portable presets follow in Phases 6.17.4–6.17.6.
+Eligible generators and processors now show a **Preset** selector just below their header, on every canvas. Choose a grouped configuration to apply it immediately as one graph edit, including during playback. Its usage description appears below the control (hover for the full text). The selector shows **Modified / no preset** if the current base settings do not exactly match a catalog entry. Manual edits and undo/redo update the selected name; modulation, mute and bypass do not affect matching. The Custom group is visible but empty until the custom library is implemented. Composites, racks and nodes without configurable parameters do not show the selector.
+
+### Expanded built-in presets (Phase 6.17.4)
+
+The catalog contains 65 built-in presets, including the ten original configurations. Each eligible node has several usage groups and complete parameter configurations, including values dormant in the chosen mode.
+
+| Node | Presets | Examples |
+|---|---:|---|
+| Oscillator | 14 | Sub Bass, Detuned Companion, Slow Drift, Bar Swell |
+| Noise | 7 | Wind, Deep Rumble, Fine Grain |
+| Gain | 6 | Quarter Level, Quiet Bed, Modulation Center |
+| Filter | 8 | Dark Drone, Vocal Resonance, Moving Notch |
+| Parametric EQ | 7 | Warmth, Presence, Formant Peak |
+| Delay | 8 | Dotted Quarter, Double Track, Long Echo |
+| Reverb | 8 | Soft Chamber, Long Wash, Subtle Glue |
+| Chorus | 7 | Subtle Double, Slow Drift, Wet Vibrato |
+
+These configurations use the existing selector, graph commands and audio engine without new DSP or node-specific UI. The tests apply and match every shipped preset and generate a reachable Faust graph. Sound depends on routing, modulation and input levels; leave headroom when layering or using resonance and feedback. Custom saving and portable presets follow in Phases 6.17.5–6.17.6.
 
 ### Chorus (Phase 6.15)
 

@@ -5,11 +5,13 @@ using Orbit.Application.Graphs.Commands;
 using Orbit.Application.Graphs.Events;
 using Orbit.Application.Graphs.Sessions;
 using Orbit.Application.Presets;
+using Orbit.Audio.Compilation;
 using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Nodes.Processors;
 using Orbit.Domain.Parameters;
+using Orbit.Domain.Ports;
 using Orbit.Infrastructure.Presets;
 using Xunit;
 
@@ -52,18 +54,59 @@ public sealed class NodePresetTests
         foreach (var key in registry.RegisteredTypes.Where(validator.Supports))
         {
             var groups = service.GetGroups(key);
-            Assert.True(groups.Count >= 2, key);
+            Assert.True(groups.Count >= 3, key);
             Assert.Equal(NodePreset.CustomGroup, groups[^1].Name);
             Assert.Empty(groups[^1].Presets);
-            foreach (var preset in groups.SelectMany(group => group.Presets))
+            var presets = groups.SelectMany(group => group.Presets).ToArray();
+            Assert.True(presets.Length >= 5, key);
+            Assert.Equal(presets.Length, presets.Select(preset => preset.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count());
+            foreach (var preset in presets)
             {
                 Assert.Equal(key, preset.NodeType);
+                Assert.False(string.IsNullOrWhiteSpace(preset.Description), preset.Id);
                 Assert.Same(preset, service.GetPreset(preset.Id));
                 Assert.Equal(registry.Create(key).Parameters.Count, preset.Parameters.Count);
                 validator.Validate(preset);
             }
         }
         Assert.NotEmpty(catalog.LoadBuiltInPresets());
+    }
+
+    [Fact]
+    public void EveryShippedPresetAppliesMatchesAndGeneratesReachableDsp()
+    {
+        var registry = BuiltInNodes.CreateEditorRegistry();
+        var service = new NodePresetService(new EmbeddedNodePresetCatalog(), validator);
+        var compiler = FaustGraphCompiler.CreateBuiltIn();
+        foreach (var type in registry.RegisteredTypes.Where(validator.Supports))
+        {
+            using var session = new PatchSession(registry);
+            var graphId = session.GraphId;
+            var target = session.Execute(new AddNodeCommand(graphId, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+            var master = session.Execute(new AddNodeCommand(graphId, MasterOutput.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+            if (target.Inputs.SingleOrDefault(port => port.SignalType == SignalType.Audio) is { } input)
+            {
+                var source = session.Execute(new AddNodeCommand(graphId, OscillatorGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+                session.Execute(new ConnectNodesCommand(graphId, new PortAddress(source.Id, source.Outputs.Single().Id),
+                    new PortAddress(target.Id, input.Id), 0.2));
+            }
+            session.Execute(new ConnectNodesCommand(graphId, new PortAddress(target.Id, target.Outputs.Single().Id),
+                new PortAddress(master.Id, master.Inputs.Single().Id)));
+            var connections = session.Snapshot.Connections.ToArray();
+            foreach (var preset in service.GetGroups(type).SelectMany(group => group.Presets))
+            {
+                var before = session.Snapshot.Revision;
+                var result = session.Execute(new ApplyNodePresetCommand(graphId, target.Id, preset));
+                var applied = session.Snapshot.GetNode(target.Id);
+                Assert.Equal(before + (result.Changed ? 1 : 0), session.Snapshot.Revision);
+                foreach (var parameter in applied.Parameters)
+                    Assert.Equal(preset.Parameters[parameter.Definition.Key], parameter.BaseValue);
+                // Duplicate complete configurations would select the wrong catalog entry.
+                Assert.Same(preset, service.FindMatchingPreset(applied));
+                Assert.Equal(connections, session.Snapshot.Connections.ToArray());
+                Assert.NotEmpty(compiler.Compile(session.Snapshot).Source);
+            }
+        }
     }
 
     [Fact]
