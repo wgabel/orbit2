@@ -1,6 +1,7 @@
 @namespace Orbit.UI.Components.Canvas
 @using Microsoft.AspNetCore.Components.Web
 @using Orbit.Presentation.Canvas
+@using Orbit.Domain.Nodes.Composites
 
 @* Root and nested editors use the same canvas, with no dependencies on the DSP runtime. *@
 @{ var wires = Wires; }
@@ -16,7 +17,7 @@
             {
                 <ConnectionAmountBadge @key="wire.Id" Wire="@wire" Zoom="@Snapshot.Viewport.Zoom" OnSelect="SelectConnection" />
             }
-            @foreach (var node in Snapshot.Graph.Nodes)
+            @foreach (var node in Snapshot.Graph.Nodes.OrderBy(node => node.TypeKey is InputRack.NodeType or OutputRack.NodeType ? 1 : 0))
             {
                 <NodeFrame @key="node.Id" Node="@node" Position="@Snapshot.NodePositions[node.Id]" PatchId="@PatchId" GraphId="@Snapshot.GraphId"
                            Visualization="@Snapshot.VisualizationFor(node.Id)" VisualizationExpanded="@(Snapshot.ExpandedVisualizationNodeId == node.Id)"

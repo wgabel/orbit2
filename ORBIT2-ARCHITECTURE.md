@@ -1,7 +1,7 @@
 # Orbit 2 — Modular audio engine and hierarchical graph architecture
 
 **Status:** Living architecture, implemented contracts and implementation roadmap  
-**Implementation audit:** 2026-11-21 · main through [`4f8de46`](https://github.com/wgabel/orbit2/commit/4f8de46b03a6dd0f09f39d842a625f48c28f7f3c)  
+**Implementation audit:** 2026-11-21 · main through [`ff67ea5`](https://github.com/wgabel/orbit2/commit/ff67ea5)
 **Target repository:** [wgabel/orbit2](https://github.com/wgabel/orbit2)  
 **Original design date:** 2026-11-20
 
@@ -10,6 +10,8 @@ This document consolidates the design discussions for Orbit 2: the original brow
 ## Reading guide and current implementation
 
 **Status vocabulary:** Implemented = verified on the audited main branch or in an explicitly identified implementation PR; Partial = a defined subset delivered; In progress = implementation underway; Planned = design or future deliverable; Deferred = deliberately outside current scope.
+
+**Implementation traceability (mandatory):** Every delivered feature, improvement and bug fix must cite its actual implementation pull request(s) using `[PR #N](https://github.com/wgabel/orbit2/pull/N)` directly in the relevant implementation description and roadmap entry, and in the status table when applicable. Include follow-up PRs beside the affected feature. Open the PR first if its number is not known, then update the architecture on that PR's branch before merge. Never substitute a documentation-only PR for runtime evidence or mark unmerged work as merged. Older direct-to-main implementations predating the PR workflow have no PR number; cite the actual commit when extending their implementation record. Do not invent historical PRs.
 
 | Capability | Current status | Design / evidence |
 |---|---|---|
@@ -23,8 +25,8 @@ This document consolidates the design discussions for Orbit 2: the original brow
 | AD envelope and typed Trigger/Gate/Clock ports/adapters | Implemented · 7.1.1–7.1.2 | Section 10; [PR #7](https://github.com/wgabel/orbit2/pull/7), [#8](https://github.com/wgabel/orbit2/pull/8) |
 | Manual Trigger, timed Gate and Clock sources | Implemented · 7.1.3 | Section 10; [PR #10](https://github.com/wgabel/orbit2/pull/10) |
 | AR/ADSR/Loop envelope modes | Implemented · 7.1.4 | Section 10; [PR #12](https://github.com/wgabel/orbit2/pull/12) |
-| Envelope curve, measured output and live stage | Implemented · 7.1.5 | Section 10; envelope visualization |
-| Live keyboard and pitch pattern sequencer | Implemented · 7.2.8a–b | Section 10; Note Sequencer live and loop modes |
+| Envelope curve, measured output and live stage | Implemented · 7.1.5 | Section 10; [PR #14](https://github.com/wgabel/orbit2/pull/14) |
+| Live keyboard and pitch pattern sequencer | Implemented · 7.2.8a–b | Section 10; [PR #16](https://github.com/wgabel/orbit2/pull/16), [PR #17](https://github.com/wgabel/orbit2/pull/17) |
 | Playable note source, quantized recording, resonators, polyphony | Planned · remaining Phase 7 | Section 10; [PR #9](https://github.com/wgabel/orbit2/pull/9) is design documentation only |
 | Post-mixer pitch shifter; recorded audio assets and sample synthesis | Planned · 6.20, Phase 8 | Section 10 |
 
@@ -1285,6 +1287,10 @@ The implemented `CompositeBoundaryEditor` resolves the child graph's attached ow
 
 The racks do not generate additional samples or require a separate clock. During compilation, the boundary wiring is resolved to internal signal dependencies without artificial audio latency. The root graph's master output represents the physical playback destination; an internal Output Rack represents a graph boundary, not another speaker.
 
+### Boundary visibility and navigation (Phase 6.19.6)
+
+The Impact — AD percussion composite ([PR #7](https://github.com/wgabel/orbit2/pull/7)) already connects its internal voice oscillator to the Audio socket of the existing Output Rack. Previously the default grid could wrap that rack beneath a tall node and obscure the boundary. The shared canvas now paints boundary racks after ordinary nodes and explicitly labels their direction relative to the parent graph. New child layouts put the Output Rack in a separate column to the right of every existing node. A nested-only **Locate output rack** action selects and fits the rack using its measured bounds, including in previously saved patches. Existing saved positions and graph wiring are preserved; users may still drag the rack and edit its exposed ports. Fit returns to the full graph. No extra generator, Master Output, synthetic port or DSP change is introduced.
+
 ## 9. Commands, events and transaction boundaries
 
 ### Why an event system?
@@ -2352,7 +2358,7 @@ Keep identifiers stable even when independent milestones ship out of numerical o
 |---|---|---|
 | Foundation and editor | 1–5; 6.1–6.17 | Deferred version-aware reload / additional graph reuse |
 | Visualization | 6.18.1–6.18.5 | 6.18.6 analyzer sink, 6.18.7 advanced comparisons and profiling |
-| Patch organization | 6.19.5 core | 6.19.1–6.19.4 notes, descriptions, groups, discovery; optional badge refinements |
+| Patch organization | 6.19.5 core; 6.19.6 boundary visibility | 6.19.1–6.19.4 notes, descriptions, groups, discovery; optional badge refinements |
 | Rhythmic articulation | 7.1.1–7.1.5 | 7.1.6–7.1.7 |
 | Keyboard and sequencing | 7.2.2 shared pitch; 7.2.8a–b live pitch, long transport and loops | 7.2.8c quantized recording; 7.2.3 and 7.2.8d when event/gated articulation is ready |
 | Instruments | Existing oscillator/effect capabilities and AD impact preset | 7.2.1 recipes/templates, 7.2.4 resonator, 7.2.5 modal synthesis, 7.2.6 polyphony, 7.2.7 physical models |
@@ -2510,7 +2516,7 @@ Deliverable: inspect an oscillator waveform, harmonics, modulation and levels di
 
 <a id="phase-619--patch-documentation-and-canvas-organization-planned"></a>
 
-#### Phase 6.19 — Patch documentation and canvas organization (partial: 6.19.5 implemented core)
+#### Phase 6.19 — Patch documentation and canvas organization (partial: 6.19.5 and 6.19.6 implemented)
 
 - Partial (6.19): presentation-only notes, node/connection descriptions, visual groups and searchable patch documentation planned; connection amount badges and inline editing implemented (core).
 
@@ -2519,6 +2525,8 @@ Deliverable: inspect an oscillator waveform, harmonics, modulation and levels di
 - **6.19.3 — Visual groups (planned):** explicit member references, named/color-coded background regions, resize and atomic movement of members, annotation history and persistence; no new signal graph, rack, audio behavior or implicit deletion of members.
 - **6.19.4 — Patch overview and discovery (planned):** optional title, description, usage instructions and tags in the portable document; patch manager metadata display/search/filter and compatible import/export; annotated example patches, including an impact recipe when AD envelopes are available.
 - **6.19.5 — Connection visualization and inline editing (implemented core):** shared committed amount badge with destination units, signed/zero/dormant states, fixed Bézier midpoint behind nodes (no collision detection or manual positioning), All/Modified/Selected/Off persisted display preference, and one anchored floating amount editor with explicit Apply/Cancel and Escape. Remaining refinements: automatic zoom suppression and optional per-edge predicted contribution. Verify display-only isolation and ordinary graph undo/redo for actual amount edits in root and nested canvases. Badges may be implemented independently of other Phase 6.19 steps.
+
+- **6.19.6 — Composite boundary visibility (implementation in review):** explicit rack direction labels, output rack initial placement in its own column, boundary frames painted above ordinary frames, nested-only Locate output rack action, measured viewport fitting and preservation of saved positions. Verify the Impact preset's mirrored audio port and real internal connection, existing saved positions and browser navigation.
 
 Deliverable: a musician can open a previously saved or shared complex patch, identify its sections, understand modulation intent and recover design notes without altering sound or reading source code.
 

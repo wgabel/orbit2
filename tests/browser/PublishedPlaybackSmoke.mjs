@@ -639,6 +639,12 @@ try {
     assert.ok(Number(await beat.innerText()) >= Number(frozenBeat));
     assert.equal(await page.locator("#node-type option[value='output.master']").count(), 0);
     assert.equal(await articles.count(), 4);
+    const outputRack = articles.filter({ has: page.locator(".node-header > span", { hasText: /^Output Rack$/ }) });
+    await outputRack.getByText("To parent graph · exposed outputs").waitFor();
+    await outputRack.getByRole("button", { name: "Input: Audio (Audio)" }).waitFor();
+    await page.getByRole("button", { name: "Locate output rack" }).click();
+    assert.match(await outputRack.getAttribute("class"), /node-selected/);
+    await page.getByRole("button", { name: "Fit", exact: true }).click();
     const rack = articles.filter({ hasText: "Input Parameters Rack" });
     await rack.getByRole("button", { name: "Output: Pitch (Modulation)" }).waitFor();
     const childFrequency = page.getByRole("spinbutton", { name: "Frequency (Hz)" });
