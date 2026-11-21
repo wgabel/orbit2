@@ -30,7 +30,8 @@ let browser;
 try {
     browser = await chromium.launch({ executablePath: process.env.ORBIT_CHROME, headless: true,
         args: ["--no-sandbox", "--mute-audio"] });
-    const page = await browser.newPage();
+    // Exercise device-pixel bitmap resizing independently of CSS plot width.
+    const page = await browser.newPage({ deviceScaleFactor: 2 });
     page.on("pageerror", error => console.error(error.message));
     await page.goto("http://127.0.0.1:" + server.address().port);
     const status = page.locator(".playback-toolbar").getByRole("status");
@@ -316,11 +317,29 @@ try {
     }
     assert.ok(moved, "Live frequency marker did not move");
     // The shared scope renders actual browser capture without changing graph revision.
+    const assertCompactPlotFits = async panel => {
+        const result = await panel.evaluate(section => {
+            const node = section.closest("article").getBoundingClientRect();
+            const overflow = [section, ...section.querySelectorAll(".scope-header, button, .scope-source, select, .signal-scope, canvas, .scope-readouts, .scope-levels, meter, output")]
+                .filter(element => element.getClientRects().length > 0)
+                .map(element => ({ name: element.getAttribute("aria-label") || element.className || element.tagName, rect: element.getBoundingClientRect() }))
+                .filter(({ rect }) => rect.left < node.left - 1 || rect.right > node.right + 1)
+                .map(({ name, rect }) => ({ name, left: rect.left, right: rect.right }));
+            const canvas = section.querySelector("canvas");
+            return { overflow, cssWidth: canvas?.clientWidth, bitmapWidth: canvas?.width, pixelRatio: devicePixelRatio };
+        });
+        assert.deepEqual(result.overflow, [], "Compact scope controls and plot must fit inside the node");
+        if (result.cssWidth > 0) {
+            assert.ok(result.bitmapWidth <= result.cssWidth * Math.min(2, result.pixelRatio) + 1,
+                "Canvas bitmap cannot cause CSS layout to grow");
+        }
+    };
     await articles.nth(1).locator(".node-header > span").click();
     const compact = articles.nth(1).locator(".node-visualization-panel");
     await compact.getByRole("button", { name: "Show plot" }).click();
     await page.getByRole("button", { name: "Fit", exact: true }).click();
     await compact.locator("[data-scope-status]").filter({ hasText: /Live/ }).waitFor({ timeout: 15000 });
+    await assertCompactPlotFits(compact);
     await panCanvas(4000);
     await compact.locator("[data-scope-status]").filter({ hasText: "Paused" }).waitFor();
     await panCanvas(-4000);
@@ -328,6 +347,7 @@ try {
     await compact.getByRole("combobox", { name: "Analysis view" }).selectOption("spectrum");
     await compact.locator('.signal-scope[data-configured-mode="spectrum"]').waitFor();
     await compact.locator("[data-scope-status]").filter({ hasText: /Spectrum · peak bin/ }).waitFor();
+    await assertCompactPlotFits(compact);
     await compact.getByRole("button", { name: "Expand plot" }).click();
     const scope = page.getByRole("region", { name: "Signal scope", exact: true });
     await scope.waitFor();
@@ -384,9 +404,11 @@ try {
     await compact.locator("[data-scope-status]").filter({ hasText: /Live/ }).waitFor({ timeout: 15000 });
     await compact.getByRole("combobox", { name: "Analysis view" }).selectOption("level");
     await compact.locator("[data-scope-status]").filter({ hasText: "Live · level meter" }).waitFor();
+    await assertCompactPlotFits(compact);
     assert.equal(await compact.locator("canvas").isVisible(), false);
     const compactSource = compact.getByRole("combobox", { name: "Scope signal" });
     await compactSource.selectOption({ label: "Input: Frequency" });
+    await assertCompactPlotFits(compact);
     const savedScopeSource = await compactSource.inputValue();
     assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
     await compact.getByRole("button", { name: "Hide plot" }).click();
@@ -788,6 +810,19 @@ try {
     await newDrone.getByRole("button", { name: "Open Drone" }).click();
     await viewport.getByText("4 nodes · 4 connections", { exact: true }).waitFor();
     await addInPannedView("generator.noise", 3200);
+    // A custom exposed port can have a much longer label than built-in signals.
+    await page.getByRole("button", { name: "Fit", exact: true }).click();
+    await rack.getByRole("button", { name: "Edit ports" }).click();
+    const longSignal = "Slow atmospheric modulation for the resonant filter in this drone";
+    await editor.getByLabel("New port name").fill(longSignal);
+    await editor.getByRole("button", { name: "Add port", exact: true }).click();
+    await rack.getByRole("button", { name: `Output: ${longSignal} (Modulation)` }).waitFor();
+    await editor.getByRole("button", { name: "Close port editor" }).click();
+    const nestedPlot = rack.locator(".node-visualization-panel");
+    await nestedPlot.getByRole("button", { name: "Show plot" }).click();
+    await nestedPlot.getByRole("combobox", { name: "Scope signal" }).selectOption({ label: `Output: ${longSignal}` });
+    await nestedPlot.locator("[data-view-mode='waveform']").waitFor();
+    await assertCompactPlotFits(nestedPlot);
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {
     await browser?.close();

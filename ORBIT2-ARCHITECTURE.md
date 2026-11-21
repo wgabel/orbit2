@@ -1003,6 +1003,8 @@ Visualization is a shared observation system, not a DSP effect or a second audio
 
 `CanvasStateService` owns immutable node-qualified `NodeVisualizationSettings` and one expanded node ID in its local snapshot. `CanvasChangeKind.VisualizationChanged` triggers the existing autosave and post-render geometry measurement, not a graph edit. `SavedCanvas` schema 1 adds optional preferences and expanded node fields; missing fields use collapsed defaults, invalid settings normalize to supported choices, deleted ports fall back and dormant preferences reactivate when valid. Node deletion prunes preferences, with bounded restoration on graph undo; expanded selection closes. `CanvasNavigationService` captures each graph's independent preferences alongside positions and viewport. No runtime telemetry is serialized. Tests cover nested layout round-trips, old documents, invalid choices, history isolation, compact/expanded live modes, settings persistence and no playback revision change.
 
+**Visualization sizing.** Both panels and their nested grids use shrinkable tracks; signal labels and select controls cannot expand the node. The plot canvas has a CSS-constrained width and inline-size containment so the high-DPI drawing buffer cannot feed back into intrinsic layout sizing. Meter tracks shrink independently of numeric readouts. Published browser tests assert that compact controls, plots and meters stay within node bounds in all three modes, including long custom rack port labels and a device-pixel ratio of two.
+
 ~~~mermaid
 flowchart TD
     L[Canvas visualization preferences] --> N[NodeVisualizationPanel]
