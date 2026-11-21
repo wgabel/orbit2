@@ -1337,6 +1337,18 @@ The playback service also implements `ISignalAnalysisService`; both interfaces r
 
 **Phase 6.18.2 implementation.** The selected-node scope is a reusable overlay, separate from graph history and node-specific editors. `SignalScopePanel` chooses eligible graph-qualified mono ports; `SignalScope` owns a browser renderer and resolves a lightweight binding every 250 ms while visible. The renderer calls the same versioned audio module as playback directly, reads shared typed arrays at up to 30 Hz and never moves waveform samples through Blazor. A generation/source change, missing window, hidden view or disposal clears the bounded history; visibility changes release leases. Short windows use a newest complete zero-crossing or free-running window, with per-pixel min/max decimation. Long history stores up to 1000 ten-millisecond extrema buckets, skips overlapping samples and leaves gaps on missed windows. Timing is approximate audio-context time, not an exact render-frame timestamp. Peak/RMS use the latest 20 ms and 0 dBFS at unit amplitude, independent of selected timebase. The view is stopped/unavailable until real capture is ready. Compact node integration and expanded mode persistence remain Phase 6.18.4.
 
+**Phase 6.18.3 implementation.** The same scope selects waveform or spectrum without touching the accepted runtime, graph history or capture lease. `SpectrumAnalyzer` is a pure browser-side radix-2 FFT plan with precomputed bit-reversal, twiddles and window weights, reusable typed arrays and bounded size 1024–8192. It reads the newest complete segment of the shared capture synchronously; DC mean is removed before applying the Hann/rectangular window. Single-sided peak amplitude uses the coherent window gain; the Nyquist bin is not doubled. Squared amplitudes are exponentially smoothed using elapsed audio-context time (off, 150 ms, 500 ms); repeat timestamps reuse the last result. Settings, mode, source, generation, visibility and capture loss reset the plan/smoothing. The positive-frequency log axis spans the first bin to Nyquist, the peak readout reports the dominant bin center rather than false continuous-frequency precision, and max-per-pixel decimation preserves narrow peaks. The amplitude dBFS scale references a full-scale peak sine, not RMS or power spectral density; window leakage and finite frequency resolution still apply. `signalPlot` centralizes theme-driven Canvas preparation and `spectrumPlot` owns frequency-domain geometry. No additional analyser nodes, audio callback work or sample interop are introduced.
+
+~~~mermaid
+flowchart TD
+    C[Shared captured samples] --> V{Selected view}
+    V --> T[Waveform and trigger]
+    V --> F[Window and FFT]
+    F --> S[Power smoothing]
+    S --> P[Log frequency plot]
+    C --> L[Peak and RMS]
+~~~
+
 ~~~mermaid
 flowchart TD
     P[Selected port address] --> B[Accepted binding]
@@ -1869,7 +1881,7 @@ Deliverable: choose or create a grouped configuration for any eligible node with
 - **6.18.1 — Observation infrastructure (implemented):** bounded Faust output taps, explicit master-channel isolation, graph-qualified manifest, generation-aware capture leases and analysis contracts. Offline/worklet regression coverage for master equivalence, nested routing, mute/bypass, leakage and bounded resources. Device-scale profiling and long-history capture remain later analysis work.
 - **6.18.2 — Oscilloscope and level meter (implemented):** reusable selected-node scope, browser-side time-domain display, peak/RMS, timebase, zero-crossing trigger and bounded slow-modulation history. Known sine, clipped and low-rate modulation regression coverage.
 - **Parameter editing UX refinement (implemented):** independent display-scale metadata, segmented logarithmic oscillator frequency rail and consistent modulation visualization; unchanged physical values and DSP semantics.
-- **6.18.3 — Spectrum analyzer:** reusable FFT display with frequency and dB axes, configurable window/resolution and smoothing, known fundamental/harmonic/noise tests, and shared capture with the oscilloscope.
+- **6.18.3 — Spectrum analyzer (implemented):** reusable FFT display with logarithmic frequency and calibrated peak dBFS axes, selectable window/resolution and time-based power smoothing; known fundamental/harmonic/noise tests and shared capture with the oscilloscope.
 - **6.18.4 — Integrated and expanded views:** capability-driven shared `NodeVisualizationPanel`, compact collapsible plots, expand/mode/source controls, visible-only rendering, tokenized design and compatible per-graph layout persistence; no graph history or DSP restarts for display changes.
 - **6.18.5 — Processor response curves:** pure tested response providers matching the actual parametric EQ and filter DSP, base and instantaneous effective parameter response, sample-rate-aware frequency axis and stopped previews.
 - **6.18.6 — Dedicated analyzer sink:** validated passive mono observation node for any compatible signal, reusable visualization panels, independent placement/resizing, analyzer-only reachability, nested graph persistence and undo/redo; prove audible master isolation.

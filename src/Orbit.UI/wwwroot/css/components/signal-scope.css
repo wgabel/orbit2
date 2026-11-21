@@ -26,6 +26,8 @@
     gap: var(--semantic-space-compact);
 }
 .signal-scope { display: grid; gap: var(--semantic-space-tight); }
+.signal-scope [hidden] { display: none; }
+.scope-spectrum-note { color: var(--semantic-color-muted); font-size: var(--semantic-typography-caption); }
 .scope-waveform {
     display: block;
     width: 100%;

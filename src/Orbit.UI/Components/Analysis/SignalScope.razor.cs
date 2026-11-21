@@ -33,7 +33,7 @@ public partial class SignalScope : IAsyncDisposable
     {
         try
         {
-            module = await JavaScript.InvokeAsync<IJSObjectReference>("import", "./js/scopeView.js");
+            module = await JavaScript.InvokeAsync<IJSObjectReference>("import", BrowserAssets.ScopeModulePath);
             if (disposed) return;
             reference = DotNetObjectReference.Create(this);
             view = await module.InvokeAsync<IJSObjectReference>("mountScope", root, BrowserAssets.AudioModulePath, reference, lease);

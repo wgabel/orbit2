@@ -298,6 +298,37 @@ try {
     await scope.getByRole("combobox", { name: "Scope timebase" }).selectOption("0.005");
     await scope.locator("[data-scope-status]").filter({ hasText: /Live/ }).waitFor();
     await scope.getByRole("combobox", { name: "Scope trigger" }).selectOption("falling");
+    await scope.getByRole("combobox", { name: "Analysis view" }).selectOption("spectrum");
+    await scope.locator("[data-scope-status]").filter({ hasText: /Spectrum · peak bin/ }).waitFor();
+    const spectrumText = await scope.locator("[data-scope-status]").innerText();
+    const peakFrequency = Number(spectrumText.match(/peak bin ([\d.]+) Hz/)[1]);
+    assert.ok(peakFrequency > 250 && peakFrequency < 700, "Spectrum must measure the modulated carrier");
+    // Ensure the actual spectrum renderer painted the themed trace, not just a text readout.
+    const tracePixels = await scope.locator("canvas").evaluate(canvas => {
+        const probe = document.createElement("canvas");
+        probe.width = probe.height = 1;
+        const context = probe.getContext("2d");
+        context.fillStyle = getComputedStyle(canvas).getPropertyValue("--semantic-color-modulation").trim();
+        context.fillRect(0, 0, 1, 1);
+        const target = context.getImageData(0, 0, 1, 1).data;
+        const pixels = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+        let count = 0;
+        for (let i = 0; i < pixels.length; i += 4)
+            if (Math.abs(pixels[i] - target[0]) + Math.abs(pixels[i+1] - target[1]) + Math.abs(pixels[i+2] - target[2]) < 90) count++;
+        return count;
+    });
+    assert.ok(tracePixels > 10, "Spectrum trace was not drawn");
+    assert.equal(await scope.getByRole("combobox", { name: "Scope timebase" }).isVisible(), false);
+    const originalResolution = await scope.locator("[data-scale]").innerText();
+    await scope.getByRole("combobox", { name: "FFT resolution" }).selectOption("1024");
+    await scope.getByRole("combobox", { name: "FFT window" }).selectOption("rectangular");
+    await scope.getByRole("combobox", { name: "Spectrum smoothing" }).selectOption("0");
+    await page.waitForFunction(previous => {
+        const value = document.querySelector("[data-scale]")?.textContent;
+        return value?.includes("Hz/bin") && value !== previous;
+    }, originalResolution);
+    await scope.getByRole("combobox", { name: "Analysis view" }).selectOption("waveform");
+    await scope.locator("[data-scope-status]").filter({ hasText: /Live/ }).waitFor();
     assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
     await scope.getByRole("button", { name: "Close scope" }).click();
     await scope.waitFor({ state: "detached" });

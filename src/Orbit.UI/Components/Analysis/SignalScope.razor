@@ -2,6 +2,14 @@
 
 <div class="signal-scope" @ref="root">
     <div class="scope-controls workspace-toolbar">
+        <label>View
+            <select data-analysis-mode aria-label="Analysis view">
+                <option value="waveform" selected>Waveform</option>
+                <option value="spectrum">Spectrum</option>
+            </select>
+        </label>
+    </div>
+    <div class="scope-controls workspace-toolbar" data-waveform-controls>
         <label>Timebase
             <select data-timebase aria-label="Scope timebase">
                 <option value="0.005">5 ms</option>
@@ -19,6 +27,30 @@
                 <option value="falling">Falling zero</option>
             </select>
         </label>
+    </div>
+    <div class="scope-controls workspace-toolbar" data-spectrum-controls hidden>
+        <label>FFT
+            <select data-fft-size aria-label="FFT resolution">
+                <option value="1024">1,024</option>
+                <option value="2048">2,048</option>
+                <option value="4096">4,096</option>
+                <option value="8192" selected>8,192</option>
+            </select>
+        </label>
+        <label>Window
+            <select data-fft-window aria-label="FFT window">
+                <option value="hann" selected>Hann</option>
+                <option value="rectangular">Rectangular</option>
+            </select>
+        </label>
+        <label>Smoothing
+            <select data-fft-smoothing aria-label="Spectrum smoothing">
+                <option value="0">Off</option>
+                <option value="0.15" selected>Fast</option>
+                <option value="0.5">Slow</option>
+            </select>
+        </label>
+        <small class="scope-spectrum-note">Log Hz · peak amplitude dBFS · DC removed</small>
     </div>
     <canvas class="scope-waveform" aria-label="Live signal waveform"></canvas>
     <div class="scope-readouts">
