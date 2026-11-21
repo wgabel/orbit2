@@ -408,13 +408,26 @@ try {
     // Unconnected nodes do not require a new worklet.
     await page.getByRole("button", { name: "Add", exact: true }).click();
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 2}$`) }).waitFor({ timeout: 10000 });
+    // Wires run underneath node frames; viewport-aware placement may put a
+    // frame over the midpoint without hiding other parts of the cable.
+    const selectVisibleWire = async target => {
+        await target.scrollIntoViewIfNeeded();
+        const point = await target.evaluate(path => {
+            const length = path.getTotalLength();
+            const matrix = path.getScreenCTM();
+            for (let i = 0; i <= 100; i++) {
+                const fraction = 0.5 + (i % 2 ? -1 : 1) * Math.ceil(i / 2) / 100;
+                const point = path.getPointAtLength(length * fraction).matrixTransform(matrix);
+                if (document.elementFromPoint(point.x, point.y) === path) return { x: point.x, y: point.y };
+            }
+            return null;
+        });
+        assert.ok(point, "Expected an exposed part of the cable to select");
+        await page.mouse.click(point.x, point.y);
+        await target.locator("xpath=..").and(page.locator(".connection-selected")).waitFor({ timeout: 4000 });
+    };
     // Remove the original LFO-to-frequency connection, then connect to amplitude.
-    await wire.scrollIntoViewIfNeeded();
-    const midpoint = await wire.evaluate(path => {
-        const point = path.getPointAtLength(path.getTotalLength() / 2).matrixTransform(path.getScreenCTM());
-        return { x: point.x, y: point.y };
-    });
-    await page.mouse.click(midpoint.x, midpoint.y);
+    await selectVisibleWire(wire);
     await page.getByRole("button", { name: "Delete selected" }).click();
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 3}$`) }).waitFor({ timeout: 15000 });
     assert.equal(await marker.count(), 0);
@@ -441,18 +454,13 @@ try {
     await drone.waitFor();
     await page.getByRole("button", { name: "Fit", exact: true }).click();
     const masterWire = page.locator(".connection-audio .connection-hit").nth(1);
-    await masterWire.scrollIntoViewIfNeeded();
-    const masterMidpoint = await masterWire.evaluate(path => {
-        const point = path.getPointAtLength(path.getTotalLength() / 2).matrixTransform(path.getScreenCTM());
-        return { x: point.x, y: point.y };
-    });
-    await page.mouse.click(masterMidpoint.x, masterMidpoint.y);
+    await selectVisibleWire(masterWire);
     await page.getByRole("button", { name: "Delete selected" }).click();
     await articles.nth(0).getByRole("button", { name: "Output: Signal (Audio)" }).press("Enter");
     await drone.getByRole("button", { name: "Input: Pitch (Modulation)" }).press("Enter");
     await drone.getByRole("button", { name: "Output: Audio (Audio)" }).press("Enter");
     await articles.nth(3).getByRole("button", { name: "Input: Audio (Audio)" }).press("Enter");
-    assert.equal(await page.getByRole("alert").count(), 0);
+    assert.equal(await page.getByRole("alert").count(), 0, await page.getByRole("alert").allTextContents());
     const rootTransform = await page.locator(".canvas-world").getAttribute("style");
     await play.click();
     await status.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
