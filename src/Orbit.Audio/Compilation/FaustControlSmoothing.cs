@@ -17,6 +17,6 @@ internal static class FaustControlSmoothing
             throw new ArgumentOutOfRangeException(nameof(settlingMilliseconds));
 
         // exp(-3) ~= 0.05 remaining error after the specified duration.
-        return $"si.smooth(exp(-3.0 / (ma.SR * {FaustNumber.Format(milliseconds / 1000.0)})))";
+        return $"si.smooth(exp(-3000.0 / (ma.SR * {FaustNumber.Format(milliseconds)})))";
     }
 }

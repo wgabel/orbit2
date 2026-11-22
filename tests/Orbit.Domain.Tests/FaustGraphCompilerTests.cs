@@ -225,7 +225,7 @@ public sealed class FaustGraphCompilerTests
         Assert.Contains($"n_{oscillator.Id:N} * 1.0", program.Source);
         Assert.Contains("os.lf_sawpos(min(0.49 * ma.SR", program.Source);
         Assert.False(program.RequiresTransport);
-        Assert.Contains(" : si.smooth(exp(-3.0 / (ma.SR * 0.005)));", program.Source);
+        Assert.Contains(" : si.smooth(exp(-3000.0 / (ma.SR * 5.0)));", program.Source);
         Assert.Contains("process = ", program.Source);
         Assert.Equal(0.5, Control(program, lfo, "frequency").InitialValue);
         Assert.Equal(440, Control(program, oscillator, "frequency").InitialValue);
@@ -255,12 +255,12 @@ public sealed class FaustGraphCompilerTests
             Assert.EndsWith(" : " + smoothing + ";", line.Trim());
         }
 
-        string Smooth(string seconds) => $"si.smooth(exp(-3.0 / (ma.SR * {seconds})))";
-        Check(oscillator, "frequency", Smooth("0.005"));
-        Check(oscillator, "amplitude", Smooth("0.01"));
-        Check(oscillator, "phase", Smooth("0.01"));
-        Check(gain, "gain", Smooth("0.01"));
-        Check(filter, "cutoff", Smooth("0.015"));
+        string Smooth(string milliseconds) => $"si.smooth(exp(-3000.0 / (ma.SR * {milliseconds})))";
+        Check(oscillator, "frequency", Smooth("5.0"));
+        Check(oscillator, "amplitude", Smooth("10.0"));
+        Check(oscillator, "phase", Smooth("10.0"));
+        Check(gain, "gain", Smooth("10.0"));
+        Check(filter, "cutoff", Smooth("15.0"));
         Check(filter, "resonance", "si.smoo");
 
         var frequency = oscillator.Parameters.Single(p => p.Definition.Key == "frequency");
