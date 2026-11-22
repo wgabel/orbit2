@@ -2,14 +2,16 @@
 
 [Usage index](README.md) · [Canvas architecture](../editor/canvas.md) · [Persistence](../editor/persistence-and-history.md)
 
-## Mobile workspace (6.21.1–6.21.3 implemented)
+## Responsive workspace
+
+Desktop and mobile share the same **Nodes**, **Outline**, **Edit**, **View** and **More** buttons. Desktop puts all five in the single top toolbar beside breadcrumbs and transport; mobile keeps them in its bottom bar. Desktop menus open as floating popovers below their trigger; click outside, press Escape or use Close to dismiss. On mobile, sheets keep their existing Close and Back handling. Neither layout resizes the canvas when a menu opens. The optional piano sits at the bottom on desktop and above navigation on mobile.
 
 [PR #60](https://github.com/wgabel/orbit2/pull/60) introduces a canvas-first layout on phones and short touch landscape screens. Use the top BPM button to edit tempo or reset the transport; Play and Stop remain immediately available. The bottom toolbar opens existing controls without reducing the canvas rectangle:
 
-- **+ Nodes:** open the visual Node Library; tap a node row to add it. The panel closes on success. Locate output rack (inside composites) is also available here.
+- **Nodes:** open the visual Node Library; click/tap a node row to add it. The panel closes on success.
 - **Outline:** open/search the existing graph hierarchy; choose a target or open a nested composite.
 - **Edit:** graph and annotation undo/redo, Create visual group, selection actions (marquee/multi-select and grouping/ungrouping) and contextual Describe/Delete selected. Enable Marquee mode to close the sheet and drag a selection; reopen Edit → Selection actions → Return to pan to exit.
-- **View:** connection labels, annotations, local/entire-patch counts, gesture help and scope.
+- **View:** connection labels, annotations, local/entire-patch counts, gesture help, scope and Locate output rack (inside composites).
 - **More:** Patches and Performance diagnostics. Toggle the bottom tool again to close it; apply/cancel an active overview draft before switching tools.
 - Navigate the canvas without zoom buttons. In a nested graph, use its parent breadcrumb to return.
 
@@ -55,12 +57,12 @@ If badges obscure a cable, open **View → Connection labels → Off**, close Vi
 
 ### Node Library
 
-On desktop, click **Add node**; on mobile, tap **+ Nodes**. Search by name, keyword or purpose, or choose a category. Each row shows a recognizable icon, category accent, canonical node name and short description. Click/tap the row to add it at the current visible canvas; star a row to favorite it (tap again to remove). Favorites and up to six recently added types appear first when no filter is active, and persist in this browser. The list adapts to the graph (Master output is root-only); composite and instrument templates remain available. Close the library to return to the canvas without adding anything. Node frames and the outline share the category icons/colors; signal colors still indicate signal semantics. See [PR #62](https://github.com/wgabel/orbit2/pull/62).
+On either platform, open **Nodes**. Search by name, keyword or purpose, or choose a category. Each row shows a recognizable icon, category accent, canonical node name and short description. Click/tap the row to add it at the current visible canvas; star a row to favorite it (tap again to remove). Favorites and up to six recently added types appear first when no filter is active, and persist in this browser. The list adapts to the graph (Master output is root-only); composite and instrument templates remain available. Close the library to return to the canvas without adding anything. Node frames and the outline share the category icons/colors; signal colors still indicate signal semantics. See [PR #62](https://github.com/wgabel/orbit2/pull/62).
 
 ## 1. Build and play a patch
 
-1. Open **Patches** and create a new patch (stop playback first). It starts with a Master output. Alternatively, import a portable patch JSON or use the existing workspace.
-2. Open **Add node** (or **+ Nodes** on mobile), then choose **Oscillator**. Choose Triangle or Sine, free frequency 110 Hz, amplitude 0.15. Add a **Gain** with gain 0.5. Connect the oscillator's signal output to Gain's audio input, and Gain's audio output to Master output. Use compatible sockets; drag from an output to an input or activate the sockets in order.
+1. Open **More → Patches** and create a new patch (stop playback first). It starts with a Master output. Alternatively, import a portable patch JSON or use the existing workspace.
+2. Open **Nodes**, then choose **Oscillator**. Choose Triangle or Sine, free frequency 110 Hz, amplitude 0.15. Add a **Gain** with gain 0.5. Connect the oscillator's signal output to Gain's audio input, and Gain's audio output to Master output. Use compatible sockets; drag from an output to an input or activate the sockets in order.
 3. Click **Play patch**. Begin with comfortable device volume. For a richer sound add a second oscillator at 220 Hz and amplitude 0.04, use a Mixer to combine both, then route through Gain. Add Chorus or Reverb after the Mixer, keeping some headroom. Click Stop to stop playback.
 4. Base parameter edits update the active DSP; routed structural changes may compile a replacement and crossfade. Replacing the whole patch requires stopped playback. If editing effects during playback, tails may be preserved for live scalar edits but not necessarily structural changes.
 
@@ -84,9 +86,9 @@ Implemented ([PR #73](https://github.com/wgabel/orbit2/pull/73)): on Android/tou
 
 - Audio links carry sound. Modulation values add a contribution in the receiving parameter's unit. Pitch expects relative semitones; Frequency expects Hz. A unit-amplitude bipolar 0.5 Hz sine into a 440 Hz carrier's Frequency at +100 gives 340–540 Hz before constraints. A Pitch Control +12 into a semitone-tracked Pitch at unity doubles the base frequency; connecting it to Frequency instead adds 12 Hz.
 - Click the wire or its numeric badge. Edit the amount in the anchored popover and **Apply** (or Cancel). For audio paths ×0.5 halves amplitude (about −6 dB); for a modulation connection, the amount is depth, not necessarily a fader. Typed Trigger/Gate/Clock links use unity; transform continuous signals through explicit adapters. Zero amount and dormant/inactive link are different: zero is a configured contribution of zero, dormant means the current node mode does not use that port. Neither deletes the cable.
-- The canvas **Connection labels** dropdown supports All/Modified/Selected/Off. This is per-canvas presentation state, independent of the graph and annotation visibility. Hiding badges does not disconnect or prevent selecting cables. [PR #1](https://github.com/wgabel/orbit2/pull/1), [PR #2](https://github.com/wgabel/orbit2/pull/2), [PR #3](https://github.com/wgabel/orbit2/pull/3); [connection contract](../editor/annotations-and-connections.md).
+- The **View → Connection labels** dropdown supports All/Modified/Selected/Off. This is per-canvas presentation state, independent of the graph and annotation visibility. Hiding badges does not disconnect or prevent selecting cables. [PR #1](https://github.com/wgabel/orbit2/pull/1), [PR #2](https://github.com/wgabel/orbit2/pull/2), [PR #3](https://github.com/wgabel/orbit2/pull/3); [connection contract](../editor/annotations-and-connections.md).
 
-**Composite example:** add `Impact — AD percussion`, connect its Audio output to a root Mixer or Master output and play. Open the composite and follow the internal oscillator to the exposed Audio socket of the Output Rack. Use **Locate output rack** if the rack is offscreen or hidden behind old layout geometry. The parent Audio socket is the same boundary signal, not a second output generator; do not add another Master inside the composite. The Input Rack supplies any exposed parent inputs to the child. Use the breadcrumbs to return to the parent; Fit fits the current canvas. [PR #18](https://github.com/wgabel/orbit2/pull/18); [composite routing](../editor/composite-nodes.md).
+**Composite example:** add `Impact — AD percussion`, connect its Audio output to a root Mixer or Master output and play. Open the composite and follow the internal oscillator to the exposed Audio socket of the Output Rack. Use **View → Locate output rack** if the rack is offscreen or hidden behind old layout geometry. The parent Audio socket is the same boundary signal, not a second output generator; do not add another Master inside the composite. The Input Rack supplies any exposed parent inputs to the child. Use the breadcrumbs to return to the parent; Fit fits the current canvas. [PR #18](https://github.com/wgabel/orbit2/pull/18); [composite routing](../editor/composite-nodes.md).
 
 ## 3. Document and organize a patch
 
@@ -94,12 +96,12 @@ For a complex piece, create meaningful names (e.g. `01 · Harmonic bed`, `02 · 
 
 | Task | Actual UI workflow / result |
 | --- | --- |
-| Add a note card | Add node → **Note (annotation)**. Edit title, body and accent; Apply. Drag the header, resize or collapse. Use notes for musical timing, parameter ranges, routing rationale and warnings. [PR #27](https://github.com/wgabel/orbit2/pull/27) |
+| Add a note card | Nodes → **Note (annotation)**. Edit title, body and accent; Apply. Drag the header, resize or collapse. Use notes for musical timing, parameter ranges, routing rationale and warnings. [PR #27](https://github.com/wgabel/orbit2/pull/27) |
 | Name or describe an oscillator/processor | Select one node → **Describe selected** → enter alias and description → Apply. Canonical node type and IDs remain unchanged. [PR #28](https://github.com/wgabel/orbit2/pull/28) |
 | Explain a connection | Select one cable → **Describe selected** or **Edit connection label** in the amount editor. A label describes purpose, not a numerical amount. [PR #28](https://github.com/wgabel/orbit2/pull/28) |
 | Organize a synth voice | Select related nodes using additive selection → **Create visual group** → set title/accent and membership. Drag its header to move members; resize the frame or remove it without deleting members. Groups are presentation only, not nested DSP graphs. [PR #30](https://github.com/wgabel/orbit2/pull/30) |
-| Describe an entire piece | Patches → **Edit patch overview**: title, description, usage instructions and tags → Apply. Save a named snapshot. Search those metadata fields in the saved patch list; open a result to load its graph. [PR #32](https://github.com/wgabel/orbit2/pull/32) |
-| Learn from an existing annotated example | Patches → **Annotated examples** → choose the modulation example or **Impact — AD percussion** → **Export example**. Then stop playback and **Import JSON** to inspect the exported patch. Export does not replace the current graph. [PR #32](https://github.com/wgabel/orbit2/pull/32) |
+| Describe an entire piece | More → Patches → **Edit patch overview**: title, description, usage instructions and tags → Apply. Save a named snapshot. Search those metadata fields in the saved patch list; open a result to load its graph. [PR #32](https://github.com/wgabel/orbit2/pull/32) |
+| Learn from an existing annotated example | More → Patches → **Annotated examples** → choose the modulation example or **Impact — AD percussion** → **Export example**. Then stop playback and **Import JSON** to inspect the exported patch. Export does not replace the current graph. [PR #32](https://github.com/wgabel/orbit2/pull/32) |
 
 Use **Undo annotation** / **Redo annotation** for notes, descriptions and group edits. Normal Undo/Redo acts on graph commands separately. The workspace overview is patch-wide; notes/groups and descriptions belong to their own canvas. See [patch annotations](../editor/patch-annotations.md) for editing/history, portable JSON keys and an example.
 

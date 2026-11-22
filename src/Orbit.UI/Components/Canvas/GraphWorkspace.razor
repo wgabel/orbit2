@@ -17,14 +17,13 @@ else
         <h1>Orbit 2 <span class="workspace-build" title="@BrowserBuild.Description" aria-label="@BrowserBuild.Description"
                          data-build-commit="@BrowserBuild.Commit" data-build-number="@BrowserBuild.Number">@BrowserBuild.Label</span></h1>
         <CanvasBreadcrumbs Path="@Navigation.Path" OnNavigate="NavigateTo" />
-        <button type="button" class="secondary desktop-outline" aria-expanded="@outlineOpen" @onclick="() => outlineOpen = !outlineOpen">Outline</button>
         <PatchOutlinePanel @key="workspaceGeneration" Open="@outlineOpen" Locked="@(annotationDraft || switchingWorkspace)"
                            Outline="@(outlineOpen ? Navigation.GetOutline(overview.Title) : null)" OnClose="CloseOutline" OnNavigate="NavigateOutline" />
 
         <div class="workspace-toolbar toolbar-group workspace-edit-tools" data-mobile-sheet="edit" role="region" aria-label="Editing tools">
             <MobileSheetHeader Title="Edit" OnClose="DismissMobilePanelAsync" />
-            <p class="workspace-mobile-only workspace-notice workspace-selection-summary" role="status">@MobileSelectionSummary</p>
-            <button type="button" class="secondary workspace-mobile-only" disabled="@(annotationDraft || switchingWorkspace)" @onclick='() => ToggleMobilePanel("selection")'>Selection actions</button>
+            <p class="workspace-notice workspace-selection-summary" role="status">@MobileSelectionSummary</p>
+            <button type="button" class="secondary" disabled="@(annotationDraft || switchingWorkspace)" @onclick='() => ToggleMobilePanel("selection")'>Selection actions</button>
             <button type="button" class="secondary" disabled="@(!session.CanUndo || switchingWorkspace)" @onclick="Undo">Undo</button>
             <button type="button" class="secondary" disabled="@(!session.CanRedo || switchingWorkspace)" @onclick="Redo">Redo</button>
             <button type="button" class="secondary" disabled="@(!Canvas.Snapshot.CanUndoAnnotations || annotationDraft || switchingWorkspace)" @onclick="UndoAnnotation">Undo annotation</button>
@@ -36,15 +35,17 @@ else
             <button type="button" class="secondary contextual-action" disabled="@(!HasSelection || annotationDraft || switchingWorkspace)" @onclick="DeleteSelection">Delete selected</button>
         </div>
     </header>
+    <nav class="mobile-workspace-bar" aria-label="Workspace tools">
+        <button type="button" class="secondary" data-mobile-trigger="nodes" aria-expanded="@(mobilePanel == "nodes")" disabled="@(overviewDraft || annotationDraft || addingNode || switchingWorkspace)" @onclick='() => ToggleMobilePanel("nodes")'><WorkspaceToolIcon Tool="nodes" /> <span>Nodes</span></button>
+        <button type="button" class="secondary" data-mobile-trigger="outline" aria-expanded="@outlineOpen" disabled="@overviewDraft" @onclick="ToggleMobileOutline"><WorkspaceToolIcon Tool="outline" /> <span>Outline</span></button>
+        <button type="button" class="secondary" data-mobile-trigger="edit" aria-expanded="@(mobilePanel == "edit" || mobilePanel == "selection")" disabled="@overviewDraft" @onclick='() => ToggleMobilePanel("edit")'><WorkspaceToolIcon Tool="edit" /> <span>Edit</span></button>
+        <button type="button" class="secondary" data-mobile-trigger="view" aria-expanded="@(mobilePanel == "view")" disabled="@overviewDraft" @onclick='() => ToggleMobilePanel("view")'><WorkspaceToolIcon Tool="view" /> <span>View</span></button>
+        <button type="button" class="secondary" data-mobile-trigger="more" aria-expanded="@(mobilePanel == "more")" disabled="@overviewDraft" @onclick='() => ToggleMobilePanel("more")'><WorkspaceToolIcon Tool="more" /> <span>More</span></button>
+    </nav>
     <div class="canvas-caption">
         <div class="workspace-toolbar toolbar-group workspace-nodes-tools" data-mobile-sheet="nodes" role="region" aria-label="Add nodes">
         <NodeLibrary Open="@NodeLibraryOpen" Entries="@LibraryEntries" KnownKeys="@LibraryKeys" Disabled="@(addingNode || switchingWorkspace || annotationDraft)"
                      OnAdd="@AddNodeFromLibraryAsync" OnClose="CloseNodeLibrary" />
-        <button type="button" class="desktop-node-library-trigger" aria-expanded="@(NodeLibraryOpen ? "true" : "false")" disabled="@(addingNode || switchingWorkspace || annotationDraft)" @onclick="ToggleNodeLibrary">Add node</button>
-        @if (Canvas.Snapshot.Graph.Nodes.FirstOrDefault(node => node.TypeKey == OutputRack.NodeType) is { } outputRack)
-        {
-            <button type="button" class="secondary workspace-locate-output" @onclick="() => canvasView!.FocusNodeAsync(outputRack.Id)">Locate output rack</button>
-        }
         </div>
         <GraphPlaybackControls @key="workspaceGeneration" @ref="playbackControls" Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" TempoChanged="OnTempoChanged" SampleRateChanged="OnSampleRateChanged" PlaybackStopped="ResetPerformance" Disabled="switchingWorkspace"
                                MobileTransportOpen="@(mobilePanel == "transport")" OnMobileTempo="@(() => ToggleMobilePanel("transport"))" MobileToolsLocked="@overviewDraft" />
@@ -56,13 +57,6 @@ else
             <PerformanceMonitor @ref="performanceMonitor" PatchId="@session.GraphId" EditableCounts="@Navigation.PatchCounts" />
         </div>
     </div>
-    <nav class="mobile-workspace-bar" aria-label="Mobile workspace tools">
-        <button type="button" class="secondary" data-mobile-trigger="nodes" aria-expanded="@(mobilePanel == "nodes")" disabled="@overviewDraft" @onclick='() => ToggleMobilePanel("nodes")'>+ Nodes</button>
-        <button type="button" class="secondary" data-mobile-trigger="outline" aria-expanded="@outlineOpen" disabled="@overviewDraft" @onclick="ToggleMobileOutline">Outline</button>
-        <button type="button" class="secondary" data-mobile-trigger="edit" aria-expanded="@(mobilePanel == "edit" || mobilePanel == "selection")" disabled="@overviewDraft" @onclick='() => ToggleMobilePanel("edit")'>Edit</button>
-        <button type="button" class="secondary" data-mobile-trigger="view" aria-expanded="@(mobilePanel == "view")" disabled="@overviewDraft" @onclick='() => ToggleMobilePanel("view")'>View</button>
-        <button type="button" class="secondary" data-mobile-trigger="more" aria-expanded="@(mobilePanel == "more")" disabled="@overviewDraft" @onclick='() => ToggleMobilePanel("more")'>More</button>
-    </nav>
     @if (Error is not null)
     {
         <p class="parameter-error workspace-error" role="alert">@Error</p>

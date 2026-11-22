@@ -1,0 +1,18 @@
+@namespace Orbit.UI.Components.Canvas
+
+<svg class="workspace-tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    <path d="@IconPath" />
+</svg>
+
+@code {
+    [Parameter, EditorRequired] public string Tool { get; set; } = "";
+    private string IconPath => Tool switch
+    {
+        "nodes" => "M12 5v14M5 12h14",
+        "outline" => "M5 4v16M5 7h5m-5 10h5m3-10h6m-6 10h6",
+        "edit" => "m4 16 12-12 4 4L8 20H4v-4zm9-9 4 4",
+        "view" => "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12ZM9 12a3 3 0 1 0 6 0 3 3 0 0 0-6 0",
+        "more" => "M5 12h.1M12 12h.1M19 12h.1",
+        _ => ""
+    };
+}

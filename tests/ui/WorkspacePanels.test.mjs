@@ -5,7 +5,7 @@ import { mountWorkspacePanels } from "../../src/Orbit.UI/wwwroot/js/workspacePan
 test("mobile sheet navigation uses one history entry, restores focus and preserves a locked draft", async () => {
     const globals = ["matchMedia", "history", "window", "MutationObserver"];
     const saved = Object.fromEntries(globals.map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
-    let observer, keyHandler, backHandler, mediaHandler, focused, disposed = false;
+    let observer, keyHandler, backHandler, mediaHandler, pointerHandler, focused, disposed = false;
     const historyStack = [null];
     const media = { matches: true, addEventListener(_, cb) { mediaHandler = cb; }, removeEventListener() { mediaHandler = null; } };
     const history = { get state() { return historyStack.at(-1); },
@@ -19,8 +19,8 @@ test("mobile sheet navigation uses one history entry, restores focus and preserv
             const focus = () => { focused = match[1] + ":" + match[2]; };
             return { focus, querySelector: () => ({ focus }) };
         },
-        addEventListener(_, cb) { keyHandler = cb; },
-        removeEventListener() { keyHandler = null; }
+        addEventListener(type, cb) { if (type === "keydown") keyHandler = cb; else pointerHandler = cb; },
+        removeEventListener(type) { if (type === "keydown") keyHandler = null; else pointerHandler = null; }
     };
     const setPanel = panel => { workspace.dataset.mobileActivePanel = panel; observer(); };
     let dismissals = 0;
@@ -33,7 +33,7 @@ test("mobile sheet navigation uses one history entry, restores focus and preserv
     const install = (key, value) => Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
     install("matchMedia", () => media);
     install("history", history);
-    install("window", { addEventListener(_, cb) { backHandler = cb; }, removeEventListener() { backHandler = null; } });
+    install("window", { addEventListener(type, cb) { if (type === "popstate") backHandler = cb; }, removeEventListener(type) { if (type === "popstate") backHandler = null; } });
     install("MutationObserver", class { constructor(cb) { observer = cb; } observe() {} disconnect() { disposed = true; } });
     const flush = () => new Promise(resolve => setImmediate(resolve));
     let controller;
@@ -73,6 +73,18 @@ test("mobile sheet navigation uses one history entry, restores focus and preserv
         mediaHandler();
         await flush();
         assert.equal(historyStack.length, 1);
+        assert.equal(workspace.dataset.mobileActivePanel, "transport", "Resize preserves the open panel");
+        setPanel("edit");
+        assert.equal(historyStack.length, 1, "Desktop opens do not alter history");
+        assert.equal(focused, "sheet:edit");
+        pointerHandler({ target: { closest: () => null } });
+        await flush();
+        assert.equal(workspace.dataset.mobileActivePanel, "");
+        assert.equal(focused, "sheet:edit", "Outside click must not steal canvas focus");
+        setPanel("view");
+        keyHandler({ key: "Escape", preventDefault() {}, stopPropagation() {} });
+        await flush();
+        assert.equal(focused, "trigger:view");
     } finally {
         controller?.dispose();
         for (const key of globals) {
@@ -82,5 +94,6 @@ test("mobile sheet navigation uses one history entry, restores focus and preserv
     }
     assert.equal(disposed, true);
     assert.equal(keyHandler, null);
+    assert.equal(pointerHandler, null);
     assert.equal(backHandler, null);
 });
