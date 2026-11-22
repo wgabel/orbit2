@@ -26,7 +26,7 @@
             @foreach (var row in rows.Take(limit))
             {
                 var entry = row.Entry;
-                <li @key="entry.Target" class="patch-outline-row" style="--outline-depth:@Math.Min(row.Depth, 12)">
+                <li @key="entry.Target" class="patch-outline-row" style="@Indentation(row.Depth)">
                     <div class="patch-outline-actions">
                         @if (!Searching && entry.Children.Count > 0)
                         {
@@ -97,6 +97,7 @@
         dirty = true;
     }
     private void ShowMore() { limit += PageSize; RefreshRows(); }
+    private static string Indentation(int depth) => $"padding-inline-start: calc({Math.Min(depth, 12)} * var(--semantic-space-compact))";
     private void Toggle(OutlineTarget target)
     {
         if (!expanded.Add(target)) expanded.Remove(target);

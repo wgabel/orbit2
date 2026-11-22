@@ -42,7 +42,7 @@
 .patch-manager { width: var(--component-workspace-patch-panel-width); box-sizing: border-box; }
 .patch-outline-panel { width: var(--component-workspace-patch-panel-width); box-sizing: border-box; inset-inline-start: var(--semantic-space-normal); inset-inline-end: auto; }
 .patch-outline-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--semantic-space-tight); }
-.patch-outline-row { min-width: 0; padding-inline-start: calc(var(--outline-depth) * var(--semantic-space-compact)); }
+.patch-outline-row { min-width: 0; }
 .patch-outline-actions { display: flex; align-items: center; gap: var(--semantic-space-tight); }
 .patch-outline-locate { flex: 1; min-width: 0; text-align: start; display: grid; gap: var(--semantic-space-tight); overflow-wrap: anywhere; }
 .patch-outline-locate small { font-size: var(--semantic-typography-caption); color: var(--semantic-color-muted); }
