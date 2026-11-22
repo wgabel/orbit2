@@ -19,6 +19,7 @@ public partial class GraphCanvas : IAsyncDisposable
     [Inject] private IJSRuntime JavaScript { get; set; } = default!;
     [Parameter, EditorRequired] public ICanvasStateService State { get; set; } = default!;
     [Parameter, EditorRequired] public GraphElementCounts PatchCounts { get; set; }
+    [Parameter] public OutlineFocusRequest? OutlineFocus { get; set; }
     [Parameter, EditorRequired] public Func<SetConnectionAmountCommand, string?> DispatchConnectionAmount { get; set; } = default!;
     [Parameter] public Guid PatchId { get; set; }
     [Parameter] public EventCallback<PortConnectionRequest> OnConnect { get; set; }
@@ -68,6 +69,7 @@ public partial class GraphCanvas : IAsyncDisposable
     private bool previousSecondaryDetail;
     private IReadOnlyList<Guid> previousSelectedNodes = [];
     private bool initialFit;
+    private Guid? handledOutlineFocus;
     private bool disposed;
     private long? gesturePointer;
     private Guid? draggedNode;
@@ -231,13 +233,39 @@ public partial class GraphCanvas : IAsyncDisposable
         if (measuredRevision != Snapshot.GraphRevision || measuredVisualizationGeneration != visualizationGeometryGeneration)
         {
             await MeasureAsync();
-            if (!initialFit && measurement is not null && (measurement.Nodes.Length > 0 || Snapshot.Notes.Count > 0 || Snapshot.VisualGroups.Count > 0))
+            if (!initialFit && !HasPendingElementFocus && measurement is not null && (measurement.Nodes.Length > 0 || Snapshot.Notes.Count > 0 || Snapshot.VisualGroups.Count > 0))
             {
                 initialFit = true;
                 FitMeasured();
             }
             if (!disposed) StateHasChanged();
         }
+        await ApplyOutlineFocusAsync();
+    }
+
+    private bool HasPendingElementFocus => OutlineFocus is { } request && request.Token != handledOutlineFocus &&
+        request.Target.GraphId == Snapshot.GraphId && request.Target.Kind != OutlineKind.Canvas;
+
+    private async Task ApplyOutlineFocusAsync()
+    {
+        if (disposed || OutlineFocus is not { } request || request.Token == handledOutlineFocus ||
+            request.Target.GraphId != Snapshot.GraphId || AnnotationControlsLocked) return;
+        if (measurement is null || measuredRevision != Snapshot.GraphRevision || measuredVisualizationGeneration != visualizationGeometryGeneration) return;
+        handledOutlineFocus = request.Token;
+        var target = request.Target;
+        CanvasBounds? bounds = target.Kind switch
+        {
+            OutlineKind.Note when Snapshot.SelectedNoteId == target.Id && Snapshot.Notes.FirstOrDefault(note => note.Id == target.Id) is { } note => CanvasStateService.NoteBounds(note),
+            OutlineKind.Group when Snapshot.SelectedGroupId == target.Id && Snapshot.VisualGroups.FirstOrDefault(group => group.Id == target.Id) is { } group => CanvasStateService.GroupBounds(group),
+            OutlineKind.Node or OutlineKind.Composite when Snapshot.SelectedNodeIds.Contains(target.Id) => MeasuredNodeBounds(target.Id),
+            _ => null
+        };
+        if (bounds is { IsValid: true } fit && measurement.Width > 0 && measurement.Height > 0)
+        {
+            initialFit = true;
+            State.FitToBounds(fit, measurement.Width, measurement.Height, 32);
+        }
+        await viewportElement.FocusAsync(preventScroll: true);
     }
 
     private async Task MeasureAsync()
@@ -474,13 +502,16 @@ public partial class GraphCanvas : IAsyncDisposable
         var state = State;
         await MeasureAsync();
         if (disposed || !ReferenceEquals(state, State) || measurement is null ||
-            !Snapshot.NodePositions.TryGetValue(nodeId, out var position)) return;
-        var node = measurement.Nodes.FirstOrDefault(item => item.NodeId == nodeId);
-        if (node is null) return;
-        var bounds = new CanvasBounds(position.X, position.Y, position.X + node.Width, position.Y + node.Height);
-        if (!bounds.IsValid || measurement.Width <= 0 || measurement.Height <= 0) return;
+            MeasuredNodeBounds(nodeId) is not { IsValid: true } bounds || measurement.Width <= 0 || measurement.Height <= 0) return;
         State.SelectNode(nodeId);
         State.FitToBounds(bounds, measurement.Width, measurement.Height, 32);
+    }
+
+    private CanvasBounds? MeasuredNodeBounds(Guid nodeId)
+    {
+        if (!Snapshot.NodePositions.TryGetValue(nodeId, out var position) ||
+            measurement?.Nodes.FirstOrDefault(item => item.NodeId == nodeId) is not { } node) return null;
+        return new CanvasBounds(position.X, position.Y, position.X + node.Width, position.Y + node.Height);
     }
 
     /// <summary>Measure at Add time, including resizes and scrolling not associated with graph edits.

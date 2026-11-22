@@ -43,9 +43,15 @@ Use **Undo annotation** / **Redo annotation** for notes, descriptions and group 
 - **Show:** full annotation detail at close zoom; as you zoom out, compact markers replace fuller note content. The automatic transitions have hysteresis. Groups retain their background/frame in compact detail.
 - **Titles only:** use compact note/group titles; select a marker (click or focus and Enter/Space) to reveal its editable full card temporarily. Selected nodes retain their description access; aliases remain recognizable.
 - **Hide:** hide note cards and group frames, suppress secondary descriptive detail, without deleting metadata, cables, nodes or numeric connection badges. Use **Find annotation**, choose a current-canvas note or group, then **Reveal and fit** to select and locate it temporarily. Deselect to return to the stored visibility mode.
-- **Fit signals** fits the measured node bounds, ignoring annotations; ordinary Fit considers visible detail. If switching/revealing is disabled, commit or cancel the open metadata draft first. The finder is local to the active canvas; it is not the planned cross-graph outline.
+- **Fit signals** fits the measured node bounds, ignoring annotations; ordinary Fit considers visible detail. If switching/revealing is disabled, commit or cancel the open metadata draft first. The finder is local to the active canvas; the cross-graph outline is a separate feature in review.
 
 Try describing a composition, hiding its annotations during performance, then opening its nested instruments and revealing a warning via the finder. Each canvas remembers its own visibility. Neither zoom nor visibility overwrites authored note dimensions, manually collapsed state, metadata, signal revisions or sound. Export retains the preference. Full details: [annotation visibility](../editor/patch-annotations.md#2-annotation-visibility-and-zoom-dependent-detail-6197--implemented).
+
+### Search and navigate the entire patch (in review)
+
+[PR #39](https://github.com/wgabel/orbit2/pull/39) adds **Outline** to the workspace header. Expand composites or visual groups, or use **Search patch** and **Filter outline** to find committed names, aliases, descriptions and notes throughout the hierarchy, including canvases you have never opened.
+
+For example, add a Flute instrument, open **Outline**, search `Flute Output Rack` and filter by Node. Select the matching **Locate node: Output Rack** action to enter the Flute's canvas, select its rack and fit it into view. **Locate composite** selects a composite in its parent; **Open canvas** enters its child. Locate a hidden note to reveal it temporarily without changing the canvas visibility setting. Apply or cancel an active annotation draft before navigating. These actions do not change the signal graph or interrupt playback. The outline is navigation, not a module library or an editing tool. See the [outline contract](../editor/patch-annotations.md#3-patch-outline-and-navigation-6198--in-review).
 
 ### Understand the two counts
 

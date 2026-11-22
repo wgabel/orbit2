@@ -94,12 +94,13 @@ Keep layout structure in CSS and markup, with numeric styling constants in JSON.
 | VisualGroupFrame / VisualGroupEditor | Background frame, header drag, frame-only resize, explicit membership and unscaled metadata draft (6.19.3, implemented) |
 | PatchOverviewEditor / PatchOverviewSummary | Patch-wide protected metadata draft and read-only summary, reused by PatchManager for active and saved documents (6.19.4, implemented) |
 | AnnotationMarker / AnnotationDetailPolicy | Shared screen-scaled title/marker detail and per-canvas visibility, with selection reveal and stable authored geometry (6.19.7, implemented) |
+| PatchOutlinePanel / PatchOutline | Searchable, bounded hierarchy of committed graph-qualified targets, with explicit locate/open actions (6.19.8, in review) |
 | PortConnector | Render shape, label, typed endpoint, hit area and connection gesture |
 | ConnectionLayer / ConnectionPath | Render and hit-test Bézier connections using shared port geometry |
 | ParameterSlider | Name, unit, editable numeric base value, min/max, range slider, inline error, modulation band and effective marker |
 | ValidationMessage | Consistent field-level error presentation directly below an invalid value box |
 
-Razor markup composes reusable components; code-behind handles presentation interaction. Domain validation and application commands remain authoritative. Node-specific views supply definitions and content, rather than duplicating viewport, slider, port or connection code. Theme tokens and reusable styles live in the UI project, never in Domain.
+Razor markup composes reusable components; code-behind handles presentation interaction. Domain validation and application commands remain authoritative. Node-specific views supply definitions and content, rather than duplicating viewport, slider, port or connection code. Theme tokens and reusable styles live in the UI project, never in Domain. Razor components using DOM event directives such as `@onclick` must import `Microsoft.AspNetCore.Components.Web`; without that import a clean build can emit literal, inert HTML attributes. Verify actual event behavior in the published editor, as in the outline regression in [PR #39](https://github.com/wgabel/orbit2/pull/39).
 
 #### Parameter editor contract
 

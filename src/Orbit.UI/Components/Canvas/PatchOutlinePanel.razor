@@ -1,0 +1,112 @@
+@namespace Orbit.UI.Components.Canvas
+@using Microsoft.AspNetCore.Components.Web
+@using Orbit.Presentation.Canvas
+
+@if (Open && Outline is not null)
+{
+    <section class="workspace-library-panel patch-outline-panel" role="region" aria-label="Patch outline">
+        <div class="workspace-toolbar">
+            <strong>Patch outline</strong>
+            <button type="button" class="secondary" @onclick="OnClose">Close outline</button>
+        </div>
+        <label for="outline-search">Search patch</label>
+        <input id="outline-search" type="search" placeholder="Name, type, description or note…" @bind="query" @bind:event="oninput" @bind:after="ResetRows" />
+        <label for="outline-filter">Filter outline</label>
+        <select id="outline-filter" @bind="filter" @bind:after="ResetRows">
+            <option value="">All entries</option>
+            @foreach (var kind in Enum.GetValues<OutlineKind>())
+            {
+                <option value="@kind">@kind</option>
+            }
+        </select>
+        @if (Locked)
+        {
+            <p class="workspace-notice">Apply or cancel the current annotation edit before navigating.</p>
+        }
+        <ul class="patch-outline-rows" aria-label="Outline entries">
+            @foreach (var row in rows.Take(limit))
+            {
+                var entry = row.Entry;
+                <li @key="entry.Target" class="patch-outline-row" style="@Indentation(row.Depth)">
+                    <div class="patch-outline-actions">
+                        @if (!Searching && entry.Children.Count > 0)
+                        {
+                            <button type="button" class="secondary" aria-label="@($"{(expanded.Contains(entry.Target) ? "Collapse" : "Expand")} {entry.Title}")" aria-expanded="@expanded.Contains(entry.Target)" @onclick="() => Toggle(entry.Target)">@(expanded.Contains(entry.Target) ? "−" : "+")</button>
+                        }
+                        <button type="button" class="secondary patch-outline-locate" disabled="@Locked"
+                                aria-label="@($"{(entry.Target.Kind == OutlineKind.Canvas ? "Open" : "Locate")} {entry.Target.Kind.ToString().ToLowerInvariant()}: {entry.Title}")"
+                                title="@($"{entry.Breadcrumb} · {entry.Target.Id}")" @onclick="() => OnNavigate.InvokeAsync(new OutlineNavigationRequest(entry.Target))">
+                            <span>@Icon(entry.Target.Kind) @entry.Title</span>
+                            <small>@entry.Detail · @entry.Target.Id.ToString("N")[..8]</small>
+                            @if (Searching) { <small>@entry.Breadcrumb</small> }
+                        </button>
+                        @if (entry.ChildGraphId is not null)
+                        {
+                            <button type="button" class="secondary" disabled="@Locked" aria-label="@($"Open canvas: {entry.Title}")" @onclick="() => OnNavigate.InvokeAsync(new OutlineNavigationRequest(entry.Target, true))">Open canvas</button>
+                        }
+                    </div>
+                </li>
+            }
+        </ul>
+        @if (rows.Count == 0) { <p class="workspace-notice">No matching entries.</p> }
+        @if (rows.Count > limit)
+        {
+            <button type="button" class="secondary" @onclick="ShowMore">Show more entries</button>
+        }
+    </section>
+}
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public bool Locked { get; set; }
+    [Parameter] public PatchOutline? Outline { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<OutlineNavigationRequest> OnNavigate { get; set; }
+    private const int PageSize = 100;
+    private int limit = PageSize;
+    private string query = "";
+    private string filter = "";
+    private bool Searching => !string.IsNullOrWhiteSpace(query) || filter.Length != 0;
+    private readonly HashSet<OutlineTarget> expanded = [];
+    private PatchOutline? previous;
+    private IReadOnlyList<OutlineRow> rows = [];
+    private bool dirty = true;
+    private bool previousOpen;
+    private bool previousLocked;
+
+    protected override void OnParametersSet()
+    {
+        if (Open != previousOpen || Locked != previousLocked) dirty = true;
+        previousOpen = Open;
+        previousLocked = Locked;
+        if (Outline is null || ReferenceEquals(previous, Outline)) return;
+        if (previous is null) expanded.Add(Outline.Root.Target);
+        expanded.RemoveWhere(target => Outline.Find(target) is null);
+        previous = Outline;
+        RefreshRows();
+    }
+    protected override bool ShouldRender()
+    {
+        var render = dirty;
+        dirty = false;
+        return render;
+    }
+    private void ResetRows() { limit = PageSize; RefreshRows(); }
+    private void RefreshRows()
+    {
+        rows = Outline?.Rows(expanded, query, Enum.TryParse<OutlineKind>(filter, out var kind) ? kind : null).Take(limit + 1).ToArray() ?? [];
+        dirty = true;
+    }
+    private void ShowMore() { limit += PageSize; RefreshRows(); }
+    private static string Indentation(int depth) => $"padding-inline-start: calc({Math.Min(depth, 12)} * var(--semantic-space-compact))";
+    private void Toggle(OutlineTarget target)
+    {
+        if (!expanded.Add(target)) expanded.Remove(target);
+        ResetRows();
+    }
+    private static string Icon(OutlineKind kind) => kind switch
+    {
+        OutlineKind.Canvas => "▧", OutlineKind.Composite => "▣", OutlineKind.Group => "□",
+        OutlineKind.Note => "▤", _ => "◇"
+    };
+}
