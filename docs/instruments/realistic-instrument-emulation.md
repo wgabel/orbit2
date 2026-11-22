@@ -2,9 +2,9 @@
 
 [Architecture](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md) · [Instrument recipes](../examples/instrument-recipes.md) · [Resonators and modal synthesis](physical-modelling.md) · [Repeatable audition](../examples/instrument-design-and-audition.md)
 
-**Status:** Research and planned design (Phase 7.2.7). Recipes below are candidate experiments with existing nodes, not new shipped presets or listening-validated acoustic replicas. User feedback (2026-11-22): the existing implemented instruments are all lacking in realism. The preferred next approach is to reuse the Faust Physical Modeling Toolkit where suitable and legally distributable, rather than recreate every acoustic model from primitive oscillators. Retain existing preset identities, saved graphs and useful synthetic sounds.
+**Status:** Research and planned design (Phase 7.2.7); pinned-library audit recorded for two local experiments. Recipes below are candidate experiments with existing nodes, not new shipped presets or listening-validated acoustic replicas. User feedback (2026-11-22): the existing implemented instruments are all lacking in realism. The preferred next approach is to reuse the Faust Physical Modeling Toolkit where suitable and legally distributable, rather than recreate every acoustic model from primitive oscillators. Retain existing preset identities, saved graphs and useful synthetic sounds.
 
-Design provenance: [PR #78](https://github.com/wgabel/orbit2/pull/78) (documentation only; no implementation or license clearance).
+Design provenance: [PR #78](https://github.com/wgabel/orbit2/pull/78) (documentation only; no shipped implementation or release clearance).
 
 ## 1. Choose the synthesis method for the instrument
 
@@ -42,6 +42,8 @@ Names are upstream reference candidates, not promises of compatibility or an exa
 
 ### 2.1 License and dependency gate (mandatory before integration or distribution)
 
+**Audit result:** [Pinned Faust dependency audit](faust-dependency-audit.md) verifies compiler 2.90.0, standard libraries 2.74.2 and physmodels.lib 1.2.1 in the actual browser bundle. Two minimal `pm.ks` and `pm.fluteModel` probes compile; their license evidence supports local experiments. Generated-code exceptions do not remove compiler distribution obligations; final wrapper dependencies, required notices and corresponding source/replacement arrangements must be resolved before shipping. No upgrade is needed merely to obtain the physmodels.lib header.
+
 As checked on 2026-11-22, current upstream [physmodels.lib](https://github.com/grame-cncm/faustlibraries/blob/master/physmodels.lib) includes a GRAME LGPL-2.1-or-later header with a Faust exception permitting the compiled code of a larger Faust program importing the file to use a separately chosen license. This is not a blanket grant over all Faust code, and source redistribution/modification obligations are distinct from generated-output licensing. The missing header was explicitly reported and fixed on 2026-09-02 in [issue #250 / commit 85368ff](https://github.com/grame-cncm/faustlibraries/issues/250); do not assume an older bundled revision contains that text.
 
 Orbit currently pins `@grame/faustwasm@0.19.0` in its [build](../../scripts/prepare-faust-compiler.mjs) and ships the browser compiler bundle, including its COPYING notice. Before implementing a model:
@@ -54,7 +56,7 @@ Orbit currently pins `@grame/faustwasm@0.19.0` in its [build](../../scripts/prep
 
 ### 2.2 Integration design
 
-- First compile a small monophonic flute or plucked-string candidate with the exact pinned compiler and render offline at 44.1/48 kHz. Choose a second contrasting model (bowed string or clarinet). Proof-of-concept must precede adding many nodes. If the dependency cannot compile or passes audio but not licensing, stop the model track at that candidate and evaluate a cleared alternative.
+- First render the two minimal compiled probes (`pm.ks` pluck and `pm.fluteModel` sustained flute) offline at 44.1/48 kHz with the exact pinned compiler. Extend to a bowed string or clarinet only after its dependency audit. Proof-of-concept must precede adding many nodes. If the dependency cannot compile or passes audio but not licensing, stop the model track at that candidate and evaluate a cleared alternative.
 - Use existing domain node registry, `IFaustNodeEmitter`, `FaustNodeContext`, parameter definitions/ranges, audio-rate modulation, typed event inputs, stable serialization, compatible history and graph flattening. Keep feedback/delay states internal to DSP, not illegal graph cycles. No second audio engine or VST host.
 - Keep reusable physical primitives (exciter, body/resonator, processor where suitable) and instrument-specific parameterized cores only where needed; wrap playable variants as editable composites with pitch reference, Gate or Trigger, Velocity (where physically meaningful), Expression and Audio output. No per-note compilation. Prefer phase-continuous controls and bounded state, clear unit mapping (semitones/Hz/normalized pressure) and stable defaults, with intentionally shaped initial attack and release.
 - Expression is continuous breath/bow strength, not velocity repeated every sample. For a note interface, use Velocity for the onset gesture, Gate for sustain/release, and Expression for evolving excitation/brightness. For a pluck, latch strike energy, preserve state until decay. Do not retune old tails when future per-voice allocation is available.
