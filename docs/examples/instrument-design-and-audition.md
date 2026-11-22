@@ -1,12 +1,18 @@
-# Modern pop instrument design and repeatable audition
+# Instrument and sound design — repeatable audition
 
 [Music creation index](README.md) · [Voice design](sound-quality-and-voice-design.md) · [Instrument recipes](instrument-recipes.md) · [Roadmap](../../ROADMAP.md)
 
-**Status:** design and listener-feedback case, with an editable instrument-audition reference patch using existing nodes. The proposed modern-pop instrument library, built-in fixture registration and future engine capabilities are separate planned work. This is not a catalogue of approved presets.
+**Status:** General-purpose sound design and listening workflow, with an editable audition reference patch using existing nodes. Additional test profiles, a reusable sound library, built-in fixture registration and future engine capabilities are planned. This is not a catalogue of approved presets.
 
 Documentation and reference asset: [PR #54](https://github.com/wgabel/orbit2/pull/54) (no new runtime capabilities).
 
-## 1. Evidence: Prism Rush and the unintended chiptune character
+## Scope: any genre or appropriate sound
+
+Use this workflow whenever an instrument, synthesized voice, percussion sound, evolving drone, texture, sound effect or processing chain can be meaningfully isolated and compared with repeatable inputs. It applies equally to classical-inspired, jazz, rock, cinematic, ambient, industrial, dance, experimental, retro/chiptune and pop music, among other styles. The brief determines the desired character: intentional noise, harshness, digital artifacts, static tones and basic waveforms are valid choices.
+
+Reuse the comparison method, not necessarily the same melody. Choose a suitable stimulus, define the intended sound and role, design and level-match candidates, evaluate them in isolation and context, and save the exact successful revision with evidence. Long-form or interacting sounds may need a reproducible contextual test rather than a short monophonic melody. Genre and role tags are optional, multiple-valued discovery aids, not restrictions on reuse.
+
+## 1. Case study: Prism Rush and the unintended chiptune character
 
 In *Prism Rush* (three minutes, 128 BPM, D major/B minor), the listener strongly approved the composition and intricate melodies, but described the individual tones as childish, 16-bit/chiptune, and unlike recent pop production. This is a sound-design problem to investigate while retaining the successful score, not a reason to simplify its counterpoint, remove its breaks or rewrite its harmony.
 
@@ -35,7 +41,7 @@ Design multiple coordinated components instead of giving every voice one oscilla
 - **Spectral identity:** distinguish a rounded bass fundamental from a saturated or filtered upper body, a mellow lead from a metallic transient, a breathing pad from a closed percussion sound. Select register, body resonances and bandwidth in relation to adjacent instruments. More partials alone do not guarantee a natural sound.
 - **Mix and space:** give the important melody a recognizable direct signal, separate supporting parts in register and depth, shape transients, use short ambience selectively, preserve dry sub/kick, and check the full arrangement at matched loudness. True pan, stereo spread, saturation and controlled dynamics can help but do not fix identical tone/phrasing by themselves.
 
-Modern commercial pop is diverse: some songs intentionally use basic synths. Dua Lipa's *Houdini* credits synth/programming along with guitar, bass guitar, drums and keyboards [P3]. FINNEAS describes blending acoustic guitars, pianos and virtual instruments and the importance of production serving the artist's expression in the *Birds of a Feather* production walkthrough and album interview [P4–P5]. These are examples of complementary sound sources and performance choices, not instructions to reproduce copyrighted songs or proof that every hit requires acoustic recordings.
+As one genre-specific illustration, modern commercial pop is diverse: some songs intentionally use basic synths. Dua Lipa's *Houdini* credits synth/programming along with guitar, bass guitar, drums and keyboards [P3]. FINNEAS describes blending acoustic guitars, pianos and virtual instruments and the importance of production serving the artist's expression in the *Birds of a Feather* production walkthrough and album interview [P4–P5]. These are examples of complementary sound sources and performance choices, not instructions to reproduce copyrighted songs or proof that every hit requires acoustic recordings. Other styles may favor extreme modulation, noise, historical instrument behavior, sparse spectra or deliberately synthetic character; choose the target first.
 
 ## 3. The instrument audition fixture — TEST Melody Driver v1
 
@@ -69,7 +75,7 @@ The supplied workspace has the reference branch; add and connect the candidate b
 
 The initial driver supports onsets at least two sixteenths apart because the Schmitt trigger must see a low slot between rises. For arbitrary adjacent sixteenth repetitions and real note velocity/retrigger/gate rules, implement Note-mode patterns (7.2.8d) rather than misusing Hold as a note event. A gate-driven ADSR responds to a new gate edge, not to every legato pitch change; a separate Trigger-driven AD transient can still respond at each onset. The supplied reference uses exactly that combination.
 
-**Verification of the supplied fixture:** schema-1 deserialization/restoration through the actual application registry; compile with the Orbit Faust graph compiler; render two 8-second cycles at 48 kHz with the actual pitch-pattern scheduler and dynamic observations. All 30 expected typed trigger pulses occurred at their exact 6,000-frame grid positions; settled gate, pitch and normalized velocity matched the score including legato/repeated notes. Final 250 ms of each cycle was silent (< 10⁻⁶ sample magnitude); the master peak was approximately −18.0 dBFS. This verifies the control and demonstration voice, not approval of any modern-pop candidate or live device performance.
+**Verification of the supplied fixture:** schema-1 deserialization/restoration through the actual application registry; compile with the Orbit Faust graph compiler; render two 8-second cycles at 48 kHz with the actual pitch-pattern scheduler and dynamic observations. All 30 expected typed trigger pulses occurred at their exact 6,000-frame grid positions; settled gate, pitch and normalized velocity matched the score including legato/repeated notes. Final 250 ms of each cycle was silent (< 10⁻⁶ sample magnitude); the master peak was approximately −18.0 dBFS. This verifies the control and demonstration voice, not approval of any proposed instrument or live device performance.
 
 **Score table** (onset and duration are zero-based sixteenth slots; velocity numerator divided by 12):
 
@@ -89,15 +95,27 @@ The initial driver supports onsets at least two sixteenths apart because the Sch
 5. Connect each candidate's Audio to the root **A/B mixer** with conservative gain/connection amount. Start at low monitor volume. Use the composite header **M** (mute) to hear one at a time; mute the reference before listening to candidate, and reverse. Leave the driver and shared master unmuted. Do not assume muted graphs stop using CPU. After changing wiring, stop/reset/play for a fresh identical pass; allow tails to settle. If graph load limits intervene, use separate saved patch copies each with the same driver/mixer, not 15 simultaneously running instruments.
 6. Match apparent loudness using the candidate's final output trim or mixer connection (not changes to internal nonlinear drive or excitation). Compare comparable windows or whole-cycle RMS/K-weighted energy as a starting point; preserve the instrument's dynamics and verify by ear. Check peak, silence/rest, tuning, repeated strikes and tails with scopes; compare two loops at safe, similar monitoring levels. Avoid choosing the louder version by default.
 7. Save the accepted editable candidate and its settings in a separate named patch; leave unsuccessful experiments as clearly labelled candidates. Today reusable cross-patch modules are planned: use a saved complete test-patch copy or the documented grouping workflow until 7.4.3–7.4.5 ship. Then save the tested instrument composite to the Module Library; the test driver itself belongs in a Testing/Instrument audition category. Do not save the driver plus reference as the candidate instrument.
-8. Finally test the winning instrument in a representative real arrangement at the intended register, including sparse and dense sections, on the same score. A pleasant solo sound may mask a lead or bass when layered. Preserve user's successful themes and form; compare only the sound change first. Physical realism is not required for a good modern synth.
+8. Finally test the winning instrument in a representative real arrangement at the intended register, including sparse and dense sections, on the same score. A pleasant solo sound may mask a lead or bass when layered. Preserve user's successful themes and form; compare only the sound change first. Physical realism is not required for a good synthesized sound.
 
 ### Extend the test without losing comparability
 
-Keep `v1` stable. Add separate labelled profiles when useful: low-register bass (transpose the score uniformly, compare all variants at that transposition), slow pad (long held notes and longer tail rest), percussion (same trigger/velocity pattern, mapped strike pitches where musically relevant), chord/pad (independent pitch voices or future polyphony), full production chorus. Each profile must pin tempo, exact score, reference tuning, dynamics, duration, effects state, mix weights and render revision. Never change the test between A and B unnoticed. The short melody alone is not a sufficient test of drums or a large polyphonic arrangement.
+Keep `v1` stable. The supplied four-bar D-major melody is the first test profile, not a required scale, tempo, genre or interface for every sound. The following are examples of additional profiles to create as needed; only the original melody fixture is supplied today.
 
-## 4. Candidate palette: develop 12 contrasting instruments
+| Sound or behavior to evaluate | Suitable repeatable test |
+| --- | --- |
+| Lead, keys, plucked or bowed instrument | Melody v1, plus role-specific register, dynamics, articulation, scales and intervals as needed. |
+| Sub, bass guitar, acid or distorted bass | Uniformly transposed low-register notes; repeated and long accents; stability, drive and interaction with kick. |
+| Sustained pad, ambient drone, industrial texture | Long holds, fixed modulation and transport, isolated attack/release and a long steady-state window; allow intentional evolution. |
+| Percussion, impacts, rhythmic noise | Fixed trigger/velocity pattern with rests, repeated strikes and mapped pitch only if relevant. |
+| Chords, classical ensemble, jazz voicings | Fixed voices and chord changes using independent note controls or future polyphony; compare voice interaction and release overlap. |
+| Effects, soundscapes, transitions and experimental sounds | Identical dry source or excitation/control sequence, fixed automation and duration; check tails, response, intended texture and level. |
+| Context-dependent or generative sound | Fixed backing, initial state and seed where supported; compare repeated passes if inherently variable and document variation. |
 
-The following are proposed roles, not already approved sounds or exact acoustic emulations. Use current editable components first, compare alternate sound routes with the shared fixture, and only label an instrument as recommended after validation and user listening feedback. In a pop mix, choose complementary roles instead of using all 12 indiscriminately.
+Pin applicable tempo, score/stimulus, reference tuning, dynamics, duration, effects state, mix weights, control settings and render revision. Not every sound needs Pitch, Gate, Trigger and Velocity: expose only meaningful controls (or a fixed audio input for processors), while keeping comparisons equivalent. Never change the test between A and B unnoticed. The short melody alone is not sufficient for drums, long drones, effects or large polyphonic arrangements.
+
+## 4. Initial candidate palette: 12 contrasting instruments
+
+The following proposed roles originated in the Prism Rush feedback but are reusable across genres, not an exhaustive or mandatory palette or already approved sounds. Use current editable components first, compare alternate sound routes using an appropriate shared profile, and recommend instruments only after validation and user listening feedback. Choose complementary roles for each brief. Expand with any useful sound family (e.g. orchestral brass, modal mallets, evolving dissonant drones, aggressive basses, intentional chip voices, experimental textures or transition effects) using the same process.
 
 | Candidate | Initial design direction (existing nodes) | Evaluate / further capability |
 | --- | --- | --- |
@@ -110,7 +128,7 @@ The following are proposed roles, not already approved sounds or exact acoustic 
 | 07 Deep electronic sub | Single clean pitched sine or rounded low harmonic, gate-aware amplitude, dry path | Headroom, kick overlap, stable tuning; intentionally simple |
 | 08 Warm string pad | Slow ADSR, restrained detuning, subtly evolving harmonics/PWM, shaped bow-like excitation, different time constants | Physical body and sustain, no constant high buzz; future stereo/unison |
 | 09 Atmosphere / airy texture | Very quiet shaped band-limited noise plus independently moving resonant tones, controlled tail | No exposed wind/hiss; depth without masking |
-| 10 Pop kick | Tuned downward pitch transient with separate short click/body and stable low tail | Punch, tail length, peak/headroom and interaction with sub; sample hybrid optional |
+| 10 Electronic kick | Tuned downward pitch transient with separate short click/body and stable low tail | Punch, tail length, peak/headroom and interaction with sub; sample hybrid optional |
 | 11 Snare / clap | Separate short body and filtered transient; several decays and controlled noise bands | Not a game-like beep; variable strength, recorded drum layering later |
 | 12 Hat / percussion | Short shaped metallic and filtered noise transients or struck modal resonances; distinct accents | Organic variation, transient clarity, avoid hiss dominance; future recorded hits |
 
@@ -118,18 +136,18 @@ Start with lead, electric keys, bass, pad and drums, rather than building twelve
 
 ## 5. Instrument acceptance and evidence records
 
-Use a repeatable listening and engineering loop for each role: design → run identical test score → compare level-matched alternatives → diagnose → refine → test in context → retain or reject. Avoid hiding a poor instrument with a beautiful arrangement or loud master. Keep a plain reference and failed variants where useful. A compact record should include:
+Use a repeatable listening and engineering loop for each role: design → run an identical test profile → compare level-matched alternatives → diagnose → refine → test in context → retain or reject. Avoid hiding an unsuitable sound with a beautiful arrangement or loud master. Keep a plain reference and failed variants where useful. A compact record should include:
 
-- Candidate name/version, actual graph/export, dependencies/PRs, role, usable register, control interface, test score/profile revision and transport; envelope/transient/body and effects design choices.
+- Candidate name/version, actual graph/export, dependencies/PRs, role, intended character, optional genre tags, usable register where relevant, control interface, test score/profile revision and transport; envelope/transient/body and effects design choices.
 - Import, validation, actual native render (if available), tuning, finite output, resting silence, articulation/retrigger and tail behavior, peak/headroom, relative metrics and comparisons. Record alignment, sample rate and test window selection. Check voice CPU/performance too before accumulating many simultaneous candidates.
 - Listening judgment (e.g. too chip-like, warmer, cloudy, expressive, organic, weak transient, reference-like character), specific notes or sections, tested playback and whether solo or in mix. Use user feedback as evidence for that listener and role; never infer human approval from metrics.
-- Status: `candidate / graph-validated / native-rendered / listener-approved for role / rejected or needs refinement` (technical evidence and subjective approval can coexist independently). Record exact variant, date, and feedback. Preserve prior revisions. Only promote a listener-approved reliable version into the recommended modern-pop palette; other styles may choose differently. Agents should select approved roles where relevant or identify new sounds as experiments.
+- Status: `candidate / graph-validated / native-rendered / listener-approved for role / rejected or needs refinement` (technical evidence and subjective approval can coexist independently). Record exact variant, date, and feedback. Preserve prior revisions. Only promote a listener-approved reliable version into the recommended reusable palette for its stated role and context. Approval is not universal: a rejected variant for one brief may be ideal in another. Agents should select approved roles where relevant or identify new sounds as experiments.
 
-For Prism Rush, compare original and sound-redesigned versions on the very same score, harmony, breaks, tempo and duration. Render stems and measure aligned role/backing ratios using [contextual layer balance](contextual-layer-balance.md); match overall playback level when comparing. Compare major chorus, quiet interlude and borrowed-minor bridge, and report what changed in instrument design versus mix. Revisit arrangement only if the user requests it or a later separate experiment justifies it.
+For the specific Prism Rush case, compare original and sound-redesigned versions on the very same score, harmony, breaks, tempo and duration. Render stems and measure aligned role/backing ratios using [contextual layer balance](contextual-layer-balance.md); match overall playback level when comparing. Compare major chorus, quiet interlude and borrowed-minor bridge, and report what changed in instrument design versus mix. Revisit arrangement only if the user requests it or a later separate experiment justifies it.
 
 ## 6. Future engine support and dependencies
 
-The first fixture and candidate sound experiments are useful now with existing nodes, so Phase 7.3 performance tooling is not a prerequisite for this small test patch. Keep the existing performance-first requirement for expensive DSP expansion, especially stereo/unison (7.5). Follow the [roadmap register](../roadmap/advanced.md#phase-76--instrument-audition-and-modern-production-planned) for staged delivery. Address gaps by reusing existing contracts rather than inventing parallel sequencer or preset systems:
+The first fixture and candidate sound experiments are useful now with existing nodes, so Phase 7.3 performance tooling is not a prerequisite for this small test patch. Keep the existing performance-first requirement for expensive DSP expansion, especially stereo/unison (7.5). Follow the [roadmap register](../roadmap/advanced.md#phase-76--instrument-and-sound-design-and-audition) for staged delivery. Address gaps by reusing existing contracts rather than inventing parallel sequencer or preset systems:
 
 | Priority | Needed capability / existing track |
 | --- | --- |
