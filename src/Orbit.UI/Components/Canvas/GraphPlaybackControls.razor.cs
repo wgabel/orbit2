@@ -18,6 +18,9 @@ public partial class GraphPlaybackControls : IAsyncDisposable
     [Parameter] public EventCallback<int?> SampleRateChanged { get; set; }
     [Parameter] public EventCallback PlaybackStopped { get; set; }
     [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool MobileTransportOpen { get; set; }
+    [Parameter] public bool MobileToolsLocked { get; set; }
+    [Parameter] public EventCallback OnMobileTempo { get; set; }
     public bool CanReplaceWorkspace => !IsActive;
 
     private bool IsReady { get; set; }

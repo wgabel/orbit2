@@ -1,0 +1,207 @@
+
+/* Desktop retains the original shared toolbars and controls. */
+.workspace-more-tools, .workspace-transport-tools, .canvas-view-tools { display: contents; }
+.mobile-workspace-bar, .workspace-mobile-tempo, .mobile-playback-label { display: none; }
+
+/* A viewport breakpoint is a layout condition, not a reusable visual dimension. */
+@media (max-width: 768px), (max-height: 480px) and (pointer: coarse) {
+    body {
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        overflow: hidden;
+    }
+    .graph-workspace {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: var(--component-workspace-mobile-toolbar-height) minmax(0, 1fr) var(--component-workspace-mobile-toolbar-height);
+        gap: 0;
+        min-width: 0;
+        min-height: 0;
+    }
+    .workspace-header {
+        grid-area: 1 / 1;
+        min-width: 0;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 0;
+        padding-inline: var(--semantic-space-compact);
+    }
+    .workspace-header h1 { font-size: var(--semantic-typography-label); }
+    .canvas-breadcrumbs {
+        flex: 0 1 auto;
+        flex-wrap: nowrap;
+        gap: var(--semantic-space-tight);
+        min-width: 0;
+        max-width: 100%;
+        font-size: var(--semantic-typography-caption);
+    }
+    .canvas-breadcrumbs > * {
+        white-space: nowrap;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .canvas-breadcrumbs > button { padding: 0; background: transparent; font-size: inherit; }
+    .canvas-breadcrumbs > button:not(:last-of-type),
+    .canvas-breadcrumbs > span:not(:last-child):not(:nth-last-child(2)) { display: none; }
+    .workspace-header > .desktop-outline { display: none; }
+    .canvas-caption { display: contents; }
+    .playback-toolbar {
+        grid-area: 1 / 2;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: var(--semantic-space-tight);
+        padding-inline: var(--semantic-space-tight);
+        border: 0;
+    }
+    .playback-toolbar button, .mobile-workspace-bar button, .canvas-toolbar button {
+        min-height: var(--component-workspace-mobile-toolbar-height);
+        padding: 0 var(--semantic-space-tight);
+        font-size: var(--semantic-typography-caption);
+        white-space: nowrap;
+    }
+    .playback-toolbar button:not(.workspace-mobile-tempo), .canvas-toolbar button {
+        min-width: var(--component-workspace-mobile-toolbar-height);
+    }
+    .workspace-mobile-tempo, .mobile-playback-label { display: inline; }
+    .mobile-playback-label { font-size: var(--semantic-typography-section); }
+    .desktop-playback-label { display: none; }
+    .playback-toolbar .workspace-notice {
+        position: absolute;
+        width: var(--semantic-border-width);
+        height: var(--semantic-border-width);
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+    .graph-canvas {
+        grid-area: 2 / 1 / 3 / -1;
+        min-height: 0;
+        min-width: 0;
+        border-radius: 0;
+        flex: 1;
+        isolation: isolate;
+    }
+    .graph-canvas .canvas-viewport { min-height: 0; }
+    .mobile-workspace-bar {
+        grid-area: 3 / 1 / 4 / -1;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: var(--semantic-space-tight);
+        align-items: stretch;
+        background: var(--semantic-color-surface);
+    }
+    .mobile-workspace-bar button { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .mobile-workspace-bar button[aria-expanded="true"], .workspace-mobile-tempo[aria-expanded="true"] {
+        background: var(--semantic-color-action);
+        color: var(--semantic-color-action-text);
+    }
+    .canvas-toolbar {
+        position: absolute;
+        z-index: 3;
+        inset-inline-end: var(--semantic-space-compact);
+        inset-block-end: calc(var(--component-workspace-mobile-toolbar-height) + var(--semantic-space-compact));
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        gap: var(--semantic-space-tight);
+        padding: var(--semantic-space-tight);
+        background: var(--semantic-color-surface);
+        border: var(--semantic-border-width) solid var(--semantic-color-border);
+        border-radius: var(--semantic-radius-control);
+    }
+    .canvas-toolbar .canvas-zoom { min-width: 0; font-size: var(--semantic-typography-caption); }
+    .canvas-toolbar button { width: 100%; }
+    .workspace-edit-tools, .workspace-nodes-tools, .workspace-more-tools, .workspace-transport-tools,
+    .canvas-view-tools { display: none; }
+    .graph-workspace[data-mobile-panel="edit"] .workspace-edit-tools,
+    .graph-workspace[data-mobile-panel="nodes"] .workspace-nodes-tools,
+    .graph-workspace[data-mobile-panel="more"] .workspace-more-tools,
+    .graph-workspace[data-mobile-panel="transport"] .workspace-transport-tools {
+        position: absolute;
+        z-index: var(--component-workspace-overlay-layer);
+        inset-inline: 0;
+        inset-block-end: var(--component-workspace-mobile-toolbar-height);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--semantic-space-compact);
+        max-height: 65%;
+        overflow: auto;
+        padding: var(--semantic-space-normal);
+        background: var(--semantic-color-surface);
+        border: var(--semantic-border-width) solid var(--semantic-color-border);
+        border-radius: var(--semantic-radius-surface) var(--semantic-radius-surface) 0 0;
+    }
+    .workspace-nodes-tools select { min-width: 0; flex: 1 1 auto; max-width: 100%; }
+    .workspace-more-tools .audio-performance-monitor { padding: 0; border: 0; }
+    .workspace-library-panel, .signal-scope-panel {
+        position: fixed;
+        inset-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+        inset-block-start: auto;
+        inset-block-end: calc(var(--component-workspace-mobile-toolbar-height) + env(safe-area-inset-bottom));
+        width: auto;
+        max-width: none;
+        max-height: calc(var(--component-workspace-viewport-height) - 2 * var(--component-workspace-mobile-toolbar-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        z-index: var(--component-workspace-overlay-layer);
+    }
+    .canvas-count, .canvas-patch-count {
+        inset-inline-start: var(--semantic-space-tight);
+        inset-inline-end: auto;
+        font-size: var(--semantic-typography-caption);
+        text-align: start;
+    }
+    .canvas-hint { display: none; }
+    /* When the view sheet is open, allow its native vertical touch scrolling. */
+    .graph-workspace[data-mobile-panel="view"] .canvas-viewport { touch-action: pan-y; }
+    .graph-workspace[data-mobile-panel="view"] .canvas-view-tools {
+        position: absolute;
+        z-index: 3;
+        inset-inline-start: 0;
+        inset-inline-end: calc(var(--component-workspace-mobile-toolbar-height) + 4 * var(--semantic-space-compact));
+        inset-block-end: 0;
+        display: grid;
+        gap: var(--semantic-space-compact);
+        max-height: 75%;
+        overflow: auto;
+        padding: var(--semantic-space-compact);
+        background: var(--semantic-color-surface);
+        border-radius: var(--semantic-radius-control);
+        touch-action: auto;
+    }
+    .canvas-view-tools .connection-label-control,
+    .canvas-view-tools .annotation-display-control,
+    .canvas-view-tools .canvas-scope-action,
+    .canvas-view-tools .canvas-selection-panel,
+    .canvas-view-tools .annotation-finder {
+        position: static;
+        width: auto;
+        min-width: 0;
+        max-width: 100%;
+        flex-wrap: wrap;
+    }
+    .canvas-view-tools .canvas-selection-panel { flex-basis: 100%; }
+    .performance-keyboard, .graph-workspace > .rack-editor {
+        position: absolute;
+        z-index: var(--component-workspace-overlay-layer);
+        inset-inline: 0;
+        inset-block-start: var(--component-workspace-mobile-toolbar-height);
+        max-height: 65%;
+        overflow: auto;
+        background: var(--semantic-color-surface);
+    }
+    .graph-workspace .workspace-error {
+        position: absolute;
+        z-index: var(--component-workspace-overlay-layer);
+        inset-inline: var(--semantic-space-compact);
+        inset-block-start: var(--component-workspace-mobile-toolbar-height);
+        max-height: 35%;
+        overflow: auto;
+        overflow-wrap: anywhere;
+        background: var(--semantic-color-surface);
+        padding: var(--semantic-space-compact);
+    }
+}

@@ -3,13 +3,16 @@
 
 @* Reusable controls for a graph snapshot. Audio execution belongs to the service. *@
 <div class="workspace-toolbar toolbar-group playback-toolbar">
-    <button type="button" @onclick="PlayAsync" disabled="@(!IsReady || IsActive || Disabled)">Play patch</button>
-    <button type="button" class="secondary" @onclick="StopAsync" disabled="@(!IsActive || IsStopping)">Stop</button>
+    <button type="button" class="workspace-mobile-tempo secondary" aria-expanded="@MobileTransportOpen" disabled="@MobileToolsLocked" @onclick="OnMobileTempo">@($"{TransportState.BeatsPerMinute:0.#} BPM")</button>
+    <button type="button" aria-label="Play patch" @onclick="PlayAsync" disabled="@(!IsReady || IsActive || Disabled)"><span class="desktop-playback-label">Play patch</span><span class="mobile-playback-label" aria-hidden="true">▶</span></button>
+    <button type="button" class="secondary" aria-label="Stop" @onclick="StopAsync" disabled="@(!IsActive || IsStopping)"><span class="desktop-playback-label">Stop</span><span class="mobile-playback-label" aria-hidden="true">■</span></button>
     <span class="workspace-notice" role="status">@Status</span>
 </div>
+<div class="workspace-transport-tools">
 <TransportControls Snapshot="@TransportState" ClockError="@TransportError"
                    OnSetTempo="SetTempoAsync" OnReset="ResetTransportAsync" />
+</div>
 @if (Error is not null)
 {
-    <p class="parameter-error workspace-error" role="alert">@Error</p>
+    <p class="parameter-error workspace-error playback-error" role="alert">@Error</p>
 }

@@ -11,17 +11,15 @@
 else
 {
     var graphId = Canvas.Snapshot.GraphId;
-<section class="graph-workspace" data-active-graph="@graphId">
+<section class="graph-workspace" data-active-graph="@graphId" data-mobile-panel="@mobilePanel">
     <header class="workspace-header">
         <h1>Orbit 2</h1>
         <CanvasBreadcrumbs Path="@Navigation.Path" OnNavigate="NavigateTo" />
-        <button type="button" class="secondary" aria-expanded="@outlineOpen" @onclick="() => outlineOpen = !outlineOpen">Outline</button>
+        <button type="button" class="secondary desktop-outline" aria-expanded="@outlineOpen" @onclick="() => outlineOpen = !outlineOpen">Outline</button>
         <PatchOutlinePanel @key="workspaceGeneration" Open="@outlineOpen" Locked="@(annotationDraft || switchingWorkspace)"
                            Outline="@(outlineOpen ? Navigation.GetOutline(overview.Title) : null)" OnClose="() => outlineOpen = false" OnNavigate="NavigateOutline" />
-        <PatchManager Capture="CaptureCommittedWorkspace" OpenDocument="ReplaceWorkspaceAsync" NewDocument="NewWorkspaceAsync"
-                      Overview="@overview" OverviewEditDisabled="@(annotationDraft || switchingWorkspace)"
-                      OnOverviewDraftChanged="SetOverviewDraftAsync" OnOverviewApplied="ApplyOverview" />
-        <div class="workspace-toolbar toolbar-group">
+
+        <div class="workspace-toolbar toolbar-group workspace-edit-tools">
             <button type="button" class="secondary" disabled="@(!session.CanUndo || switchingWorkspace)" @onclick="Undo">Undo</button>
             <button type="button" class="secondary" disabled="@(!session.CanRedo || switchingWorkspace)" @onclick="Redo">Redo</button>
             <button type="button" class="secondary" disabled="@(!Canvas.Snapshot.CanUndoAnnotations || annotationDraft || switchingWorkspace)" @onclick="UndoAnnotation">Undo annotation</button>
@@ -36,11 +34,7 @@ else
         <CanvasToolbar ZoomPercentage="@Canvas.Snapshot.Viewport.ZoomPercentage"
                        ZoomIn="@(() => canvasView!.ZoomIn())" ZoomOut="@(() => canvasView!.ZoomOut())"
                        Reset="@(() => canvasView!.ResetViewport())" Fit="@(() => canvasView!.FitAsync())" />
-        @if (Canvas.Snapshot.Graph.Nodes.FirstOrDefault(node => node.TypeKey == OutputRack.NodeType) is { } outputRack)
-        {
-            <button type="button" class="secondary" @onclick="() => canvasView!.FocusNodeAsync(outputRack.Id)">Locate output rack</button>
-        }
-        <div class="workspace-toolbar toolbar-group">
+        <div class="workspace-toolbar toolbar-group workspace-nodes-tools">
         <label for="node-type">Add node</label>
         <select id="node-type" @bind="SelectedType">
             @foreach (var type in RegisteredTypes)
@@ -48,12 +42,29 @@ else
                 <option value="@type">@DescribeType(type)</option>
             }
         </select>
-        <button type="button" disabled="@(addingNode || switchingWorkspace || annotationDraft)" @onclick="AddNodeAsync">Add</button>
+        <button type="button" disabled="@(addingNode || switchingWorkspace || annotationDraft)" @onclick="AddNodeFromToolbarAsync">Add</button>
         <button type="button" class="secondary" disabled="@(!HasSelection || annotationDraft)" @onclick="DeleteSelection">Delete selected</button>
+        @if (Canvas.Snapshot.Graph.Nodes.FirstOrDefault(node => node.TypeKey == OutputRack.NodeType) is { } outputRack)
+        {
+            <button type="button" class="secondary workspace-locate-output" @onclick="() => canvasView!.FocusNodeAsync(outputRack.Id)">Locate output rack</button>
+        }
         </div>
-        <GraphPlaybackControls @key="workspaceGeneration" @ref="playbackControls" Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" TempoChanged="OnTempoChanged" SampleRateChanged="OnSampleRateChanged" PlaybackStopped="DisarmPerformance" Disabled="switchingWorkspace" />
-        <PerformanceMonitor PatchId="@session.GraphId" EditableCounts="@Navigation.PatchCounts" />
+        <GraphPlaybackControls @key="workspaceGeneration" @ref="playbackControls" Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" TempoChanged="OnTempoChanged" SampleRateChanged="OnSampleRateChanged" PlaybackStopped="DisarmPerformance" Disabled="switchingWorkspace"
+                               MobileTransportOpen="@(mobilePanel == "transport")" OnMobileTempo="@(() => ToggleMobilePanel("transport"))" MobileToolsLocked="@overviewDraft" />
+        <div class="workspace-more-tools">
+            <PatchManager Capture="CaptureCommittedWorkspace" OpenDocument="ReplaceWorkspaceAsync" NewDocument="NewWorkspaceAsync"
+                          Overview="@overview" OverviewEditDisabled="@(annotationDraft || switchingWorkspace)"
+                          OnOverviewDraftChanged="SetOverviewDraftAsync" OnOverviewApplied="ApplyOverview" />
+            <PerformanceMonitor PatchId="@session.GraphId" EditableCounts="@Navigation.PatchCounts" />
+        </div>
     </div>
+    <nav class="mobile-workspace-bar" aria-label="Mobile workspace tools">
+        <button type="button" class="secondary" aria-expanded="@(mobilePanel == "nodes")" disabled="@overviewDraft" @onclick='() => ToggleMobilePanel("nodes")'>+ Nodes</button>
+        <button type="button" class="secondary" aria-expanded="@outlineOpen" disabled="@overviewDraft" @onclick="ToggleMobileOutline">Outline</button>
+        <button type="button" class="secondary" aria-expanded="@(mobilePanel == "edit")" disabled="@overviewDraft" @onclick='() => ToggleMobilePanel("edit")'>Edit</button>
+        <button type="button" class="secondary" aria-expanded="@(mobilePanel == "view")" disabled="@overviewDraft" @onclick='() => ToggleMobilePanel("view")'>View</button>
+        <button type="button" class="secondary" aria-expanded="@(mobilePanel == "more")" disabled="@overviewDraft" @onclick='() => ToggleMobilePanel("more")'>More</button>
+    </nav>
     @if (PerformanceTarget is { } target)
     {
         <PerformanceKeyboard @key="(workspaceGeneration, graphId, target.Id, performanceEpoch)" Node="@target" PatchId="@session.GraphId" GraphId="@graphId" Offset="@PerformanceOffset(target.Id)" Playhead="@PerformanceStep(target.Id)" Tempo="@tempo" Edit="@(request => EditParameter(graphId, request))" ClearPattern="@(() => ClearPitchPattern(graphId, target.Id))" CommitTake="@(take => CommitPitchTake(graphId, target.Id, take))" />

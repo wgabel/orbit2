@@ -3,6 +3,7 @@
 
 body {
     margin: 0;
+    height: 100vh;
     height: var(--component-workspace-viewport-height);
     padding: var(--component-workspace-page-padding);
     background: var(--semantic-color-canvas);

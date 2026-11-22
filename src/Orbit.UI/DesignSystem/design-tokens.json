@@ -207,6 +207,7 @@
       "page-padding": "{semantic.space.compact}",
       "tempo-width": "4.5rem",
       "overlay-layer": "10",
+      "mobile-toolbar-height": "44px",
       "toolbar-button-block": "{primitive.space.input-block}",
       "toolbar-button-inline": "{primitive.space.md}"
     },
