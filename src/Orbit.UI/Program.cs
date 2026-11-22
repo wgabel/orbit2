@@ -25,6 +25,7 @@ builder.RootComponents.Add<App>("#app");
 // Both ports resolve to the same adapter and therefore the same browser context.
 builder.Services.AddSingleton<BrowserAudioEngine>();
 builder.Services.AddSingleton<IAudioEngine>(services => services.GetRequiredService<BrowserAudioEngine>());
+builder.Services.AddSingleton<IAudioPerformanceSource>(services => services.GetRequiredService<BrowserAudioEngine>());
 builder.Services.AddSingleton<IAudioClock>(services => services.GetRequiredService<BrowserAudioEngine>());
 builder.Services.AddSingleton<ITransportSignalSink>(services => services.GetRequiredService<BrowserAudioEngine>());
 builder.Services.AddSingleton<IMusicalTransportService, MusicalTransportService>();

@@ -1,3 +1,4 @@
+import { AudioPerformanceMonitor } from "./Components/AudioPerformanceMonitor.js";
 import { SignalCapture } from "./Components/SignalCapture.js";
 import { RhythmicActionSource } from "./Components/RhythmicActionSource.js";
 import { isNoteRelease } from "./Components/MonophonicNoteState.js";
@@ -14,6 +15,7 @@ export class AudioEngine {
     #actions = new WeakMap();
     #active = new Map();
     #disposed = false;
+    #performance = new AudioPerformanceMonitor();
 
     constructor(contextManager, nodeFactory, output, createMonitor, transport = null, createActions = RhythmicActionSource.create) {
         this.#contextManager = contextManager;
@@ -69,6 +71,7 @@ export class AudioEngine {
             }
 
             playback.current = this.#startVoice(playback, node, request);
+            this.#performance.begin(playback, context);
             signalReady(true);
             // A retiring voice ending is not the end of the logical playback.
             while (playback.current) {
@@ -81,6 +84,7 @@ export class AudioEngine {
             signalReady(false);
             for (const instance of playback.voices) instance.voice.stop();
             await Promise.allSettled([...playback.voices].map(instance => instance.finished));
+            this.#performance.end(playback);
             this.#active.delete(request.soundId);
         }
     }
@@ -165,6 +169,13 @@ export class AudioEngine {
     getOutputValues(soundId) {
         const playback = this.#active.get(soundId);
         return !playback || playback.cancelled ? null : playback.current?.monitor.getSnapshot() ?? null;
+    }
+
+    getPerformanceSnapshot(reset = false) {
+        // Avoid background-tab statistics reads. Lifecycle baselines remain
+        // independent of UI visibility, and the next foreground read catches up.
+        if (globalThis.document?.visibilityState === "hidden") return null;
+        return this.#performance.snapshot(this.#contextManager.getCurrentContext(), reset);
     }
 
     getSignalDiagnostics(soundId) {

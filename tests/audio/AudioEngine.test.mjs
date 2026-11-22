@@ -10,7 +10,8 @@ const request = {
 
 function setup() {
     const calls = [];
-    const context = {};
+    const context = { state: "running", sampleRate: 48000,
+        playbackStats: { underrunEvents: 3, underrunDuration: 0, totalDuration: 10 } };
     const node = { disconnect: () => calls.push("disconnect"), destroy: () => calls.push("destroy") };
     let finishPlayback;
     const voice = {
@@ -24,6 +25,7 @@ function setup() {
 
     const contextManager = {
         getRunningContext: async () => { calls.push("resume"); return context; },
+        getCurrentContext: () => calls.includes("resume") ? context : undefined,
         dispose: async () => calls.push("close")
     };
     const nodeFactory = {
@@ -38,7 +40,7 @@ function setup() {
     const monitor = { getSnapshot: () => ({ "/ModulatedSine/effectiveFrequency": 430 }),
         dispose: () => calls.push("monitor-dispose") };
     return { engine: new AudioEngine(contextManager, nodeFactory, output, () => monitor), calls,
-        finish: () => finishPlayback(), contextManager, nodeFactory, output };
+        finish: () => finishPlayback(), contextManager, nodeFactory, output, context };
 }
 
 test("resumes context first, creates voice, and releases its resources", async () => {
@@ -151,7 +153,7 @@ function replacementSetup(createActions) {
     const events = [];
     const nodes = [];
     const voices = [];
-    const context = { currentTime: 3, state: "running" };
+    const context = { currentTime: 3, state: "running", playbackStats: { underrunEvents: 9, underrunDuration: 0, totalDuration: 8 } };
     const makeNode = name => {
         const node = { name, disconnect() { events.push(["disconnect", name]); },
             destroy() { events.push(["destroy", name]); } };
@@ -182,7 +184,7 @@ function replacementSetup(createActions) {
             return voice;
         }
     };
-    const engine = new AudioEngine({ getRunningContext: async () => context }, nodeFactory, output,
+    const engine = new AudioEngine({ getRunningContext: async () => context, getCurrentContext: () => context }, nodeFactory, output,
         node => ({ getSnapshot: () => ({ name: node.name }), dispose: () => events.push(["monitor", node.name]) }), null, createActions);
     return { engine, events, nodes, voices, nodeFactory, makeNode, context };
 }
@@ -303,4 +305,38 @@ test("stop while replacement compiles cannot resurrect the playback", async () =
     assert.ok(events.some(event => event[0] === "destroy" && event[1] === "late"));
     assert.ok(!events.some(event => event[0] === "play" && event[1] === "late"));
     assert.equal(engine.getPlaybackState(request.soundId), "idle");
+});
+
+test("performance reads do not create audio, and track accepted playback through stop", async () => {
+    const { engine, calls, context } = setup();
+    assert.equal(engine.getPerformanceSnapshot().contextState, "not-created");
+    assert.deepEqual(calls, []);
+    const playback = engine.play(request);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(engine.getPerformanceSnapshot().playbackState, "active");
+    context.playbackStats.underrunEvents++;
+    const before = [...calls];
+    assert.equal(engine.getPerformanceSnapshot().underrunEvents, 1);
+    assert.equal(engine.getPerformanceSnapshot(true).underrunEvents, 0);
+    assert.deepEqual(calls, before);
+    context.playbackStats.underrunEvents += 2;
+    engine.stop(request.soundId);
+    await playback;
+    context.playbackStats.underrunEvents += 3;
+    assert.equal(engine.getPerformanceSnapshot().playbackState, "stopped");
+    assert.equal(engine.getPerformanceSnapshot().underrunEvents, 2);
+});
+
+test("structural replacement preserves the accepted performance session", async () => {
+    const { engine, context } = replacementSetup();
+    const playing = engine.play(request);
+    await new Promise(resolve => setImmediate(resolve));
+    const epoch = engine.getPerformanceSnapshot().sessionEpoch;
+    context.playbackStats.underrunEvents += 2;
+    assert.equal(await engine.replace({ ...request, processor: "replacement" }, 1), true);
+    const snapshot = engine.getPerformanceSnapshot();
+    assert.equal(snapshot.sessionEpoch, epoch);
+    assert.equal(snapshot.underrunEvents, 2);
+    engine.stop(request.soundId);
+    await playing;
 });
