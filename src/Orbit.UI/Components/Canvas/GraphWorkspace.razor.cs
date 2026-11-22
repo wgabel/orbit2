@@ -44,13 +44,30 @@ public partial class GraphWorkspace : IAsyncDisposable
     private Guid rangeGraphId;
     private GraphParameterTelemetry? telemetry;
     private long performanceEpoch;
-    private GraphNodeSnapshot? PerformanceTarget => Canvas.Snapshot.SelectedNodeIds.Count == 1
-        ? Canvas.Snapshot.Graph.Nodes.SingleOrDefault(node => node.Id == Canvas.Snapshot.SelectedNodeIds[0] && node.TypeKey is NoteSequencerGenerator.NodeType or NoteSourceGenerator.NodeType) : null;
-    private double? PerformanceOffset(Guid nodeId) => telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision &&
-        frame.PitchOffsets.TryGetValue(Canvas.Snapshot.GraphId, out var offsets) && offsets.TryGetValue(nodeId, out var value) ? value : null;
-    private int? PerformanceStep(Guid nodeId) => telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision &&
-        frame.PitchSteps.TryGetValue(Canvas.Snapshot.GraphId, out var steps) && steps.TryGetValue(nodeId, out var value) && value > 0 ? value : null;
-    private void DisarmPerformance() => performanceEpoch++;
+    // The last compatible single selection owns the dock independently of canvas selection.
+    private (Guid GraphId, Guid NodeId)? performanceAddress;
+    private string? performanceLabel;
+    private GraphNodeSnapshot? PerformanceTarget => performanceAddress is { } address
+        ? session.Snapshot.FindGraph(address.GraphId)?.Nodes.SingleOrDefault(node => node.Id == address.NodeId && IsPerformanceNode(node)) : null;
+    private static bool IsPerformanceNode(GraphNodeSnapshot node) => node.TypeKey is NoteSequencerGenerator.NodeType or NoteSourceGenerator.NodeType;
+    private void ReconcilePerformanceTarget()
+    {
+        if (PerformanceTarget is null) { performanceAddress = null; performanceLabel = null; }
+        var view = Canvas.Snapshot;
+        if (view.SelectedNodeIds.Count == 1 && view.Graph.Nodes.SingleOrDefault(node =>
+            node.Id == view.SelectedNodeIds[0] && IsPerformanceNode(node)) is { } selected)
+            performanceAddress = (view.GraphId, selected.Id);
+        if (performanceAddress is { } address && address.GraphId == view.GraphId && PerformanceTarget is { } target)
+        {
+            var alias = view.NodeDescriptions.GetValueOrDefault(address.NodeId)?.Alias;
+            performanceLabel = string.IsNullOrWhiteSpace(alias) ? target.Name : alias;
+        }
+    }
+    private double? PerformanceOffset(Guid graphId, Guid nodeId) => telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision &&
+        frame.PitchOffsets.TryGetValue(graphId, out var offsets) && offsets.TryGetValue(nodeId, out var value) ? value : null;
+    private int? PerformanceStep(Guid graphId, Guid nodeId) => telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision &&
+        frame.PitchSteps.TryGetValue(graphId, out var steps) && steps.TryGetValue(nodeId, out var value) && value > 0 ? value : null;
+    private void ResetPerformance() => performanceEpoch++;
     private int? responseSampleRate;
     private IReadOnlyDictionary<ParameterAddress, double> EffectiveValues =>
         telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision
@@ -141,6 +158,7 @@ public partial class GraphWorkspace : IAsyncDisposable
             Navigation = new CanvasNavigationService(session, Placement);
         }
         RefreshRanges();
+        ReconcilePerformanceTarget();
         SubscribeToNavigation();
         initialized = true;
     }
@@ -150,6 +168,7 @@ public partial class GraphWorkspace : IAsyncDisposable
         subscription = Navigation.Subscribe(change => { _ = InvokeAsync(() =>
         {
             RefreshRanges();
+            ReconcilePerformanceTarget();
             StateHasChanged();
             _ = SaveWorkspaceAsync();
         }); });
@@ -247,6 +266,9 @@ public partial class GraphWorkspace : IAsyncDisposable
             Error = PersistenceError = null;
             autosaveEnabled = true;
             workspaceGeneration++;
+            performanceAddress = null;
+            performanceLabel = null;
+            ReconcilePerformanceTarget();
             outlineOpen = false;
             outlineFocus = null;
             RefreshRanges();
@@ -472,15 +494,21 @@ public partial class GraphWorkspace : IAsyncDisposable
             Execute(new SetParameterValueCommand(graphId, request.Address, request.Value), request.GestureId);
     }
 
+    private void EditPerformanceParameter(Guid graphId, Guid nodeId, ParameterEditRequest request)
+    {
+        if (performanceAddress == (graphId, nodeId) && PerformanceTarget is not null && request.Address.NodeId == nodeId)
+            Execute(new SetParameterValueCommand(graphId, request.Address, request.Value), request.GestureId);
+    }
+
     private void ClearPitchPattern(Guid graphId, Guid nodeId)
     {
-        if (graphId == Canvas.Snapshot.GraphId)
+        if (performanceAddress == (graphId, nodeId) && PerformanceTarget is not null)
             Execute(new SetPitchPatternStepsCommand(graphId, nodeId, new int[NoteSequencerGenerator.Capacity]));
     }
 
     private bool CommitPitchTake(Guid graphId, Guid nodeId, PitchRecordingTake take)
     {
-        if (disposed || Canvas.Snapshot.GraphId != graphId || PerformanceTarget is not { } target || target.Id != nodeId)
+        if (disposed || performanceAddress != (graphId, nodeId) || PerformanceTarget is not { } target || target.Id != nodeId)
             return false;
         var reference = (int)target.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.ReferenceKey).BaseValue;
         return take.MatchesSource(PitchPattern.FromNode(target), reference) &&

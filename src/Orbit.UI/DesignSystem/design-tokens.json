@@ -226,6 +226,15 @@
       "toolbar-button-block": "{primitive.space.input-block}",
       "toolbar-button-inline": "{primitive.space.md}"
     },
+    "keyboard": {
+      "tool-size": "32px",
+      "compact-height": "112px",
+      "tall-height": "176px",
+      "status-dot": "7px",
+      "white-color": "{primitive.color.slate-100}",
+      "black-color": "{primitive.color.ink-950}",
+      "held-color": "{primitive.color.mint-300}"
+    },
     "pitch-pattern": {
       "max-height": "18rem",
       "numeric-width": "6rem",

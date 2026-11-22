@@ -86,14 +86,71 @@
 .audio-performance-metrics { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--semantic-space-compact); margin: 0; font-size: var(--semantic-typography-label); }
 .audio-performance-metrics dt { color: var(--semantic-color-muted); }
 .audio-performance-metrics dd { margin: 0; text-align: end; font-variant-numeric: tabular-nums; }
-.performance-keyboard { padding: var(--semantic-space-compact); border: var(--semantic-border-width) solid var(--semantic-color-border); border-radius: var(--semantic-radius-control); }
-/* The live meter must not change the wrap decision or move playable keys. */
-.performance-live-pitch { flex: 0 0 24ch; max-width: 100%; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.performance-piano { display: flex; flex-wrap: wrap; gap: var(--semantic-space-tight); }
-.performance-piano button { display: grid; gap: var(--semantic-space-tight); text-align: center; padding: var(--semantic-space-compact); }
-.performance-piano .performance-white-key { background: var(--semantic-color-text); color: var(--semantic-color-canvas); }
-.performance-piano .performance-black-key { background: var(--semantic-color-canvas); color: var(--semantic-color-text); }
-.performance-piano button:active { background: var(--semantic-color-modulation); color: var(--semantic-color-canvas); }
+.graph-workspace:has(> .performance-keyboard) > .graph-canvas { flex: 1 1 0; min-height: 0; }
+.graph-workspace:has(> .performance-keyboard) .canvas-viewport { min-height: 0; }
+.performance-keyboard {
+    flex: 0 0 auto;
+    display: grid;
+    gap: var(--semantic-space-tight);
+    min-width: 0;
+    padding: var(--semantic-space-tight);
+    background: var(--semantic-color-surface);
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-control);
+}
+.performance-dock-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--semantic-space-tight);
+    min-width: 0;
+}
+.performance-target { display: grid; flex: 1 1 auto; min-width: 0; }
+.performance-target-name, .performance-target small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--semantic-typography-caption); }
+.performance-target-name { font-weight: var(--semantic-typography-emphasis); }
+.performance-target small { color: var(--semantic-color-muted); }
+.performance-target-dot { display: inline-block; width: var(--component-keyboard-status-dot); height: var(--component-keyboard-status-dot); margin-inline-end: var(--semantic-space-tight); background: var(--semantic-color-muted); border-radius: var(--semantic-radius-round); }
+.performance-target-dot[data-live="true"] { background: var(--semantic-color-modulation); }
+.performance-live-pitch { flex: 0 0 8ch; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--semantic-color-muted); font-size: var(--semantic-typography-caption); }
+.performance-dock-bar .performance-tool { flex: 0 0 var(--component-keyboard-tool-size); min-width: 0; min-height: var(--component-keyboard-tool-size); padding: 0; font-size: var(--semantic-typography-section); line-height: 1; }
+.performance-piano {
+    display: grid;
+    grid-template-columns: repeat(16, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
+    height: min(var(--component-keyboard-compact-height), 25dvh);
+    touch-action: none;
+    user-select: none;
+}
+.performance-keyboard[data-tall="true"] .performance-piano { height: min(var(--component-keyboard-tall-height), 38dvh); }
+.performance-piano .performance-key {
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    min-width: 0;
+    min-height: 0;
+    padding: var(--semantic-space-tight) 0;
+    gap: var(--semantic-space-tight);
+    font-size: var(--semantic-typography-label);
+    border: var(--semantic-border-width) solid var(--component-keyboard-black-color);
+    border-radius: 0 0 var(--semantic-radius-input) var(--semantic-radius-input);
+    touch-action: none;
+}
+.performance-piano .performance-white-key { align-self: stretch; background: var(--component-keyboard-white-color); color: var(--component-keyboard-black-color); }
+.performance-piano .performance-black-key { align-self: start; justify-self: center; z-index: 1; width: 64%; height: 62%; background: var(--component-keyboard-black-color); color: var(--component-keyboard-white-color); }
+.performance-piano .performance-key:focus-visible { outline-color: var(--semantic-color-modulation); outline-offset: calc(-1 * var(--semantic-border-focus-width)); }
+.performance-piano .performance-key[data-held="true"], .performance-piano .performance-key:active { background: var(--component-keyboard-held-color); color: var(--component-keyboard-black-color); }
+.performance-piano .performance-extension { display: none; }
+.performance-piano small { font-size: var(--semantic-typography-caption); }
+.performance-dock-notice { position: absolute; inset-inline-end: var(--semantic-space-compact); inset-block-end: 100%; z-index: var(--component-workspace-overlay-layer); max-width: 85%; background: var(--semantic-color-surface); padding: var(--semantic-space-tight); pointer-events: none; }
+.performance-keyboard { position: relative; }
+.performance-keyboard .pitch-pattern-editor { max-height: min(var(--component-pitch-pattern-max-height), 32dvh); }
+.performance-keyboard[data-tall="true"] .pitch-pattern-editor { max-height: min(var(--component-pitch-pattern-max-height), 20dvh); }
+@media (min-width: 1100px) and (min-height: 481px) and (pointer: fine) {
+    .performance-piano { grid-template-columns: repeat(30, minmax(0, 1fr)); }
+    .performance-piano .performance-extension { display: flex; }
+}
 .pitch-pattern-editor { flex-basis: 100%; display: grid; gap: var(--semantic-space-compact); max-height: var(--component-pitch-pattern-max-height); overflow: auto; }
 .pitch-pattern-settings label { display: grid; gap: var(--semantic-space-tight); }
 .pitch-pattern-settings input[type="number"] { width: var(--component-pitch-pattern-numeric-width); }

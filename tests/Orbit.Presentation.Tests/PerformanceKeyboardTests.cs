@@ -8,6 +8,18 @@ namespace Orbit.Presentation.Tests;
 public sealed class PerformanceKeyboardTests
 {
     [Fact]
+    public void VisualPianoHasEightWhiteKeysAndFiveBlackKeysPerFirstOctaveWithSharedBoundary()
+    {
+        var first = PerformanceKeyboardLayout.PianoKeys.Where(key => !key.Extension).ToArray();
+        Assert.Equal(8, first.Count(key => !key.Black));
+        Assert.Equal(new[] { 2, 4, 8, 10, 12 }, first.Where(key => key.Black).Select(key => key.GridColumn));
+        Assert.Equal(Enumerable.Range(60, 25), PerformanceKeyboardLayout.PianoKeys.Select(key => PerformanceKeyboardLayout.Note(4, key)));
+        Assert.Equal(15, PerformanceKeyboardLayout.PianoKeys.Count(key => !key.Black));
+        Assert.Equal(10, PerformanceKeyboardLayout.PianoKeys.Count(key => key.Black));
+        Assert.All(PerformanceKeyboardLayout.PianoKeys.Where(key => key.Extension), key => Assert.Null(key.Hint));
+    }
+
+    [Fact]
     public void PhysicalPianoMapsChromaticOctavesAndRespectsPitchBounds()
     {
         Assert.Equal(Enumerable.Range(60, 13), PerformanceKeyboardLayout.Keys.Select(key => PerformanceKeyboardLayout.Note(4, key)));

@@ -48,7 +48,7 @@ else
             <button type="button" class="secondary workspace-locate-output" @onclick="() => canvasView!.FocusNodeAsync(outputRack.Id)">Locate output rack</button>
         }
         </div>
-        <GraphPlaybackControls @key="workspaceGeneration" @ref="playbackControls" Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" TempoChanged="OnTempoChanged" SampleRateChanged="OnSampleRateChanged" PlaybackStopped="DisarmPerformance" Disabled="switchingWorkspace"
+        <GraphPlaybackControls @key="workspaceGeneration" @ref="playbackControls" Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" TempoChanged="OnTempoChanged" SampleRateChanged="OnSampleRateChanged" PlaybackStopped="ResetPerformance" Disabled="switchingWorkspace"
                                MobileTransportOpen="@(mobilePanel == "transport")" OnMobileTempo="@(() => ToggleMobilePanel("transport"))" MobileToolsLocked="@overviewDraft" />
         <div class="workspace-more-tools" data-mobile-sheet="more" role="region" aria-label="More tools">
             <MobileSheetHeader Title="More" Locked="@overviewDraft" OnClose="DismissMobilePanelAsync" />
@@ -65,10 +65,6 @@ else
         <button type="button" class="secondary" data-mobile-trigger="view" aria-expanded="@(mobilePanel == "view")" disabled="@overviewDraft" @onclick='() => ToggleMobilePanel("view")'>View</button>
         <button type="button" class="secondary" data-mobile-trigger="more" aria-expanded="@(mobilePanel == "more")" disabled="@overviewDraft" @onclick='() => ToggleMobilePanel("more")'>More</button>
     </nav>
-    @if (PerformanceTarget is { } target)
-    {
-        <PerformanceKeyboard @key="(workspaceGeneration, graphId, target.Id, performanceEpoch)" Node="@target" PatchId="@session.GraphId" GraphId="@graphId" Offset="@PerformanceOffset(target.Id)" Playhead="@PerformanceStep(target.Id)" Tempo="@tempo" Edit="@(request => EditParameter(graphId, request))" ClearPattern="@(() => ClearPitchPattern(graphId, target.Id))" CommitTake="@(take => CommitPitchTake(graphId, target.Id, take))" />
-    }
     @if (Error is not null)
     {
         <p class="parameter-error workspace-error" role="alert">@Error</p>
@@ -107,6 +103,10 @@ else
                  OnUngroupComposite="UngroupComposite"
                  OnEditRack="@(nodeId => OpenRackEditor(graphId, nodeId))"
                  ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" EnvelopePlayheads="@EnvelopePlayheads" BeatsPerMinute="@tempo" SampleRate="@responseSampleRate" />
+    @if (performanceAddress is { } address && PerformanceTarget is { } target)
+    {
+        <PerformanceKeyboard @key="(workspaceGeneration, address.GraphId, target.Id, performanceEpoch)" Node="@target" TargetLabel="@(performanceLabel ?? target.Name)" PatchId="@session.GraphId" GraphId="@address.GraphId" Offset="@PerformanceOffset(address.GraphId, target.Id)" Playhead="@PerformanceStep(address.GraphId, target.Id)" Tempo="@tempo" Edit="@(request => EditPerformanceParameter(address.GraphId, target.Id, request))" ClearPattern="@(() => ClearPitchPattern(address.GraphId, target.Id))" CommitTake="@(take => CommitPitchTake(address.GraphId, target.Id, take))" />
+    }
     @if (ScopeNode is { } scopeNode)
     {
         <NodeVisualizationPanel @key="(workspaceGeneration, graphId, scopeNode.Id)" PatchId="@session.GraphId"
