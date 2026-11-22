@@ -1422,16 +1422,20 @@ try {
     await responseManager.getByRole("button", { name: "Close", exact: true }).click();
     await responsePage.locator(".canvas-count").filter({ hasText: "1 nodes · 0 connections" }).waitFor();
     const noteSource = await addResponseNode("generator.note-source");
-    const handpan = await addResponseNode("preset.modal.handpan");
+    for (const [key, name] of [["handpan", "Handpan"], ["bell", "Bell"], ["gong", "Gong"], ["wood", "Wood percussion"]])
+        assert.equal(await responsePage.locator(`#node-type option[value="preset.modal.playable-${key}"]`).textContent(), `Playable — ${name}`);
+    const handpan = await addResponseNode("preset.modal.playable-handpan");
     await noteSource.getByRole("button", { name: "Output: Gate (Gate)" }).waitFor();
     await noteSource.getByRole("button", { name: "Output: Velocity (Modulation)" }).waitFor();
     await noteSource.getByRole("button", { name: "Output: Pitch (Modulation)" }).press("Enter");
     await handpan.getByRole("button", { name: "Input: Pitch (st) (Modulation)" }).press("Enter");
     await noteSource.getByRole("button", { name: "Output: Trigger (Trigger)" }).press("Enter");
     await handpan.getByRole("button", { name: "Input: Trigger (Trigger)" }).press("Enter");
+    await noteSource.getByRole("button", { name: "Output: Velocity (Modulation)" }).press("Enter");
+    await handpan.getByRole("button", { name: "Input: Velocity (Modulation)" }).press("Enter");
     await handpan.getByRole("button", { name: "Output: Audio (Audio)" }).press("Enter");
     await master.getByRole("button", { name: "Input: Audio (Audio)" }).press("Enter");
-    await responsePage.locator(".canvas-count").filter({ hasText: "3 nodes · 3 connections" }).waitFor();
+    await responsePage.locator(".canvas-count").filter({ hasText: "3 nodes · 4 connections" }).waitFor();
     await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
     await noteSource.locator(".node-header > span").click();
     await responsePage.locator('.performance-keyboard[data-keyboard-ready="true"]').waitFor();
