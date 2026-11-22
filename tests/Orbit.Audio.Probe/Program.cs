@@ -212,6 +212,38 @@ var instruments = new[] { InstrumentTemplates.Organ, InstrumentTemplates.Flute, 
 }).ToArray();
 File.WriteAllText(Path.Combine(args[0], "instruments.json"), JsonSerializer.Serialize(instruments));
 
+var modalInstruments = new[] { ModalInstrumentTemplates.Handpan, ModalInstrumentTemplates.Bell,
+    ModalInstrumentTemplates.Gong, ModalInstrumentTemplates.Wood }.Select(key =>
+{
+    using var modalSession = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+    var modalRoot = modalSession.GraphId;
+    GraphNodeSnapshot AddModal(string type) => modalSession.Execute(new AddNodeCommand(modalRoot, type))
+        .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+    var instrument = AddModal(key);
+    var trigger = AddModal(ManualTriggerGenerator.NodeType);
+    var pitch = AddModal(PitchControlGenerator.NodeType);
+    var strength = AddModal(PitchControlGenerator.NodeType);
+    var external = AddModal(OscillatorGenerator.NodeType);
+    var output = AddModal(MasterOutput.NodeType);
+    void Wire(GraphNodeSnapshot from, GraphNodeSnapshot to, int input) => modalSession.Execute(new ConnectNodesCommand(modalRoot,
+        new(from.Id, from.Outputs[0].Id), new(to.Id, to.Inputs[input].Id)));
+    Wire(trigger, instrument, 0); Wire(pitch, instrument, 1); Wire(strength, instrument, 2); Wire(external, instrument, 3); Wire(instrument, output, 0);
+    var modes = instrument.Composite!.Graph.Nodes.Where(n => n.TypeKey == ResonatorProcessor.NodeType).ToArray();
+    var frequency = modes.Min(n => n.Parameters.Single(p => p.Definition.Key == "frequency").BaseValue);
+    modalSession.Execute(new SetParameterValueCommand(modalRoot, Address(external, "amplitude"), 0));
+    modalSession.Execute(new SetParameterValueCommand(modalRoot, Address(external, "frequency"), frequency));
+    var compiled = FaustGraphCompiler.CreateBuiltIn().Compile(modalSession.Snapshot);
+    string Control(GraphNodeSnapshot node, string parameter) => compiled.Controls.Single(c => c.Address == Address(node, parameter)).Name;
+    return new { key, source = compiled.Source, values = compiled.InitialControlValues(),
+        phaseChannels = compiled.TransportInputChannels, actionCount = compiled.RhythmicInputs.Count,
+        actionIndex = compiled.RhythmicInputs.ToList().FindIndex(i => i.NodeId == trigger.Id),
+        transpose = Control(pitch, PitchControlGenerator.SemitonesKey), strength = Control(strength, PitchControlGenerator.SemitonesKey),
+        external = Control(external, "amplitude"),
+        frequencies = modes.Select(v => v.Parameters.Single(p => p.Definition.Key == "frequency").BaseValue).ToArray(),
+        meters = modes.Select(v => compiled.Controls.Single(c => c.Address == Address(v, "frequency")).MeterName).ToArray() };
+}).ToArray();
+File.WriteAllText(Path.Combine(args[0], "modal-instruments.json"), JsonSerializer.Serialize(modalInstruments));
+
 using var filterSession = new PatchSession(BuiltInNodes.CreateRegistry());
 var filterRoot = filterSession.GraphId;
 var carrier = FilterAdd(OscillatorGenerator.NodeType);
