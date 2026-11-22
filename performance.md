@@ -36,7 +36,7 @@ A single number called "performance" cannot answer these questions. The monitor 
 - Do not silently change output latency, sample rate, patch settings, graph content, analyzer quality or sound to improve the meter. Suggest actions and let the user choose.
 - A monitor read, toggle, reset or report export must not change command history, committed graph revision, persisted patch content, musical transport, DSP source, compiled identity or playback generation.
 - Do not use a displayed peak, a worklet error count, a JavaScript timer delay or a made-up CPU estimate as a substitute for actual rendering capacity or underrun statistics.
-- Separate **ordinary passive monitoring** (low overhead; enabled by default when supported) from **explicit diagnostic profiling and stress testing** (potentially expensive; opt-in).
+- Separate **ordinary passive monitoring** (low overhead; opt-in by opening the Performance panel) from **explicit diagnostic profiling and stress testing** (potentially expensive; separately opt-in). While closed, no recurring monitor sampling or operation timing runs. See the [on-demand collection contract](docs/quality/performance-implementation.md#on-demand-collection).
 
 ## Contents
 

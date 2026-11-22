@@ -4,6 +4,16 @@
 
 Related: [performance](../../performance.md) · [dsp engine](../audio/dsp-engine.md) · [testing](testing.md).
 
+## On-demand collection
+
+Follow-up to 7.3.1–7.3.3 (local implementation pending PR). This lifecycle supersedes earlier component-lifetime and page-lifetime descriptions below.
+
+- The default closed toolbar button reads **Performance · Off**. Only opening the panel creates the editor frame sampler, PerformanceObservers, one-second interop polling loop, browser runtime diagnostics and application operation tracker. Closing with the button, closing the mobile More sheet or disposing the workspace cancels and releases them. Rapid reopen waits for prior cleanup.
+- Opening during existing playback seeds a new local underrun baseline and reports current graph/program and runtime resources. It does not invent historical compile times, errors or counters for operations that started while closed. Closing invalidates the session, including in-flight preparation timing; reopening creates fresh history and counters. Stop while open still freezes audio totals; a new Play starts a fresh audio/application playback baseline.
+- Compiler complexity metadata is derived during necessary graph traversal/emission, without separate diagnostic graph scans. Playback state, musical clocks, parameter modulation telemetry and signal analysis necessary for normal operation stay independent of the monitor. No new DSP routes or audio-thread profiling are introduced.
+- When open, hidden-tab editor sampling and snapshot reads remain paused as before. Browser operation outcomes and application timings are scoped to the open session; reset session counters affects only its audio underrun baseline.
+- Regressions: closed playback performs no playback-stat reads, passes no factory timing object, and produces no graph diagnostics; reopening mid-play starts fresh; a replacement initiated in an earlier session cannot contaminate a new one. Published browser smoke covers default Off, open/close, reopening during sound and closing via mobile navigation.
+
 <a id="phase-731--passive-monitor-in-review"></a>
 
 ## Phase 7.3.1 — Passive monitor (implemented)

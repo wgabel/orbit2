@@ -16,8 +16,8 @@ export class AudioEngine {
     #actions = new WeakMap();
     #active = new Map();
     #disposed = false;
-    #performance = new AudioPerformanceMonitor();
-    #runtime = new RuntimeDiagnostics();
+    #performance = null;
+    #runtime = null;
 
     constructor(contextManager, nodeFactory, output, createMonitor, transport = null, createActions = RhythmicActionSource.create) {
         this.#contextManager = contextManager;
@@ -46,7 +46,8 @@ export class AudioEngine {
             pendingParameters: Object.create(null), pendingPatterns: new Map()
         };
         this.#active.set(request.soundId, playback);
-        const attempt = this.#runtime.begin("play", request);
+        const runtime = this.#runtime;
+        const attempt = runtime?.begin("play", request);
 
         try {
             // Resume before any DSP download to preserve user activation.
@@ -54,7 +55,7 @@ export class AudioEngine {
             playback.context = context;
             if (playback.cancelled) return;
 
-            const node = await this.#createNode(context, request, attempt.timings);
+            const node = await this.#createNode(context, request, attempt?.timings);
 
             if (playback.cancelled) {
                 this.#destroyNode(node);
@@ -74,9 +75,9 @@ export class AudioEngine {
             }
 
             playback.current = this.#startVoice(playback, node, request);
-            this.#runtime.accept(attempt);
-            this.#runtime.finish(attempt, "accepted");
-            this.#performance.begin(playback, context);
+            runtime?.accept(attempt);
+            runtime?.finish(attempt, "accepted");
+            this.#performance?.begin(playback, context);
             signalReady(true);
             // A retiring voice ending is not the end of the logical playback.
             while (playback.current) {
@@ -85,15 +86,15 @@ export class AudioEngine {
                 if (voice === playback.current) break;
             }
         } catch (error) {
-            this.#runtime.finish(attempt, playback.cancelled ? "cancelled" : "failed");
+            runtime?.finish(attempt, playback.cancelled ? "cancelled" : "failed");
             throw error;
         } finally {
-            this.#runtime.finish(attempt, "cancelled");
+            runtime?.finish(attempt, "cancelled");
             playback.cancelled = true;
             signalReady(false);
             for (const instance of playback.voices) instance.voice.stop();
             await Promise.allSettled([...playback.voices].map(instance => instance.finished));
-            this.#performance.end(playback);
+            this.#performance?.end(playback);
             this.#active.delete(request.soundId);
         }
     }
@@ -111,13 +112,14 @@ export class AudioEngine {
         this.markRevision(request.soundId, revision);
         if (playback.replacing) throw new Error("A replacement is already pending.");
         playback.replacing = true;
-        const attempt = this.#runtime.begin("replace", request, revision);
+        const runtime = this.#runtime;
+        const attempt = runtime?.begin("replace", request, revision);
         const isCurrent = () => this.#active.get(request.soundId) === playback &&
             !playback.cancelled && revision === playback.latestRevision;
         try {
             if (!await playback.ready || !isCurrent()) return false;
             let node;
-            try { node = await this.#createNode(playback.context, request, attempt.timings); }
+            try { node = await this.#createNode(playback.context, request, attempt?.timings); }
             catch (error) { if (!isCurrent()) return false; throw error; }
             if (!isCurrent()) { this.#destroyNode(node); return false; }
 
@@ -132,16 +134,16 @@ export class AudioEngine {
             playback.subscriptions?.clear();
             playback.controlNames = new Set(Object.keys(request.parameters ?? {}));
             old.voice.stop(transition);
-            this.#runtime.accept(attempt, transition.duration * 1000);
+            runtime?.accept(attempt, transition.duration * 1000);
             await old.finished;
             // Once scheduled the crossfade is committed. Subsequent revisions
             // must use this voice as their starting point.
             return !playback.cancelled;
         } catch (error) {
-            this.#runtime.finish(attempt, playback.cancelled ? "cancelled" : "failed");
+            runtime?.finish(attempt, playback.cancelled ? "cancelled" : "failed");
             throw error;
         } finally {
-            this.#runtime.finish(attempt, playback.cancelled ? "cancelled" : "superseded");
+            runtime?.finish(attempt, playback.cancelled ? "cancelled" : "superseded");
             playback.replacing = false;
         }
     }
@@ -188,10 +190,26 @@ export class AudioEngine {
         return !playback || playback.cancelled ? null : playback.current?.monitor.getSnapshot() ?? null;
     }
 
+    setPerformanceCollection(enabled) {
+        if (enabled === Boolean(this.#performance)) return;
+        if (!enabled) {
+            this.#runtime.stop();
+            this.#runtime = this.#performance = null;
+            return;
+        }
+        this.#performance = new AudioPerformanceMonitor();
+        this.#runtime = new RuntimeDiagnostics();
+        // Opening during playback establishes a new local baseline, without
+        // restarting audio or counting work that happened while closed.
+        for (const playback of this.#active.values())
+            if (playback.current && !playback.cancelled)
+                this.#performance.begin(playback, playback.context);
+    }
+
     getPerformanceSnapshot(reset = false) {
         // Avoid background-tab statistics reads. Lifecycle baselines remain
         // independent of UI visibility, and the next foreground read catches up.
-        if (globalThis.document?.visibilityState === "hidden") return null;
+        if (!this.#performance || globalThis.document?.visibilityState === "hidden") return null;
         return { ...this.#performance.snapshot(this.#contextManager.getCurrentContext(), reset),
             runtime: this.#runtime.snapshot(this.#active.values()) };
     }
@@ -247,6 +265,7 @@ export class AudioEngine {
 
     async dispose() {
         this.#disposed = true;
+        this.setPerformanceCollection(false);
         for (const soundId of this.#active.keys()) {
             this.stop(soundId);
         }
@@ -290,7 +309,7 @@ export class AudioEngine {
 
     #startVoice(playback, node, request, transition) {
         let voice, monitor;
-        const onProcessorError = () => this.#runtime.processorError();
+        const onProcessorError = () => this.#runtime?.processorError();
         try {
             monitor = this.#createMonitor(node);
             const routing = request.tapSelectorCount > 0 ? {

@@ -4,7 +4,14 @@
 <div class="workspace-toolbar toolbar-group audio-performance-monitor">
     <button type="button" class="secondary audio-performance-toggle" aria-expanded="@expanded"
             aria-controls="audio-performance-details" @onclick="Toggle">
-        Performance · @CompactLatency · @CompactUnderruns · @CompactFps
+        @if (expanded)
+        {
+            <text>Performance · @CompactLatency · @CompactUnderruns · @CompactFps</text>
+        }
+        else
+        {
+            <text>Performance · Off</text>
+        }
     </button>
 </div>
 @if (expanded)
@@ -14,6 +21,7 @@
             <strong>Performance diagnostics</strong>
             <button type="button" class="secondary" @onclick="Toggle">Close</button>
         </div>
+        <p class="workspace-notice">Collecting while open. Closing stops monitoring; reopening starts a fresh session.</p>
         <strong>Editor responsiveness (foreground)</strong>
         @if (editorFailed || editor is null)
         {
@@ -94,7 +102,7 @@
                         <dt>Request to completion</dt><dd>@Format(accepted.CompletionMs, "ms")</dd>
                     </dl>
                 }
-                <p class="workspace-notice">Browser operation counts are page-lifetime totals; runtime voices are DSP worklets, not musical notes. Worker round trip includes queueing and startup; cache hit is unknown.</p>
+                <p class="workspace-notice">Browser operation counts cover this open monitoring session; runtime voices are DSP worklets, not musical notes. Worker round trip includes queueing and startup; cache hit is unknown.</p>
             }
             @if (CurrentGraph is { } graph)
             {
@@ -117,9 +125,9 @@
                     <dt>Program application controls</dt><dd>@(graph.ProgramControls?.ToString() ?? "—")</dd>
                     <dt>Program output channels</dt><dd>@(graph.ProgramOutputChannels?.ToString() ?? "—")</dd>
                 </dl>
-                <p class="workspace-notice">Application counts restart on Play and retain the latest prepared/accepted program after Stop. Source generation is not WASM compilation or DSP load.</p>
+                <p class="workspace-notice">Application counts cover activity since opening the monitor or starting Play, whichever is later. Current program counts can be inspected even if Play started earlier. Source generation is not WASM compilation or DSP load.</p>
             }
-            <p class="workspace-notice">Latency is a browser estimate, not keyboard-to-speaker delay. Underruns are context-wide, relative to the accepted playback or reset; unavailable is not zero, and zero does not prove glitch-free audio.</p>
+            <p class="workspace-notice">Latency is a browser estimate, not keyboard-to-speaker delay. Underruns are context-wide, relative to opening the monitor, accepted playback or reset; unavailable is not zero, and zero does not prove glitch-free audio.</p>
             <button type="button" class="secondary" disabled="@(snapshot.PlaybackState != "active" || resetPending)" @onclick="RequestReset">Reset session counters</button>
         }
     </section>

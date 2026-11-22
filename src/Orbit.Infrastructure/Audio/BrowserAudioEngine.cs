@@ -75,6 +75,13 @@ public sealed class BrowserAudioEngine(IJSRuntime javaScriptRuntime) : IAudioEng
     public async Task<AudioClockSnapshot?> GetSnapshotAsync() =>
         await GetAudioModule().InvokeAsync<AudioClockSnapshot?>("getClockSnapshot");
 
+    public async Task SetPerformanceCollectionAsync(bool enabled)
+    {
+        if (enabled) await InitializeAsync();
+        if (audioModule is not null)
+            await audioModule.InvokeVoidAsync("setPerformanceCollection", enabled);
+    }
+
     public async Task<AudioPerformanceSnapshot?> GetPerformanceSnapshotAsync(bool reset, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
