@@ -103,14 +103,14 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 
 - [canvas](docs/editor/canvas.md)
 - <a id="7-hierarchical-signal-graphs-and-canvases"></a><a id="8-input-and-output-racks"></a>[composite nodes](docs/editor/composite-nodes.md)
-- [reusable composite modules](docs/editor/reusable-modules.md) — selection-to-composite, whole-patch conversion, custom module library, portable definitions and macro controls (planned Phase 7.4)
+- [reusable composite modules](docs/editor/reusable-modules.md) — selection-to-composite, whole-patch conversion, custom module library, portable definitions and macro controls (Phase 7.4; multi-node selection in review, structural reuse planned)
 - <a id="shared-canvas-and-component-standards"></a>[design system](docs/editor/design-system.md)
 - <a id="signal-analysis-and-visualization-planned-phase-618"></a>[visualizations](docs/editor/visualizations.md)
 - [node presets](docs/editor/node-presets.md)
 - <a id="workspace-persistence-and-history-phases-68611"></a>[persistence and history](docs/editor/persistence-and-history.md)
 - <a id="node-mute-and-processor-bypass-phase-616"></a>[audition](docs/editor/audition.md)
 - <a id="connection-amount-badges-and-inline-editing-planned-phase-6195"></a>[connection visualization](docs/editor/annotations-and-connections.md)
-- <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>[patch annotations](docs/editor/patch-annotations.md) — note cards, node/wire descriptions, visual groups, patch metadata and library search (6.19.1–6.19.4 implemented), annotation visibility and zoom detail (6.19.7 implemented), nested outline (6.19.8 in review)
+- <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>[patch annotations](docs/editor/patch-annotations.md) — note cards, node/wire descriptions, visual groups, patch metadata and library search (6.19.1–6.19.4 implemented), annotation visibility and zoom detail (6.19.7 implemented), nested outline (6.19.8 implemented)
 
 **Instruments and examples**
 

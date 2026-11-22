@@ -18,7 +18,7 @@ For an analyzed, listener-validated synthetic instrument foundation rather than 
 
 #### Musical instrument synthesis and physical modelling (Phase 7.2 — partial)
 
-**Status:** five sustained instrument composites (7.2.1), shared oscillator pitch and Pitch Control (7.2.2), [Monophonic Note Source](../instruments/pitch-control.md#phase-723--note-source-in-review) (7.2.3), single-mode [Resonator](../instruments/physical-modelling.md) (7.2.4), four editable [modal percussion composites](../instruments/physical-modelling.md#phase-725--modal-instrument-composites-implemented) (7.2.5 first stage) and pitch-only keyboard sequencing (7.2.8a–c) implemented. Five playable sustained templates (7.2.6a) are in review; direct-velocity modal variants, Note-mode patterns, optional compact modal bank and polyphony remain follow-ups.
+**Status:** five sustained instrument composites (7.2.1), shared oscillator pitch and Pitch Control (7.2.2), [Monophonic Note Source](../instruments/pitch-control.md#phase-723--note-source-in-review) (7.2.3), single-mode [Resonator](../instruments/physical-modelling.md) (7.2.4), four editable [modal percussion composites](../instruments/physical-modelling.md#phase-725--modal-instrument-composites-implemented) (7.2.5 first stage) and pitch-only keyboard sequencing (7.2.8a–c) implemented. Five playable sustained templates (7.2.6a) are implemented; direct-velocity modal variants, Note-mode patterns, optional compact modal bank and polyphony remain follow-ups.
 
 **Goal and scope.** Build editable synthesized instrument approximations from reusable oscillators, noise, filters, effects, envelopes, pitch controllers and resonators. Do not create a separate DSP class for each instrument. An instrument template is an ordinary composite graph with stable named rack inputs, independent state and an audio output. Preserve the possibility of opening it, inspecting its components, changing routing and saving a new configuration. This is sound design, not a claim of exact reproduction of acoustic instruments. Sample-based approximations and hybrid instruments can additionally use Phase 8 assets later.
 
@@ -42,7 +42,9 @@ Select an **Instrument — …** entry in Add node and connect its Audio output 
 
 The quiet filtered noise layers serve breath and bow textures rather than presenting exposed broadband hiss. The voices use conservative default levels, with a final gain of .5 and modest wet reverb. These are synthesized timbral approximations, not acoustic recordings or listening-validated replicas. Offline regression tests render the registered composites at 44.1/48 kHz, check finite non-silent audio, peak headroom and octave tracking; graph tests exercise editing, independent copies and JSON round trips. Audible character and perceived loudness still require listening in a musical context.
 
-### Phase 7.2.6a — Playable sustained instruments (in review)
+<a id="phase-726a--playable-sustained-instruments-in-review"></a>
+
+### Phase 7.2.6a — Playable sustained instruments (implemented)
 
 Implementation: [PR #44](https://github.com/wgabel/orbit2/pull/44).
 

@@ -183,7 +183,8 @@ public partial class GraphCanvas : IAsyncDisposable
     private CanvasStateSnapshot Snapshot => State.Snapshot;
     private string Hint => pendingSource is not null
         ? "Connect to an input · Esc to cancel"
-        : "Drag header · drag background to pan · wheel to zoom";
+        : marqueeMode ? "Drag background to select · Ctrl/Meta adds · Esc cancels"
+        : "Drag header · drag background to pan · Shift+drag selects · wheel to zoom";
     private string WorldStyle => FormattableString.Invariant(
         $"transform:translate({Snapshot.Viewport.Pan.X}px,{Snapshot.Viewport.Pan.Y}px) scale({Snapshot.Viewport.Zoom});");
 
@@ -199,6 +200,8 @@ public partial class GraphCanvas : IAsyncDisposable
         pendingSource = null;
         finderOpen = false;
         finderTarget = "";
+        selectionPanelOpen = marqueeMode = false;
+        selectionCandidate = "";
         previousSecondaryDetail = Snapshot.ShowSecondaryAnnotations;
         previousSelectedNodes = Snapshot.SelectedNodeIds;
         EndGesture();
@@ -325,6 +328,11 @@ public partial class GraphCanvas : IAsyncDisposable
     private async Task BeginBackground(PointerEventArgs args)
     {
         if (args.Button is not (0 or 1)) return;
+        if (args.Button == 0 && (marqueeMode || args.ShiftKey))
+        {
+            await BeginMarqueeAsync(args);
+            return;
+        }
         if (args.Button == 0)
         {
             State.ClearSelection();
@@ -365,7 +373,9 @@ public partial class GraphCanvas : IAsyncDisposable
         var current = new CanvasPoint(args.ClientX, args.ClientY);
         var delta = current.Subtract(lastClientPoint);
         lastClientPoint = current;
-        if (groupPreview is not null)
+        if (marquee is { } selection)
+            marquee = selection with { End = current };
+        else if (groupPreview is not null)
             PreviewGroupDelta(Snapshot.Viewport.ScreenDeltaToWorld(delta));
         else if (notePreview is { } note)
         {
@@ -390,6 +400,12 @@ public partial class GraphCanvas : IAsyncDisposable
     private async Task PointerReleasedAsync(PointerEventArgs args)
     {
         if (gesturePointer != args.PointerId) return;
+        if (marquee is { } selection)
+        {
+            EndGesture();
+            await CompleteMarqueeAsync(selection with { End = new CanvasPoint(args.ClientX, args.ClientY) });
+            return;
+        }
         var wasWire = drawingWire;
         var note = notePreview;
         var originalGroup = groupStart;
@@ -427,6 +443,7 @@ public partial class GraphCanvas : IAsyncDisposable
         resizingNote = false;
         groupPreview = groupStart = null;
         resizingGroup = false;
+        marquee = null;
     }
 
     private async Task ActivatePortAsync(PortAddress address)
@@ -463,15 +480,18 @@ public partial class GraphCanvas : IAsyncDisposable
     {
         if (args.Key == "Escape")
         {
+            var selecting = marquee is not null || marqueeMode;
             EndGesture();
             pendingSource = null;
-            State.ClearSelection();
+            marqueeMode = false;
+            selectionPanelOpen = false;
+            if (!selecting) State.ClearSelection();
         }
     }
 
     private async Task OnWheelAsync(WheelEventArgs args)
     {
-        if (module is null) return;
+        if (module is null || marquee is not null) return;
         var bounds = await module.InvokeAsync<ViewportMeasurement>("viewportBounds", viewportElement);
         var anchor = new CanvasPoint(args.ClientX - bounds.Left, args.ClientY - bounds.Top);
         var delta = args.DeltaY * (args.DeltaMode == 1 ? 16 : args.DeltaMode == 2 ? bounds.Height : 1);

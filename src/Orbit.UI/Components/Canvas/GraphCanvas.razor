@@ -58,11 +58,15 @@
                            OnParameterEdit="OnParameterEdit" OnParameterGestureEnded="OnParameterGestureEnded" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" Playhead="@EnvelopePlayheads.GetValueOrDefault(node.Id)" BeatsPerMinute="@BeatsPerMinute" SampleRate="@SampleRate" />
             }
         </div>
+        @if (MarqueeStyle is { } marqueeStyle)
+        {
+            <div class="canvas-marquee" style="@marqueeStyle" aria-hidden="true"></div>
+        }
         @if (Snapshot.Notes.FirstOrDefault(note => note.Id == editingNote) is { } editing)
         {
             <NoteEditor @key="editing.Id" Note="@editing" OnApply="FinishNoteEditAsync" OnCancel="@(() => FinishNoteEditAsync(null))" />
         }
-        <div class="connection-label-control" @onpointerdown:stopPropagation="true">
+        <div class="connection-label-control" @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true">
             <label for="connection-label-mode">Connection labels</label>
             <select id="connection-label-mode" @bind="LabelMode" aria-label="Connection labels">
                 @foreach (var mode in Enum.GetValues<Orbit.Application.Persistence.ConnectionLabelMode>())
@@ -70,6 +74,29 @@
                     <option value="@mode">@mode</option>
                 }
             </select>
+            <button type="button" class="secondary" aria-expanded="@selectionPanelOpen" aria-label="Selection actions"
+                    @onclick="() => selectionPanelOpen = !selectionPanelOpen">@(marqueeMode ? "Selecting" : "Selection")</button>
+            @if (selectionPanelOpen)
+            {
+                <section class="canvas-selection-panel" aria-label="Node selection" role="region" @onwheel:stopPropagation="true">
+                    <strong role="status">@SelectionSummary</strong>
+                    <p class="workspace-notice">Rack and master nodes stay outside reusable modules. Boundary routing will be checked when grouping.</p>
+                    <button type="button" class="secondary" aria-pressed="@marqueeMode" disabled="@AnnotationControlsLocked"
+                            @onclick="ToggleMarqueeMode">@(marqueeMode ? "Return to pan" : "Marquee mode")</button>
+                    <button type="button" class="secondary" disabled="@(AnnotationControlsLocked || !EligibleNodes.Any())" @onclick="SelectAllModuleNodes">Select all module nodes</button>
+                    <button type="button" class="secondary" disabled="@AnnotationControlsLocked" @onclick="ClearModuleSelection">Clear selection</button>
+                    <label for="selection-candidate">Individual module node</label>
+                    <select id="selection-candidate" @bind="selectionCandidate" disabled="@AnnotationControlsLocked">
+                        <option value="">Choose node</option>
+                        @foreach (var node in EligibleNodes)
+                        {
+                            <option value="@node.Id">@(Snapshot.SelectedNodeIds.Contains(node.Id) ? "✓ " : "")@Snapshot.DisplayName(node.Id) · @node.Id.ToString("N")[..8]</option>
+                        }
+                    </select>
+                    <button type="button" class="secondary" disabled="@(AnnotationControlsLocked || !CandidateExists)" @onclick="ToggleCandidate">Toggle node selection</button>
+                    <button type="button" class="secondary" @onclick="() => selectionPanelOpen = false">Close selection actions</button>
+                </section>
+            }
         </div>
         <div class="annotation-display-control" @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true" @onwheel:stopPropagation="true">
             <label for="annotation-visibility">Annotations</label>

@@ -168,6 +168,19 @@ public sealed partial class CanvasStateService : ICanvasStateService
         return UpdateSelection(nodeId, additive, selectNode: true);
     }
 
+    /// <summary>Replace or union a module selection in one notification. Clears non-node selection.</summary>
+    public CanvasChangeResult SelectModuleNodes(IEnumerable<Guid> nodeIds, bool additive = false)
+    {
+        EnsureEditable();
+        ArgumentNullException.ThrowIfNull(nodeIds);
+        var requested = nodeIds.ToHashSet();
+        foreach (var id in requested) GetPosition(id); // reject stale/foreign IDs before any state change
+        var eligible = ModuleSelection.EligibleIds(snapshot.Graph).ToHashSet();
+        if (additive) requested.UnionWith(snapshot.SelectedNodeIds);
+        requested.IntersectWith(eligible);
+        return CommitSelection(requested.Order().ToArray(), []);
+    }
+
     public CanvasChangeResult SelectConnection(Guid connectionId, bool additive = false)
     {
         EnsureEditable();
