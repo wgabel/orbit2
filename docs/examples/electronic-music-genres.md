@@ -18,7 +18,7 @@ This is a modular reference for composing **whole pieces** and designing their c
 
 For choosing synthesized roles and timbral families within a genre or hybrid, consult the [synthesizer patch recipes](synthesizer-patch-recipes.md) before designing voices. Use suitable techniques as reference material, not as a constraint on the genre or a required instrument roster.
 
-For sound quality and production rather than genre selection, open [voice design](sound-quality-and-voice-design.md) (noise treatment, harmonic body, candidate presets) and [mixing, mastering and analysis](mixing-mastering-and-analysis.md) (balance, full-render iteration and measurement).
+For sound quality and production rather than genre selection, open [voice design](sound-quality-and-voice-design.md) (noise treatment, harmonic body, candidate presets), [instrument and sound design — repeatable audition](instrument-design-and-audition.md) (genre-independent A/B testing, reusable sounds and role-specific profiles) and [mixing, mastering and analysis](mixing-mastering-and-analysis.md) (balance, full-render iteration and measurement).
 
 Start with just the relevant family and selected technique sections. Cross genre boundaries freely; for example, a space-ambient track with a halftime climax combines ambient form, a bass foundation and a broken percussion grid. Do not read all modules by default. Unknown genres are not blockers: listen/research if possible, identify the audible ingredients, investigate the relevant node contracts and build an appropriate patch. Extend this reference when a recurring musical need is missing.
 
