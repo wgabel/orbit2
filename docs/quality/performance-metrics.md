@@ -239,3 +239,11 @@ function readPlaybackMetrics(context) {
 ```
 
 A valid 0 reported by a browser can be displayed, but a null or missing metric cannot become 0 through default deserialization. Derive availability and freshness, distinguish estimated components to avoid double counting, and do not add playbackStats.averageLatency a second time to the estimated base + output pipeline.
+
+## Phase 7.3.1 — Passive Performance Monitor (in review)
+
+[PR #53](https://github.com/wgabel/orbit2/pull/53). In the workspace toolbar (root or nested canvas), select **Performance** to open Audio performance diagnostics. Before Play, it reports idle and not-created without starting a context. During a patch, it updates roughly once per second: sample rate, audio context state, base and output latency (when available), estimated pipeline latency (their sum only when both are known), reported underrun events, missing output duration, reported playback duration and missing-audio fraction. Reset session counters while playing to start a fresh local baseline, e.g. immediately before adding a heavy sound layer. Stop freezes the completed session; Play starts a fresh baseline. A graph replacement does not reset the session. Close the panel to keep only the compact indicator; it continues foreground passive sampling. Unsupported data appears as unavailable, not zero.
+
+Example: base 4 ms and output 8.4 ms yield an estimated pipeline of 12.4 ms; this is not physical key-to-speaker latency. An increase from 12 to 15 browser cumulative underrun events after a session begins appears as 3 reported events. If the platform lacks playbackStats, no underrun claims can be made. The browser stats describe the shared audio context, not a particular oscillator or isolated patch. Zero reported events cannot prove glitch-free audio. DSP load and headroom explicitly say Not measured until validated 7.3.4 instrumentation or external profiling is available.
+
+The feature does not allocate an audio analyzer or alter sound. Use [performance troubleshooting](performance-troubleshooting.md) when diagnosing clicks, and later Phase 7.3.2/7.3.4 instrumentation to investigate compilation and DSP load. Browser API reference: [Web Audio 1.1 playback statistics](https://www.w3.org/TR/webaudio-1.1/).

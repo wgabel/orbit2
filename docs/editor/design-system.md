@@ -88,6 +88,7 @@ Keep layout structure in CSS and markup, with numeric styling constants in JSON.
 | GraphCanvas | Compose viewport, graph nodes, connections and local interaction state for any graph |
 | CanvasViewport | Coordinate conversion, pan, zoom and viewport state |
 | CanvasToolbar | Zoom controls, percentage readout, fit and reset |
+| PerformanceMonitor | Shared passive toolbar indicator and expandable diagnostics; token-based panel, local reset; independent of graph/canvas state (7.3.1 in review, [PR #53](https://github.com/wgabel/orbit2/pull/53)) |
 | NodeFrame | Shared node background, role accent, header, input/output layout and content slot |
 | NoteCard / NoteEditor | Presentation-only text, semantic accent, header, resize, collapse and isolated unscaled text draft (6.19.1, implemented) |
 | DescriptionEditor | Unscaled node alias/description or cable label editor, shared annotation draft lifecycle (6.19.2, implemented) |

@@ -44,7 +44,7 @@ Each phase should be a separate reviewable increment. Before implementation read
 
 | Milestone | Status | Deliverable |
 |---|---|---|
-| 7.3.1 | Planned | Passive context statistics + shared Performance Monitor |
+| 7.3.1 | In review · [PR #53](https://github.com/wgabel/orbit2/pull/53) | Passive context statistics + shared Performance Monitor |
 | 7.3.2 | Planned | Compilation, update/replacement, runtime and analysis resource diagnostics |
 | 7.3.3 | Planned | Foreground editor responsiveness and bounded diagnostics history |
 | 7.3.4 | Planned | Validated DSP profiling and reproducible benchmark fixtures |
@@ -52,6 +52,8 @@ Each phase should be a separate reviewable increment. Before implementation read
 | 7.3.6 | Planned | Advanced local reports, stress/regression automation and measured improvement cycles |
 
 ### 7.3.1 — Passive monitor
+
+**In review:** [PR #53](https://github.com/wgabel/orbit2/pull/53). Node tests cover idle/unsupported/invalid fields, context changes, local baseline and reset, decrease/recovery, same-interval fraction, overlapping lifetimes, stop/restart, and graph replacement preserving epoch. The published editor smoke test opens diagnostics before Play, verifies no context exists, opens during accepted playback, checks sample rate and resets without changing the accepted revision. Local JavaScript suites passed (23 tests); the .NET/published-browser checks run in CI.
 
 Implement framework-neutral snapshot and optional metrics port, browser context reads, capability/availability states, session baseline/reset and slow polling, compact toolbar and expanded details. Include sample rate, context state, estimated latency and supported playback statistics; unavailable metrics must stay unavailable. Test no graph/audio mutations and lifecycle/disposal. Ship even when render load is unavailable. Do not block on profiling or sequencer work.
 

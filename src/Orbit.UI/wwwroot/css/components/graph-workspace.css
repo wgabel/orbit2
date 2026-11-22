@@ -80,6 +80,11 @@
 .canvas-caption button { padding: var(--component-workspace-toolbar-button-block) var(--component-workspace-toolbar-button-inline); font-size: var(--semantic-typography-label); }
 .canvas-caption select { font-size: var(--semantic-typography-label); }
 .playback-toolbar { flex: 1 1 auto; }
+.audio-performance-toggle { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.audio-performance-panel { width: var(--component-workspace-patch-panel-width); box-sizing: border-box; }
+.audio-performance-metrics { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--semantic-space-compact); margin: 0; font-size: var(--semantic-typography-label); }
+.audio-performance-metrics dt { color: var(--semantic-color-muted); }
+.audio-performance-metrics dd { margin: 0; text-align: end; font-variant-numeric: tabular-nums; }
 .performance-keyboard { padding: var(--semantic-space-compact); border: var(--semantic-border-width) solid var(--semantic-color-border); border-radius: var(--semantic-radius-control); }
 .performance-piano { display: flex; flex-wrap: wrap; gap: var(--semantic-space-tight); }
 .performance-piano button { display: grid; gap: var(--semantic-space-tight); text-align: center; padding: var(--semantic-space-compact); }

@@ -1,0 +1,44 @@
+@namespace Orbit.UI.Components.Canvas
+@using Microsoft.AspNetCore.Components.Web
+
+<div class="workspace-toolbar toolbar-group audio-performance-monitor">
+    <button type="button" class="secondary audio-performance-toggle" aria-expanded="@expanded"
+            aria-controls="audio-performance-details" @onclick="Toggle">
+        Performance · @CompactLatency · @CompactUnderruns
+    </button>
+</div>
+@if (expanded)
+{
+    <section id="audio-performance-details" class="workspace-library-panel audio-performance-panel" aria-label="Audio performance diagnostics">
+        <div class="workspace-toolbar">
+            <strong>Audio performance</strong>
+            <button type="button" class="secondary" @onclick="Toggle">Close</button>
+        </div>
+        @if (failed)
+        {
+            <p class="workspace-notice">Diagnostics unavailable. Audio playback is independent.</p>
+        }
+        else if (snapshot is null)
+        {
+            <p class="workspace-notice">Waiting for diagnostics…</p>
+        }
+        else
+        {
+            <dl class="audio-performance-metrics">
+                <dt>Session</dt><dd data-performance-session>@snapshot.PlaybackState</dd>
+                <dt>Audio context</dt><dd>@snapshot.ContextState</dd>
+                <dt>Sample rate</dt><dd>@Format(snapshot.SampleRateHz, "Hz", "0")</dd>
+                <dt>Base latency</dt><dd>@Format(snapshot.BaseLatencyMs, "ms")</dd>
+                <dt>Output latency</dt><dd>@Format(snapshot.OutputLatencyMs, "ms")</dd>
+                <dt>Estimated pipeline latency</dt><dd>@Format(snapshot.EstimatedPipelineLatencyMs, "ms")</dd>
+                <dt>Reported underrun events</dt><dd>@(snapshot.UnderrunEvents?.ToString() ?? "Unavailable")</dd>
+                <dt>Missing audio</dt><dd>@Format(snapshot.UnderrunDurationMs, "ms", "0.###")</dd>
+                <dt>Reported playback duration</dt><dd>@Format(snapshot.PlaybackDurationMs / 1000, "s")</dd>
+                <dt>Missing audio fraction</dt><dd>@Format(snapshot.MissingAudioPercent, "%", "0.####")</dd>
+                <dt>DSP load / headroom</dt><dd>Not measured</dd>
+            </dl>
+            <p class="workspace-notice">Latency is a browser estimate, not keyboard-to-speaker delay. Underruns are context-wide, relative to the accepted playback or reset; unavailable is not zero, and zero does not prove glitch-free audio.</p>
+            <button type="button" class="secondary" disabled="@(snapshot.PlaybackState != "active" || resetPending)" @onclick="RequestReset">Reset session counters</button>
+        }
+    </section>
+}
