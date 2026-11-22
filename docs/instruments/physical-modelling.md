@@ -46,7 +46,7 @@ Offline WASM regression tests compare the impulse to its analytic damped cosine 
 
 Implementation: [PR #37](https://github.com/wgabel/orbit2/pull/37).
 
-For live keyboard playing with the new monophonic Note Source (7.2.3 in review), see [the wiring example](pitch-control.md#phase-723--note-source-in-review), including direct velocity mapping to Strength offset.
+For live keyboard playing with the new monophonic Note Source (7.2.3 implemented), see [the wiring example](pitch-control.md#phase-723--note-source-in-review), including direct velocity mapping to Strength offset.
 
 **Modal synthesis** models a vibrating object as several independently tuned decaying modes. Add a **Modal — …** composite from the node catalog, connect its Audio output to Master output (or a mixer), start playback, and connect Manual Trigger or Clock to Trigger. Fire Manual Trigger to strike the body; the resonators ring and decay after the internal noise excitation stops. Optional Pitch Control or Note Sequencer connected to Pitch (st) at amount 1 transposes all modes together, without changing their decay. There is no sound without a strike or external excitation.
 

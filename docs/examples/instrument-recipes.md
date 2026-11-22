@@ -18,7 +18,7 @@ For an analyzed, listener-validated synthetic instrument foundation rather than 
 
 #### Musical instrument synthesis and physical modelling (Phase 7.2 — partial)
 
-**Status:** five sustained instrument composites (7.2.1), shared oscillator pitch and Pitch Control (7.2.2), single-mode [Resonator](../instruments/physical-modelling.md) (7.2.4), four editable [modal percussion composites](../instruments/physical-modelling.md#phase-725--modal-instrument-composites-implemented) (7.2.5 first stage) and pitch-only keyboard sequencing (7.2.8a–c) implemented. [Monophonic Note Source](../instruments/pitch-control.md#phase-723--note-source-in-review) (7.2.3) is in review. Playable instrument templates, Note-mode patterns, optional compact modal bank and polyphony remain follow-ups.
+**Status:** five sustained instrument composites (7.2.1), shared oscillator pitch and Pitch Control (7.2.2), [Monophonic Note Source](../instruments/pitch-control.md#phase-723--note-source-in-review) (7.2.3), single-mode [Resonator](../instruments/physical-modelling.md) (7.2.4), four editable [modal percussion composites](../instruments/physical-modelling.md#phase-725--modal-instrument-composites-implemented) (7.2.5 first stage) and pitch-only keyboard sequencing (7.2.8a–c) implemented. Five playable sustained templates (7.2.6a) are in review; direct-velocity modal variants, Note-mode patterns, optional compact modal bank and polyphony remain follow-ups.
 
 **Goal and scope.** Build editable synthesized instrument approximations from reusable oscillators, noise, filters, effects, envelopes, pitch controllers and resonators. Do not create a separate DSP class for each instrument. An instrument template is an ordinary composite graph with stable named rack inputs, independent state and an audio output. Preserve the possibility of opening it, inspecting its components, changing routing and saving a new configuration. This is sound design, not a claim of exact reproduction of acoustic instruments. Sample-based approximations and hybrid instruments can additionally use Phase 8 assets later.
 
@@ -41,6 +41,22 @@ Select an **Instrument — …** entry in Add node and connect its Audio output 
 | Didgeridoo | A1 (55 Hz) | Low saw feeding parallel low-pass and vocal-formant band-passes at 460/1150 Hz, triangle fundamental, filtered brown noise .025, reverb. |
 
 The quiet filtered noise layers serve breath and bow textures rather than presenting exposed broadband hiss. The voices use conservative default levels, with a final gain of .5 and modest wet reverb. These are synthesized timbral approximations, not acoustic recordings or listening-validated replicas. Offline regression tests render the registered composites at 44.1/48 kHz, check finite non-silent audio, peak headroom and octave tracking; graph tests exercise editing, independent copies and JSON round trips. Audible character and perceived loudness still require listening in a musical context.
+
+### Phase 7.2.6a — Playable sustained instruments (in review)
+
+Implementation: [PR #44](https://github.com/wgabel/orbit2/pull/44).
+
+Five additional **Playable — …** entries reuse the sustained voices' timbre and pitch routing, without replacing or migrating the original presets. Each exposes Pitch (st), Gate (typed, single source) and Velocity (0–1, modulation amount 1), plus Audio output. Connect Note Source outputs of the same name; use a reference matching the instrument's native tuning to make keyboard labels match actual fundamental pitches. An unconnected Gate or Velocity produces silence; a fixed velocity can also be supplied by an ordinary modulation source or set by editing the internal velocity Gain base to 1.
+
+| Voice | Reference | Attack (ms) | Decay (ms) | Sustain | Release (ms) |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Organ | A2 | 8 | 80 | .92 | 120 |
+| Flute | A3 | 65 | 180 | .78 | 190 |
+| Brass | A2 | 45 | 160 | .70 | 160 |
+| Bowed strings | A2 | 180 | 300 | .85 | 420 |
+| Didgeridoo | A1 | 100 | 220 | .88 | 300 |
+
+The shared graph builder inserts two zero-base gains in series before reverb: velocity and ADSR. This multiplies rather than adds strike strength and the envelope, gates the entire tonal/noise mix, and permits the reverberant tail after release. The final gain remains .5. Open the composite to edit its envelope and tone; the existing Note Source last-note priority gives legato on overlapping notes, not independent attacks or simultaneous voice allocation. A new note during release can change the voice's pitch/velocity. These are editable approximations, not acoustically validated instruments. Offline tests render the full Note Source → composite → Master route at 44.1/48 kHz, verifying idle silence, octave pitch, velocity ratio, sustained level, headroom and decaying release. See [how to play](../usage/sound-and-instruments.md#playable-sustained-instruments).
 
 The **Impact — AD percussion** worked patch is exportable from Patches → Annotated examples (6.19.4); import the JSON to inspect its root/nested descriptions and notes. See [patch overview and discovery](../editor/patch-annotations.md#patch-overview-and-discovery-6194).
 
