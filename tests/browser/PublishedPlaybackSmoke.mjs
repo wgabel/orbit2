@@ -829,6 +829,9 @@ try {
     assert.equal(await viewport.locator(".canvas-patch-value").innerText(), wholePatchCount);
     await page.getByRole("button", { name: "Outline", exact: true }).click();
     const playingOutline = page.getByRole("region", { name: "Patch outline" });
+    // Razor event directives must compile to Blazor callbacks, not literal DOM attributes.
+    assert.equal(await playingOutline.locator("button").evaluateAll(buttons =>
+        buttons.some(button => button.hasAttribute("@onclick"))), false, "Outline buttons must have compiled event handlers");
     await playingOutline.getByLabel("Search patch").fill("Drone");
     await playingOutline.getByLabel("Filter outline").selectOption("Composite");
     await playingOutline.getByRole("button", { name: "Open canvas: Drone", exact: true }).click();
