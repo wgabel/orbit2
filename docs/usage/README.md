@@ -10,6 +10,7 @@
 | --- | --- |
 | Create, connect, play or save a patch; understand cables, composites and racks | [Patch editor — first patch and routing](patch-editor.md#1-build-and-play-a-patch) |
 | Organize a large graph; add notes, aliases, groups, overview; hide or reveal annotations; count nested nodes; search the nested outline | [Patch editor — organization and visibility](patch-editor.md#3-document-and-organize-a-patch) |
+| Check audio latency, sample rate and supported underrun statistics | [Performance Monitor](../quality/performance-metrics.md#phase-731--passive-performance-monitor-in-review) |
 | Understand plots, frequency responses, live levels and unavailable taps | [Patch editor — inspecting signals](patch-editor.md#4-inspect-and-troubleshoot-signals) |
 | Make notes articulate individually; use keyboard, patterns, clock, gate and envelopes | [Sound and instruments — pitch and articulation](sound-and-instruments.md#1-pitch-versus-articulation) |
 | Use organ, strings, flute, brass, didgeridoo, impact, handpan, bell, gong and wood percussion | [Sound and instruments — instruments](sound-and-instruments.md#3-built-in-instruments-and-resonators) |
@@ -23,6 +24,7 @@ Use this as a discovery index, not a substitute for the feature contracts or roa
 
 | Feature | Where to find practical instructions | Evidence |
 | --- | --- | --- |
+| Passive Performance Monitor (in review) | [Open Performance, inspect context/latency and reset local session](../quality/performance-metrics.md#phase-731--passive-performance-monitor-in-review) | [PR #53](https://github.com/wgabel/orbit2/pull/53) |
 | Playable modal percussion | [Play handpan, bell, gong and wood percussion](sound-and-instruments.md#playable-modal-percussion), [contract](../instruments/physical-modelling.md#phase-726b--playable-modal-instruments-in-review) | [PR #46](https://github.com/wgabel/orbit2/pull/46) — in review |
 | Multi-node selection and marquee | [Select multiple nodes for reuse](patch-editor.md#select-multiple-nodes-for-reuse), [contract](../editor/reusable-modules.md#implementation-multi-node-selection-741-implemented) | [PR #45](https://github.com/wgabel/orbit2/pull/45) — merged |
 | Create editable composite | [Group a selection](patch-editor.md#create-an-editable-composite-742a-implemented), [contract](../editor/reusable-modules.md#implementation-create-composite-742a-implemented) | [PR #47](https://github.com/wgabel/orbit2/pull/47) — merged |

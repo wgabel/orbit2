@@ -47,11 +47,11 @@ Deliverable: an oscillator can repeatedly trigger a percussion envelope without 
 
 Deliverable: play and edit a synthesized instrument as an ordinary Orbit2 graph; excite a handpan-like modal bank with short bursts and different pitches/velocities; use the same pitch, gate, envelope and resonator components for sustained and percussive sounds without hardcoded instrument-specific DSP; perform and loop quantized pitch progressions over rhythmic or multi-minute ambient timescales without interrupting continuous drones. Phase 8 later adds recorded assets and hybrid techniques.
 
-#### Phase 7.3 — Performance monitoring, profiling and diagnostics (planned)
+#### Phase 7.3 — Performance monitoring, profiling and diagnostics (7.3.1 in review)
 
 The detailed implementation and usage contract lives in [performance.md](../../performance.md), not in this roadmap. The monitor distinguishes measured/estimated/unsupported metrics, stays read-only and measures audio reliability separately from UI and signal quality.
 
-- **7.3.1 — Passive Performance Monitor (planned):** shared compact toolbar/expanded diagnostics, sample rate and context state, browser-reported latency and supported underrun statistics, feature detection, local session baselines and bounded slow collection.
+- **7.3.1 — Passive Performance Monitor (in review):** shared compact toolbar/expanded diagnostics, sample rate and context state, browser-reported base/output latency and estimated pipeline sum, supported underrun count/duration, playback duration and missing fraction, feature detection, accepted-playback local session baseline/reset/freeze and 1 Hz independent collection. No DSP-load measurement or hidden audio routes. [Implementation contract](../quality/performance-implementation.md#phase-731--passive-monitor-in-review); [PR #53](https://github.com/wgabel/orbit2/pull/53).
 - **7.3.2 — Compilation and runtime diagnostics (planned):** C# source generation, worker round trip, worklet creation, replacement and control-only update timing; accepted/stale revisions, active/retiring voices, graph complexity and analyzer resource counts.
 - **7.3.3 — Editor performance (planned):** foreground FPS/frame-gap and supported long-task metrics, independent observer lifecycle and bounded history; no changes to graph or audio.
 - **7.3.4 — DSP profiling and benchmarks (planned):** deterministic representative fixtures and offline throughput, external live renderer measurements, optional validated low-overhead worklet timing if supported; relative node costs and baseline before expensive DSP/polyphony.

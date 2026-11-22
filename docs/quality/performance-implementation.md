@@ -4,6 +4,12 @@
 
 Related: [performance](../../performance.md) · [dsp engine](../audio/dsp-engine.md) · [testing](testing.md).
 
+## Phase 7.3.1 — Passive monitor (in review)
+
+Implementation: [PR #53](https://github.com/wgabel/orbit2/pull/53). `AudioPerformanceMonitor.js` is owned by the shared AudioEngine. It takes a local baseline when a logical playback is accepted, keeps it through structural replacement and freezes totals when the last active logical lifetime ends. Overlapping lifetimes share context-global statistics; startup compilation and later idle time are excluded. The monitor samples only the current context, never creates/resumes it or invokes the browser's reset method. Missing, throwing, invalid or decreasing counters yield unavailable or a new baseline; the missing fraction requires two valid counters with the same baseline interval and a positive denominator. A reset only changes the local epoch. The UI's read-only `IAudioPerformanceSource` resolves to the existing BrowserAudioEngine singleton; `AudioPerformanceSnapshot` has nullable numeric fields and explicit units. The workspace owns one PerformanceMonitor independent of nested canvas keys; one cancellable sequential 1 Hz observer reads a batched snapshot, with the hidden-document guard skipping stats collection. A hidden view retains its last foreground sample until the next foreground poll; it does not request any analyzer or add any worklet. Reset is scheduled on the same observer to avoid overlapping interop calls. Neither viewing nor resetting changes graph state, transport, history, compilation, or audio settings.
+
+Read the [practical usage and limitations](performance-metrics.md#phase-731--passive-performance-monitor-in-review). Browser context latency is an estimate; DSP load, editor FPS, compilation stages, operation history and timing metrics remain planned. No claim of device-specific underrun coverage or exact render capacity is made. Metrics availability is determined at runtime.
+
 ## 6. Implementation architecture
 
 ### 6.1 Existing integration points (reviewed main)
