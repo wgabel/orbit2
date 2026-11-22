@@ -450,6 +450,25 @@ try {
     await exerciseNote(initialRevision, "Root harmony");
     await exerciseAlias(articles.nth(1), initialRevision);
     await exerciseGroup(articles.nth(1), initialRevision);
+    // Patch-wide metadata is a committed presentation edit, even during playback.
+    await page.getByRole("button", { name: "Patches", exact: true }).click();
+    const liveManager = page.getByRole("region", { name: "Patch manager" });
+    const undoBeforeOverview = await page.getByRole("button", { name: "Undo", exact: true }).isEnabled();
+    await liveManager.getByRole("button", { name: "Edit patch overview" }).click();
+    const overviewEditor = liveManager.getByRole("region", { name: "Edit patch overview" });
+    await overviewEditor.getByLabel("Title", { exact: true }).fill("Distant horizon");
+    await overviewEditor.getByLabel("Description", { exact: true }).fill("Dark evolving space");
+    await overviewEditor.getByLabel("Usage instructions").fill("Change the timbre slowly.");
+    await overviewEditor.getByLabel("Tags (comma-separated)").fill("Ambient, space, ambient");
+    await overviewEditor.getByRole("button", { name: "Apply", exact: true }).click();
+    await liveManager.getByRole("region", { name: "Current patch overview" }).getByText("Distant horizon", { exact: true }).waitFor();
+    await liveManager.getByRole("button", { name: "Edit patch overview" }).click();
+    await overviewEditor.getByLabel("Title", { exact: true }).fill("Discard this draft");
+    await overviewEditor.getByLabel("Title", { exact: true }).press("Escape");
+    await liveManager.getByRole("region", { name: "Current patch overview" }).getByText("Distant horizon", { exact: true }).waitFor();
+    await liveManager.getByRole("button", { name: "Close", exact: true }).click();
+    assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
+    assert.equal(await page.getByRole("button", { name: "Undo", exact: true }).isEnabled(), undoBeforeOverview);
     await transportState.filter({ hasText: "Running" }).waitFor();
     await transport.getByTestId("transport-sample-rate").waitFor();
     const firstBeat = Number(await beat.innerText());
@@ -918,6 +937,7 @@ try {
         await page.waitForTimeout(100);
     }
     assert.ok(savedWorkspace, "Expected the latest child graph and viewport to be saved");
+    assert.equal(savedWorkspace.overview.title, "Distant horizon");
     assert.ok(savedWorkspace.rootGraph.nodes.some(node => node.composite?.graph.id === expectedGraph));
     await page.reload();
     await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
@@ -953,6 +973,8 @@ try {
     // Named saves are independent of recovery and imported/exported documents.
     await page.getByRole("button", { name: "Patches", exact: true }).click();
     const manager = page.locator(".patch-manager");
+    // The overview region also contains "Saved patch" in its accessible name.
+    const savedPatchPicker = manager.getByRole("combobox", { name: "Saved patch", exact: true });
     await manager.waitFor().catch(async error => {
         console.error("Patch menu header:", await page.locator(".workspace-header").innerHTML());
         throw error;
@@ -960,35 +982,48 @@ try {
     await manager.getByLabel("Patch name").fill("Drone study");
     await manager.getByRole("button", { name: "Save as" }).click();
     await manager.getByText("Saved Drone study.", { exact: true }).waitFor();
+    await manager.getByRole("region", { name: "Saved patch overview" }).getByText("Distant horizon", { exact: true }).waitFor();
     const downloadPromise = page.waitForEvent("download");
     await manager.getByRole("button", { name: "Export JSON" }).click();
     const download = await downloadPromise;
     const exported = await readFile(await download.path());
     assert.equal(JSON.parse(exported.toString()).beatsPerMinute, 90);
+    assert.deepEqual(JSON.parse(exported.toString()).overview.tags, ["Ambient", "space"]);
+    assert.equal(JSON.parse(exported.toString()).overview.title, "Distant horizon");
     await manager.getByRole("button", { name: "New patch" }).click();
     await manager.getByText("New workspace created.", { exact: true }).waitFor();
+    await manager.getByRole("region", { name: "Current patch overview" }).getByText("Untitled patch", { exact: true }).waitFor();
     await page.getByText("1 nodes · 0 connections", { exact: true }).waitFor();
     await manager.getByLabel("Patch name").fill("Empty study");
     await manager.getByRole("button", { name: "Save as" }).click();
     await manager.getByText("Saved Empty study.", { exact: true }).waitFor();
-    await manager.getByLabel("Saved patch").selectOption("Drone study");
+    await manager.getByLabel("Search library").fill("HORIZON evolving");
+    await savedPatchPicker.locator("option[value='Empty study']").waitFor({ state: "detached" });
+    await manager.getByLabel("Tag", { exact: true }).selectOption("Ambient");
+    await savedPatchPicker.locator("option[value='Drone study']").waitFor({ state: "attached" });
+    await manager.getByLabel("Search library").fill("no-match");
+    await manager.getByText("No matching patches.", { exact: true }).waitFor();
+    await manager.getByRole("button", { name: "Clear filters" }).click();
+    await savedPatchPicker.selectOption("Drone study");
     await manager.getByRole("button", { name: "Open patch" }).click();
     await manager.getByText("Opened Drone study.", { exact: true }).waitFor();
+    await manager.getByRole("region", { name: "Current patch overview" }).getByText("Distant horizon", { exact: true }).waitFor();
     await drone.getByRole("button", { name: "Input: Cutoff (Modulation)" }).waitFor();
     await status.filter({ hasText: /Ready/ }).waitFor();
     assert.equal(await tempo.inputValue(), "90");
     await manager.getByLabel("Import JSON").setInputFiles({ name: "bad.json", mimeType: "application/json", buffer: Buffer.from("{}") });
     await manager.getByRole("alert").waitFor();
     await drone.getByRole("button", { name: "Input: Cutoff (Modulation)" }).waitFor();
-    await manager.getByLabel("Saved patch").selectOption("Empty study");
+    await savedPatchPicker.selectOption("Empty study");
     await manager.getByRole("button", { name: "Open patch" }).click();
     await manager.getByText("Opened Empty study.", { exact: true }).waitFor();
     await manager.getByLabel("Import JSON").setInputFiles({ name: "exported.json", mimeType: "application/json", buffer: exported });
     await manager.getByText("Imported patch.", { exact: true }).waitFor();
+    await manager.getByRole("region", { name: "Current patch overview" }).getByText("Distant horizon", { exact: true }).waitFor();
     await drone.getByRole("button", { name: "Input: Cutoff (Modulation)" }).waitFor();
     await manager.getByRole("button", { name: "Delete saved patch" }).click();
     await manager.getByText("Saved patch deleted; current workspace unchanged.").waitFor();
-    assert.equal(await manager.getByLabel("Saved patch").locator("option[value='Empty study']").count(), 0);
+    assert.equal(await savedPatchPicker.locator("option[value='Empty study']").count(), 0);
     // Opening and importing other patches does not remove the independent custom library.
     await manager.getByRole("button", { name: "Close" }).click();
     await rootPreset.locator(`optgroup[label='Custom'] option[value='${customId}']`).waitFor({ state: "attached" });

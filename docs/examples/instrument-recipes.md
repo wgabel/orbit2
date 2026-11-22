@@ -40,6 +40,8 @@ Select an **Instrument — …** entry in Add node and connect its Audio output 
 
 The quiet filtered noise layers serve breath and bow textures rather than presenting exposed broadband hiss. The voices use conservative default levels, with a final gain of .5 and modest wet reverb. These are synthesized timbral approximations, not acoustic recordings or listening-validated replicas. Offline regression tests render the registered composites at 44.1/48 kHz, check finite non-silent audio, peak headroom and octave tracking; graph tests exercise editing, independent copies and JSON round trips. Audible character and perceived loudness still require listening in a musical context.
 
+The **Impact — AD percussion** worked patch is exportable from Patches → Annotated examples (6.19.4); import the JSON to inspect its root/nested descriptions and notes. See [patch overview and discovery](../editor/patch-annotations.md#patch-overview-and-discovery-6194).
+
 | Instrument | Existing synthesis recipe | Later improvement |
 |---|---|---|
 | Organ | Additive bank of sines at a fundamental and integer multiples, weighted mixer, chorus/reverb. | Pitch tracking, gate, independent drawbar-style macro controls. |

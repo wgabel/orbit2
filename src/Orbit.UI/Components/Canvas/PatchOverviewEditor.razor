@@ -1,0 +1,41 @@
+@namespace Orbit.UI.Components.Canvas
+@using Orbit.Application.Persistence
+@using Microsoft.AspNetCore.Components.Web
+
+<section class="patch-overview-editor" role="region" aria-label="Edit patch overview" @onkeydown="HandleKey">
+    <strong>Edit patch overview</strong>
+    <label>Title <input @ref="titleInput" maxlength="@SavedPatchOverview.MaxTitleLength" @bind="title" @bind:event="oninput" /></label>
+    <label>Description <textarea rows="4" maxlength="@SavedPatchOverview.MaxTextLength" @bind="description" @bind:event="oninput"></textarea></label>
+    <label>Usage instructions <textarea rows="4" maxlength="@SavedPatchOverview.MaxTextLength" @bind="instructions" @bind:event="oninput"></textarea></label>
+    <label>Tags (comma-separated) <input @bind="tags" @bind:event="oninput" maxlength="1200" /></label>
+    <p class="workspace-notice">Up to 24 tags, 40 characters each. Describe intended duration, key or recommended tempo in the text; playback settings are unchanged.</p>
+    @if (error is not null) { <p class="parameter-error" role="alert">@error</p> }
+    <div class="workspace-toolbar">
+        <button type="button" @onclick="ApplyAsync">Apply</button>
+        <button type="button" class="secondary" @onclick="OnCancel">Cancel</button>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public SavedPatchOverview Overview { get; set; } = default!;
+    [Parameter] public EventCallback<SavedPatchOverview> OnApply { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    private string title = "", description = "", instructions = "", tags = "";
+    private string? error;
+    private ElementReference titleInput;
+    protected override void OnInitialized()
+    {
+        title = Overview.Title; description = Overview.Description; instructions = Overview.Instructions;
+        tags = string.Join(", ", Overview.Tags);
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await titleInput.FocusAsync(preventScroll: true);
+    }
+    private async Task ApplyAsync()
+    {
+        try { await OnApply.InvokeAsync(SavedPatchOverview.Create(title, description, instructions, tags.Split(','))); }
+        catch (Exception exception) { error = exception.Message; }
+    }
+    private Task HandleKey(KeyboardEventArgs args) => args.Key == "Escape" ? OnCancel.InvokeAsync() : Task.CompletedTask;
+}

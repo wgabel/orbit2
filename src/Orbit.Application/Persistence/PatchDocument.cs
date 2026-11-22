@@ -7,6 +7,7 @@ public sealed record PatchDocument(int SchemaVersion, Guid PatchId, SavedGraph R
     double BeatsPerMinute, Guid ActiveGraphId, SavedCanvas[] CanvasLayouts)
 {
     public const int CurrentVersion = 1;
+    public SavedPatchOverview Overview { get; set; } = SavedPatchOverview.Empty;
 }
 
 public sealed record SavedGraph(Guid Id, SavedNode[] Nodes, SignalConnection[] Connections);

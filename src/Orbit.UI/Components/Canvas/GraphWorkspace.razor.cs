@@ -69,6 +69,8 @@ public partial class GraphWorkspace : IDisposable
     private bool switchingWorkspace;
     private bool addingNode;
     private bool annotationDraft;
+    private bool overviewDraft;
+    private SavedPatchOverview overview = SavedPatchOverview.Empty;
     private const string NoteType = "canvas.note";
     private static readonly GridNodePlacementPolicy Placement = new(columnSpacing: 320, rowSpacing: 360, columns: 4);
     private NodeRegistry catalog = default!;
@@ -113,6 +115,7 @@ public partial class GraphWorkspace : IDisposable
                 Navigation = new CanvasNavigationService(session, Placement, document.CanvasLayouts, document.ActiveGraphId);
                 await Transport.SetTempoAsync(document.BeatsPerMinute);
                 tempo = document.BeatsPerMinute;
+                overview = document.Overview;
             }
         }
         catch (Exception exception)
@@ -149,7 +152,31 @@ public partial class GraphWorkspace : IDisposable
     }
 
     private PatchDocument CaptureWorkspace() => Serializer.Capture(session, tempo,
-        Canvas.Snapshot.GraphId, Navigation.CaptureLayouts());
+        Canvas.Snapshot.GraphId, Navigation.CaptureLayouts(), overview);
+
+    private async Task SetOverviewDraftAsync(bool active)
+    {
+        if (active && (annotationDraft || switchingWorkspace))
+            throw new InvalidOperationException("Apply or cancel the annotation edit first.");
+        overviewDraft = active;
+        OnAnnotationDraftChanged(active);
+        try
+        {
+            if (canvasView is not null) await canvasView.SetExternalDraftWarningAsync(active);
+        }
+        catch
+        {
+            overviewDraft = !active;
+            OnAnnotationDraftChanged(!active);
+            throw;
+        }
+    }
+
+    private void ApplyOverview(SavedPatchOverview value)
+    {
+        overview = SavedPatchOverview.Validate(value);
+        _ = SaveWorkspaceAsync();
+    }
 
     private PatchDocument CaptureCommittedWorkspace()
     {
@@ -208,6 +235,7 @@ public partial class GraphWorkspace : IDisposable
             candidate = null;
             candidateNavigation = null;
             tempo = document.BeatsPerMinute;
+            overview = document.Overview;
             rangeRevision = -1;
             telemetry = null;
             editingRack = null;

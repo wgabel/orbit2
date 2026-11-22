@@ -202,6 +202,8 @@
       "select-padding": "{primitive.space.xs}",
       "notice-size": "{semantic.typography.caption}",
       "viewport-height": "100dvh",
+      "patch-panel-width": "32rem",
+      "patch-overview-text-height": "12rem",
       "page-padding": "{semantic.space.compact}",
       "tempo-width": "4.5rem",
       "overlay-layer": "10",

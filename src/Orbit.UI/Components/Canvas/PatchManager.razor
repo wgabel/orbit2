@@ -1,14 +1,26 @@
 @namespace Orbit.UI.Components.Canvas
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Web
+@using Orbit.Application.Persistence
 
-<button type="button" class="secondary" aria-expanded="@IsOpen" @onclick="ToggleAsync">Patches</button>
+<button type="button" class="secondary" aria-expanded="@IsOpen" disabled="@(Busy || EditingOverview)" @onclick="ToggleAsync">Patches</button>
 @if (IsOpen)
 {
     <section class="workspace-library-panel patch-manager" role="region" aria-label="Patch manager">
         <div class="workspace-toolbar">
             <strong>Saved patches</strong>
-            <button type="button" class="secondary" @onclick="ToggleAsync">Close</button>
+            <button type="button" class="secondary" disabled="@(Busy || EditingOverview)" @onclick="ToggleAsync">Close</button>
+        </div>
+        @if (EditingOverview)
+        {
+            <PatchOverviewEditor Overview="@Overview" OnApply="ApplyOverviewAsync" OnCancel="CancelOverviewAsync" />
+        }
+        else
+        {
+        <div class="patch-overview-section" role="region" aria-label="Current patch overview">
+            <span class="workspace-notice">Current patch overview</span>
+            <PatchOverviewSummary Overview="@Overview" />
+            <button type="button" class="secondary" @onclick="BeginOverviewAsync" disabled="@(Busy || OverviewEditDisabled)">Edit patch overview</button>
         </div>
         <p class="workspace-notice">Named saves are independent of autosave. Opening or importing replaces the current workspace; stop playback first.</p>
         <label for="patch-name">Patch name</label>
@@ -16,14 +28,38 @@
             <input id="patch-name" type="text" maxlength="80" @bind="Name" @bind:event="oninput" disabled="@Busy" />
             <button type="button" @onclick="SaveAsync" disabled="@Busy">Save as</button>
         </div>
+        <label for="patch-search">Search library</label>
+        <input id="patch-search" type="search" value="@Query" @oninput="ChangeQuery" placeholder="Name, title, description or tag" disabled="@Busy" />
+        <div class="workspace-toolbar">
+            <label for="patch-tag">Tag</label>
+            <select id="patch-tag" value="@Tag" @onchange="ChangeTag" disabled="@Busy">
+                <option value="">All tags</option>
+                @foreach (var tag in AvailableTags) { <option value="@tag">@tag</option> }
+            </select>
+            <button type="button" class="secondary" @onclick="ClearFilters" disabled="@(Busy || (Query.Length == 0 && Tag.Length == 0))">Clear filters</button>
+        </div>
+        <p class="workspace-notice" role="status">@(Entries.Length == 0 ? "No saved patches." : Filtered.Length == 0 ? "No matching patches." : $"{Filtered.Length} of {Entries.Length} saved patches")</p>
         <label for="saved-patch">Saved patch</label>
         <select id="saved-patch" @bind="Selected" disabled="@Busy">
             <option value="">Select a patch</option>
-            @foreach (var name in Names)
+            @foreach (var entry in Filtered)
             {
-                <option value="@name">@name</option>
+                <option value="@entry.Name">@entry.Name</option>
             }
         </select>
+        @if (SelectedEntry is { } selected)
+        {
+            <div class="patch-overview-section" role="region" aria-label="Saved patch overview">
+                @if (selected.MetadataUnavailable)
+                {
+                    <p class="parameter-error">Metadata unavailable; the saved document may be invalid or from a newer schema.</p>
+                }
+                else
+                {
+                    <PatchOverviewSummary @key="selected.Name" Overview="@selected.Overview" FallbackTitle="@selected.Name" />
+                }
+            </div>
+        }
         <div class="workspace-toolbar">
             <button type="button" @onclick="OpenAsync" disabled="@(Busy || Selected.Length == 0)">Open patch</button>
             <button type="button" class="secondary" @onclick="OverwriteAsync" disabled="@(Busy || Selected.Length == 0)">Overwrite selected</button>
@@ -35,6 +71,15 @@
         </div>
         <label for="patch-import">Import JSON</label>
         <InputFile id="patch-import" OnChange="ImportAsync" accept=".json,application/json" disabled="@Busy" />
+        <label for="patch-example">Annotated examples</label>
+        <div class="workspace-toolbar">
+            <select id="patch-example" @bind="Example" disabled="@Busy">
+                <option value="@PatchExampleCatalog.ModulationKey">Modulation study</option>
+                <option value="@PatchExampleCatalog.ImpactKey">Impact — AD percussion</option>
+            </select>
+            <button type="button" class="secondary" @onclick="ExportExampleAsync" disabled="@Busy">Export example</button>
+        </div>
+        }
         @if (Message is not null) { <p class="workspace-notice">@Message</p> }
         @if (Error is not null) { <p class="parameter-error" role="alert">@Error</p> }
     </section>

@@ -4,7 +4,7 @@
 
 Related: [canvas](canvas.md) · [design system](design-system.md) · [persistence and history](persistence-and-history.md) · [commands and events](../core/commands-and-events.md) · [connection visualization](annotations-and-connections.md) · [composite nodes](composite-nodes.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
 
-**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) implemented ([PR #28](https://github.com/wgabel/orbit2/pull/28)); visual groups (6.19.3) in review ([PR #30](https://github.com/wgabel/orbit2/pull/30)); overview, visibility and outline (6.19.4, 6.19.7–6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
+**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) implemented ([PR #28](https://github.com/wgabel/orbit2/pull/28)); visual groups (6.19.3) implemented ([PR #30](https://github.com/wgabel/orbit2/pull/30)); overview and discovery (6.19.4) in review ([PR #32](https://github.com/wgabel/orbit2/pull/32)); visibility and outline (6.19.7–6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
 
 <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>
 
@@ -147,7 +147,7 @@ Initially support ordinary nodes (including whole composites as members) and not
 
 A visual group can later become an actual composite via an explicit validated structural operation under Phase 7 graph grouping. That operation belongs to the composite implementation, not annotation history; preview the boundary and reject non-equivalent or invalid conversions. Never implicitly convert a group because it was renamed, moved or collapsed.
 
-#### Visual groups — implementation (6.19.3, in review)
+#### Visual groups — implementation (6.19.3, implemented)
 
 Implementation: [PR #30](https://github.com/wgabel/orbit2/pull/30).
 
@@ -188,6 +188,29 @@ Provide a Patch overview panel reachable from the existing workspace/patch manag
 Prefer the real project transport value when showing current BPM; distinguish a recommended tempo in prose from the actual setting. Do not infer exact duration or key from arbitrary notes. Metadata is optional and descriptive, not a second project tempo, transport, scale quantizer or audio configuration. Search/filter saved patches by title/name, tags and description, with case-insensitive matching and clear empty states. Do not run DSP or load a patch into the active workspace to display search metadata; use validated lightweight saved document metadata or a derived index if needed.
 
 Example for agents: use overview text to give duration, musical concept, manual actions and assumptions; visual groups identify arrangement lanes; node aliases mark voices and control functions; a few note cards explain a tricky harmonic choice or modulation scheme. For an individual effect preset, a short note describing what it does may suffice. Use meaningful descriptions, not a repetition of every parameter value; separate unverified musical intent from actually auditioned/verified behavior. Once implemented, include these fields in generated patch JSON according to the current schema, not hypothetical keys.
+
+#### Patch overview and discovery — implementation (6.19.4, in review)
+
+Implementation: [PR #32](https://github.com/wgabel/orbit2/pull/32).
+
+Open **Patches → Edit patch overview** from any canvas. The overview describes the entire patch, not the currently open composite. Edit title, multiline description, usage instructions and comma-separated tags. Apply commits the complete draft and schedules recovery; Cancel or Escape discards it. An open draft is protected by the annotation draft warning and blocks patch replacement, graph navigation, other annotation edits and current-patch save/export. Editing while playing does not change the graph revision, transport, playback or graph history. Overview edits are patch-wide and are not entries in the per-canvas annotation undo history.
+
+The optional top-level schema-1 `overview` property (not inside a canvas layout) defaults to empty metadata when omitted:
+
+```json
+"overview": {
+  "title": "The Distant Horizon",
+  "description": "An intended evolving A minor soundscape with a quiet open-fifth pedal.",
+  "instructions": "Intended duration: three minutes. Fade the melodic layer in around 1:15. Recommended tempo: 72 BPM.",
+  "tags": ["Ambient", "Space", "Generative", "A minor"]
+}
+```
+
+Title is limited to 120 characters, description and instructions to 16,000 each, and tags to 24 unique trimmed strings of 1–40 characters (case-insensitive uniqueness, no commas or control characters). The editor trims tags, removes empty entries and deduplicates them; malformed imported metadata is rejected (including explicit null). The metadata is descriptive only: instructions about tempo/duration/key do not alter `beatsPerMinute`, automatically schedule events or quantize pitch. Save, overwrite, recovery and export capture committed metadata; opening/importing replaces it atomically with the patch, and New patch starts empty.
+
+The library save name remains independent of the musical title. The saved-patch picker displays a selected snapshot's overview without opening it. Search matches whitespace-separated terms case-insensitively against save name, title, description and tags (all terms must match somewhere); the optional tag filter is an exact case-insensitive match. Clear filters restores the list; hidden selection is cleared to avoid unintended overwrite/delete. The library reads overview fields from stored JSON without reconstructing a graph or starting DSP. Unreadable or unsupported metadata is identified separately and the entry remains selectable by save name for deletion or an explicit load attempt; full validation remains the normal load path. Named snapshots do not track current workspace edits until explicitly overwritten.
+
+**Annotated examples** in Patches exports a fresh ordinary portable JSON patch without changing the active workspace or named library. **Modulation study** explains the existing oscillator modulation demo; **Impact — AD percussion** includes the existing impact composite routed to a master output, root and nested notes, aliases, and overview instructions. Import the exported file to inspect or edit it. Both examples use existing graph factories and validated persistence; their annotations are learning aids, not claims of musical mastering or listening verification.
 
 ## 2. Annotation visibility and zoom-dependent detail (6.19.7 — planned)
 
@@ -244,4 +267,4 @@ Keep the original state/persistence/history contracts above authoritative. When 
 | Audio isolation | During continuous playback perform every annotation and navigation action and verify unchanged root graph revision, DSP source/runtime generation and no graph-history entry. |
 | Agents / examples | Annotated example patch explains roles and actual settings, overview provides musical purpose and manual instructions, optional metadata remains data-only and valid. |
 
-These are separate deliverable increments in the [Phase 6.19 register](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-planned). With 6.19.1–6.19.2 implemented and 6.19.3 in review, implement 6.19.4 patch overview and discovery next; the other increments can proceed independently as their model/UI foundations are available. Record actual implementation PR links here and in the roadmap as features ship.
+These are separate deliverable increments in the [Phase 6.19 register](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-planned). With 6.19.1–6.19.3 implemented and 6.19.4 in review, implement 6.19.7 annotation visibility and zoom-dependent detail next, followed by 6.19.8 outline and navigation. Record actual implementation PR links here and in the roadmap as features ship.

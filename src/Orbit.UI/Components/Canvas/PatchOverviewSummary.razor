@@ -1,0 +1,28 @@
+@namespace Orbit.UI.Components.Canvas
+@using Orbit.Application.Persistence
+
+<div class="patch-overview-summary">
+    <strong>@(string.IsNullOrWhiteSpace(Overview.Title) ? FallbackTitle : Overview.Title)</strong>
+    @if (!string.IsNullOrWhiteSpace(Overview.Description))
+    {
+        <p class="patch-overview-text">@Overview.Description</p>
+    }
+    @if (Overview.Tags.Count > 0)
+    {
+        <div class="patch-overview-tags" aria-label="Tags">
+            @foreach (var tag in Overview.Tags) { <span>@tag</span> }
+        </div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Overview.Instructions))
+    {
+        <details>
+            <summary>Usage instructions</summary>
+            <p class="patch-overview-text">@Overview.Instructions</p>
+        </details>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public SavedPatchOverview Overview { get; set; } = default!;
+    [Parameter] public string FallbackTitle { get; set; } = "Untitled patch";
+}
