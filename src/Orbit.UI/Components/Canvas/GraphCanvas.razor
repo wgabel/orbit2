@@ -10,7 +10,7 @@
          aria-keyshortcuts="F 0" data-fit-sequence="@fitSequence" data-pinching="@(pinchOrigin is not null ? "true" : "false")"
          @onpointerdown="BeginBackground" @onpointerdown:preventDefault="true"
          @onpointermove="PointerMoved" @onpointerup="PointerReleasedAsync"
-         @onpointercancel="CancelGesture" @onpointerleave="CancelGesture" @onlostpointercapture="CancelGesture"
+         @onpointercancel="CancelGesture" @onpointerleave="CancelPointerExit" @onlostpointercapture="CancelPointerExit"
          @onwheel="OnWheelAsync" @onwheel:preventDefault="true" @onkeydown="KeyDown">
         <div class="canvas-world" style="@WorldStyle">
             @foreach (var group in Snapshot.VisualGroups.Where(group => Snapshot.GroupDetail(group.Id) != AnnotationDetail.Hidden))

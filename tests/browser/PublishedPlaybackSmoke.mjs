@@ -6,6 +6,7 @@ import { readFile } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { verifyTouchWire } from "./TouchWireSmoke.mjs";
+import { verifyWireEdgePan } from "./WireEdgePanSmoke.mjs";
 import { fitCanvas, resetCanvas, zoomStep, tripleTapFit, verifyCanvasNavigation } from "./CanvasNavigationSmoke.mjs";
 
 const { chromium } = await import(pathToFileURL(resolve(process.env.ORBIT_PLAYWRIGHT_DIR, "index.mjs")));
@@ -2085,6 +2086,7 @@ try {
     await mobilePage.getByRole("button", { name: "Stop", exact: true }).click();
     await mobilePage.close();
     await verifyTouchWire(browser, "http://127.0.0.1:" + server.address().port);
+    await verifyWireEdgePan(browser, "http://127.0.0.1:" + server.address().port);
     await verifyCanvasNavigation(browser, "http://127.0.0.1:" + server.address().port);
     for (const file of ["canvasDom.js", "workspacePanels.js", "nodeLibraryStorage.js", "performanceKeyboard.js",
         "scopeView.js", "scopeAnalysis.js", "signalPlot.js", "spectrumAnalysis.js", "spectrumPlot.js"])
