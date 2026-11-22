@@ -18,6 +18,7 @@ Related: [performance](../../performance.md) · [dsp engine](../audio/dsp-engine
 - UI: accessible compact control/expanded panel, separate badges, missing state and tooltip, stable sizing, readable units and responsive/nested canvas behavior, no graph manipulation on panel interaction, local report export.
 - Resource counts: distinction between reachable and editable, current and retiring voices, unique capture channel vs lease; verify counts match ownership and cleanup after stop/replace/dispose.
 - DSP profiler if supported: synthetic deterministic clock examples, actual block shape, scope labels, overhead and identical sample output; unsupported path must remain functional.
+- Explainable health (7.3.7): deterministic status/reason pairs at every numeric boundary, refresh-relative 60/120 Hz examples, cadence unknown, scope mismatch, unsupported, stale, warm-up and paused values, isolated/repeated underruns/tasks, new vs historical processor errors, expected superseded requests, intentional crossfade, critical precedence even with limited monitoring, and no fabricated Healthy summary. Reasons use the exact same metric/threshold/units as classification.
 - Report schema: finite numeric fields, provenance/capabilities, bounded sizes, no audio buffers or personal/patch content by default.
 
 ### 12.2 Integration/browser tests
@@ -29,6 +30,8 @@ Run against the published app, not only unit mocks. Test both browser-supported 
 - Live parameter edit: no transition/compilation count change except the control update; monitor visibility/toggle does not change source or generation.
 - Structural edit: valid source generation and worker/factory timing, accepted generation and replacement stage separation, retiring count resolves; stale/failed replacements obey last-good policy.
 - Expand/collapse visualization, nested navigation, patch save/load, repeated play/stop: bounded observers/leasing and independent diagnostics.
+- Explainable monitor (7.3.7): inject representative Good/Caution/Critical/neutral values; assert readable status and short reason next to each classified number (not hover-only), valid units/scope, readable mobile wrapping and canvas-first compact layout, independent section states and no monitor-induced audio/graph mutations.
+- Device benchmark (7.3.8): opt-in bounded test, cancellation and critical-stop paths, reference fixture validation, report provenance and known unavailable metrics, patch/transport/history preservation and worklet/tap cleanup. Actual timing targets require controlled hardware; mock tests must not pretend to establish capacity.
 - Background/visibility changes: paused or stale UI sample, resumed fresh window, no fabricated performance crisis from inactivity.
 - Basic benchmark protocol with deterministic fixtures at 44.1 and 48 kHz, and optional real hardware smoke check. Document actual hardware/browser and real-vs-simulated statistics.
 
@@ -50,6 +53,8 @@ Each phase should be a separate reviewable increment. Before implementation read
 | 7.3.4 | Baseline in review · [PR #58](https://github.com/wgabel/orbit2/pull/58) | Validated DSP profiling and reproducible benchmark fixtures |
 | 7.3.5 | Planned | Input-to-engine and musical timing diagnostics, when note/sequencer events exist |
 | 7.3.6 | Planned | Advanced local reports, stress/regression automation and measured improvement cycles |
+| 7.3.7 | Planned | Explainable metric-specific health badges and short reasons, scoped to actual capabilities and display cadence |
+| 7.3.8 | Planned | Opt-in device capacity diagnostic and 50/200/500/1,000+ reachable-node reference compositions |
 
 ### 7.3.1 — Passive monitor
 
@@ -82,6 +87,14 @@ After Phase 7.1 runtime event delivery and 7.2.3/7.2.8 performance actions exist
 ### 7.3.6 — Reports and regression improvements
 
 Add opt-in history charts, local report/copy/export, stress testing with safe fixture workload controls, optional machine-comparable CI benchmark job, long-running leak tests, analysis comparisons and regression summaries. Record actual current-vs-baseline results and prioritize measured bottlenecks; review resource and quality changes separately. No unbounded histories, automatic uploads, hidden audio paths or speculative optimizations.
+
+### 7.3.7 — Explainable performance health (planned)
+
+Implement the [threshold and reason contract](performance-metrics.md#31-suggested-health-thresholds) and [expanded UI](performance-metrics.md#421-explainable-health-indicators-planned-737). Centralize a pure, testable evaluator for each assessed metric and expose a brief visible status reason, with neutral states when no valid threshold applies. Use independent audio, DSP, editor and compile statuses; retain data provenance, history and current-state semantics. Reuse 7.3.1–7.3.3 now; integrate 7.3.4 validated load later. Do not block existing useful health badges on live DSP profiling.
+
+### 7.3.8 — Device-specific capacity benchmarks (planned)
+
+Extend the 7.3.4 fixtures and 7.3.6 reporting/stress facilities to the [device-specific reference compositions and diagnostic workflow](dsp-profiling.md#94-device-specific-capacity-and-reference-compositions-planned). Establish reference mobile and desktop profiles, actual measured capacity and threshold validation; safe opt-in runs, limits and cleanup. Expose separate current environment and workload results; do not claim unsupported live DSP load or turn fixture sizes into universal limits.
 
 Dependencies: 7.3.1–7.3.4 can start from the current architecture without waiting for musical instrument milestones; 7.3.5 depends on the relevant runtime event/keyboard work; 7.3.6 may progressively extend earlier reporting/benchmark facilities. Phase 6.18 signal-analysis observations can contribute resource metrics but must not duplicate the diagnostics system. Maintain performance acceptance as a cross-cutting requirement for all subsequent DSP nodes.
 

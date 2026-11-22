@@ -105,17 +105,45 @@ Definitions: mean = sum divided by count; median (p50) = middle observation; p95
 
 ### 3.1 Suggested health thresholds
 
-These are initial UX heuristics, not universal guarantee limits. Revisit using measured data from actual devices.
+**Planned health interpretation (7.3.7):** initial engineering/UX targets, not measured guarantees or universal device limits. Audio reliability is the primary requirement: zero interruptions during normal playback and editing. Target 30–50% measured p95 render-budget consumption for a representative complex composition, leaving capacity for new voices/effects, stereo/unison, analysis and temporary graph replacements. Validate and refine the thresholds on real reference hardware via [device capacity benchmarks](dsp-profiling.md#94-device-specific-capacity-and-reference-compositions-planned). Never use a missing, stale or unvalidated metric as a passing measurement.
 
-| Dimension | Good | Caution | Critical / action |
+#### Audio and runtime
+
+| Measurement (valid, current scope) | Good | Caution (usable but investigate) | Critical / action |
 |---|---|---|---|
-| Measured render/DSP load | p95 below 60% | 60–85% or frequent budget pressure | p95 above 85% sustained, repeated budget exceedance or reported underrun |
-| Audio underruns | None reported in current valid session | Isolated event: inspect duration/timing | Repeated events or growing missing duration |
-| Interactive estimated output latency | Under ~20 ms is a useful starting goal | 20–50 ms can feel sluggish for playing | Above ~50 ms noticeable for many keyboard applications; inspect device/buffers first |
-| Editor | Close to foreground display cadence, regular frame times | p95 frame gaps materially above refresh interval | Sustained slow frames or repeated long tasks during interaction |
-| Compile/replacement | Stable relative to comparable patch/baseline | Regression or unexpectedly frequent compiles | Failures, stale results, repeated unnecessary recompilation |
+| Estimated pipeline latency (base + output; interactive playing) | Below 20 ms | 20–50 ms | Above 50 ms; inspect device/output route and buffers first |
+| Reported underrun events | 0 in valid session | One isolated event | Repeated or newly accumulating events |
+| Reported missing audio duration / fraction | 0 ms / 0% | Isolated nonzero loss | Growing loss or recurring interruptions |
+| Measured render capacity or DSP load (p95, explicitly scoped) | Below 60%; aim for 30–50% on representative complex patch | 60–85% or frequent budget pressure | Above 85% sustained, recurrent budget exceedance or underruns |
+| Worklet processor errors | 0 new errors for monitored session | — | Any unexpected new error; inspect attempt and current revision |
 
-Thresholds must not be used where metrics are unavailable or stale. Show independent dimension badges; an overall badge may summarize observed conditions but label "Monitoring limited" when key metrics are unsupported. Do not show "Healthy" based solely on a low latency number. A 25 ms output buffer can be musically fine for slow drones while being undesirable for a fast keyboard; no universal latency pass/fail.
+An isolated underrun is already a failure of the uninterrupted-audio target even if its UI warning is Caution rather than Critical. Zero reported events do not prove glitch-free audio. Distinguish context-wide renderer capacity from Faust-only timing; offline throughput cannot be shown as live load. At 48 kHz / 128 frames, the budget is ~2.67 ms (30% = 0.80 ms; 50% = 1.33 ms; 75% = 2.00 ms; 95% = 2.53 ms). Preserve measured values above 100% and explain budget exceedance. A scoped kernel measurement does not account for all renderer overhead. Latency above 20 ms is not necessarily a defect for sustained or sequenced drones, and the pipeline estimate is not physical key-to-speaker latency.
+
+#### Editor responsiveness (60 Hz reference)
+
+| Measurement | Good | Caution | Critical / action |
+|---|---|---|---|
+| Observed FPS | At least 55 (target 60) | 40 to below 55 | Below 40 during normal interaction |
+| Median frame gap | At most 17 ms (target ~16.7 ms) | Above 17 through 25 ms | Above 25 ms |
+| P95 frame gap | Below 20 ms | 20–33 ms | Above 33 ms |
+| Longest frame gap | Below 50 ms | 50–100 ms | Above 100 ms |
+| Long tasks / long animation frames | 0 in recent window | Occasional isolated entry | Frequent/repeated entries during normal interaction |
+
+The editor thresholds are cadence-relative except for absolute stalls (50/100 ms) and long task/long animation-frame definitions. Scale FPS goals by reliable reference cadence (55/60 and 40/60 of reference refresh), median and p95 gap thresholds by reference frame interval / 16.67 ms: e.g. on 120 Hz, aim for 110–120 FPS and p95 below 10 ms. Use a reliable device/display baseline from a light foreground workload, never infer that an already slow patch is the device's maximum. If cadence is unknown, give a clearly labelled 60 Hz reference (not a device-specific claim) or withhold cadence-dependent health. Distinguish browser render opportunities from actual painted frames. Use the current five-second foreground window and bounded history; avoid classifying warm-up, hidden tabs or sparse observations. Long tasks and long frames are separate, potentially overlapping observations; do not add them. Use documented, testable rolling-window rules for "repeated" (initially two or more in the same 5 s observation window); surface isolated long stalls even when average FPS looks good. An audio warning and UI warning must remain independent.
+
+#### Live editing / compilation
+
+These are proposed targets for comparable warm and cold work, not verified performance, and should be evaluated separately on reference hardware. Compare same patch and operation type; keep historical last-operation timings separate from current playback health.
+
+| Operation | Good (desired) | Caution (acceptable) | Critical / investigate |
+|---|---|---|---|
+| Live control update round trip | Below 10 ms | 10 to below 30 ms | 30 ms or more |
+| Faust source generation | Below 20 ms | 20 to below 100 ms | 100 ms or more |
+| Worklet creation | Below 30 ms | 30 to below 100 ms | 100 ms or more |
+| Warm graph request-to-acceptance | Below 150 ms | 150 to below 500 ms | 500 ms or more |
+| Initial patch compilation (measured cold compile scope) | Below 500 ms | 500 ms to below 2 s | 2 s or more |
+
+Do not substitute worker round trip, source generation, request-to-completion (includes intentional crossfade) or initial download for a measured compile scope. If cold/warm classification is unavailable, label it unknown and use comparable-operation baseline rather than a false warm/cold badge. Continue to flag failures or unexpected repeated recompiles regardless of stage timing. Changing a base frequency, gain or cutoff should reuse DSP without compiling. Expected superseded/cancelled edits are not processor failures. Counts such as sample rate, current/retiring worklets, output channels, reachable nodes, active plots and capture leases are descriptive unless a known limit or lifecycle invariant is violated; do not invent arbitrary health thresholds for resource counts. A retiring worklet during a scheduled crossfade is normal; one retained after the expected completion/cleanup warrants investigation. Compare page-lifetime error counters against an explicit observation baseline without silently erasing the historical total.
 
 ## 4. Performance Monitor UX and usage
 
@@ -159,6 +187,28 @@ Compilation
 
 [Reset session counters]   [Copy report]   [Start diagnostic]
 ```
+
+#### 4.2.1 Explainable health indicators (planned 7.3.7)
+
+Add a visible text badge to each assessable metric and an immediately adjacent short, plain-language explanation of **why** the current value has that status. It is part of the normal expanded panel (one sentence, typically 5–15 words, wrapping on mobile), not exclusively a tooltip, a documentation link or a generic label. For Caution/Critical, explain what is at risk and, when useful, the next diagnostic action. A longer tooltip/details can explain measurement provenance, target, scope, window and troubleshooting, but the short reason must be readable without interaction. Example rows (hypothetical):
+
+| Metric | Measurement | Status | Visible reason |
+|---|---:|---|---|
+| Estimated pipeline latency | 12.4 ms | Good | Below 20 ms; suitable for responsive playing. |
+| Reported underruns | 0 | Good | None reported since this playback baseline. |
+| DSP load (validated p95) | 38% | Good | Below 60%; margin remains within the measured scope. |
+| DSP load (validated p95) | 75% | Caution | Using most of the render budget; less room for new effects. |
+| Editor FPS (60 Hz) | 58 | Good | Close to the 60 Hz reference cadence. |
+| Editor p95 gap (60 Hz) | 28 ms | Caution | Above the 20 ms target; some frames may be missed. |
+| Warm graph replacement | 124 ms | Good | Accepted within the 150 ms target. |
+| Warm graph replacement | 620 ms | Critical | Above 500 ms; structural edits may feel slow. |
+| Worklet errors | 1 new | Critical | A processor error occurred; inspect the affected revision. |
+| DSP load (unsupported) | N/A | Not measured | This browser cannot provide validated live DSP timing. |
+| Editor FPS (hidden tab) | — | Paused | Frame sampling resumes when this tab is visible. |
+
+Use Good (green), Caution (amber), Critical (red), and neutral Informational / Unavailable / Not measured / Warming up / Paused / Stale states, with readable labels and accessible contrast; never communicate status only by color. Put known thresholds and actual numbers in the explanation when they help; keep factual phrasing tied to exactly the classified value. For descriptive metrics show a neutral explanation (e.g. “48 kHz is the current audio sample rate”), not a misleading Good badge. Reasons should be generated from the same centralized, pure evaluator as the badge, thresholds and availability/scope rules; avoid independent UI logic that can contradict the color. Prefer typed stable reason IDs, parameters and status values, formatted for the current locale. Provide direct navigation to relevant troubleshooting guidance where useful.
+
+Provide compact aggregate/section indicators separately for audio reliability, DSP headroom, UI and graph edits, without adding height or clutter to the canvas-first toolbar. In the details show the worst applicable valid measurement and reasons; an isolated severe frame/processor event must not disappear behind averages. If important measurements are not supported or not fresh, show “Monitoring limited” / “Not measured” and the reason, never an unqualified Healthy summary. A known Critical condition takes precedence and should remain visible even when other metrics are unknown. A stopped session or historical operation cannot be presented as current live health. No automatic quality reductions, node removal, sample-rate changes, compile requests or playback changes to improve status. Status evaluation is read-only, bounded and at the existing ~1 Hz publication cadence.
 
 All example values are hypothetical. Render missing metrics as N/A with a tooltip such as "This browser does not expose playback statistics". Use independent flags for estimated, stale, warming up, inactive, limited precision and unsupported. Show units, metric source and sampled interval in an explanation panel accessible without developer knowledge.
 
