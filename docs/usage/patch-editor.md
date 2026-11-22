@@ -54,7 +54,7 @@ Implemented ([PR #65](https://github.com/wgabel/orbit2/pull/65)). On a touchscre
 
 ### Drag a cable to an off-screen node
 
-In review: on Android/touch or desktop, start dragging from an output and keep the finger or mouse near the edge of the canvas. After a short pause the canvas scrolls automatically, faster nearer the edge; corners scroll diagonally. You can keep holding until the destination comes into view, without zooming out or releasing the cable. Move away from the edge or aim at the compatible input to stop the scrolling, then release to connect. On touch the lifted cursor, magnetic rings and target label still work; a second finger takes over for pinch navigation and cancels the cable. Escape or dropping the panned cable away from a target cancels the connection. See [canvas behavior](../editor/canvas.md#cable-edge-panning).
+In review ([PR #73](https://github.com/wgabel/orbit2/pull/73)): on Android/touch or desktop, start dragging from an output and keep the finger or mouse near the edge of the canvas. After a short pause the canvas scrolls automatically, faster nearer the edge; corners scroll diagonally. You can keep holding until the destination comes into view, without zooming out or releasing the cable. Move away from the edge or aim at the compatible input to stop the scrolling, then release to connect. On touch the lifted cursor, magnetic rings and target label still work; a second finger takes over for pinch navigation and cancels the cable. Escape or dropping the panned cable away from a target cancels the connection. See [canvas behavior](../editor/canvas.md#cable-edge-panning).
 
 ## 2. Interpret and edit connections
 
