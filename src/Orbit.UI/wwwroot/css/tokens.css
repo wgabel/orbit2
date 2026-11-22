@@ -175,6 +175,13 @@
     --component-workspace-mobile-toolbar-height: 44px;
     --component-workspace-toolbar-button-block: var(--primitive-space-input-block);
     --component-workspace-toolbar-button-inline: var(--primitive-space-md);
+    --component-keyboard-tool-size: 32px;
+    --component-keyboard-compact-height: 112px;
+    --component-keyboard-tall-height: 176px;
+    --component-keyboard-status-dot: 7px;
+    --component-keyboard-white-color: var(--primitive-color-slate-100);
+    --component-keyboard-black-color: var(--primitive-color-ink-950);
+    --component-keyboard-held-color: var(--primitive-color-mint-300);
     --component-pitch-pattern-max-height: 18rem;
     --component-pitch-pattern-numeric-width: 6rem;
     --component-pitch-pattern-step-min-width: 4rem;

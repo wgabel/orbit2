@@ -51,13 +51,51 @@ test('long press opens once and consumes its release; drag, quick tap and second
         emit('pointerdown'); emit('pointermove', { clientX: 70 }); emit('pointerup');
         emit('pointerdown'); emit('pointerdown', { pointerId: 2 }); emit('pointerup', { pointerId: 2 }); emit('pointerup');
         await wait();
-        assert.equal(calls.length, 1);
+        assert.deepEqual(calls.slice(1).map(call => call.method), ['BeginUniversalPinchAsync', 'EndUniversalPinchAsync', 'EndUniversalPinchAsync']);
         assert.ok(emit('contextmenu', { pointerType: 'mouse', button: 2 }).prevented);
-        assert.equal(calls.length, 2);
-        assert.equal(calls[1].request.touch, false);
+        // A fresh mouse down permits a new right-click after the pinch.
+        emit('pointerdown', { pointerType: 'mouse', button: 2 });
+        assert.ok(emit('contextmenu', { pointerType: 'mouse', button: 2 }).prevented);
+        assert.equal(calls.length, 5);
+        assert.equal(calls.at(-1).request.touch, false);
     } finally {
         controller.dispose();
         globalThis.matchMedia = orig;
     }
     assert.equal(listeners.size, 0);
+});
+
+test('two fingers starting on interactive controls take over, cancel the range and suppress native edits', () => {
+    const { viewport, receiver, emit, calls, make } = fixture();
+    const savedPointer = globalThis.PointerEvent;
+    globalThis.PointerEvent = class { constructor(type, options) { Object.assign(this, options, { type }); } };
+    const range = make('node', true);
+    range.value = '0.4';
+    const closest = range.closest.bind(range);
+    range.closest = selector => selector === 'input[type="range"]' ? range : closest(selector);
+    let canceled = 0;
+    range.dispatchEvent = event => { assert.equal(event.type, 'pointercancel'); canceled++; };
+    const controller = mountContextInput(viewport, receiver);
+    try {
+        assert.equal(emit('pointerdown', { target: range }).stopped, undefined);
+        range.value = '0.8';
+        const takeover = emit('pointerdown', { pointerId: 2, target: make('node', true), clientX: 100 });
+        assert.ok(takeover.stopped);
+        assert.equal(calls[0].method, 'BeginUniversalPinchAsync');
+        assert.equal(calls[0].request.slider, true);
+        assert.equal(range.value, '0.4');
+        assert.equal(canceled, 1);
+        range.value = '0.9';
+        assert.ok(emit('input', { target: range }).stopped);
+        assert.equal(range.value, '0.4');
+        emit('pointermove', { pointerId: 1, clientX: 60 });
+        emit('pointerup', { pointerId: 2 });
+        emit('pointermove', { pointerId: 1, clientX: 70 });
+        emit('pointerup');
+        assert.deepEqual(calls.map(call => call.method), ['BeginUniversalPinchAsync', 'MoveUniversalPinchAsync', 'EndUniversalPinchAsync', 'MoveUniversalPinchAsync', 'EndUniversalPinchAsync']);
+        assert.ok(emit('click').stopped);
+        assert.equal(emit('pointerdown', { target: range }).stopped, undefined);
+        assert.equal(emit('input', { target: range }).stopped, undefined);
+        emit('pointerup');
+    } finally { controller.dispose(); globalThis.PointerEvent = savedPointer; }
 });

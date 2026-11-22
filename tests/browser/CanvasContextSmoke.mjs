@@ -10,14 +10,29 @@ const emptyPoint = page => page.locator('.canvas-viewport').evaluate(element => 
     throw new Error('No empty context gesture target');
 });
 
+async function rightClickHeader(page, selector) {
+    const point = await page.locator('.canvas-viewport').evaluate((viewport, selector) => {
+        const bounds = viewport.getBoundingClientRect();
+        for (const header of viewport.querySelectorAll(selector)) {
+            const rect = header.getBoundingClientRect();
+            for (let y = Math.ceil(Math.max(rect.top, bounds.top)); y < Math.min(rect.bottom, bounds.bottom); y += 3)
+                for (let x = Math.ceil(Math.max(rect.left, bounds.left)); x < Math.min(rect.right, bounds.right); x += 3) {
+                    const hit = document.elementFromPoint(x, y);
+                    if (hit && header.contains(hit) && !hit.closest('button, input, select, label')) return { x, y };
+                }
+        }
+        throw Error('No exposed header for ' + selector);
+    }, selector);
+    await page.mouse.click(point.x, point.y, { button: 'right' });
+}
+
 export async function verifyCanvasContext(browser, url) {
     const desktop = await browser.newPage({ viewport: { width: 1200, height: 800 } });
     try {
         await desktop.goto(url);
         await desktop.locator('article[data-node-id]').nth(3).waitFor();
         await fitCanvas(desktop);
-        const node = desktop.locator('article[data-node-id]').first();
-        await node.locator('.node-alias').click({ button: 'right' });
+        await rightClickHeader(desktop, 'article[data-node-id] .node-header');
         await menu(desktop).getByRole('button', { name: 'Focus node', exact: true }).waitFor();
         await menu(desktop).getByRole('button', { name: 'Close contextual actions' }).press('Escape');
         await menu(desktop).waitFor({ state: 'hidden' });
@@ -27,7 +42,8 @@ export async function verifyCanvasContext(browser, url) {
         const note = desktop.locator('.note-card.note-selected');
         await note.waitFor();
         const noteId = await note.getAttribute('data-note-id');
-        await note.locator('.note-title').click({ button: 'right' });
+        await fitCanvas(desktop);
+        await rightClickHeader(desktop, `.note-card[data-note-id="${noteId}"] .note-header`);
         await menu(desktop).getByRole('button', { name: 'Duplicate note' }).waitFor();
         await menu(desktop).getByRole('button', { name: 'Delete note', exact: true }).click();
         await menu(desktop).waitFor({ state: 'hidden' });

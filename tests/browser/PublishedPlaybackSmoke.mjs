@@ -1420,8 +1420,8 @@ try {
     const performance = responsePage.getByRole("region", { name: "Performance keyboard" });
     await responsePage.bringToFront();
     await responsePage.locator('.performance-keyboard[data-keyboard-ready="true"]').waitFor();
-    await performance.getByRole("button", { name: "Arm keyboard" }).click();
-    await performance.getByRole("button", { name: "Disarm keyboard" }).waitFor();
+    await performance.getByRole("button", { name: "Collapse keyboard" }).waitFor();
+    assert.equal(await performance.getAttribute("data-target-node"), await sequencer.getAttribute("data-node-id"));
     await responsePage.getByRole("button", { name: "Play patch" }).click();
     await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
     const keyboardRevision = await responseStatus.innerText();
@@ -1504,7 +1504,7 @@ try {
     await pattern.locator('[data-sequence-playhead="none"]').waitFor();
     await responsePage.getByRole("button", { name: "Stop", exact: true }).click();
     await responseStatus.filter({ hasText: /Ready/ }).waitFor();
-    await performance.getByRole("button", { name: "Arm keyboard" }).waitFor();
+    await performance.getByRole("button", { name: "Collapse keyboard" }).waitFor();
 
     // The held-note keyboard can play the real modal composite. Overlapping keys
     // follow last-note priority; fallback and release do not edit the graph.
@@ -1533,11 +1533,19 @@ try {
     await fitCanvas(responsePage);
     await noteSource.locator(".node-header > span").click();
     await responsePage.locator('.performance-keyboard[data-keyboard-ready="true"]').waitFor();
-    await performance.getByRole("button", { name: "Arm keyboard" }).click();
+    await performance.getByRole("button", { name: "Collapse keyboard" }).waitFor();
+    assert.equal(await performance.getAttribute("data-target-node"), await noteSource.getAttribute("data-node-id"));
     await responsePage.getByRole("button", { name: "Play patch" }).click();
     await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
     const noteRevision = await responseStatus.innerText();
+    // Ordinary node selection must not discard the keyboard target.
+    await fitCanvas(responsePage);
+    await handpan.locator(".node-header > span").click();
+    assert.equal(await performance.getAttribute("data-target-node"), await noteSource.getAttribute("data-node-id"));
     await performance.focus();
+    await responsePage.keyboard.down("f");
+    await performance.locator('[data-live-pitch-offset="-4"]').waitFor();
+    await responsePage.keyboard.up("f");
     await responsePage.keyboard.down("a");
     await performance.locator('[data-live-pitch-offset="-9"]').waitFor();
     await responsePage.keyboard.down("s");
@@ -1546,9 +1554,86 @@ try {
     await performance.locator('[data-live-pitch-offset="-9"]').waitFor();
     await responsePage.keyboard.up("a");
     assert.equal(await responseStatus.innerText(), noteRevision);
+
+    // The mobile live offset used to wrap at +10 st and move every key
+    // under the finger. Compare every key's bounds across real note actions.
+    await responsePage.keyboard.press("x");
+    await performance.getByText("Octave 5 · reference A4", { exact: true }).waitFor();
+    const desktopKeyboardViewport = responsePage.viewportSize();
+    const readPianoBounds = () => performance.locator("[data-midi-note]:visible").evaluateAll(keys =>
+        keys.map(key => {
+            const { x, y, width, height } = key.getBoundingClientRect();
+            return { note: key.dataset.midiNote, x, y, width, height };
+        }));
+    try {
+        for (const width of [360, 390, 430]) {
+            await responsePage.setViewportSize({ width, height: 844 });
+            await responsePage.locator(".mobile-workspace-bar").waitFor();
+            let baseline;
+            for (const [note, offset] of [[72, 3], [79, 10], [72, 3], [81, 12]]) {
+                const key = performance.locator(`[data-midi-note="${note}"]`);
+                const pointer = { pointerId: 1, pointerType: "touch", isPrimary: true, button: 0, bubbles: true };
+                await key.dispatchEvent("pointerdown", { ...pointer, buttons: 1 });
+                await performance.locator(`[data-live-pitch-offset="${offset}"]`).waitFor();
+                const bounds = await readPianoBounds();
+                assert.equal(bounds.length, 13);
+                if (baseline) assert.deepEqual(bounds, baseline, `Piano shifted at ${width}px, pitch +${offset} st`);
+                else baseline = bounds;
+                const dock = await performance.boundingBox();
+                const nav = await responsePage.locator(".mobile-workspace-bar").boundingBox();
+                const canvas = await responsePage.locator(".graph-canvas").boundingBox();
+                assert.ok(dock.y + dock.height <= nav.y + 1, "Dock must not occlude mobile navigation");
+                assert.ok(canvas.y + canvas.height <= dock.y + 1, "Dock must reserve canvas space");
+                await key.dispatchEvent("pointerup", { ...pointer, buttons: 0 });
+                await performance.locator(`[data-midi-note="${note}"][data-held="false"]`).waitFor();
+            }
+        }
+        const mobilePiano = performance.getByRole("group", { name: "On-screen piano" });
+        const compact = await mobilePiano.boundingBox();
+        const whiteC = performance.locator('[data-midi-note="72"]');
+        const blackCs = performance.locator('[data-midi-note="73"]');
+        const whiteD = performance.locator('[data-midi-note="74"]');
+        const cBounds = await whiteC.boundingBox(), csBounds = await blackCs.boundingBox(), dBounds = await whiteD.boundingBox();
+        assert.ok(csBounds.height < cBounds.height && csBounds.y === cBounds.y && dBounds.y === cBounds.y, "Piano geometry must overlay short black keys on the white row");
+        assert.ok(csBounds.x < dBounds.x && csBounds.x + csBounds.width > dBounds.x, "Black key must straddle C and D");
+        // Capture a touch, slide to another key, and release outside the keyboard.
+        const slidePointer = { pointerId: 7, pointerType: "touch", isPrimary: true, button: 0, bubbles: true };
+        await whiteC.dispatchEvent("pointerdown", { ...slidePointer, buttons: 1 });
+        await performance.locator('[data-live-pitch-offset="3"]').waitFor();
+        await responsePage.locator("body").dispatchEvent("pointermove", { ...slidePointer, buttons: 1,
+            clientX: dBounds.x + dBounds.width / 2, clientY: dBounds.y + dBounds.height * 0.9 });
+        await performance.locator('[data-live-pitch-offset="5"]').waitFor();
+        await responsePage.locator("body").dispatchEvent("pointerup", { ...slidePointer, buttons: 0, clientX: 1, clientY: 1 });
+        await performance.locator('[data-midi-note="74"][data-held="false"]').waitFor();
+        await performance.getByRole("button", { name: "Expand keyboard" }).click();
+        assert.ok((await mobilePiano.boundingBox()).height > compact.height);
+        await performance.getByRole("button", { name: "Compact keyboard" }).click();
+        await performance.getByRole("button", { name: "Collapse keyboard" }).click();
+        await mobilePiano.waitFor({ state: "detached" });
+        assert.equal(await performance.getAttribute("data-armed"), "false");
+        assert.equal(await performance.getAttribute("data-target-node"), await noteSource.getAttribute("data-node-id"));
+        await performance.getByRole("button", { name: "Show keyboard" }).click();
+        await mobilePiano.waitFor();
+    } finally {
+        await responsePage.setViewportSize(desktopKeyboardViewport);
+    }
+    assert.equal(await responseStatus.innerText(), noteRevision);
     await performance.getByRole("button", { name: "Release all notes" }).click();
+    // Navigate inside the played instrument; the root note source stays targeted.
+    const noteTargetId = await noteSource.getAttribute("data-node-id");
+    await fitCanvas(responsePage);
+    await handpan.getByRole("button", { name: /^Open / }).click();
+    assert.equal(await performance.getAttribute("data-target-node"), noteTargetId);
+    await performance.getByRole("button", { name: "Play C5 (A)" }).click();
+    await performance.locator('[data-live-pitch-offset="3"]').waitFor();
+    await responsePage.getByRole("navigation", { name: "Canvas path" }).getByRole("button", { name: "Patch", exact: true }).click();
+    assert.equal(await performance.getAttribute("data-target-node"), await noteSource.getAttribute("data-node-id"));
     await responsePage.getByRole("button", { name: "Stop", exact: true }).click();
     await responseStatus.filter({ hasText: /Ready/ }).waitFor();
+    const otherNoteSource = await addResponseNode("generator.note-source");
+    await fitCanvas(responsePage);
+    await otherNoteSource.locator(".node-header > span").click();
+    await responsePage.waitForFunction(id => document.querySelector(".performance-keyboard")?.dataset.targetNode === id, await otherNoteSource.getAttribute("data-node-id"));
 
     // The AD generator uses the normal canvas, preset, range and live-control paths.
     await responsePage.getByRole("button", { name: "Patches", exact: true }).click();

@@ -67,6 +67,57 @@ export async function tripleTapFit(page, touch = true) {
     await waitFit(page, sequence);
 }
 
+async function verifyCoveredNodePinch(page) {
+    // Focus a parameter-rich node, then zoom around the viewport centre until
+    // there is no exposed background to start a navigation gesture on.
+    const id = await canvas(page).locator('article[data-node-id]').evaluateAll(nodes => nodes
+        .filter(node => node.querySelector('input[type="range"]'))
+        .sort((a, b) => b.offsetHeight - a.offsetHeight)[0].dataset.nodeId);
+    const node = canvas(page).locator(`[data-node-id="${id}"]`);
+    await node.locator('.node-alias').click({ button: 'right' });
+    await page.locator('.canvas-context-menu').getByRole('button', { name: 'Focus node', exact: true }).click();
+    for (let i = 0; i < 20 && (await currentViewport(page)).zoom < 4; i++) await zoomStep(page, 1);
+    await waitZoom(page, 4);
+    const target = await node.evaluate(node => {
+        const viewport = node.closest('.canvas-viewport').getBoundingClientRect();
+        const rect = node.getBoundingClientRect();
+        if (rect.left > viewport.left + 1 || rect.right < viewport.right - 1 || rect.top > viewport.top + 1 || rect.bottom < viewport.bottom - 1)
+            throw Error('The zoomed node must cover the viewport');
+        for (const slider of node.querySelectorAll('input[type="range"]')) {
+            const bounds = slider.getBoundingClientRect();
+            const left = Math.max(bounds.left, viewport.left) + 16, right = Math.min(bounds.right, viewport.right) - 16;
+            const y = Math.round(Math.max(bounds.top, viewport.top) + Math.min(bounds.bottom, viewport.bottom) / 2 - Math.max(bounds.top, viewport.top) / 2);
+            const a = { x: Math.round(left + 12), y }, b = { x: Math.round(right - 12), y };
+            if (b.x - a.x >= 100 && [a, b].every(p => document.elementFromPoint(p.x, p.y) === slider))
+                return { a, b, label: slider.getAttribute('aria-label'), value: slider.closest('.parameter-slider').querySelector('input[type="number"]').value };
+        }
+        throw Error('No two visible contact points on a slider in the covered node');
+    });
+    const slider = node.getByRole('slider', { name: target.label, exact: true });
+    const number = slider.locator('xpath=ancestor::div[contains(@class,"parameter-slider")]').locator('input[type="number"]');
+    const cdp = await page.context().newCDPSession(page);
+    const send = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points.map((p, i) => ({ ...p, id: i + 1 })) });
+    try {
+        await send('touchStart', [target.a]);
+        await page.waitForTimeout(80);
+        await send('touchStart', [target.a, target.b]);
+        await page.waitForFunction(() => document.querySelector('.canvas-viewport').dataset.pinching === 'true');
+        const contracted = [{ x: target.a.x + 24, y: target.a.y }, { x: target.b.x - 24, y: target.b.y }];
+        await send('touchMove', contracted);
+        await waitZoom(page, 4 * (target.b.x - target.a.x - 48) / (target.b.x - target.a.x));
+        const beforePan = await currentViewport(page);
+        await send('touchMove', contracted.map(p => ({ x: p.x + 10, y: p.y + 12 })));
+        await page.waitForFunction(old => {
+            const m = new DOMMatrix(getComputedStyle(document.querySelector('.canvas-world')).transform);
+            return Math.abs(m.e - old.x - 10) < 1 && Math.abs(m.f - old.y - 12) < 1;
+        }, beforePan);
+        await send('touchEnd', []);
+        await page.waitForFunction(() => document.querySelector('.canvas-viewport').dataset.pinching === 'false');
+        assert.equal(await number.inputValue(), target.value, 'Pinch takeover must restore the original slider value');
+        assert.equal(await page.locator('.canvas-context-menu').count(), 0);
+    } finally { await cdp.detach(); }
+}
+
 export async function verifyCanvasNavigation(browser, url) {
     const desktop = await browser.newPage({ viewport: { width: 1200, height: 800 } });
     try {
@@ -104,8 +155,8 @@ export async function verifyCanvasNavigation(browser, url) {
             try {
                 await canvas(page).evaluate(element => {
                     element.navigationTestPointers = [];
-                    element.addEventListener("pointerdown", event => {
-                        if (event.pointerType === "touch")
+                    window.addEventListener("pointerdown", event => {
+                        if (event.pointerType === "touch" && element.contains(event.target))
                             element.navigationTestPointers.push({ id: event.pointerId, x: event.clientX });
                     }, true);
                 });
@@ -151,6 +202,7 @@ export async function verifyCanvasNavigation(browser, url) {
             await tripleTapFit(page);
             assert.ok(Math.abs((await currentViewport(page)).zoom - fitted.zoom) < 0.00001);
             assert.equal(await page.locator(".canvas-toolbar, .canvas-zoom").count(), 0);
+            if (size.width === 390) await verifyCoveredNodePinch(page);
         } finally { await page.close(); }
     }
 }

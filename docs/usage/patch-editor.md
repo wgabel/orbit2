@@ -29,6 +29,8 @@ Implemented: [PR #69](https://github.com/wgabel/orbit2/pull/69).
 
 In review: [PR #71](https://github.com/wgabel/orbit2/pull/71).
 
+If a node fills the entire screen, put two fingers directly on the node—even on a slider, button, port or plot—and pinch inward to zoom out, or move them together to pan. There is no need to find empty canvas. Adding the second finger cancels a still-active local drag/edit; a single finger still edits or moves as before. Lift one finger to continue panning with the remaining finger. Tool sheets and open editors retain their own controls.
+
 On Android or another touchscreen, touch and hold for about half a second. On desktop, right-click (or focus the canvas and press Shift+F10). A menu appears next to the mouse pointer or as a bottom sheet for touch. Tap/click outside, press Escape, or choose Close to dismiss it. Moving your finger or adding a second finger before the hold finishes cancels the menu, so drag and pinch continue normally.
 
 | Hold or right-click | Available actions (when applicable) |

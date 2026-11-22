@@ -13,7 +13,7 @@
         position: relative;
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
-        grid-template-rows: var(--component-workspace-mobile-toolbar-height) minmax(0, 1fr) var(--component-workspace-mobile-toolbar-height);
+        grid-template-rows: var(--component-workspace-mobile-toolbar-height) minmax(0, 1fr) auto var(--component-workspace-mobile-toolbar-height);
         gap: 0;
         min-width: 0;
         min-height: 0;
@@ -87,7 +87,7 @@
     }
     .graph-canvas .canvas-viewport { min-height: 0; }
     .mobile-workspace-bar {
-        grid-area: 3 / 1 / 4 / -1;
+        grid-area: 4 / 1 / 5 / -1;
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: var(--semantic-space-tight);
@@ -191,7 +191,7 @@
     .graph-workspace[data-mobile-panel="selection"] .canvas-view-tools > :not(.connection-label-control),
     .graph-workspace[data-mobile-panel="selection"] .connection-label-control > :not(.canvas-selection-panel) { display: none; }
     .workspace-view-summary { display: grid; gap: var(--semantic-space-tight); }
-    .performance-keyboard, .graph-workspace > .rack-editor {
+    .graph-workspace > .rack-editor {
         position: absolute;
         z-index: var(--component-workspace-overlay-layer);
         inset-inline: 0;
@@ -200,6 +200,11 @@
         overflow: auto;
         background: var(--semantic-color-surface);
     }
+    /* Real layout row between the canvas and bottom navigation; no overlay. */
+    .performance-keyboard { grid-area: 3 / 1 / 4 / -1; border-radius: 0; }
+    .performance-piano small { display: none; }
+    .performance-piano .performance-black-key { font-size: var(--semantic-typography-caption); }
+    .performance-dock-notice { inset-block-end: 100%; }
     .graph-workspace .workspace-error {
         position: absolute;
         z-index: var(--component-workspace-overlay-layer);

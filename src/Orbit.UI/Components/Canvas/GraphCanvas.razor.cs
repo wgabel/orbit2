@@ -486,6 +486,7 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private void CancelGesture(PointerEventArgs args)
     {
+        if (universalNavigating) return; // The document-level router owns cancellation during takeover.
         if (gesturePointer != args.PointerId && pinchPointer != args.PointerId) return;
         fitTaps.Reset();
         if (assistedWire) pendingSource = null;

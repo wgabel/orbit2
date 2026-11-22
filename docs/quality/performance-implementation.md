@@ -175,7 +175,9 @@ Counter decrease, context change, missing fields or invalid denominator means re
 
 For context output estimates, convert seconds to milliseconds once. If base = 4 ms and output = 8.4 ms, estimated audio pipeline = 12.4 ms. This is not key-to-speaker latency. If only output is available, show that value with its correct label and leave the combined estimate unknown.
 
-When Performance Mode (7.2.8) is implemented, instrument a representative note-on or latched pitch action:
+The Note Source (7.2.3) and live pitch controls (7.2.8a–c) are implemented; the end-to-end instrumentation is still planned. The Android user reported residual delay even on a fast playable instrument. Note Source pointer-down sends a note through the C# service and browser interop to the generation-qualified worklet action lane, with no per-note compilation. The context currently uses browser defaults, and visual pitch telemetry is refreshed about every 40 ms. Measure input admission/application separately from that display cadence, audio output buffering and audible envelope onset. Compare built-in/wired versus Bluetooth output, physical versus touch input, and a minimal gated oscillator versus an instrument with known attack. Collect repeated median/p95 data before changing the context latency hint or introducing a faster event path.
+
+Instrument a representative note-on or latched pitch action:
 
 1. Capture the input timestamp on the browser monotonic timebase (event dispatch timestamp, plus handler receipt time where useful). Track a scoped action ID and performance target; do not persist individual musical inputs in diagnostic reports by default.
 2. Measure dispatch to C# application and interop message accepted. Distinguish dispatch-to-ack round-trip from one-way latency; C# completion does not establish sample application.

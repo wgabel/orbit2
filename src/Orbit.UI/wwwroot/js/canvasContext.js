@@ -25,7 +25,14 @@ export function contextTarget(viewport, element) {
 export function mountContextInput(viewport, receiver) {
     const doc = viewport.ownerDocument;
     const active = new Set();
+    const contacts = new Map();
+    let navigation = null, blockedRange = null, syntheticCancel = false;
     let hold = null, swallowed = null, suppressClick = false;
+    const consume = event => { event.preventDefault(); event.stopImmediatePropagation(); };
+    const point = event => ({ id: event.pointerId, x: event.clientX, y: event.clientY });
+    const call = (method, ...args) => receiver.invokeMethodAsync(method, ...args).catch(() => {});
+    const isWorld = target => viewport.contains(target) &&
+        (target === viewport || !!target.closest('.canvas-world') || !!target.closest('.canvas-empty'));
     const cancel = () => {
         if (hold) clearTimeout(hold.timer);
         hold = null;
@@ -36,12 +43,37 @@ export function mountContextInput(viewport, receiver) {
             mobile: matchMedia('(max-width: 768px), (max-height: 480px) and (pointer: coarse)').matches }).catch(() => {});
     };
     const down = event => {
-        suppressClick = false;
+        if (!navigation) { suppressClick = false; blockedRange = null; }
         if (viewport.querySelector('.canvas-context-overlay') && !viewport.contains(event.target))
             receiver.invokeMethodAsync('DismissContextAsync').catch(() => {});
         if (event.pointerType !== 'touch') { cancel(); return; }
         active.add(event.pointerId);
         cancel();
+        if (navigation) { consume(event); return; }
+        if (!swallowed && event.button === 0 && !viewport.querySelector('.canvas-context-overlay') && isWorld(event.target)) {
+            const range = event.target.closest('input[type="range"]');
+            contacts.set(event.pointerId, { ...point(event), target: event.target, range, value: range?.value });
+            if (contacts.size === 2) {
+                const [first, second] = contacts.values();
+                navigation = new Set([first.id, second.id]);
+                suppressClick = true;
+                blockedRange = first.range ? { element: first.range, value: first.value } : null;
+                consume(event);
+                const rect = viewport.getBoundingClientRect();
+                // Do not capture the first finger away from a native control before
+                // rollback: lostpointercapture would prematurely complete its edit.
+                call('BeginUniversalPinchAsync', { first: { id: first.id, x: first.x, y: first.y },
+                    second: { id: second.id, x: second.x, y: second.y }, left: rect.left, top: rect.top, slider: !!blockedRange });
+                if (blockedRange) {
+                    blockedRange.element.value = blockedRange.value;
+                    syntheticCancel = true;
+                    try { first.range.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true,
+                        pointerId: first.id, pointerType: 'touch' })); }
+                    finally { syntheticCancel = false; }
+                }
+                return;
+            }
+        }
         if (active.size !== 1 || event.button !== 0 || viewport.querySelector('.canvas-context-overlay')) return;
         const target = contextTarget(viewport, event.target);
         if (!target) return;
@@ -54,6 +86,12 @@ export function mountContextInput(viewport, receiver) {
         }, HOLD_MS) };
     };
     const move = event => {
+        if (event.pointerType === 'touch' && navigation) {
+            if (navigation.has(event.pointerId)) call('MoveUniversalPinchAsync', point(event));
+            consume(event);
+            return;
+        }
+        if (contacts.has(event.pointerId)) Object.assign(contacts.get(event.pointerId), point(event));
         if (event.pointerId === swallowed) { event.stopImmediatePropagation(); return; }
         if (hold?.id === event.pointerId) {
             if (Math.hypot(event.clientX - hold.x, event.clientY - hold.y) > HOLD_SLOP) cancel();
@@ -61,7 +99,19 @@ export function mountContextInput(viewport, receiver) {
         }
     };
     const end = event => {
+        if (syntheticCancel) return;
         active.delete(event.pointerId);
+        contacts.delete(event.pointerId);
+        if (event.pointerType === 'touch' && navigation) {
+            if (navigation.delete(event.pointerId)) {
+                const canceled = event.type === 'pointercancel';
+                call('EndUniversalPinchAsync', event.pointerId, canceled);
+                if (canceled) navigation.clear();
+            }
+            if (!active.size) navigation = null;
+            consume(event);
+            return;
+        }
         if (hold?.id === event.pointerId) cancel();
         if (event.pointerId === swallowed) {
             swallowed = null;
@@ -71,10 +121,15 @@ export function mountContextInput(viewport, receiver) {
     };
     const click = event => {
         if (!suppressClick || event.detail === 0) return;
-        suppressClick = false;
         event.preventDefault();
         event.stopImmediatePropagation();
     };
+    const input = event => {
+        if (blockedRange?.element !== event.target) return;
+        event.target.value = blockedRange.value;
+        consume(event);
+    };
+    const touch = event => { if (navigation) event.preventDefault(); };
     const menu = event => {
         if (viewport.querySelector('.canvas-context-overlay')) { event.preventDefault(); return; }
         const target = contextTarget(viewport, event.target);
@@ -85,6 +140,7 @@ export function mountContextInput(viewport, receiver) {
         open(target, event.clientX, event.clientY, false);
     };
     const key = event => {
+        if (!navigation) blockedRange = null;
         if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return;
         const target = contextTarget(viewport, event.target);
         if (!target) return;
@@ -95,8 +151,9 @@ export function mountContextInput(viewport, receiver) {
     };
     const wheel = event => { if (event.target.closest('.canvas-context-overlay')) event.stopPropagation(); };
     const listeners = [[doc, 'pointerdown', down], [doc, 'pointermove', move], [doc, 'pointerup', end],
-        [doc, 'pointercancel', end], [doc, 'click', click], [viewport, 'contextmenu', menu], [viewport, 'keydown', key], [viewport, 'wheel', wheel]];
-    for (const [element, name, handler] of listeners) element.addEventListener(name, handler, true);
+        [doc, 'pointercancel', end], [doc, 'click', click], [doc, 'input', input], [doc, 'change', input],
+        [doc, 'touchstart', touch], [doc, 'touchmove', touch], [viewport, 'contextmenu', menu], [viewport, 'keydown', key], [viewport, 'wheel', wheel]];
+    for (const [element, name, handler] of listeners) element.addEventListener(name, handler, { capture: true, passive: false });
     return { dispose() { cancel(); for (const [element, name, handler] of listeners) element.removeEventListener(name, handler, true); } };
 }
 
