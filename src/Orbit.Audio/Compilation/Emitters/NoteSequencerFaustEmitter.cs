@@ -14,7 +14,7 @@ public sealed class NoteSequencerFaustEmitter : IFaustNodeEmitter
         var action = context.PerformancePitchInput();
         var reference = context.Parameter(NoteSequencerGenerator.ReferenceKey);
         var initial = context.Parameter(NoteSequencerGenerator.InitialPitchKey, initializeAtTarget: true);
-        var glide = context.Parameter(NoteSequencerGenerator.GlideKey, unsmoothed: true);
+        var glide = context.Parameter(NoteSequencerGenerator.GlideKey);
         var meter = context.PitchMeter();
         var stepMeter = meter.Replace("pitch_", "step_", StringComparison.Ordinal);
         return $$"""

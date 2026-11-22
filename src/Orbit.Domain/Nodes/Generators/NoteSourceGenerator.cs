@@ -7,9 +7,9 @@ namespace Orbit.Domain.Nodes.Generators;
 /// <summary>Transient monophonic keyboard actions; four sample-coherent control outputs.</summary>
 public sealed class NoteSourceGenerator(Guid id) : SignalNode(id, NodeType, "Note Source",
     [new Parameter(Guid.NewGuid(), new ParameterDefinition(NoteSequencerGenerator.ReferenceKey, "Reference note", MusicalPitch.ReferenceMidiNote, 0, 127,
-        ParameterUnit.Ratio, ParameterScale.Linear, false)
+        ParameterUnit.Ratio, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None)
         { Choices = Array.AsReadOnly(Enumerable.Range(0, 128).Select(n => new ParameterChoice(n, MusicalPitch.NoteName(n))).ToArray()) }),
-     new Parameter(Guid.NewGuid(), new ParameterDefinition(VelocityKey, "Keyboard velocity", .8, 0, 1, ParameterUnit.Normalized, ParameterScale.Linear, false))],
+     new Parameter(Guid.NewGuid(), new ParameterDefinition(VelocityKey, "Keyboard velocity", .8, 0, 1, ParameterUnit.Normalized, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None))],
     [],
     [new PortDefinition(Guid.NewGuid(), "pitch-out", "Pitch", PortDirection.Output, SignalType.Modulation),
      new PortDefinition(Guid.NewGuid(), "gate-out", "Gate", PortDirection.Output, SignalType.Gate),

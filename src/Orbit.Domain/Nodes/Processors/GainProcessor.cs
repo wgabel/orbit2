@@ -10,7 +10,7 @@ public sealed class GainProcessor : AudioEffectProcessor
 
     private static readonly ParameterDefinition GainDefinition = new(
         "gain", "Gain", 1, 0, 1, ParameterUnit.Normalized,
-        ParameterScale.Linear, CanModulate: true);
+        ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.Amplitude);
 
     public GainProcessor(Guid id) : this(id, Guid.NewGuid())
     {

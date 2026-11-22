@@ -11,19 +11,19 @@ public sealed class ResonatorProcessor : AudioEffectProcessor
     public const string PitchPortKey = "pitch-modulation-in";
 
     private static readonly ParameterDefinition Frequency = new("frequency", "Frequency", 220, 20, 20_000,
-        ParameterUnit.Hertz, ParameterScale.Linear, true)
+        ParameterUnit.Hertz, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Pitch)
     { DisplayScale = new(new(0, 20), new(.65, 1000), new(1, 20_000)) };
     private static readonly ParameterDefinition Pitch = new(PitchKey, "Pitch offset", 0, -60, 60,
-        ParameterUnit.Semitones, ParameterScale.Linear, true);
+        ParameterUnit.Semitones, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Pitch);
     private static readonly ParameterDefinition Decay = new("decay", "Decay (T60)", 1, .02, 20,
-        ParameterUnit.Seconds, ParameterScale.Linear, true)
+        ParameterUnit.Seconds, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Decay)
     { DisplayScale = new(new(0, .02), new(.5, 1), new(1, 20)) };
     private static readonly ParameterDefinition Excitation = new("excitation", "Excitation gain", 2, 0, 32,
-        ParameterUnit.Ratio, ParameterScale.Linear, true);
+        ParameterUnit.Ratio, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Amplitude);
     private static readonly ParameterDefinition OutputGain = new("output-gain", "Output gain", .5, 0, 1,
-        ParameterUnit.Normalized, ParameterScale.Linear, true);
+        ParameterUnit.Normalized, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Amplitude);
     private static readonly ParameterDefinition Mix = new("mix", "Wet mix", 1, 0, 1,
-        ParameterUnit.Normalized, ParameterScale.Linear, true);
+        ParameterUnit.Normalized, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.EffectMix);
 
     public ResonatorProcessor(Guid id) : this(id, new[] { Frequency, Pitch, Decay, Excitation, OutputGain, Mix }
         .Select(definition => new Parameter(Guid.NewGuid(), definition, Guid.NewGuid())).ToArray()) { }

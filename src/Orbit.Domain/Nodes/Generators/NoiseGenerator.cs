@@ -9,7 +9,7 @@ public sealed class NoiseGenerator : SignalNode, IGenerator
 
     private static readonly ParameterDefinition ColorDefinition = new(
         "color", "Noise color", (int)NoiseColor.White, 0, 2,
-        ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: false)
+        ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: false, Smoothing: ParameterSmoothing.None)
     {
         RequiresRecompile = true,
         Choices = Array.AsReadOnly(Enum.GetValues<NoiseColor>()
@@ -18,7 +18,7 @@ public sealed class NoiseGenerator : SignalNode, IGenerator
 
     private static readonly ParameterDefinition AmplitudeDefinition = new(
         "amplitude", "Amplitude", 0.2, 0, 1,
-        ParameterUnit.Normalized, ParameterScale.Linear, CanModulate: true);
+        ParameterUnit.Normalized, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.Amplitude);
 
     public NoiseGenerator(Guid id) : this(id, Guid.NewGuid()) { }
 

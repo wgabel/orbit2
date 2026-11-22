@@ -9,11 +9,11 @@ public sealed class ParametricEqProcessor : AudioEffectProcessor
     public const string NodeType = "processor.parametric-eq";
 
     private static readonly ParameterDefinition FrequencyDefinition = new(
-        "frequency", "Frequency", 1000, 20, 20000, ParameterUnit.Hertz, ParameterScale.Linear, CanModulate: true);
+        "frequency", "Frequency", 1000, 20, 20000, ParameterUnit.Hertz, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.Filter);
     private static readonly ParameterDefinition GainDefinition = new(
-        "gain", "Gain", 0, -18, 18, ParameterUnit.Decibels, ParameterScale.Linear, CanModulate: true);
+        "gain", "Gain", 0, -18, 18, ParameterUnit.Decibels, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.Amplitude);
     private static readonly ParameterDefinition QualityDefinition = new(
-        "q", "Q", 1, 0.2, 10, ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: true);
+        "q", "Q", 1, 0.2, 10, ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.Filter);
 
     public ParametricEqProcessor(Guid id) : this(id, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()) { }
 

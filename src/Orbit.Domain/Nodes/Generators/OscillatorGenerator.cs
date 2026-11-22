@@ -20,7 +20,7 @@ public sealed class OscillatorGenerator : SignalNode, IGenerator
 
     private static readonly ParameterDefinition FrequencyDefinition = new(
         "frequency", "Frequency", 440, 0.01, 20_000,
-        ParameterUnit.Hertz, ParameterScale.Linear, CanModulate: true)
+        ParameterUnit.Hertz, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.Pitch)
     {
         DisplayScale = new(new(0, 0.01), new(0.20, 40), new(0.85, 1_000), new(1, 20_000)),
         ActiveWhen = new("timing", (int)OscillatorTimingMode.Free)
@@ -28,15 +28,15 @@ public sealed class OscillatorGenerator : SignalNode, IGenerator
 
     private static readonly ParameterDefinition AmplitudeDefinition = new(
         "amplitude", "Amplitude", 1, 0, 1,
-        ParameterUnit.Normalized, ParameterScale.Linear, CanModulate: true);
+        ParameterUnit.Normalized, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.Amplitude);
 
     private static readonly ParameterDefinition PhaseDefinition = new(
         "phase", "Phase offset", 0, 0, 360,
-        ParameterUnit.Degrees, ParameterScale.Linear, CanModulate: true);
+        ParameterUnit.Degrees, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.Phase);
 
     private static readonly ParameterDefinition WaveformDefinition = new(
         "waveform", "Waveform", (int)OscillatorWaveform.Sine, 0, 3,
-        ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: false)
+        ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: false, Smoothing: ParameterSmoothing.None)
     {
         RequiresRecompile = true,
         Choices = Array.AsReadOnly(Enum.GetValues<OscillatorWaveform>()
@@ -45,7 +45,7 @@ public sealed class OscillatorGenerator : SignalNode, IGenerator
 
     private static readonly ParameterDefinition TimingDefinition = new(
         "timing", "Timing mode", (int)OscillatorTimingMode.Free, 0, 1,
-        ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: false)
+        ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: false, Smoothing: ParameterSmoothing.None)
     {
         RequiresRecompile = true,
         Choices = Array.AsReadOnly(new ParameterChoice[]
@@ -59,18 +59,18 @@ public sealed class OscillatorGenerator : SignalNode, IGenerator
 
     private static readonly ParameterDefinition PulseWidthDefinition = new(
         PulseWidthKey, "Pulse width", DefaultPulseWidth, 0.01, 0.99,
-        ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: true)
+        ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.Shape)
     { ActiveWhen = new("waveform", (int)OscillatorWaveform.Square) };
 
     private static readonly ParameterDefinition PitchTrackingDefinition = new(
-        PitchTrackingKey, "Pitch tracking (free)", 0, 0, 1, ParameterUnit.Ratio, ParameterScale.Linear, false)
+        PitchTrackingKey, "Pitch tracking (free)", 0, 0, 1, ParameterUnit.Ratio, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None)
     {
         RequiresRecompile = true,
         Choices = Array.AsReadOnly(new ParameterChoice[] { new(0, "Off"), new(1, "Semitones") })
     };
 
     private static readonly ParameterDefinition PitchDefinition = new(
-        PitchKey, "Pitch offset", 0, -60, 60, ParameterUnit.Semitones, ParameterScale.Linear, true)
+        PitchKey, "Pitch offset", 0, -60, 60, ParameterUnit.Semitones, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Pitch)
     { ActiveWhen = new("timing", (int)OscillatorTimingMode.Free, new(PitchTrackingKey, 1)) };
 
     public OscillatorGenerator(Guid id)

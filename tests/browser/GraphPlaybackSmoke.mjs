@@ -1090,13 +1090,20 @@ try {
                 processor.setOutputParamHandler((path, value) => meters.set(path.split('/').at(-1), value));
                 for (const [name, value] of Object.entries(pitch.values)) set(name, value);
                 let previous = null;
-                for (const [semitones, cents] of [[0, 0], [12, 0], [-12, 0], [7, 50]]) {
+                for (const [semitones, cents] of [[0, 0], [12, 0], [-12, 0], [7, 0], [7, 100], [7, -100]]) {
                     set(pitch.transpose, semitones);
                     set(pitch.cents, cents);
+                    const ratio = Math.pow(2, (semitones + cents / 100) / 12);
+                    // A shared transpose/fine tune must respond promptly, not only
+                    // settle eventually. Allow a few worklet blocks for metering.
+                    const [early] = processor.render([], Math.ceil(rate * 0.02 / 128) * 128);
+                    const earlyError = previous === null ? 0 : Math.max(...pitch.frequencyMeters.map((name, index) => {
+                        const target = pitch.frequencies[index] * ratio;
+                        return Math.abs(meters.get(name) - target) / target;
+                    }));
                     // Render complete DSP blocks; otherwise OfflineProcessor discards
                     // padding samples and the next call is not sample-contiguous.
                     const [audio] = processor.render([], Math.ceil(rate * 2 / 128) * 128);
-                    const ratio = Math.pow(2, (semitones + cents / 100) / 12);
                     const magnitudes = pitch.frequencies.map(hz => {
                         let real = 0, imaginary = 0;
                         for (let i = audio.length - rate; i < audio.length; i++) {
@@ -1106,20 +1113,38 @@ try {
                         }
                         return 2 * Math.hypot(real, imaginary) / rate;
                     });
-                    const discontinuity = previous === null ? 0 : Math.abs(audio[0] - previous);
+                    const discontinuity = previous === null ? 0 : Math.abs(early[0] - previous);
                     previous = audio.at(-1);
                     const meterError = Math.max(...pitch.frequencyMeters.map((name, index) => Math.abs(meters.get(name) - pitch.frequencies[index] * ratio)));
-                    results.push({ rate, semitones, cents, magnitudes, discontinuity, meterError });
+                    results.push({ rate, semitones, cents, magnitudes, discontinuity, meterError, earlyError });
                 }
+                // Retarget before the five-millisecond envelope settles: no phase
+                // reset or discontinuity on any sample, including block joins.
+                let maxStep = 0;
+                for (let edit = 0; edit < 40; edit++) {
+                    set(pitch.transpose, edit % 2 ? -12 : 12);
+                    set(pitch.cents, edit % 2 ? 100 : -100);
+                    for (const sample of processor.render([], 128)[0]) {
+                        if (!Number.isFinite(sample)) throw new Error("Non-finite pitch bank sample");
+                        maxStep = Math.max(maxStep, Math.abs(sample - previous));
+                        previous = sample;
+                    }
+                }
+                results.push({ rate, maxStep });
             }
             return results;
         } finally { compiler.dispose(); }
     }, pitch);
     for (const result of pitchResults) {
         console.log("Shared musical pitch", result);
+        if ("maxStep" in result) {
+            assert.ok(result.maxStep < 0.04, "Rapid shared pitch edits must preserve sample continuity");
+            continue;
+        }
         assert.ok(result.magnitudes.every(value => Math.abs(value - 0.1) < 0.01), "All three tones must follow one pitch ratio");
         assert.ok(result.discontinuity < 0.04, "Live pitch changes preserve the existing oscillator phase");
         assert.ok(result.meterError < 0.1, "Frequency telemetry follows the actual transposed Hz");
+        assert.ok(result.earlyError < 0.015, "Shared pitch control must settle promptly after transpose or fine tune");
     }
 } finally {
     await browser?.close();

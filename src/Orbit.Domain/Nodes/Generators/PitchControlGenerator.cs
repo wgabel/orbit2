@@ -12,8 +12,8 @@ public sealed class PitchControlGenerator : SignalNode, IGenerator
 
     public PitchControlGenerator(Guid id) : base(id, NodeType, "Pitch Control",
         [new Parameter(Guid.NewGuid(), new ParameterDefinition(SemitonesKey, "Transpose", 0, -48, 48,
-             ParameterUnit.Semitones, ParameterScale.Linear, CanModulate: false)),
+             ParameterUnit.Semitones, ParameterScale.Linear, CanModulate: false, Smoothing: ParameterSmoothing.Pitch)),
          new Parameter(Guid.NewGuid(), new ParameterDefinition(CentsKey, "Fine tune", 0, -100, 100,
-             ParameterUnit.Cents, ParameterScale.Linear, CanModulate: false))],
+             ParameterUnit.Cents, ParameterScale.Linear, CanModulate: false, Smoothing: ParameterSmoothing.Pitch))],
         [], [new PortDefinition(Guid.NewGuid(), "pitch-out", "Pitch", PortDirection.Output, SignalType.Modulation)]) { }
 }

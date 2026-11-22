@@ -22,9 +22,8 @@ internal static class FaustOscillatorTiming
     {
         var pitch = context.Node.Parameters.Single(p => p.Definition.Key == OscillatorGenerator.PitchKey);
         var multiplier = context.Node.IsParameterActive(pitch)
-            ? $"pow(2.0, {context.Parameter(OscillatorGenerator.PitchKey, settlingMilliseconds: FaustControlSmoothing.Pitch)} / {FaustNumber.Format(MusicalPitch.SemitonesPerOctave)})" : null;
-        var frequency = context.Parameter("frequency", "0.49 * ma.SR", multiplier,
-            settlingMilliseconds: FaustControlSmoothing.Pitch);
+            ? $"pow(2.0, {context.Parameter(OscillatorGenerator.PitchKey)} / {FaustNumber.Format(MusicalPitch.SemitonesPerOctave)})" : null;
+        var frequency = context.Parameter("frequency", "0.49 * ma.SR", multiplier);
         return new($"os.lf_sawpos({frequency})", $"({frequency}) / ma.SR", "0.49");
     }
 

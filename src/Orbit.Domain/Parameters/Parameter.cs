@@ -21,13 +21,19 @@ public sealed class Parameter
             definition.Minimum > definition.Maximum ||
             !definition.IsValidBaseValue(definition.DefaultValue) ||
             !Enum.IsDefined(definition.Unit) ||
-            !Enum.IsDefined(definition.Scale))
+            !Enum.IsDefined(definition.Scale) ||
+            !Enum.IsDefined(definition.Smoothing) ||
+            definition.Smoothing == ParameterSmoothing.Unspecified)
         {
             throw new ArgumentException("Invalid parameter definition.", nameof(definition));
         }
 
         if (definition.RequiresRecompile && definition.CanModulate)
             throw new ArgumentException("A structural parameter cannot be modulated.", nameof(definition));
+
+        if ((definition.Choices is not null || definition.RequiresRecompile) &&
+            definition.Smoothing != ParameterSmoothing.None)
+            throw new ArgumentException("Discrete and structural parameters must not be smoothed.", nameof(definition));
 
         if (definition.DisplayScale is { } display &&
             (definition.Choices is not null || display.Anchors[0].Value != definition.Minimum ||

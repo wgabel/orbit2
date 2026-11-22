@@ -71,7 +71,7 @@ public sealed class ParameterSliderScaleTests
     public void OtherParametersStayLinearAndTwoAnchorScalesAreReusable()
     {
         var linear = new ParameterDefinition("test", "Test", 0, -10, 10,
-            ParameterUnit.Ratio, ParameterScale.Linear, false);
+            ParameterUnit.Ratio, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None);
         Assert.Equal(0.75, ParameterSliderScale.ToPosition(linear, 5));
         Assert.Equal(5, ParameterSliderScale.FromPosition(linear, 0.75));
         var logarithmic = linear with { Minimum = 1, Maximum = 100, DefaultValue = 10,

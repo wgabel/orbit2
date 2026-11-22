@@ -10,7 +10,7 @@ public sealed class FilterProcessor : AudioEffectProcessor
 
     private static readonly ParameterDefinition ModeDefinition = new(
         "mode", "Filter mode", (int)FilterMode.LowPass, 0, 3,
-        ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: false)
+        ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: false, Smoothing: ParameterSmoothing.None)
     {
         RequiresRecompile = true,
         Choices = Array.AsReadOnly(new ParameterChoice[]
@@ -24,11 +24,11 @@ public sealed class FilterProcessor : AudioEffectProcessor
 
     private static readonly ParameterDefinition CutoffDefinition = new(
         "cutoff", "Cutoff", 1000, 20, 20000,
-        ParameterUnit.Hertz, ParameterScale.Linear, CanModulate: true);
+        ParameterUnit.Hertz, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.Filter);
 
     private static readonly ParameterDefinition ResonanceDefinition = new(
         "resonance", "Resonance (Q)", 0.707, 0.5, 8,
-        ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: true);
+        ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.Filter);
 
     public FilterProcessor(Guid id) : this(id, Guid.NewGuid(), Guid.NewGuid()) { }
 

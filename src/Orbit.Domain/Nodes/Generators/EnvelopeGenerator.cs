@@ -29,21 +29,21 @@ public sealed class EnvelopeGenerator : SignalNode, IGenerator
 
     private static readonly ParameterDefinition[] Definitions =
     [
-        new(AttackKey, "Attack", 8, 1, 10000, ParameterUnit.Milliseconds, ParameterScale.Linear, true)
+        new(AttackKey, "Attack", 8, 1, 10000, ParameterUnit.Milliseconds, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Timing)
         { DisplayScale = new(new(0, 1), new(0.5, 100), new(1, 10000)) },
-        new(DecayKey, "Decay", 500, 1, 20000, ParameterUnit.Milliseconds, ParameterScale.Linear, true)
+        new(DecayKey, "Decay", 500, 1, 20000, ParameterUnit.Milliseconds, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Timing)
         { ActiveWhen = Decays, DisplayScale = new(new(0, 1), new(0.5, 500), new(1, 20000)) },
-        new(AttackCurveKey, "Attack curve", 1, 0.25, 8, ParameterUnit.Ratio, ParameterScale.Linear, true),
-        new(DecayCurveKey, "Decay curve", 3, 0.25, 8, ParameterUnit.Ratio, ParameterScale.Linear, true) { ActiveWhen = Decays },
-        new(ModeKey, "Envelope mode", 0, 0, 3, ParameterUnit.Ratio, ParameterScale.Linear, false)
+        new(AttackCurveKey, "Attack curve", 1, 0.25, 8, ParameterUnit.Ratio, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Shape),
+        new(DecayCurveKey, "Decay curve", 3, 0.25, 8, ParameterUnit.Ratio, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Shape) { ActiveWhen = Decays },
+        new(ModeKey, "Envelope mode", 0, 0, 3, ParameterUnit.Ratio, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None)
         { RequiresRecompile = true, Choices = Array.AsReadOnly(new ParameterChoice[] { new(0, "AD"), new(1, "AR"), new(2, "ADSR"), new(3, "Loop") }) },
-        new(TriggerSourceKey, "Trigger source", 0, 0, 2, ParameterUnit.Ratio, ParameterScale.Linear, false)
+        new(TriggerSourceKey, "Trigger source", 0, 0, 2, ParameterUnit.Ratio, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None)
         { ActiveWhen = Mode(EnvelopeMode.Ad), RequiresRecompile = true, Choices = Array.AsReadOnly(new ParameterChoice[] { new(0, "Continuous signal"), new(1, "Trigger / clock"), new(2, "Gate rising edge") }) },
-        new(ReleaseKey, "Release", 500, 1, 20000, ParameterUnit.Milliseconds, ParameterScale.Linear, true)
+        new(ReleaseKey, "Release", 500, 1, 20000, ParameterUnit.Milliseconds, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Timing)
         { ActiveWhen = Releases, DisplayScale = new(new(0, 1), new(0.5, 500), new(1, 20000)) },
-        new(ReleaseCurveKey, "Release curve", 3, 0.25, 8, ParameterUnit.Ratio, ParameterScale.Linear, true) { ActiveWhen = Releases },
-        new(SustainKey, "Sustain", 0.5, 0, 1, ParameterUnit.Normalized, ParameterScale.Linear, true) { ActiveWhen = Mode(EnvelopeMode.Adsr) },
-        new(RestKey, "Rest", 0, 0, 20000, ParameterUnit.Milliseconds, ParameterScale.Linear, true)
+        new(ReleaseCurveKey, "Release curve", 3, 0.25, 8, ParameterUnit.Ratio, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Shape) { ActiveWhen = Releases },
+        new(SustainKey, "Sustain", 0.5, 0, 1, ParameterUnit.Normalized, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Amplitude) { ActiveWhen = Mode(EnvelopeMode.Adsr) },
+        new(RestKey, "Rest", 0, 0, 20000, ParameterUnit.Milliseconds, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Timing)
         { ActiveWhen = Mode(EnvelopeMode.Loop) }
     ];
 

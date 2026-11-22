@@ -87,7 +87,7 @@ public sealed class FaustNodeContext
         return InputSignal(port.Id);
     }
 
-    public string Parameter(string key, string? signalMaximum = null, string? baseMultiplier = null, bool initializeAtTarget = false, bool unsmoothed = false, double? settlingMilliseconds = null)
+    public string Parameter(string key, string? signalMaximum = null, string? baseMultiplier = null, bool initializeAtTarget = false)
     {
         var parameter = Node.Parameters.SingleOrDefault(parameter => parameter.Definition.Key == key)
             ?? throw new FaustCompilationException($"Node {Node.TypeKey} has no parameter '{key}'.");
@@ -116,8 +116,10 @@ public sealed class FaustNodeContext
             var slider = $"hslider(\"{name}\", {initial}, {minimum}, {maximum}, {step})";
             // Smooth the base slider only; audio-rate modulation is added below.
             // Time-sensitive controls may start at their initialized target.
-            var smoothing = FaustControlSmoothing.Filter(settlingMilliseconds);
-            var expression = definition.Choices is not null || unsmoothed ? slider : initializeAtTarget
+            var smoothing = FaustControlSmoothing.Filter(definition.Smoothing);
+            if (definition.Choices is not null && smoothing is not null)
+                throw new FaustCompilationException($"Discrete parameter '{key}' cannot be smoothed.");
+            var expression = smoothing is null ? slider : initializeAtTarget
                 ? $"first + ((value - first) : {smoothing}) with {{ value = {slider}; first = ((select2(1 - (1 : mem), _, value)) ~ _); }}"
                 : slider + " : " + smoothing;
             definitions.Add($"{name} = {expression};");
@@ -132,6 +134,15 @@ public sealed class FaustNodeContext
         // clamped sample value. Connected modulation and a transformed base
         // (e.g. pitch-tracked Hz) need a live meter.
         return meter is null ? effective : $"({effective} : hbargraph(\"{meter}\", {minimum}, {maximum}))";
+    }
+
+    /// <summary>Apply the same policy as a base parameter to its derived alternative
+    /// (e.g. tempo-derived delay time). The base parameter can be inactive.</summary>
+    public string SmoothDerivedControl(string key, string signal)
+    {
+        var definition = Node.Parameters.Single(p => p.Definition.Key == key).Definition;
+        var smoothing = FaustControlSmoothing.Filter(definition.Smoothing);
+        return smoothing is null ? signal : $"({signal} : {smoothing})";
     }
 
     /// <summary>Read a validated structural choice without allocating a Faust control.</summary>
