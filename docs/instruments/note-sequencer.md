@@ -4,6 +4,8 @@
 
 Related: [note sequencer design](note-sequencer-design.md) · [pitch control](pitch-control.md) · [transport and timing](../audio/transport-and-timing.md) · [envelopes](../audio/envelopes.md) · [commands and events](../core/commands-and-events.md) · [persistence and history](../editor/persistence-and-history.md).
 
+For keyboard, recorded pattern and pitch/articulation walkthroughs, see [using the Note Sequencer](../usage/sound-and-instruments.md#1-pitch-versus-articulation).
+
 <a id="keyboard-performance-and-continuous-pitch-sequencer-planned-phase-728"></a>
 
 <a id="keyboard-performance-and-continuous-pitch-sequencer-phase-728--planned"></a>
