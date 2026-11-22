@@ -24,6 +24,8 @@ The initial built-in composite catalog uses existing nodes and the registered te
 
 ### Phase 7.2.1 — built-in instrument composites (in review)
 
+Implementation: [PR #31](https://github.com/wgabel/orbit2/pull/31).
+
 Select an **Instrument — …** entry in Add node and connect its Audio output to Master output or to a mixer. Open the composite to edit all constituent nodes, settings, and routes; adding the same preset again creates an independent graph. All five have a `Pitch (st)` modulation input (relative semitones, unity connection from Pitch Control or Note Sequencer) and a `Gain offset` input (additive normalized modulation on the final gain, base 0.5, clamped to 0–1). Zero pitch offset is A in the instrument's native register; +12 doubles every voice frequency, including detuned layers, without changing fixed body filter frequencies. Gain offset −0.5 silences the composite; unconnected gain defaults to 0.5. External envelope-controlled gain can articulate the sustained sound, but this is not yet a self-contained note-triggered or polyphonic instrument.
 
 | Catalog entry | Base tuning | Internal voice and tone construction |
