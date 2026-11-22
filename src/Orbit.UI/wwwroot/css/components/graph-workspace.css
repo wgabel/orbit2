@@ -1,8 +1,12 @@
 /* The graph workspace includes shared graph and playback controls. */
 .workspace-shell { width: min(100%, var(--component-workspace-max-width)); height: 100%; margin-inline: auto; }
 .graph-workspace { display: flex; flex-direction: column; height: 100%; gap: var(--semantic-space-tight); }
-.workspace-header { display: flex; align-items: center; flex-wrap: wrap; gap: var(--semantic-space-normal); }
+.workspace-header { display: flex; align-items: center; flex-wrap: wrap; gap: var(--semantic-space-compact); }
 .workspace-header h1 { margin: 0; font-size: var(--semantic-typography-section); }
+.workspace-header > button, .workspace-header > .workspace-toolbar > button, .canvas-breadcrumbs > button {
+    padding: var(--component-workspace-toolbar-button-block) var(--component-workspace-toolbar-button-inline);
+    font-size: var(--semantic-typography-label);
+}
 .workspace-library-panel {
     position: absolute;
     inset-block-start: var(--semantic-space-normal);
@@ -40,6 +44,12 @@
 .patch-overview-editor textarea { resize: vertical; }
 .patch-overview-summary { overflow-wrap: anywhere; }
 .patch-manager { width: var(--component-workspace-patch-panel-width); box-sizing: border-box; }
+.patch-outline-panel { width: var(--component-workspace-patch-panel-width); box-sizing: border-box; inset-inline-start: var(--semantic-space-normal); inset-inline-end: auto; }
+.patch-outline-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--semantic-space-tight); }
+.patch-outline-row { min-width: 0; }
+.patch-outline-actions { display: flex; align-items: center; gap: var(--semantic-space-tight); }
+.patch-outline-locate { flex: 1; min-width: 0; text-align: start; display: grid; gap: var(--semantic-space-tight); overflow-wrap: anywhere; }
+.patch-outline-locate small { font-size: var(--semantic-typography-caption); color: var(--semantic-color-muted); }
 .patch-overview-text { white-space: pre-wrap; margin: 0; max-height: var(--component-workspace-patch-overview-text-height); overflow: auto; }
 .patch-overview-tags { display: flex; flex-wrap: wrap; gap: var(--semantic-space-tight); }
 .patch-overview-tags span {

@@ -15,6 +15,9 @@ else
     <header class="workspace-header">
         <h1>Orbit 2</h1>
         <CanvasBreadcrumbs Path="@Navigation.Path" OnNavigate="NavigateTo" />
+        <button type="button" class="secondary" aria-expanded="@outlineOpen" @onclick="() => outlineOpen = !outlineOpen">Outline</button>
+        <PatchOutlinePanel @key="workspaceGeneration" Open="@outlineOpen" Locked="@(annotationDraft || switchingWorkspace)"
+                           Outline="@(outlineOpen ? Navigation.GetOutline(overview.Title) : null)" OnClose="() => outlineOpen = false" OnNavigate="NavigateOutline" />
         <PatchManager Capture="CaptureCommittedWorkspace" OpenDocument="ReplaceWorkspaceAsync" NewDocument="NewWorkspaceAsync"
                       Overview="@overview" OverviewEditDisabled="@(annotationDraft || switchingWorkspace)"
                       OnOverviewDraftChanged="SetOverviewDraftAsync" OnOverviewApplied="ApplyOverview" />
@@ -76,6 +79,7 @@ else
                         Dispatch="@DispatchRackCommand" OnClose="CloseRackEditor" />
     }
     <GraphCanvas @key="(workspaceGeneration, graphId)" @ref="canvasView" State="@Canvas" PatchId="@session.GraphId" AutoFitOnFirstRender="@Navigation.IsFirstVisit"
+                 OutlineFocus="@outlineFocus"
                  PatchCounts="@Navigation.PatchCounts"
                  DispatchConnectionAmount="@DispatchConnectionCommand"
                  AnnotationActionsDisabled="@(switchingWorkspace || overviewDraft)" OnAnnotationDraftChanged="OnAnnotationDraftChanged" OnAnnotationError="@(value => Error = value)"

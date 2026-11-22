@@ -828,7 +828,16 @@ try {
     let droneRevision = Number((await status.innerText()).match(/Playing revision (\d+)/)[1]);
     const wholePatchCount = `${await articles.count() + 4} nodes · ${await viewport.locator(".connection-hit").count() + 4} connections`;
     assert.equal(await viewport.locator(".canvas-patch-value").innerText(), wholePatchCount);
-    await drone.getByRole("button", { name: "Open Drone" }).click();
+    await page.getByRole("button", { name: "Outline", exact: true }).click();
+    const playingOutline = page.getByRole("region", { name: "Patch outline" });
+    // Razor event directives must compile to Blazor callbacks, not literal DOM attributes.
+    assert.equal(await playingOutline.locator("button").evaluateAll(buttons =>
+        buttons.some(button => button.hasAttribute("@onclick"))), false, "Outline buttons must have compiled event handlers");
+    await playingOutline.getByLabel("Search patch").fill("Drone");
+    await playingOutline.getByLabel("Filter outline").selectOption("Composite");
+    await playingOutline.getByRole("button", { name: "Open canvas: Drone", exact: true }).click();
+    assert.equal(await page.getByRole("alert").count(), 0, await page.getByRole("alert").allTextContents());
+    await playingOutline.waitFor({ state: "detached" });
     const breadcrumbs = page.getByRole("navigation", { name: "Canvas path" });
     await breadcrumbs.getByText("Drone", { exact: true }).waitFor();
     assert.equal(await labelMode.inputValue(), "All", "New nested canvas has its own label preference");
@@ -1601,7 +1610,20 @@ try {
     await instrumentPage.getByRole("button", { name: "Add", exact: true }).click();
     const flute = instrumentPage.locator(".node-role-composite").filter({ has: instrumentPage.getByRole("button", { name: "Open Flute" }) });
     await flute.getByRole("button", { name: "Input: Pitch (st) (Modulation)" }).waitFor();
-    await flute.getByRole("button", { name: "Open Flute" }).press("Enter");
+    await instrumentPage.getByRole("button", { name: "Outline", exact: true }).click();
+    const instrumentOutline = instrumentPage.getByRole("region", { name: "Patch outline" });
+    await instrumentOutline.getByLabel("Search patch").fill("Flute Output Rack");
+    await instrumentOutline.getByLabel("Filter outline").selectOption("Node");
+    await instrumentOutline.getByRole("button", { name: "Locate node: Output Rack", exact: true }).click();
+    await instrumentOutline.waitFor({ state: "detached" });
+    await instrumentPage.locator(".node-selected").filter({ hasText: "Output Rack" }).waitFor();
+    await instrumentPage.waitForFunction(() => {
+        const rack = document.querySelector(".node-selected");
+        const viewport = document.querySelector(".canvas-viewport");
+        if (!rack || !viewport) return false;
+        const rect = rack.getBoundingClientRect(), canvas = viewport.getBoundingClientRect();
+        return rect.left >= canvas.left && rect.right <= canvas.right && rect.top >= canvas.top && rect.bottom <= canvas.bottom;
+    });
     await instrumentPage.getByRole("button", { name: "Output: Pitch (st) (Modulation)" }).waitFor();
     assert.equal(await instrumentPage.getByRole("combobox", { name: "Pitch tracking (free)" }).count(), 3);
     await instrumentPage.close();
@@ -1614,6 +1636,15 @@ try {
     await annotationPage.locator("#node-type").selectOption("canvas.note");
     await annotationPage.getByRole("button", { name: "Add", exact: true }).click();
     await annotationPage.locator(".note-card").waitFor();
+    await annotationPage.locator(".note-card").getByRole("button", { name: "Edit", exact: true }).click();
+    const outlineDraft = annotationPage.getByRole("region", { name: "Edit canvas note" });
+    await outlineDraft.waitFor();
+    await annotationPage.getByRole("button", { name: "Outline", exact: true }).click();
+    const draftOutline = annotationPage.getByRole("region", { name: "Patch outline" });
+    await draftOutline.getByLabel("Filter outline").selectOption("Note");
+    assert.equal(await draftOutline.getByRole("button", { name: "Locate note: Note", exact: true }).isDisabled(), true);
+    await draftOutline.getByRole("button", { name: "Close outline", exact: true }).click();
+    await outlineDraft.getByRole("button", { name: "Cancel", exact: true }).click();
     await annotationPage.getByRole("button", { name: "Create visual group", exact: true }).click();
     await annotationPage.locator(".visual-group").waitFor();
     const annotationMode = annotationViewport.getByLabel("Annotations", { exact: true });
@@ -1643,6 +1674,16 @@ try {
     await annotationViewport.locator(".visual-group").waitFor();
     assert.equal(await annotationMode.inputValue(), "Hide");
     assert.equal(await annotationViewport.locator(".note-card").count(), 0);
+    // An outline can locate hidden notes even when the canvas has no visible note marker.
+    await annotationPage.getByRole("button", { name: "Outline", exact: true }).click();
+    const annotationOutline = annotationPage.getByRole("region", { name: "Patch outline" });
+    await annotationOutline.getByLabel("Filter outline").selectOption("Note");
+    await annotationOutline.getByRole("button", { name: "Locate note: Note", exact: true }).click();
+    await annotationOutline.waitFor({ state: "detached" });
+    await annotationViewport.locator(".note-selected .note-body").waitFor();
+    assert.equal(await annotationMode.inputValue(), "Hide");
+    await annotationViewport.press("Escape");
+    await annotationViewport.locator(".note-card").waitFor({ state: "detached" });
     await annotationViewport.getByRole("button", { name: "Fit signals", exact: true }).click();
     assert.equal(await annotationMode.inputValue(), "Hide");
     await annotationPage.close();

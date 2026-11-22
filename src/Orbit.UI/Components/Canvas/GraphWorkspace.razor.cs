@@ -244,6 +244,8 @@ public partial class GraphWorkspace : IDisposable
             Error = PersistenceError = null;
             autosaveEnabled = true;
             workspaceGeneration++;
+            outlineOpen = false;
+            outlineFocus = null;
             RefreshRanges();
             SubscribeToNavigation();
         }
@@ -300,6 +302,7 @@ public partial class GraphWorkspace : IDisposable
     {
         if (!CheckAnnotationDraft()) return;
         if (graphId != Canvas.Snapshot.GraphId) return;
+        outlineFocus = null;
         Error = null;
         session.CompleteHistoryGesture();
         CloseRackEditor();
@@ -311,6 +314,7 @@ public partial class GraphWorkspace : IDisposable
     private void NavigateTo(Guid graphId)
     {
         if (!CheckAnnotationDraft()) return;
+        outlineFocus = null;
         Error = null;
         session.CompleteHistoryGesture();
         CloseRackEditor();
