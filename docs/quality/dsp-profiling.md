@@ -144,3 +144,20 @@ Define pass/fail targets through measured baselines at each supported sample rat
 - no leaked worklets/capture leases across repeated cycles;
 - no per-note compile, and no compilation for base-only or source-identical changes;
 - stable UI frame cadence for normal editing on measured reference hardware, not a universal 60 FPS requirement.
+
+### 9.4 Device-specific capacity and reference compositions (planned)
+
+Phase 7.3.8 extends the existing fixture and report harness with an explicitly requested, bounded device-specific diagnostic. The purpose is to establish an interpretable capacity baseline on a user's phone or desktop and make the [health targets](performance-metrics.md#31-suggested-health-thresholds) actionable. Results are scoped to the actual device, power/thermal state, browser, sample rate, output route, display cadence, app revision and fixture version. Re-run after meaningful changes to that environment.
+
+| Reference tier | Target reachable leaf nodes (recursive) | Intended performance goal (not a current claim) |
+|---|---:|---|
+| Simple composition | ~50 | Excellent audio/editing on supported reference mobile hardware |
+| Complex composition | ~200 | Smooth audio/editing on supported reference mobile and desktop |
+| Advanced composition | ~500 | Smooth audio/editing on supported reference desktop |
+| Stress test | 1,000+ (explicit optional limit) | Find device-specific limits, not a production pass requirement |
+
+Use composition-like mixed workloads (voice generators, audio-rate modulation, envelopes, sequencing, filters/effects and several nested composites), not just cheap sine nodes. Record exact reachable flattened leaf count, editable recursive count, connections, voices/channel and tap/plot configuration and actual compiled source identity; equal node counts do not imply equal cost. Retain the existing oscillator and FX fixture families for isolating costs. Include baseline and repeatable tiers, e.g. no plots versus representative open plots, stable playback versus drag/zoom/control changes and replacement, and paired mono/stereo/unison when available. Ensure numerical validity and conservative output levels.
+
+Start with a light uncrowded foreground baseline to establish observed display cadence; never calibrate to the FPS of an overloaded patch. Test each selected tier for at least ~60 s steady playback plus a bounded editing workload, repeat where practical and include 10–30 minute endurance separately. Record p95/peak render capacity only from a validated measurement with scope; otherwise report headroom unavailable and compare offline throughput as a separate metric. Track valid underruns/missing audio, audio errors, UI frame intervals, compilation stages, cleanup and actual sound checks where possible. Aim for p95 30–50% render load in normal complex use, below 60% as Good, 60–85% as Caution; no reliable device-specific headroom claim if live load is absent. If optional underrun stats are absent, state that audio reliability is not fully verified.
+
+Provide opt-in Start/Stop controls and explicit test cost, duration and staged limits. Run stress profiles in a separate diagnostic workflow with ordinary patch playback stopped; preserve the user's patch, transport, undo and saved content. Stop promptly on reported interruptions, errors, sustained critical pressure, cancellation or unexpected resource growth; release all temporary resources on completion/abort. Do not automatically start from the normal editor, emit loud test audio or upload results. A local report shows the highest tested passing tier by separate audio and UI criteria, known limitations and short reasons for each health badge. If the 1,000+ tier is unsafe or unnecessary on a device, do not run it; report the tested range, not an extrapolated maximum node count. These are target workloads, not fixed production node limits or an automatic quality-reduction policy.

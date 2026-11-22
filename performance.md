@@ -1,6 +1,6 @@
 # Orbit 2 — Performance monitoring, profiling and diagnostics
 
-**Status:** 7.3.1 implemented ([PR #53](https://github.com/wgabel/orbit2/pull/53)); 7.3.2 implemented ([PR #56](https://github.com/wgabel/orbit2/pull/56)); 7.3.3 implemented ([PR #57](https://github.com/wgabel/orbit2/pull/57)); 7.3.4 benchmark baseline in review ([PR #58](https://github.com/wgabel/orbit2/pull/58)); 7.3.5–7.3.6 planned  
+**Status:** 7.3.1 implemented ([PR #53](https://github.com/wgabel/orbit2/pull/53)); 7.3.2 implemented ([PR #56](https://github.com/wgabel/orbit2/pull/56)); 7.3.3 implemented ([PR #57](https://github.com/wgabel/orbit2/pull/57)); 7.3.4 benchmark baseline in review ([PR #58](https://github.com/wgabel/orbit2/pull/58)); 7.3.5–7.3.8 planned  
 **Scope:** Browser audio playback, Faust DSP, editing/UI, compilation, memory, musical timing and repeatable performance tests.  
 **Repository:** [wgabel/orbit2](https://github.com/wgabel/orbit2)  
 **Parent architecture:** [ORBIT2-ARCHITECTURE.md](ORBIT2-ARCHITECTURE.md)  
@@ -20,6 +20,8 @@ Performance has several independent dimensions:
 - **Resources:** how many reachable DSP nodes, parameter controls, observation taps, capture leases, FFTs and runtime voices are active? Do memory or resources grow over time?
 - **Musical timing:** do multiple sequencers and event sources share exact boundaries, do long loops drift, and how late do manual performance events reach the engine?
 - **Signal quality:** is the generated audio clipping or discontinuous? Signal clipping is not CPU overload.
+
+**Desired performance and planned UX:** the [health target contract](docs/quality/performance-metrics.md#31-suggested-health-thresholds) defines proposed audio, editor and compile thresholds; the [explainable badge design](docs/quality/performance-metrics.md#421-explainable-health-indicators-planned-737) requires a short visible “why” next to every assessed metric. Phase 7.3.7 adds this interpretation to existing valid measurements without waiting for validated in-app DSP timing. Phase 7.3.8 [device capacity benchmarks](docs/quality/dsp-profiling.md#94-device-specific-capacity-and-reference-compositions-planned) establish representative mobile and desktop workloads and calibrate targets. These are planned goals, not verified current capacities.
 
 A single number called "performance" cannot answer these questions. The monitor should expose a small number of useful, honest metrics and allow an expanded diagnostic view when something goes wrong. It should let a musician build richer patches with confidence and let a developer or AI coding agent identify the relevant subsystem before changing code.
 
