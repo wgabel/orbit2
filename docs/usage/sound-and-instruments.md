@@ -120,7 +120,7 @@ Open the composite to alter the short AD burst, each mode's frequency (stored as
 
 ### Playable modal percussion
 
-Use **Playable — Handpan**, **Playable — Bell**, **Playable — Gong** or **Playable — Wood percussion** (7.2.6b, in review) for direct velocity-sensitive strikes. Unlike Playable sustained instruments, these use Trigger instead of Gate.
+Use **Playable — Handpan**, **Playable — Bell**, **Playable — Gong** or **Playable — Wood percussion** (7.2.6b, in review, [PR #46](https://github.com/wgabel/orbit2/pull/46)) for direct velocity-sensitive strikes. Unlike Playable sustained instruments, these use Trigger instead of Gate.
 
 1. Add Note Source and Playable — Handpan; set Note Source Reference note to A3. For Bell use E4, Gong E2 or Wood D4 (approximate native tunings).
 2. Wire Pitch → Pitch (st), Trigger → Trigger and Velocity → Velocity, all at unity. Connect Audio → Master output.

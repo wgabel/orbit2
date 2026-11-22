@@ -63,6 +63,8 @@ Graph tests verify independent instances, typed clock routing, mode tuning, edit
 
 ### Phase 7.2.6b — Playable modal instruments (in review)
 
+Implementation: [PR #46](https://github.com/wgabel/orbit2/pull/46).
+
 Four **Playable — Handpan**, **Playable — Bell**, **Playable — Gong** and **Playable — Wood percussion** variants reuse the exact mode ratios, decay times, AD noise bursts and output trim of 7.2.5. They expose Trigger, Pitch (st), Velocity and optional Excitation. Wire Note Source Trigger, Pitch and Velocity at unity, then Audio to Master or Mixer; no Gate cable is required. Velocity directly scales the internal noise burst via a zero-based Gain before the resonator bank, clamped to 0–1. Velocity 0 or an unconnected Velocity port suppresses the internal strike. Unlike Strength offset in the original templates, this gain does not scale optional external audio: the independent Excitation input still feeds the bank at ×0.03, even with velocity 0. An external audio source can ring without a trigger. Existing Modal entries and saved graphs do not change.
 
 | Instrument | Reference note | Native Hz | Strike attack / decay (ms) |
