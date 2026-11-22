@@ -374,6 +374,28 @@ File.WriteAllText(Path.Combine(args[0], "pitch.json"), JsonSerializer.Serialize(
     cents = pitchProgram.Controls.Single(c => c.Address == Address(pitchSource, PitchControlGenerator.CentsKey)).Name
 }));
 
+// A single damped mode is tested with arbitrary audio-rate input and controls,
+// plus a live-control graph compiled using the ordinary node registry.
+using var resonatorSession = new PatchSession(BuiltInNodes.CreateRegistry());
+var resonatorRoot = resonatorSession.GraphId;
+GraphNodeSnapshot ResonatorAdd(string type) => resonatorSession.Execute(new AddNodeCommand(resonatorRoot, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+var resonatorVoice = ResonatorAdd(OscillatorGenerator.NodeType);
+var resonator = ResonatorAdd(ResonatorProcessor.NodeType);
+var resonatorPitch = ResonatorAdd(PitchControlGenerator.NodeType);
+var resonatorMaster = ResonatorAdd(MasterOutput.NodeType);
+void ResonatorWire(GraphNodeSnapshot from, GraphNodeSnapshot to, string key, double amount = 1) => resonatorSession.Execute(new ConnectNodesCommand(resonatorRoot,
+    new(from.Id, from.Outputs[0].Id), new(to.Id, to.Inputs.Single(p => p.Key == key).Id), amount));
+ResonatorWire(resonatorVoice, resonator, "audio-in", .1);
+ResonatorWire(resonatorPitch, resonator, ResonatorProcessor.PitchPortKey);
+ResonatorWire(resonator, resonatorMaster, "audio-in");
+var resonatorGraph = FaustGraphCompiler.CreateBuiltIn().Compile(resonatorSession.Snapshot);
+File.WriteAllText(Path.Combine(args[0], "resonator.json"), JsonSerializer.Serialize(new {
+    directSource = $"import(\"stdfaust.lib\"); process(signal,freq,t60,drive,outgain,wet) = {FaustDampedMode.Emit("signal", "freq", "t60", "drive", "outgain", "wet")};",
+    source = resonatorGraph.Source, values = resonatorGraph.InitialControlValues(),
+    transpose = resonatorGraph.Controls.Single(c => c.Address == Address(resonatorPitch, PitchControlGenerator.SemitonesKey)).Name,
+    frequencyMeter = resonatorGraph.Controls.Single(c => c.Address == Address(resonator, "frequency")).MeterName
+}));
+
 // Direct signal fixture exercises the exact production state machine with sample-accurate
 // Live keyboard actions share one pitch lane across a continuously running bank.
 using var keyboardSession = new PatchSession(registry);

@@ -4,6 +4,7 @@ using Orbit.Audio.Compilation;
 using Orbit.Domain.Parameters;
 using Orbit.Domain.Ports;
 using Orbit.Domain.Nodes.Generators;
+using Orbit.Domain.Nodes.Processors;
 using Orbit.Domain.Timing;
 
 namespace Orbit.Audio.Analysis;
@@ -102,6 +103,6 @@ public sealed class GraphModulationRangeEstimator(IEnumerable<IFaustNodeEmitter>
     }
 
     private static ParameterSnapshot? ActivePitchForFrequency(GraphNodeSnapshot node, ParameterSnapshot parameter) =>
-        node.TypeKey == OscillatorGenerator.NodeType && parameter.Definition.Key == "frequency"
+        parameter.Definition.Key == "frequency" && node.TypeKey is OscillatorGenerator.NodeType or ResonatorProcessor.NodeType
             ? node.Parameters.SingleOrDefault(p => p.Definition.Key == OscillatorGenerator.PitchKey && node.IsParameterActive(p)) : null;
 }
