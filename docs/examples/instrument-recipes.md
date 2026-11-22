@@ -8,6 +8,8 @@ These recipes address individual sounds. For combining voices into a structured 
 
 For the principles behind tuning, harmonic content, articulation, level balancing and perceived sound quality, see [music theory and sound design](music-theory-and-sound-design.md).
 
+For a richer musical sound palette and candidate editable instrument recipes, including intentional noise shaping and an audition/revision process, see [sound quality and voice design](sound-quality-and-voice-design.md). These complement the instrument approximations below rather than claiming additional deployed presets.
+
 <a id="musical-instrument-synthesis-and-physical-modelling-planned-phase-72"></a>
 
 #### Musical instrument synthesis and physical modelling (Phase 7.2 — partial)

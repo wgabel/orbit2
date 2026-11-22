@@ -4,6 +4,8 @@
 
 These are composable graph recipes using the currently documented engine, not new nodes, persisted presets, exact genre emulations or guarantees of musical quality. Values are conservative starting points. Read the relevant linked contract when building a graph, especially when generating its serialized representation. Verify names, units, modes, active sockets, ranges, signal types and implementation status against the current code. Reuse voice graphs where possible; the planned custom module library is not a prerequisite to using ordinary composites.
 
+Treat basic oscillator recipes as scaffolding. For a finished palette, use [sound quality and voice design](../sound-quality-and-voice-design.md), especially its layered lead, pad and percussion/noise examples; compare the result in context using the [production workflow](../mixing-mastering-and-analysis.md).
+
 ## T1 — Harmonic beds and pads
 
 **Use for:** ambient, dub chords, trance pads, liquid D&B, synthwave. Choose a musical register and voicing using [theory](../music-theory-and-sound-design.md#3-scales-harmony-and-tonal-color). For D minor/add9, a possible spread is D2 (73.42 Hz), A3 (220 Hz), F4 (349.23 Hz), E5 (659.26 Hz). Use separate Oscillators in Free Hz mode, gentle amplitudes (e.g. 0.10, 0.06, 0.04, 0.025), mix to a Filter and local Gain. Detune one quiet partner by a few cents for slow beating (ratio `2^(cents/1200)`); add a triangle/saw at small amplitude for audible cutoff motion. Sine at the fundamental alone has no large upper-harmonic spectrum to filter away. Use a slow sine (e.g. 0.013 Hz, amplitude 1) into low-pass cutoff base 1000 Hz with amount 600 Hz, Q 0.7. Chorus at subtle depth or reverb can soften a bed; avoid washing out the harmony.
@@ -46,6 +48,8 @@ Separate kick and bass rhythmically or duck the bass predictably. A grid-matched
 ## T5 — Noise and textural gestures
 
 **Use for:** atmosphere, dark ambient, glitch, risers, industrial. Pink noise → band-pass Filter (base cutoff e.g. 650 Hz, Q 0.8) → Gain 0.04 → Reverb. Slow modulation of the cutoff (0.017 Hz sine, amount 450 Hz) and gain (0.011 Hz sine, amount 0.035) give spectral and amplitude movement without clipping controls at zero. For a wind-like burst use white/pink Noise with base amplitude zero, triggered by AD (e.g. 1500 ms attack, 4500 ms decay, amplitude depth 0.06) into low/high-pass or band-pass. For tiny glitches, use envelope attacks/decays of 1–30 ms, frequency bands separated from other voices, and sparse masks. For granular/tape-like clouds, layer a few independently timed, gently pitched and tapered synth voices with different periods and modulated delay; identify it as a synthesized approximation, not actual grains or recorded loops. Brown noise emphasizes low frequencies; be deliberate with high-pass to avoid masking sub. Do not turn up noise until it sounds exciting; use contrast and space.
+
+For unobtrusive ambience, start with lower noise amplitude and post-effect trim, check whether the dry noise is recognizable at the sparsest part of the arrangement, and transform higher-level noise deliberately rather than relying on reverb alone. See [noise transformation recipes](../sound-quality-and-voice-design.md#2-treat-noise-as-material-not-a-finished-texture).
 
 Contracts: [oscillators and noise](../../audio/oscillators-and-noise.md), [effects](../../audio/effects.md), [envelope modes](../../audio/envelopes.md).
 

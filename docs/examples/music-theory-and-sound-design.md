@@ -2,6 +2,8 @@
 
 For applying these principles to a particular style, see the [electronic music genre reference](electronic-music-genres.md) and its linked [Orbit 2 techniques](genres/orbit-techniques.md).
 
+For quality-focused production, see [sound quality and voice design](sound-quality-and-voice-design.md) for rich voices, quiet/shaped noise and candidate presets, and [mixing, mastering and analysis](mixing-mastering-and-analysis.md) for true peak/LUFS, balance and iterative rendering.
+
 [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Generative ambient composition](generative-ambient-composition.md) · [Instrument recipes](instrument-recipes.md) · [Roadmap](../../ROADMAP.md)
 
 **Purpose:** A practical musical reference for people and agents creating Orbit 2 patches, instruments, effects and complete pieces. It explains why particular choices may work, how to implement them with the available nodes, and how to evaluate the result. This is not a rulebook for what music must sound like or an implementation specification for new DSP features. All numerical recipes are starting points, not claims of measured or listening-tested sound quality.
@@ -182,6 +184,8 @@ Detuning two sines at 110 and 110.4 Hz makes approximately 0.4 beats per second 
 
 Use noise as a quiet contrasting texture or attack/excitation, not an obligatory ingredient. Inharmonic partials, resonators, and modulation sidebands can become compelling metallic sounds. At the time of writing the dedicated resonator/modal bank are planned; use only the available filters, oscillators and effects for actual delivered presets or document a future design explicitly.
 
+In a polished musical voice, a pure sine on its own may sound hollow or like a test tone; support it with meaningful partials or shape it as a deliberate sub/impact/detail. A loud raw-noise texture, even with long reverb, can mask music. See [voice design](sound-quality-and-voice-design.md) for concrete noise transformations and richer tonal recipes; evaluate in context rather than assuming lower RMS or more effects is better.
+
 ### Articulation and modulation
 
 The envelope determines a sound's entry, body and exit. AD is suitable for plucks/strikes; AR for swells; ADSR for gate-held voices; Loop can create repeated evolution. Real sounds rarely have the same brightness throughout their duration. A separate envelope or scaled copy may close a filter after a note attack, while amplitude fades more slowly. Avoid hard waveform cuts at arbitrary sample values unless clicks are deliberate. Short attack/release smoothing can remove clicks, but intentional percussive transients need not be over-smoothed.
@@ -306,7 +310,8 @@ For a new patch or piece, adapt this checklist to the task rather than requiring
 4. **Build:** use registered node types and actual parameter/port definitions. Reuse current composites, recipes, validated patch serialization and the application's routing invariants. Document future capabilities separately.
 5. **Audition in stages:** listen to dry sources, each processed voice, then the mix. Compare at similar perceived level; change one variable at a time when diagnosing. Check whether an important layer is masked, a chord sounds congested or tails collide. Listening is indispensable for subjective quality. If an agent cannot listen, say so, provide a plausible recipe and request human audition rather than claiming that it sounds excellent.
 6. **Measure:** confirm pitch and expected note intervals, ranges, timing, envelope shape, finite output, headroom, no unexpected discontinuities, and representative later sections (not only first few seconds). Use master-feed scope/FFT and offline/browser render checks when available; distinguish sample peak/RMS from LUFS or acoustic loudness. Check performance on complex patches separately via [performance diagnostics](../../performance.md).
-7. **Deliver:** include expected musical behavior and settings, any manual performance steps, supported import format, assumptions, known limitations, actual verification and documentation report. Prefer small readable patches with names/layers that help modification; complexity is not a quality metric.
+7. **Refine:** apply the [production iteration](mixing-mastering-and-analysis.md#5-agent-workflow-render--analyze--refine--re-render) at an appropriate scale: compare the baseline and targeted revised render, when feasible, including important voices and master. Preserve musical strengths; respect human listening feedback and distinguish it from objective data.
+8. **Deliver:** include expected musical behavior and settings, any manual performance steps, supported import format, assumptions, known limitations, actual verification and documentation report. Prefer small readable patches with names/layers that help modification; complexity is not a quality metric.
 
 For an effect-only preset, a single representative dry input plus several boundary tests may be sufficient. For a whole-piece patch, verify a representative transition and the full intended duration where feasible, with deliberate silence, harmonic/timing relationships and no runaway overlap or accidental clipping. A stable autonomous performance that sounds intentional over ten minutes is a different success condition from a technically valid oscillator demonstration.
 
