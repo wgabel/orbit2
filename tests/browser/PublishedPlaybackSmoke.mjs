@@ -7,6 +7,7 @@ import { extname, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { verifyTouchWire } from "./TouchWireSmoke.mjs";
 import { fitCanvas, resetCanvas, zoomStep, tripleTapFit, verifyCanvasNavigation } from "./CanvasNavigationSmoke.mjs";
+import { verifyCanvasContext } from "./CanvasContextSmoke.mjs";
 
 const { chromium } = await import(pathToFileURL(resolve(process.env.ORBIT_PLAYWRIGHT_DIR, "index.mjs")));
 const root = resolve("publish/wwwroot");
@@ -1980,6 +1981,7 @@ try {
     await mobilePage.close();
     await verifyTouchWire(browser, "http://127.0.0.1:" + server.address().port);
     await verifyCanvasNavigation(browser, "http://127.0.0.1:" + server.address().port);
+    await verifyCanvasContext(browser, "http://127.0.0.1:" + server.address().port);
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {
     await browser?.close();

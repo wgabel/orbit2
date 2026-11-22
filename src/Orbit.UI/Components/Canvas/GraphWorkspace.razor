@@ -103,6 +103,9 @@ else
                  OnGroupNodes="GroupNodes"
                  OnUngroupComposite="UngroupComposite"
                  OnEditRack="@(nodeId => OpenRackEditor(graphId, nodeId))"
+                 OnContextAddNode="OpenContextLibrary" OnContextSelection="OpenContextSelection"
+                 OnContextDelete="DeleteSelection" OnContextUndo="Undo" OnContextRedo="Redo"
+                 ContextCanUndo="@session.CanUndo" ContextCanRedo="@session.CanRedo"
                  ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" EnvelopePlayheads="@EnvelopePlayheads" BeatsPerMinute="@tempo" SampleRate="@responseSampleRate" />
     @if (ScopeNode is { } scopeNode)
     {
