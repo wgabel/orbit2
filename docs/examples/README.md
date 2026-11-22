@@ -11,7 +11,7 @@ This is the entry point for users and agents creating, analyzing or improving mu
 | Task | Start with |
 | --- | --- |
 | Individual effect or modulation | [Effects](../audio/effects.md), [parameters and modulation](../core/parameters-and-modulation.md), [signal observation](../audio/signal-observation.md) |
-| Individual voice, instrument or preset | [Voice quality](sound-quality-and-voice-design.md), [instrument recipes](instrument-recipes.md), [instrument usage](../usage/sound-and-instruments.md) |
+| Individual voice, instrument or preset | [Classic synthesizer patch recipes](synthesizer-patch-recipes.md), [Voice quality](sound-quality-and-voice-design.md), [instrument recipes](instrument-recipes.md), [instrument usage](../usage/sound-and-instruments.md) |
 | Drone, evolving texture or sound-design experiment | [Foundations catalogue](foundations/README.md), [worked drone](drone.md), [timbre](music-theory-and-sound-design.md#5-timbre-why-one-oscillator-is-not-always-enough) |
 | Whole piece, ambient or otherwise | [Composition and layers](generative-ambient-composition.md#1-the-structure-of-a-musical-piece), [compositional development](compositional-development.md), [genre index](electronic-music-genres.md), workflow below |
 | Feedback on monotony, repetitive melody, indistinct choruses/drops or lack of progression | [Compositional development](compositional-development.md) — micro/meso/macro development, section contrast and listener feedback |
@@ -22,6 +22,8 @@ This is the entry point for users and agents creating, analyzing or improving mu
 | Export, load, organize or verify a patch | [Patch editor usage](../usage/patch-editor.md), [persistence](../editor/persistence-and-history.md), [node and port contracts](../core/signals-and-ports.md) |
 
 ## End-to-end workflow
+
+**Sound palette planning:** before constructing a new musical patch or individual synthesized voice, consult the [synthesizer patch recipes](synthesizer-patch-recipes.md#use-the-recipes-when-creating-music-in-orbit-2). Select or adapt suitable techniques for the important voices, or explain why a different design better serves the brief. Translate the settings using current node contracts, and evaluate the resulting voices using the existing production loop.
 
 For complete pieces and substantial voice design, use the [detailed production iteration](mixing-mastering-and-analysis.md#5-agent-workflow-render--analyze--refine--re-render) alongside the [musical quality checklist](music-theory-and-sound-design.md#11-agent-workflow-and-quality-checks). These remain the authoritative procedures; the following is a routing summary.
 

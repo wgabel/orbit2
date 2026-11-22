@@ -57,6 +57,8 @@ Distinguish four ingredients when useful: **fundamental** (pitch/weight), **body
 
 ### Candidate instrument recipes (not shipped presets)
 
+For the user-supplied eight classic synth designs (pads, leads, plucks, bass, keys and FM-like bell timbres), consult the [synthesizer patch recipes](synthesizer-patch-recipes.md) during sound palette planning. Preserve the musical function of the design when adapting controls to Orbit; the source settings do not establish native implementation or audition validation.
+
 Use shared semitone tracking and pitch ratio preservation for note banks. Test in low/mid/high registers, and at different articulation rates. All numeric values below are suggested starts, not audition-validated final presets.
 
 | Voice | Sources and shaping | Spatial treatment |

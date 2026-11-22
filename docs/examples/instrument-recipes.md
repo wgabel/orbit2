@@ -10,6 +10,8 @@ For the available catalog, exposed ports and quick-start examples, see [using bu
 
 For the principles behind tuning, harmonic content, articulation, level balancing and perceived sound quality, see [music theory and sound design](music-theory-and-sound-design.md).
 
+For classic electronic instrument candidates (Juno-style pad, Moog-style bass, brass lead, analog pluck, Reese bass, warped keys, FM bell and acid bass), consult the [synthesizer patch recipes](synthesizer-patch-recipes.md). These reference designs are distinct from the implemented composite instrument catalogue below.
+
 For a richer musical sound palette and candidate editable instrument recipes, including intentional noise shaping and an audition/revision process, see [sound quality and voice design](sound-quality-and-voice-design.md). These complement the instrument approximations below rather than claiming additional deployed presets.
 
 For an analyzed, listener-validated synthetic instrument foundation rather than an acoustic approximation, see [breathing harmonic drone](foundations/breathing-harmonic-drone.md): a heavy, evolving sound based on interacting oscillators, modulation and chorus. It is a reference graph, not a shipped composite preset.
