@@ -34,6 +34,8 @@ flowchart TD
 
 The same canvas UI, interaction rules, connection rendering and node registry should be used for both root and nested graphs.
 
+**Canvas and entire-patch counts (in review).** The upper-right overlay preserves the active canvas's node/connection counts (and local notes, if present), and adds a separately labelled entire-patch total. The total recursively sums each committed graph's own nodes and connections, starting at the root, including composite wrappers, internal input/output rack nodes and dormant connections. Visual groups, notes and mirrored sockets are not additional graph elements. For example, a root with one drone wrapper and a four-node, four-connection child shows one local node and five total nodes. `CanvasNavigationService` calculates this projection once at initialization and per committed patch change, so it stays consistent across navigation, nested edits, deletion, undo/redo and patch replacement without traversing the hierarchy on pan, zoom or telemetry updates. The counts do not change audio, commands, or persistence.
+
 ### Separation from visual layout
 
 | Object | Responsibility |

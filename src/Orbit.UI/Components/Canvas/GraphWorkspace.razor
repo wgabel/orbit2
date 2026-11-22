@@ -76,6 +76,7 @@ else
                         Dispatch="@DispatchRackCommand" OnClose="CloseRackEditor" />
     }
     <GraphCanvas @key="(workspaceGeneration, graphId)" @ref="canvasView" State="@Canvas" PatchId="@session.GraphId" AutoFitOnFirstRender="@Navigation.IsFirstVisit"
+                 PatchCounts="@Navigation.PatchCounts"
                  DispatchConnectionAmount="@DispatchConnectionCommand"
                  AnnotationActionsDisabled="@(switchingWorkspace || overviewDraft)" OnAnnotationDraftChanged="OnAnnotationDraftChanged" OnAnnotationError="@(value => Error = value)"
                  CanShowScope="@(ScopeSelection is not null || ScopeOpen)" ScopeOpen="@ScopeOpen" OnToggleScope="ToggleScope"

@@ -26,6 +26,7 @@ public sealed class CanvasNavigationService : IDisposable
     {
         this.session = session ?? throw new ArgumentNullException(nameof(session));
         this.placement = placement;
+        PatchCounts = GraphElementCounts.CountHierarchy(session.Snapshot);
         // Register before creating projections. Removed canvases can then be
         // released outside their own layout notifications.
         patchSubscription = session.Subscribe(OnPatchCommitted);
@@ -74,6 +75,8 @@ public sealed class CanvasNavigationService : IDisposable
     }
 
     public ICanvasStateService ActiveCanvas { get; private set; } = default!;
+    /// <summary>Root and all descendant graph elements, refreshed once per patch commit.</summary>
+    public GraphElementCounts PatchCounts { get; private set; }
     public IReadOnlyList<CanvasBreadcrumb> Path => path.AsReadOnly();
     /// <summary>Fit a newly visited canvas once. Returning must not reset its viewport.</summary>
     public bool IsFirstVisit { get; private set; }
@@ -120,6 +123,7 @@ public sealed class CanvasNavigationService : IDisposable
 
     private void OnPatchCommitted(GraphChangeSet change)
     {
+        PatchCounts = GraphElementCounts.CountHierarchy(change.Snapshot);
         // If an ancestor was deleted, navigate back to the closest surviving
         // canvas and dispose cached projections for the removed subtree.
         var removed = canvases.Keys.Where(id => change.Snapshot.FindGraph(id) is null).ToArray();

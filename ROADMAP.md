@@ -11,6 +11,7 @@
 | Capability | Current status | Design / evidence |
 |---|---|---|
 | Graph, validated commands, nested racks, dynamic Faust compilation, live parameter updates | Implemented · Phases 1–5 | [Foundation register](docs/roadmap/foundation.md) |
+| Recursive entire-patch node and connection counts | In review · editor improvement | [Canvas](docs/editor/canvas.md#the-canvases) |
 | Shared BPM, oscillators, noise, mixer, filter, EQ, delay, reverb, chorus | Implemented · 6.1–6.7, 6.12–6.15 | [Timing](docs/audio/transport-and-timing.md), [generators](docs/audio/oscillators-and-noise.md), [effects](docs/audio/effects.md) |
 | Recovery, named patches, portable JSON, undo/redo | Implemented · 6.8–6.11 | [Persistence](docs/editor/persistence-and-history.md) |
 | Mute/bypass and individual presets | Implemented · 6.16–6.17 | [Audition](docs/editor/audition.md), [presets](docs/editor/node-presets.md) |
