@@ -1,0 +1,113 @@
+# Mixing, mastering and analysis of electronic pieces
+
+[Architecture](../../ORBIT2-ARCHITECTURE.md) · [Musical theory and psychoacoustics](music-theory-and-sound-design.md) · [Voice design](sound-quality-and-voice-design.md) · [Genre reference](electronic-music-genres.md)
+
+Documentation provenance: [PR #29](https://github.com/wgabel/orbit2/pull/29) (production guidance and measured case study, not new mastering DSP or native rendering implementation).
+
+**Purpose:** make Orbit 2 music sound intentional and polished, rather than merely technically correct. Apply the appropriate depth for a single voice, short loop or long composition. Current Orbit nodes support considerable mixing and tone shaping, but a complete professional mastering suite or standardized loudness meter is not implied. Sound quality benefits most from decisions at the right stage.
+
+## 1. Separate the four production tasks
+
+| Stage | What should be solved here | Evidence of success |
+| --- | --- | --- |
+| Sound design | Identity of every voice, envelopes, body, movement, noise transformation | Auditioned solo and in context; no unintended test-tone or raw-noise character. |
+| Composition/arrangement | Motifs, harmonies, registers, contrast, sections, transitions and final resolution | Musical arc works at the intended duration and tempo; no accidental gaps or perpetual unchanged loop. |
+| Mixing | Relative levels, masking, depth, frequency allocation, transient conflicts, automation | Focal roles remain intelligible, kick/sub do not overwhelm each other, intended dynamic contrast survives. |
+| Mastering | Whole-mix tonal/dynamic balance, presentation level, peak safety, reliable delivery and translation | No distortion or excessive processing, consistent intended playback, appropriate output format and verified level measurements. |
+
+Mastering cannot repair a bad instrument, unmusical noise or a weak arrangement. If a sound is too loud or hollow, inspect and revise that voice first. Retain a clean unprocessed mix and avoid baking a fault into a master. Preserve good composition/transitions when the requested change is about timbre or balance; do not replace the score just to fix the palette.
+
+## 2. What to measure, and what each measurement cannot tell you
+
+| Measurement | Meaning | Use and limitations |
+| --- | --- | --- |
+| Sample peak (dBFS) | `20 log10(max(abs(x)))`, full-scale digital sample reference | Finds sample overload/peak headroom on master or stem. Not a loudness measurement; not a guarantee against intersample clipping. |
+| True peak (dBTP) | Estimated reconstructed waveform peaks using oversampling/interpolation | Delivery/codec headroom. Use a proper true-peak meter, not a sample peak with a different label. Measure again after encoding if delivering lossy audio. |
+| RMS (dBFS) | `20 log10(sqrt(mean(x²)))` over a specified window | Energy/density and balance trends. Unweighted, ignores hearing sensitivity; compare like for like. A low-RMS hiss can still dominate. |
+| Crest factor (dB) | Peak minus RMS in dB **over the same window** | Identifies spiky transients versus dense sustained material. A whole-track crest factor is inflated by silence and is not a compressor setting. |
+| Integrated loudness (LUFS-I) | K-weighted, channel-weighted, gated programme measurement (BS.1770) | Compare a complete piece at similar perceived level. Includes gating; not RMS, and a silence/intro changes the result differently from peak. |
+| Momentary / short-term LUFS | EBU Mode 400 ms / 3 s moving windows | Locate loud sections, transitions or brief high-density points across a long piece. Inspect comparable passages, not only integrated loudness. |
+| Loudness range (LRA, LU) | Statistical range of short-term loudness under defined gating | Broad dynamic variation, not max-minus-min, not a pass/fail artistic threshold. |
+| Spectrum / band energy | FFT or consistent band power, per voice and master; inspect over time | Locate harshness, competing bands, bass dominance, persistent hiss and resonances. Remember window size, leakage, normalization; numerical tone balance does not prove musical quality. |
+
+For current Orbit visualizations, a short-window peak/RMS and spectrum are useful diagnostic tools, not full-program mastering meters. See [signal observation](../audio/signal-observation.md) for actual windowing/FFT semantics and [theory](music-theory-and-sound-design.md#6-perceived-loudness-gain-staging-and-dynamic-range) for psychoacoustics. Use [ITU-R BS.1770-5](https://www.itu.int/rec/R-REC-BS.1770/en), [EBU loudness meter specifications](https://tech.ebu.ch/loudness) and a verified offline tool for LUFS, true peak and LRA. For mono, declare whether the meter treats it as one channel or applies dual-mono playback compensation (different LUFS result); do not compare those values directly. Record sample rate, channel layout, time bounds, window length, weighting, render engine and file version.
+
+### Example offline measurement commands
+
+If FFmpeg is available, a non-destructive analysis of a rendered lossless master is:
+
+```bash
+ffmpeg -hide_banner -nostats -i mix.wav -af ebur128=peak=true -f null -
+```
+
+For mono intended to be reproduced through two identical channels, an additional labeled reading may use `ebur128=peak=true:dualmono=true`. Keep the single-channel and dual-mono numbers separate. For a particular section use input seek/duration, e.g. `-ss 200 -t 40` before `-i mix.wav`; report that this is a section measurement, not programme LUFS-I. Use the meter's summary plus its 100 ms report samples to locate peaks and short-term trends. The `true peak` summary may be printed with a dBFS label; identify it as the estimate from true-peak mode. See the [FFmpeg ebur128 filter reference](https://ffmpeg.org/ffmpeg-filters.html#ebur128). Do not use a loudness-normalization filter to change the source when the task is measurement only.
+
+## 3. Mix from musical roles outward
+
+1. **Start with sound identity.** Follow the [voice guide](sound-quality-and-voice-design.md): intentional harmonic body, independent attack/decay/brightness, controlled air. Make a short reference render per important voice when feasible, audition in the context it will be used. A convincing sub can be mostly sine; other foreground voices should not default to naked sines in a polished ambient/bass brief.
+2. **Gain stage.** Keep mixer connections and local Gains conservative. With normalized unit full scale, 0.5 peak is roughly −6 dBFS. A rough mix with several dB of peak margin at the *loudest* section is a useful starting point; do not enforce a single peak target on every piece. Check filters/feedback and individual voice peaks, not just a reduced final output. The root Gain is an attenuator, not a limiter, compressor or automatic loudness compensator.
+3. **Build the balance.** Establish foreground (the main theme, bass call or rhythm), supporting harmony, foundation and background. In dense passages, reduce conflicting layers as well as raising the focal voice. Audition the quietest parts too: a distant texture exposed on its own may be much more recognizable than at the climax. Automate section levels purposefully. A minute-level average can hide a single overpowering noise burst; a normalized display can hide that all layers are quiet.
+4. **Control frequency competition.** Use the spectrum and stems to identify the specific source. Test sub/kick overlap (fewer simultaneous hits, shorter tails, pitch/register selection, mask or clock-driven ducking where accurate). Keep sub dry and mostly clean; guide audibility on small systems with a restrained upper harmonic lane. High-pass supporting textures where musical, and use gentle local parametric bell cuts around an identified conflict. Cut or reshape hiss at its source or its wet path; do not blanket-cut the entire mix. Do not force every genre into one spectral curve.
+5. **Depth and dynamics.** Preserve a direct focal sound, intermediate voices and a softer distant plane. Process wet tails separately when possible; keep long reverbs out of the low end, and compare dry/wet at matched levels. Control peaks in envelopes and faders rather than masking a clipped or unbalanced signal with extra reverb. Deliberate quiet sections make later impact meaningful.
+6. **Compare with references.** If authorized recordings and listening are available, choose 2–3 relevant references (e.g. one for spacious atmosphere, one for bass/drum balance). Compare similar sections at matched short-term/overall perceived level by turning down the louder signal; raw louder is not evidence of better. Listen at comfortable levels, on headphones and speakers/small playback where available; check mono. Do not copy another artist's waveform, melody or target spectrum. If only descriptions or objective measurements are accessible, report that, not a listening comparison.
+
+### A practical graph layout
+
+Individual or composite voice output → optional local EQ/filter → voice trim/arrangement Gain → root Mixer → optional gentle corrective Parametric EQ → final Gain → Master output. A voice can have pre-effect excitation/arrangement gain and a post-effect trim to preserve tails while controlling wet balance. For an optional shared space return, route one Mixer feed directly and another into a 100% wet delay/reverb followed by a separate trim/filter, then sum at a downstream Mixer; keep the graph acyclic. Do not sum multiple duplicated dry paths accidentally. Current effects are mono. Do not claim stereo panning, dynamics processors, multiband EQ, authentic sidechain compression or limiter protection unless the current implementation explicitly provides them. Check [effects](../audio/effects.md), [musical techniques](genres/orbit-techniques.md) and [roadmap](../../ROADMAP.md).
+
+## 4. Mastering: the final pass, not a loudness contest
+
+Before touching a master bus, render the approved full mix with its complete tail, and preserve that render and patch. Compare at the same loudness; if an operation makes it sound worse, undo it. If a problem only exists in one voice or brief passage, go back into the mix instead of processing the whole piece. A master should keep the form, timbral intent and dynamics that make the track work.
+
+| Operation | When useful | Current Orbit approximation / boundary |
+| --- | --- | --- |
+| Gain adjustment | Appropriate overall presentation, avoid clipping | Final Gain (0–1); cannot boost above unity or automatically catch peaks. Design enough internal headroom. |
+| Gentle equalization | Entire mix consistently too dark, harsh, or muddy | Single-band bell EQ, possibly a second serial bell if justified; filters only if needed. No assumed high/low shelf or multiband processor. |
+| Compression | Contain excessive variation or glue a mix while preserving transients | Not a current compressor node; source envelopes/levels and deliberate automation can shape musical dynamics, not perform detector-driven compression. |
+| Limiting / true-peak ceiling | Catch rare transients and control output for a delivery spec | No current limiter or automatic true-peak protection assumed; lower source peaks and mix gain. External mastering only if requested, label it separately from patch audio. |
+| Saturation / excitation | Intentional harmonic density or controlled transient color | No current dedicated saturator/waveshaper assumed. Add purposeful partials or FM-like sound design at source, not imaginary master processing. |
+| Stereo image and mono checks | Balance spatial presentation and translation | Current Orbit path is mono; depth via effects and filtering, no claim of stereo field. |
+| Export/codec QC | Check final duration, sampling, channels, clipping, end and loop | Measure actual output again; retain a lossless PCM render as analysis master where tools permit; provide MP3 as convenience preview. Native file-recording/export capabilities must be verified. |
+
+Choose the delivery requirement before choosing loudness. For example [EBU R 128](https://tech.ebu.ch/publications/r128/) uses −23 LUFS for broadcast programme normalization and defines true-peak/loudness-range descriptors; it is not a target for all music. Streaming, music files, live patch performances and game soundtracks have different needs and normalization policies. Avoid a universal −14 LUFS rule. For a dynamic ambient piece, a quieter master may be exactly right; for bass music, louder perceived impact can come from controlled low end, upper harmonics and fewer isolated peaks, not crushing dynamics. If delivering a lossy music preview, leaving around 1–2 dB of measured true-peak margin is a useful starting precaution (not a guarantee or universal release requirement); measure the encoded result. Respect any explicit platform specification and verify it at delivery time.
+
+**Headroom arithmetic:** if a mix peaks at −3 dBTP, raising its level by 2 dB gives an estimated −1 dBTP before codec changes. If reaching a loudness reference requires considerably more gain than headroom allows, do not simply normalize the peak away or pretend a Gain node is a limiter. Decide whether the requested loudness is appropriate, find the few peaks dominating headroom, rebalance transients/voices, or accept a more dynamic presentation. A limiter can be considered when available and justified; verify its audible effects and actual peak/loudness measurements.
+
+Producer perspectives: [iZotope: mastering basics](https://www.izotope.com/community/blog/what-is-mastering), [preserving dynamics](https://www.izotope.com/community/blog/9-tips-to-preserve-dynamics-without-sacrificing-loudness), and [reference tracks in mixing](https://www.izotope.com/community/blog/13-tips-for-using-references-while-mixing). These are professional workflow examples, not Orbit node specifications or claims that mastering always needs particular processors.
+
+## 5. Agent workflow: render → analyze → refine → re-render
+
+The [genre reference](electronic-music-genres.md) and [composition guide](generative-ambient-composition.md) cover the earlier creative plan. Once a substantial patch is constructed, perform an appropriately scoped **production iteration**, not just structural validation. For a complete piece, aim to render the intended duration, inspect individual roles, make evidence-driven improvements and render the revised result again if tooling permits. A small preset can instead use a short representative excerpt and relevant boundary cases. If an app or audio analysis path is unavailable, continue with what can be verified and disclose the limitation; manual feedback can guide the next iteration.
+
+| Step | Method | Evidence / result |
+| --- | --- | --- |
+| Plan | Identify brief, roles, intended register, contrast and section times. Define what good sound means for this brief. | Section plan, palette, quality targets; keep successful parts unchanged when revising. |
+| Validate patch | Inspect actual node definitions, IDs/ports, parameter ranges, nested racks, source capacity, acyclic reachability, timing, transposition, rests, triggers and endings. | Valid graph and expected score. Use current app scheduler/compiler/tests when possible. |
+| Render baseline | Prefer the actual native Faust/WASM or browser path; render lossless if possible. If unavailable, use an independent faithful preview only if its assumptions are explicit. | Full duration audio with known sample rate/channels and no omitted processing without disclosure. For long pieces, inspect both full render and short representative clips. |
+| Measure and isolate | At master and important post-voice-fader points, measure peak, RMS/crest and section levels; where feasible LUFS-I/S/LRA/true peak plus waveform/spectrum and high/low band energy. | Compare meaningful windows (bar/phrase/section and overall), pinpoint peaks and roles. For example, first/last bars, quiet breakdown, densest overlap and ending/loop wrap. |
+| Evaluate | Audition if actually possible. A/B at comparable level, check solo voice and full context, listen for hiss, thinness, harsh resonances, pulse, musical clarity and translation. | Distinguish actual observations from metrics and hypotheses; if no hearing access, report it and offer clips plus a human audition path. |
+| Refine | Pick targeted modifications based on evidence: noise shaping/attenuation, harmonic layering, envelope/cutoff motion, EQ, gain or section overlap. Change a small number, keep baseline, avoid optimizing one number. | Rationale for each adjustment and what should improve. If only the user's feedback is available, prioritize it over a meter. |
+| Re-render and compare | Same transport start, durations, render method, sample rate, channel convention and seed when controlled; compare at matched levels. Rerun graph/timing checks for changed graphs. | Before/after measurements, relative balance, transitions, peaks and tails. Reject changes that damage composition or sound quality, even if meter readings improve. |
+| Deliver | Editable patch and analysis/preview if requested, section timings, actual verification and caveats; attach meaningful canvas notes where supported. | Music and useful handoff, no claim of listening, native rendering or mastering not performed. |
+
+**Voice-level analysis details:** capture stems from the same running score/transport, preferably post-filter/effect/voice fader, and optionally raw/pre-effect to diagnose hiss. Preserve arrangement state and effect tails: independently solo-rendering a piece may change shared processing, randomness or level relationships, so identify isolated versus simultaneous captures. Stem sample sums depend on gain, alignment, effects and phase; do not simply add their dB/RMS values. If a voice RMS is low overall, inspect it specifically where other voices recede. For a meaningful suspected hiss comparison, level-match or hold the tonal level fixed and compare unchanged, muted-noise, shaped-noise and reduced-noise versions in a 10–30 s clip. Spectrum and band energy help locate a cause; they cannot tell whether a particular intentionally noisy texture is desirable. If data or listening is unavailable, flag the test as pending.
+
+**Reporting measurements correctly:** time-axis labels must correspond to actual window start/center/end; a normalized plot may use relative RMS amplitude (`RMS/max RMS`) or mean-square energy (`RMS²/max RMS²`), but label which one. Never call an RMS ratio a measured perceptual loudness or energy ratio. A mean over a minute is not proof that every second is safe; provide maxima and sections as appropriate. Peak dBFS is not dBTP; report encoded audio separately. Do not extrapolate an independent renderer's peak or CPU cost as proof of native runtime headroom, real-time performance or import success. See [performance](../../performance.md) for performance tests.
+
+Use a concise handoff structure: **observation → evidence → interpretation (including alternatives) → adjustment → re-test**. Report what was actually measured, what changed, whether it improved by measurable criteria, and remaining human-audition questions. The intent is iterative evaluation, not mandatory external tools or a large report for every tiny sound. Record docs consulted and discoverability as required by [AGENTS.md](../../AGENTS.md).
+
+## 6. Worked feedback example: Event Horizon — A Signal Returns
+
+Original ten-minute F♯-minor ambient/spacesynth/halftime/experimental-bass piece, 144 BPM grid, 10 voice composites. The user reported better composition, good transitions and some excellent sounds, but excessive recognizable noise and some hollow/basic-sounding synthesized voices. The original production already ran a baseline independent preview, measured master and individual lanes by minute, adjusted a sub-dominant balance, then rendered again. This was a useful method; it did not establish auditory quality.
+
+Measured from the **final independent 24 kHz mono preview before encoding**, not native Faust: full 600 s, sample peak −2.65 dBFS, RMS −25.98 dBFS, final second silent. Maximum one-minute RMS of the post-voice-fader dust/air stem was about −47.0 dBFS, while clean sub reached −22.6 dBFS, pad −28.9 dBFS, lead −31.7 dBFS and Reese call −30.6 dBFS. These maxima happened in their own windows, before root mixing weights, so they are not simultaneous relative-loudness measures. The measured low dust RMS does not refute the audible feedback or identify whether dust or percussion hiss was responsible.
+
+Further analysis of the **decoded 600 s MP3** using FFmpeg `ebur128=peak=true`: −28.9 LUFS-I (single mono channel), LRA 10.4 LU, estimated true peak −3.1 dBTP. Dual-mono mode reads −25.9 LUFS-I. The PCM peak and decoded true peak are different quantities and source versions; they must not be used interchangeably. The loudness is modest and the dynamic range is substantial. Reaching an arbitrary −14 LUFS target from −28.9 LUFS by simple gain would require +14.9 dB and exceed the available peak margin by a wide amount. That is a reason to inspect peaks and intended presentation, not to flatten a space-ambient arrangement.
+
+Next iteration suggested by the feedback (not an already-delivered revision):
+
+- Preserve the harmony, rhythmic roles, timeline and transitions that the listener liked. Isolate noise-bearing atmosphere and percussion during both sparse and dense passages. Lower exposed dry noise, narrow/move its spectrum and add pitched or transiently shaped color only when warranted. Compare in context rather than assuming the measurement already proves it is quiet enough.
+- Upgrade hollow lead/pad/accents with complementary partials, envelope-dependent brightness and selective effects ([candidate voice recipes](sound-quality-and-voice-design.md#3-give-foreground-tones-an-identity)). Keep a clean sub and successful unusual bass voices. Avoid simply stacking more waves or wet effects across the mix.
+- Re-render the revised palette at the same tempo and arrangement, compare individual stems and full mix, check peak/headroom/LUFS and the loudness contrast, then obtain human feedback on the critical excerpts. If the balance works and the track needs more presentation level, investigate transient-specific changes rather than increasing the master until it clips.
+
+This is an example of applying measured evidence and user listening feedback together. It is not a universal numerical target or claim about the sound of a future preset.

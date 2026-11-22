@@ -6,6 +6,8 @@ For specific ambient subgenres, rhythmic hybrids and genre-dependent sound palet
 
 Companion guide: [Music theory and sound design](music-theory-and-sound-design.md) explains how to choose compatible pitches, harmonic progressions, voicing, perceived loudness, spectral balance and spatial depth for the layers and arrangements in this document.
 
+For polished ambience, use the [voice quality guide](sound-quality-and-voice-design.md) to avoid exposed raw noise or hollow foreground tones; use [mixing, mastering and analysis](mixing-mastering-and-analysis.md) for iterative rendering and final balance without losing the piece's form.
+
 Guide introduced in [PR #22](https://github.com/wgabel/orbit2/pull/22) (documentation only; existing node implementation references are in the linked technical modules).
 
 ## 1. The structure of a musical piece
@@ -187,3 +189,4 @@ For future composition work, design features against real musical workflows: a p
 - Listen across several harmonic and melodic cycles. Confirm that changing alignment is pleasing and that bright sweeps, accents and delay/reverb tails do not overpower the motif.
 - Rehearse every section transition, keep headroom and check for clicks, misplaced strikes or lost tails. Allow long-running playback to reveal unexpected repetition, timing drift or performance problems; consult the [performance guide](../../performance.md) if needed.
 - Save the patch and document its intended tempo, role of each composite, performance controls and arrangement plan. Treat numerical settings as a starting point, not a formula for a masterpiece.
+- For a substantial composition, render, measure and refine the whole piece where feasible, including individual noise-bearing and tonal voices in quiet sections. Re-render after targeted changes and obtain human audition where listening is unavailable. See the [production workflow](mixing-mastering-and-analysis.md#5-agent-workflow-render--analyze--refine--re-render).
