@@ -14,6 +14,16 @@ export async function verifyTouchWire(browser, url) {
             const amplitude = nodes.nth(1).locator('.port-input[aria-label^="Input: Amplitude"]');
             const frequency = nodes.nth(1).locator('.port-input[aria-label^="Input: Frequency"]');
             await fitCanvas(page);
+            // overflow:hidden is a programmatically scrollable viewport. An
+            // offscreen focus or browser scrolling can leave a nonzero scrollTop.
+            // Force a small, reproducible offset without changing the graph.
+            await canvas.evaluate(viewport => {
+                const sentinel = document.createElement("span");
+                sentinel.style.cssText = `position:absolute;top:${viewport.clientHeight + 200}px;left:0;width:1px;height:1px;pointer-events:none`;
+                viewport.append(sentinel);
+                viewport.scrollTop = 17;
+            });
+            assert.equal(await canvas.evaluate(viewport => viewport.scrollTop), 17);
             await page.waitForFunction(() => {
                 const viewport = document.querySelector(".canvas-viewport");
                 const frames = viewport.querySelectorAll("article[data-node-id]");
@@ -42,6 +52,20 @@ export async function verifyTouchWire(browser, url) {
             });
             const wires = canvas.locator(".connection-hit");
             const label = canvas.locator(".touch-wire-label");
+            async function assertHighlightAlignment() {
+                await page.waitForFunction(() => {
+                    const viewport = document.querySelector(".canvas-viewport");
+                    const rings = [...viewport.querySelectorAll(".touch-wire-target")];
+                    return rings.length > 0 && rings.every(ring => {
+                        const { targetNode, targetPort } = ring.dataset;
+                        const marker = viewport.querySelector(`[data-node-id="${targetNode}"] [data-port-id="${targetPort}"]`);
+                        if (!marker) return false;
+                        const a = ring.getBoundingClientRect(), b = marker.getBoundingClientRect();
+                        return Math.abs(a.x + a.width / 2 - b.x - b.width / 2) < 2 &&
+                            Math.abs(a.y + a.height / 2 - b.y - b.height / 2) < 2;
+                    });
+                });
+            }
             async function aim() {
                 await send("touchStart", start);
                 await nodes.nth(0).locator(".port-output.port-active").waitFor();
@@ -50,11 +74,22 @@ export async function verifyTouchWire(browser, url) {
                 await label.filter({ hasText: /→ Amplitude/ }).waitFor();
                 assert.equal(await frequency.evaluate(element => element.classList.contains("port-wire-incompatible")), true);
                 assert.equal(await amplitude.evaluate(element => element.classList.contains("port-wire-candidate")), true);
+                await assertHighlightAlignment();
                 const cursor = await center(canvas.locator(".touch-wire-cursor"));
                 assert.ok(Math.abs(cursor.y - target.y) < 2 && Math.abs(cursor.x - target.x) < 2);
                 assert.equal(await wires.count(), 3, "preview must not commit");
             }
             await aim();
+            // Simulate a CSS-only node reflow while the finger stays still.
+            // The observer must move its rings, not leave the prior highlights.
+            const header = nodes.nth(1).locator(".node-header");
+            await header.evaluate(element => { element.style.marginBlockEnd = "64px"; });
+            const shifted = await center(amplitude.locator(".port-marker"));
+            assert.ok(shifted.y > target.y + 2, "The input really moved during the drag");
+            await assertHighlightAlignment();
+            // Restore geometry before continuing other gesture regressions.
+            await header.evaluate(element => { element.style.marginBlockEnd = ""; });
+            await assertHighlightAlignment();
             await send("touchCancel");
             await label.waitFor({ state: "detached" });
             assert.equal(await wires.count(), 3);

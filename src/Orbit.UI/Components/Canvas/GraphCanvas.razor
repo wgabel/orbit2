@@ -67,6 +67,7 @@
                 @foreach (var target in wireTargets)
                 {
                     <span class="touch-wire-target @(target == aim.Target ? "is-snapped" : "")"
+                          data-target-node="@target.Address.NodeId" data-target-port="@target.Address.PortId"
                           style="@WireTargetStyle(target.Point)"></span>
                 }
                 <span class="touch-wire-cursor" style="@WireTargetStyle(aim.Point)"></span>

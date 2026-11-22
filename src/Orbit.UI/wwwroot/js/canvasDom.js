@@ -79,7 +79,8 @@ export function findInputPortAt(viewport, clientX, clientY) {
     return frame && marker ? { nodeId: frame.dataset.nodeId, portId: marker.dataset.portId } : null;
 }
 
-// Measure once at touch-drag start, excluding clipped or covered markers.
+// Exclude clipped or covered markers. Visible bounds are client-space;
+// the absolute overlay and transformed world share the *scrolled* origin.
 // The C# gesture owns compatibility, snapping, the draft path and release.
 export function measureTouchWire(viewport) {
     const bounds = viewportBounds(viewport);
@@ -104,7 +105,49 @@ export function measureTouchWire(viewport) {
             document.elementFromPoint(x, y)?.closest(".port-input") !== button) continue;
         ports.push({ nodeId: frame.dataset.nodeId, portId: marker.dataset.portId, x, y });
     }
-    return { left: bounds.left, top: bounds.top, visible, ports };
+    return { left: bounds.left - (viewport.scrollLeft ?? 0),
+        top: bounds.top - (viewport.scrollTop ?? 0), visible, ports };
+}
+
+// Observe geometry only for the lifetime of a touch wire. Coalesce browser
+// layout notifications, rather than measuring every port on every pointer move.
+export function watchTouchWireGeometry(viewport, receiver, generation) {
+    let disposed = false, frame = null, previous = "";
+    const visual = window.visualViewport;
+    function schedule() {
+        if (disposed || frame !== null) return;
+        frame = requestAnimationFrame(() => {
+            frame = null;
+            if (disposed || !viewport.isConnected) return;
+            const geometry = measureTouchWire(viewport);
+            const key = JSON.stringify(geometry);
+            if (key === previous) return;
+            previous = key;
+            receiver.invokeMethodAsync("TouchWireGeometryChanged", generation, geometry).catch(() => {});
+        });
+    }
+    const resize = new ResizeObserver(schedule);
+    resize.observe(viewport);
+    // A node header or port group can move inputs even when its outer size
+    // happens to remain the same. The graph revision handles node replacement.
+    for (const element of viewport.querySelectorAll("[data-node-id], .node-header, .node-ports"))
+        resize.observe(element);
+    window.addEventListener("scroll", schedule, true);
+    window.addEventListener("resize", schedule);
+    visual?.addEventListener("scroll", schedule);
+    visual?.addEventListener("resize", schedule);
+    schedule();
+    return {
+        dispose() {
+            disposed = true;
+            if (frame !== null) cancelAnimationFrame(frame);
+            resize.disconnect();
+            window.removeEventListener("scroll", schedule, true);
+            window.removeEventListener("resize", schedule);
+            visual?.removeEventListener("scroll", schedule);
+            visual?.removeEventListener("resize", schedule);
+        }
+    };
 }
 
 export function touchWireFeedback() {

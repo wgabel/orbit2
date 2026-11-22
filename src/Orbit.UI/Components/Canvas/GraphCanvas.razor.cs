@@ -448,7 +448,8 @@ public partial class GraphCanvas : IAsyncDisposable
         }
         if (assistedWire)
         {
-            if (!TouchWireStale) UpdateTouchWire(new CanvasPoint(args.ClientX, args.ClientY));
+            // Layout may have changed since the last observer notification.
+            if (!await RefreshTouchWireForReleaseAsync(new CanvasPoint(args.ClientX, args.ClientY))) return;
             var snappedTarget = TouchWireStale ? null : wireAim?.Target;
             var moved = touchWireMoved;
             EndGesture();
@@ -668,6 +669,11 @@ public partial class GraphCanvas : IAsyncDisposable
     {
         disposed = true;
         subscription?.Dispose();
+        var watcher = touchWireWatcher;
+        touchWireWatcher = null;
+        ClearTouchWire();
+        if (watcher is not null) await DisposeTouchWireWatcherAsync(watcher);
+        touchWireReference?.Dispose();
         if (module is not null)
         {
             if (draftWarningActive) await module.InvokeVoidAsync("setAnnotationDraftWarning", false);
