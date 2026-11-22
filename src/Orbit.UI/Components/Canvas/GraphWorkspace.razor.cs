@@ -398,6 +398,25 @@ public partial class GraphWorkspace : IDisposable
     }
 
     private void Undo() => RestoreHistory(session.Undo);
+
+    private void GroupNodes(GroupNodesCommand command)
+    {
+        if (switchingWorkspace || !CheckAnnotationDraft()) return;
+        if (command.GraphId != Canvas.Snapshot.GraphId || command.ExpectedRevision != Canvas.Snapshot.GraphRevision ||
+            !command.NodeIds.ToHashSet().SetEquals(Canvas.Snapshot.SelectedNodeIds) || Canvas.Snapshot.SelectedConnectionIds.Count > 0)
+        {
+            Error = "The selection changed. Review it before creating a composite.";
+            return;
+        }
+        if (Canvas.Snapshot.VisualGroups.Any(group => group.NodeIds.Any(command.NodeIds.Contains)))
+        {
+            Error = "Remove selected nodes from their visual groups before creating a composite.";
+            return;
+        }
+        CloseRackEditor();
+        ClosePresetManager();
+        Execute(command);
+    }
     private void Redo() => RestoreHistory(session.Redo);
     private void UndoAnnotation() { if (CheckAnnotationDraft()) Canvas.UndoAnnotation(); }
     private void RedoAnnotation() { if (CheckAnnotationDraft()) Canvas.RedoAnnotation(); }

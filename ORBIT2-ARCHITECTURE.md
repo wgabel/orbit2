@@ -103,7 +103,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 
 - [canvas](docs/editor/canvas.md)
 - <a id="7-hierarchical-signal-graphs-and-canvases"></a><a id="8-input-and-output-racks"></a>[composite nodes](docs/editor/composite-nodes.md)
-- [reusable composite modules](docs/editor/reusable-modules.md) — selection-to-composite, whole-patch conversion, custom module library, portable definitions and macro controls (Phase 7.4; multi-node selection implemented, structural reuse planned)
+- [reusable composite modules](docs/editor/reusable-modules.md) — selection-to-composite, whole-patch conversion, custom module library, portable definitions and macro controls (Phase 7.4; multi-node selection implemented, grouping in review)
 - <a id="shared-canvas-and-component-standards"></a>[design system](docs/editor/design-system.md)
 - <a id="signal-analysis-and-visualization-planned-phase-618"></a>[visualizations](docs/editor/visualizations.md)
 - [node presets](docs/editor/node-presets.md)

@@ -1722,6 +1722,32 @@ try {
     await annotationViewport.getByRole("button", { name: "Fit signals", exact: true }).click();
     assert.equal(await annotationMode.inputValue(), "Hide");
     await annotationPage.close();
+    // Group the default demo's eligible nodes, inspect the child, undo while
+    // inside it, then redo and reopen the same composite.
+    const groupPage = await browser.newPage();
+    await groupPage.goto("http://127.0.0.1:" + server.address().port);
+    const groupViewport = groupPage.locator(".canvas-viewport");
+    await groupViewport.getByRole("button", { name: "Selection actions" }).click();
+    const groupPanel = groupViewport.getByRole("region", { name: "Node selection" });
+    await groupPanel.getByRole("button", { name: "Select all module nodes" }).click();
+    await groupPanel.getByRole("status").filter({ hasText: "3 nodes selected · 3 eligible" }).waitFor();
+    await groupPanel.getByLabel("Composite name").fill("Grouped demo");
+    await groupPanel.getByRole("button", { name: "Create composite", exact: true }).click();
+    const openGroup = groupViewport.getByRole("button", { name: "Open Grouped demo", exact: true });
+    await openGroup.waitFor();
+    assert.equal(await groupViewport.locator("article[data-node-id]").count(), 2);
+    await openGroup.click();
+    await groupViewport.getByRole("button", { name: "Edit ports" }).first().waitFor();
+    assert.equal(await groupViewport.locator("article[data-node-id]").count(), 5);
+    await groupPage.getByRole("button", { name: "Undo", exact: true }).click();
+    await groupViewport.locator("article[data-node-id]").nth(3).waitFor();
+    assert.equal(await groupViewport.locator("article[data-node-id]").count(), 4);
+    await groupPage.getByRole("button", { name: "Redo", exact: true }).click();
+    await openGroup.waitFor();
+    await openGroup.click();
+    await groupViewport.getByRole("button", { name: "Edit ports" }).first().waitFor();
+    assert.equal(await groupViewport.locator("article[data-node-id]").count(), 5);
+    await groupPage.close();
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {
     await browser?.close();

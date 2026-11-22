@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Orbit.Presentation.Canvas;
+using Orbit.Application.Graphs;
+using Orbit.Application.Graphs.Commands;
 
 namespace Orbit.UI.Components.Canvas;
 
@@ -9,6 +11,7 @@ public partial class GraphCanvas
     private bool selectionPanelOpen;
     private bool marqueeMode;
     private string selectionCandidate = "";
+    private string compositeName = "New composite";
     private sealed record MarqueeGesture(long PointerId, CanvasPoint Start, CanvasPoint End,
         CanvasStateSnapshot Snapshot, bool Additive, ViewportMeasurement? Bounds = null);
     private MarqueeGesture? marquee;
@@ -16,6 +19,21 @@ public partial class GraphCanvas
         Snapshot.Graph.Nodes.Where(ModuleSelection.IsEligible);
     private int SelectedEligible => EligibleNodes.Count(node => Snapshot.SelectedNodeIds.Contains(node.Id));
     private int SelectedProtected => Snapshot.SelectedNodeIds.Count - SelectedEligible;
+    private bool SelectedVisualGroupMember => Snapshot.VisualGroups.Any(group => group.NodeIds.Any(Snapshot.SelectedNodeIds.Contains));
+    private bool CanGroup => !AnnotationControlsLocked && OnGroupNodes.HasDelegate && SelectedEligible is > 0 and <= 512 &&
+        SelectedProtected == 0 && Snapshot.SelectedConnectionIds.Count == 0 && !SelectedVisualGroupMember;
+    private IReadOnlyList<CompositeGrouping.Crossing> GroupCrossings => CanGroup
+        ? CompositeGrouping.Preview(Snapshot.Graph, Snapshot.SelectedNodeIds) : [];
+
+    private async Task CreateCompositeAsync()
+    {
+        if (!CanGroup || string.IsNullOrWhiteSpace(compositeName)) return;
+        EndGesture();
+        pendingSource = null;
+        selectionPanelOpen = false;
+        await OnGroupNodes.InvokeAsync(new GroupNodesCommand(Snapshot.GraphId, Snapshot.SelectedNodeIds.ToArray(),
+            compositeName, Snapshot.GraphRevision));
+    }
     private string SelectionSummary => $"{Snapshot.SelectedNodeIds.Count} nodes selected · {SelectedEligible} eligible" +
         (SelectedProtected > 0 ? $" · {SelectedProtected} protected" : "") +
         (Snapshot.SelectedConnectionIds.Count > 0 ? $" · {Snapshot.SelectedConnectionIds.Count} cables selected" : "");

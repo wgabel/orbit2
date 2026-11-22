@@ -30,6 +30,7 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter] public long PresetCatalogRevision { get; set; }
     [Parameter] public EventCallback<Guid> OnParameterGestureEnded { get; set; }
     [Parameter] public EventCallback<Guid> OnOpenComposite { get; set; }
+    [Parameter] public EventCallback<GroupNodesCommand> OnGroupNodes { get; set; }
     [Parameter] public EventCallback<Guid> OnEditRack { get; set; }
     [Parameter] public bool AutoFitOnFirstRender { get; set; } = true;
     [Parameter] public bool CanShowScope { get; set; }

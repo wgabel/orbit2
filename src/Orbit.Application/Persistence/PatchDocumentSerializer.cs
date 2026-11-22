@@ -80,14 +80,14 @@ public sealed class PatchDocumentSerializer
     internal static SignalGraph RestoreSnapshot(GraphSnapshot snapshot, NodeRegistry registry) =>
         RestoreGraph(CaptureGraph(snapshot), registry);
 
-    private static SignalGraph RestoreGraph(SavedGraph saved, NodeRegistry registry)
+    internal static SignalGraph RestoreGraph(SavedGraph saved, NodeRegistry registry)
     {
         var root = new SignalGraph(saved.Id);
         RestoreGraph(saved, root, registry, new HashSet<Guid>());
         return root;
     }
 
-    private static SavedGraph CaptureGraph(GraphSnapshot graph) => new(graph.Id,
+    internal static SavedGraph CaptureGraph(GraphSnapshot graph) => new(graph.Id,
         graph.Nodes.Where(node => node.TypeKey is not (InputRack.NodeType or OutputRack.NodeType)).Select(node =>
             new SavedNode(node.Id, node.TypeKey,
                 node.Parameters.Select(parameter => new SavedParameter(parameter.Definition.Key, parameter.Id, parameter.BaseValue)).ToArray(),

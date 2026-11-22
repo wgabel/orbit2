@@ -94,6 +94,25 @@
                         }
                     </select>
                     <button type="button" class="secondary" disabled="@(AnnotationControlsLocked || !CandidateExists)" @onclick="ToggleCandidate">Toggle node selection</button>
+                    @if (SelectedVisualGroupMember)
+                    {
+                        <p class="workspace-notice">Remove selected nodes from their visual groups before creating a composite.</p>
+                    }
+                    @if (CanGroup)
+                    {
+                        var crossings = GroupCrossings;
+                        <label for="composite-name">Composite name</label>
+                        <input id="composite-name" maxlength="100" @bind="compositeName" @bind:event="oninput" />
+                        <details>
+                            <summary>Boundary preview: @crossings.Count(port => port.IsInput) inputs · @crossings.Count(port => !port.IsInput) outputs</summary>
+                            @foreach (var crossing in crossings)
+                            {
+                                <p class="workspace-notice">@(crossing.IsInput ? "Input" : "Output") · @crossing.Name (@crossing.SignalType)</p>
+                            }
+                            <p class="workspace-notice">Existing amounts and connections are retained. Rename ports inside the composite.</p>
+                        </details>
+                        <button type="button" disabled="@string.IsNullOrWhiteSpace(compositeName)" @onclick="CreateCompositeAsync">Create composite</button>
+                    }
                     <button type="button" class="secondary" @onclick="() => selectionPanelOpen = false">Close selection actions</button>
                 </section>
             }
