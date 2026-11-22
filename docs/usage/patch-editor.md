@@ -2,6 +2,19 @@
 
 [Usage index](README.md) · [Canvas architecture](../editor/canvas.md) · [Persistence](../editor/persistence-and-history.md)
 
+## Mobile workspace (6.21.1 in review)
+
+[PR #60](https://github.com/wgabel/orbit2/pull/60) introduces a canvas-first layout on phones and short touch landscape screens. Use the top BPM button to edit tempo or reset the transport; Play and Stop remain immediately available. The bottom toolbar opens existing controls without reducing the canvas rectangle:
+
+- **+ Nodes:** choose the existing node type and Add; the panel closes on success. Delete selected and Locate output rack (inside composites) are also available here.
+- **Outline:** open/search the existing graph hierarchy; choose a target or open a nested composite.
+- **Edit:** graph and annotation undo/redo, Describe selected and Create visual group.
+- **View:** connection labels, annotations, selection actions and scope. Tap View again to dismiss.
+- **More:** Patches and Performance diagnostics. Toggle the bottom tool again to close it; apply/cancel an active overview draft before switching tools.
+- The floating zoom control provides minus, plus, percentage, 100% and Fit. In a nested graph, use its parent breadcrumb to return.
+
+The compact color-coded Node Library, automatic node expansion/pinning, new pinch gestures and further panel behavior are planned in subsequent milestones. Resizing the browser retains the same active graph and playback controller. 
+
 ## 1. Build and play a patch
 
 1. Open **Patches** and create a new patch (stop playback first). It starts with a Master output. Alternatively, import a portable patch JSON or use the existing workspace.

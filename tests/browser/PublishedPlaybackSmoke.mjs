@@ -1785,6 +1785,67 @@ try {
     await openGroup.waitFor({ state: "detached" });
     assert.equal(await groupViewport.locator("article[data-node-id]").count(), 4);
     await groupPage.close();
+
+    // Exercise the same published workspace at phone dimensions, including
+    // responsive reflow without recreating the graph or playback controller.
+    const mobilePage = await browser.newPage({ viewport: { width: 360, height: 640 }, isMobile: true, hasTouch: true });
+    await mobilePage.goto("http://127.0.0.1:" + server.address().port);
+    const mobileCanvas = mobilePage.locator(".canvas-viewport");
+    const mobileBar = mobilePage.getByRole("navigation", { name: "Mobile workspace tools" });
+    await mobilePage.getByRole("button", { name: "Play patch" }).waitFor();
+    await mobileCanvas.locator("article[data-node-id]").first().waitFor();
+    for (const [width, height] of [[360, 640], [390, 844], [800, 390]]) {
+        await mobilePage.setViewportSize({ width, height });
+        await mobileBar.waitFor();
+        const metrics = await mobilePage.evaluate(() => {
+            const workspace = document.querySelector(".graph-workspace").getBoundingClientRect();
+            const canvas = document.querySelector(".canvas-viewport").getBoundingClientRect();
+            const bar = document.querySelector(".mobile-workspace-bar").getBoundingClientRect();
+            return { ratio: canvas.height / workspace.height, canvasBottom: canvas.bottom, barTop: bar.top,
+                width: document.documentElement.scrollWidth, viewport: innerWidth };
+        });
+        assert.ok(metrics.ratio >= (height > width ? .84 : .75), JSON.stringify(metrics));
+        assert.ok(metrics.canvasBottom <= metrics.barTop + 1);
+        assert.ok(metrics.width <= metrics.viewport);
+    }
+    await mobilePage.setViewportSize({ width: 390, height: 844 });
+    await mobileBar.getByRole("button", { name: "+ Nodes", exact: true }).click();
+    await mobilePage.locator("#node-type").selectOption("generator.oscillator");
+    const previousMobileCount = await mobileCanvas.locator("article[data-node-id]").count();
+    await mobilePage.getByRole("button", { name: "Add", exact: true }).click();
+    await mobileCanvas.locator("article[data-node-id]").nth(previousMobileCount).waitFor();
+    await mobilePage.locator("#node-type").waitFor({ state: "hidden" });
+    await mobileBar.getByRole("button", { name: "Edit", exact: true }).click();
+    await mobilePage.getByRole("button", { name: "Undo", exact: true }).click();
+    await mobileCanvas.locator("article[data-node-id]").nth(previousMobileCount).waitFor({ state: "detached" });
+    await mobileBar.getByRole("button", { name: "View", exact: true }).click();
+    await mobilePage.getByLabel("Connection labels", { exact: true }).selectOption("Off");
+    await mobilePage.getByLabel("Annotations", { exact: true }).selectOption("Hide");
+    await mobileBar.getByRole("button", { name: "View", exact: true }).click();
+    await mobilePage.getByLabel("Connection labels", { exact: true }).waitFor({ state: "hidden" });
+    await mobileBar.getByRole("button", { name: "Outline", exact: true }).click();
+    await mobilePage.getByRole("region", { name: "Patch outline" }).waitFor();
+    await mobileBar.getByRole("button", { name: "Outline", exact: true }).click();
+    await mobilePage.getByRole("region", { name: "Patch outline" }).waitFor({ state: "detached" });
+    await mobilePage.getByRole("button", { name: /BPM$/ }).click();
+    await mobilePage.getByRole("spinbutton", { name: "Tempo (BPM)" }).waitFor();
+    await mobilePage.getByRole("button", { name: /BPM$/ }).click();
+    await mobileBar.getByRole("button", { name: "More", exact: true }).click();
+    await mobilePage.getByRole("button", { name: "Patches", exact: true }).waitFor();
+    await mobilePage.getByRole("button", { name: /^Performance ·/ }).waitFor();
+    await mobileBar.getByRole("button", { name: "More", exact: true }).click();
+    const mobilePlay = mobilePage.getByRole("button", { name: "Play patch" });
+    await mobilePlay.click();
+    const mobileStatus = mobilePage.locator(".playback-toolbar [role=status]");
+    await mobilePage.waitForFunction(() => document.querySelector(".playback-toolbar [role=status]")?.textContent.startsWith("Playing revision"), null, { timeout: 30000 });
+    const playingRevision = await mobileStatus.textContent();
+    await mobilePage.setViewportSize({ width: 1000, height: 800 });
+    await mobileBar.waitFor({ state: "hidden" });
+    await mobilePage.setViewportSize({ width: 390, height: 844 });
+    await mobileBar.waitFor();
+    assert.equal(await mobileStatus.textContent(), playingRevision, "Responsive reflow must not restart playback");
+    await mobilePage.getByRole("button", { name: "Stop", exact: true }).click();
+    await mobilePage.close();
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {
     await browser?.close();

@@ -68,7 +68,9 @@ test("all authored styles use defined tokens and avoid hardcoded visual constant
         for (const match of source.matchAll(/var\((--[\w-]+)\)/g))
             assert.ok(names.has(match[1]), url.pathname + ": unknown " + match[1]);
         assert.doesNotMatch(source, /#[a-f0-9]{3,8}\b|\b(?:rgba?|hsla?)\(/i, url.pathname);
-        assert.doesNotMatch(source, /\b\d*\.?\d+(?:px|rem|em|ms)\b/i, url.pathname);
+        // Media query breakpoints cannot reference CSS custom properties.
+        const declarations = source.replace(/^\s*@media[^\n{]+\{/gm, "{");
+        assert.doesNotMatch(declarations, /\b\d*\.?\d+(?:px|rem|em|ms)\b/i, url.pathname);
     }
 });
 

@@ -58,7 +58,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 | New node, connection or parameter | [Graph model](docs/core/graph-model.md), [signals/ports](docs/core/signals-and-ports.md), [modulation](docs/core/parameters-and-modulation.md), [DSP](docs/audio/dsp-engine.md) |
 | Stereo routing, panning, oscillator unison | [Stereo audio, panning and oscillator unison](docs/audio/stereo-panning-and-unison.md) — planned Phase 7.5; prioritize the Phase 7.3 performance baseline first |
 | Playback, clicking, latency | [DSP engine](docs/audio/dsp-engine.md), [performance index](performance.md), [transport](docs/audio/transport-and-timing.md) |
-| Canvas, node frame or UI | [Canvas](docs/editor/canvas.md), [design system](docs/editor/design-system.md), [canvas-first workspace and node library (6.21 planned)](docs/roadmap/editor-and-effects.md#phase-621--canvas-first-workspace-and-node-library-planned), relevant feature module |
+| Canvas, node frame or UI | [Canvas](docs/editor/canvas.md), [design system](docs/editor/design-system.md), [canvas-first workspace and node library (6.21.1 in review)](docs/roadmap/editor-and-effects.md#phase-621--canvas-first-workspace-and-node-library-planned), relevant feature module |
 | Composite routing | [Composite nodes](docs/editor/composite-nodes.md), [signals/ports](docs/core/signals-and-ports.md), [commands](docs/core/commands-and-events.md) |
 | Reusing patches, grouping nodes into composites, custom module library and macros | [Reusable modules](docs/editor/reusable-modules.md), [composite nodes](docs/editor/composite-nodes.md), [persistence](docs/editor/persistence-and-history.md) |
 | Plots and tap capacity | [Visualizations](docs/editor/visualizations.md), [signal observation](docs/audio/signal-observation.md) |
@@ -107,7 +107,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 **Editor and persistence**
 
 - [canvas](docs/editor/canvas.md)
-- [Canvas-first workspace and node library](docs/roadmap/editor-and-effects.md#phase-621--canvas-first-workspace-and-node-library-planned) — Phase 6.21 planned: responsive mobile shell, on-demand tools, categorized icon/color library, touch gestures and auto-expanding/pinnable compact nodes; fullscreen and measurable canvas-area/performance checks
+- [Canvas-first workspace and node library](docs/roadmap/editor-and-effects.md#phase-621--canvas-first-workspace-and-node-library-planned) — Phase 6.21.1 responsive mobile shell in review ([PR #60](https://github.com/wgabel/orbit2/pull/60)); remaining: on-demand tools, categorized icon/color library, touch gestures and auto-expanding/pinnable compact nodes; fullscreen and measurable canvas-area/performance checks
 - <a id="7-hierarchical-signal-graphs-and-canvases"></a><a id="8-input-and-output-racks"></a>[composite nodes](docs/editor/composite-nodes.md)
 - [reusable composite modules](docs/editor/reusable-modules.md) — selection-to-composite, single-level expansion, whole-patch conversion, custom module library, portable definitions and macro controls (Phase 7.4; selection and grouping implemented, ungrouping in review)
 - <a id="shared-canvas-and-component-standards"></a>[design system](docs/editor/design-system.md)

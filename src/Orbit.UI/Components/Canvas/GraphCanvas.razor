@@ -66,6 +66,7 @@
         {
             <NoteEditor @key="editing.Id" Note="@editing" OnApply="FinishNoteEditAsync" OnCancel="@(() => FinishNoteEditAsync(null))" />
         }
+        <div class="canvas-view-tools" @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true" @onwheel:stopPropagation="true">
         <div class="connection-label-control" @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true">
             <label for="connection-label-mode">Connection labels</label>
             <select id="connection-label-mode" @bind="LabelMode" aria-label="Connection labels">
@@ -154,13 +155,14 @@
                 </div>
             }
         </div>
-        <span class="canvas-count">@($"{Snapshot.Graph.Nodes.Count} nodes · {Snapshot.Graph.Connections.Count} connections{(Snapshot.Notes.Count > 0 ? $" · {Snapshot.Notes.Count} notes" : "")}")</span>
-        <span class="canvas-patch-count">Entire patch: <span class="canvas-patch-value">@($"{PatchCounts.Nodes} nodes · {PatchCounts.Connections} connections")</span></span>
         @if (CanShowScope)
         {
             <button type="button" class="secondary canvas-scope-action" @onpointerdown:stopPropagation="true"
                     @onclick:stopPropagation="true" @onclick="OnToggleScope">@(ScopeOpen ? "Hide scope" : "Show scope")</button>
         }
+        </div>
+        <span class="canvas-count">@($"{Snapshot.Graph.Nodes.Count} nodes · {Snapshot.Graph.Connections.Count} connections{(Snapshot.Notes.Count > 0 ? $" · {Snapshot.Notes.Count} notes" : "")}")</span>
+        <span class="canvas-patch-count">Entire patch: <span class="canvas-patch-value">@($"{PatchCounts.Nodes} nodes · {PatchCounts.Connections} connections")</span></span>
         <span class="canvas-hint">@Hint</span>
         @if (Snapshot.SelectedConnectionIds.Count == 1 && wires.FirstOrDefault(wire => wire.Selected) is { } selectedWire)
         {
