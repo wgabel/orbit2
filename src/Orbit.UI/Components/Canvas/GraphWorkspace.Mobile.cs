@@ -7,6 +7,10 @@ public partial class GraphWorkspace
 {
     [Inject] private IJSRuntime MobileJavaScript { get; set; } = default!;
     private string? mobilePanel;
+    private bool desktopLibraryOpen;
+    private bool NodeLibraryOpen => desktopLibraryOpen || mobilePanel == "nodes";
+    private void ToggleNodeLibrary() => desktopLibraryOpen = !desktopLibraryOpen;
+    private void CloseNodeLibrary() { desktopLibraryOpen = false; if (mobilePanel == "nodes") mobilePanel = null; }
     private string? ActiveMobilePanel => outlineOpen ? "outline" : mobilePanel;
     private ElementReference workspaceElement;
     private PatchManager? patchManager;
@@ -34,6 +38,7 @@ public partial class GraphWorkspace
     {
         if (!CanLeaveMobilePanel()) return;
         outlineOpen = false;
+        desktopLibraryOpen = false;
         mobilePanel = mobilePanel == panel || (panel == "edit" && mobilePanel == "selection") ? null : panel;
     }
 
@@ -41,6 +46,7 @@ public partial class GraphWorkspace
     {
         if (!CanLeaveMobilePanel()) return;
         mobilePanel = null;
+        desktopLibraryOpen = false;
         outlineOpen = !outlineOpen;
     }
 
@@ -81,10 +87,12 @@ public partial class GraphWorkspace
         if (canvasView is not null) await canvasView.AddGroupAsync();
     }
 
-    private async Task AddNodeFromToolbarAsync()
+    private async Task<bool> AddNodeFromLibraryAsync(string type)
     {
-        await AddNodeAsync();
-        if (Error is null && mobilePanel == "nodes") mobilePanel = null;
+        var added = await AddNodeAsync(type);
+        if (added) CloseNodeLibrary();
+        await InvokeAsync(StateHasChanged);
+        return added;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

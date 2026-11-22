@@ -33,7 +33,21 @@
       "light-modulator": "#177350",
       "light-processor": "#9a620e",
       "light-composite": "#7151a9",
-      "light-routing": "#52657d"
+      "light-routing": "#52657d",
+      "category-audio": "#42aaca",
+      "light-category-audio": "#146b85",
+      "category-modulation": "#65cdb1",
+      "light-category-modulation": "#16755b",
+      "category-effects": "#ac82dc",
+      "light-category-effects": "#69439c",
+      "category-sequencing": "#e5b563",
+      "light-category-sequencing": "#825806",
+      "category-processing": "#e28b67",
+      "light-category-processing": "#a34322",
+      "category-composites": "#d27ba8",
+      "light-category-composites": "#a03670",
+      "category-routing": "#9ba9ba",
+      "light-category-routing": "#53667c"
     },
     "space": {
       "xxs": "0.3rem",
@@ -222,6 +236,13 @@
       "grid-dot": "1px",
       "toolbar-gap": "{semantic.space.compact}",
       "zoom-width": "4rem"
+    },
+    "node-library": {
+      "icon-size": "1.25rem",
+      "row-icon-size": "2rem",
+      "width": "32rem",
+      "max-width": "95vw",
+      "max-height": "70dvh"
     }
   }
 }

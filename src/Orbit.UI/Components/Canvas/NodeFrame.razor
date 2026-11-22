@@ -14,6 +14,7 @@
 <article class="@FrameClass" style="@PositionStyle" data-node-id="@Node.Id"
          @onpointerdown:stopPropagation="true">
     <header class="node-header" @onpointerdown="OnHeaderPointerDown">
+        <NodeAppearanceIcon Appearance="@Appearance" />
         <span class="node-display-name" title="@DocumentationTooltip">
             <span class="node-alias">@DisplayName</span>
             @if (DisplayName != Node.Name)
@@ -49,7 +50,7 @@
     {
         <div class="node-boundary-description">From parent graph · exposed inputs</div>
     }
-    <NodePresetSelector Node="@Node" OnApply="OnPresetApply" OnManage="OnManagePresets" CatalogRevision="@PresetCatalogRevision" />
+    <NodePresetSelector Node="@Node" Appearance="@Appearance" OnApply="OnPresetApply" OnManage="OnManagePresets" CatalogRevision="@PresetCatalogRevision" />
     <RhythmicActionPanel Node="@Node" PatchId="@PatchId" GraphId="@GraphId" />
     <div class="node-ports">
         <div class="node-inputs">

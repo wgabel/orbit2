@@ -76,7 +76,13 @@ public partial class GraphWorkspace : IAsyncDisposable
     private NodeRegistry catalog = default!;
     private IEnumerable<string> RegisteredTypes => catalog.RegisteredTypes.Where(type =>
         Canvas.Snapshot.GraphId == session.GraphId || type != MasterOutput.NodeType).Append(NoteType);
-    private string SelectedType { get; set; } = "";
+    private IReadOnlyList<NodeLibraryEntry>? rootLibrary, nestedLibrary;
+    private IReadOnlySet<string>? libraryKeys;
+    private IReadOnlySet<string> LibraryKeys => libraryKeys ??= catalog.RegisteredTypes.Append(NoteType).ToHashSet(StringComparer.Ordinal);
+    private IReadOnlyList<NodeLibraryEntry> LibraryEntries => Canvas.Snapshot.GraphId == session.GraphId
+        ? rootLibrary ??= BuildLibrary() : nestedLibrary ??= BuildLibrary();
+    private IReadOnlyList<NodeLibraryEntry> BuildLibrary() => RegisteredTypes
+        .Select(type => new NodeLibraryEntry(type, DescribeType(type), NodeAppearanceCatalog.Get(type))).ToArray();
     private string? Error { get; set; }
     private (Guid GraphId, Guid NodeId)? editingRack;
     private GraphNodeSnapshot? EditingRack => editingRack is { } address && address.GraphId == Canvas.Snapshot.GraphId
@@ -106,7 +112,6 @@ public partial class GraphWorkspace : IAsyncDisposable
     {
         var registry = Registry;
         catalog = registry;
-        SelectedType = OscillatorGenerator.NodeType;
         try
         {
             if (await Persistence.LoadAsync() is { } document)
@@ -144,7 +149,6 @@ public partial class GraphWorkspace : IAsyncDisposable
     {
         subscription = Navigation.Subscribe(change => { _ = InvokeAsync(() =>
         {
-            if (!RegisteredTypes.Contains(SelectedType)) SelectedType = OscillatorGenerator.NodeType;
             RefreshRanges();
             StateHasChanged();
             _ = SaveWorkspaceAsync();
@@ -240,7 +244,6 @@ public partial class GraphWorkspace : IAsyncDisposable
             telemetry = null;
             editingRack = null;
             managingPresets = null;
-            SelectedType = OscillatorGenerator.NodeType;
             Error = PersistenceError = null;
             autosaveEnabled = true;
             workspaceGeneration++;
@@ -370,11 +373,10 @@ public partial class GraphWorkspace : IAsyncDisposable
         return error;
     }
 
-    private async Task AddNodeAsync()
+    private async Task<bool> AddNodeAsync(string type)
     {
-        if (switchingWorkspace || addingNode || canvasView is null || !CheckAnnotationDraft()) return;
+        if (switchingWorkspace || addingNode || canvasView is null || !CheckAnnotationDraft() || !RegisteredTypes.Contains(type)) return false;
         var canvas = Canvas;
-        var type = SelectedType;
         addingNode = true;
         try
         {
@@ -382,18 +384,18 @@ public partial class GraphWorkspace : IAsyncDisposable
             {
                 if (!await canvasView.AddNoteAsync()) Error = "The canvas view changed. Try adding the note again.";
                 else Error = null;
-                return;
+                return Error is null;
             }
             using var placement = await canvasView.ReserveVisibleNodePlacementAsync();
-            if (disposed || switchingWorkspace || !ReferenceEquals(Canvas, canvas)) return;
+            if (disposed || switchingWorkspace || !ReferenceEquals(Canvas, canvas)) return false;
             if (placement is null)
             {
                 Error = "The canvas view changed. Try adding the node again.";
-                return;
+                return false;
             }
-            Execute(new AddNodeCommand(canvas.Snapshot.GraphId, type));
+            return Execute(new AddNodeCommand(canvas.Snapshot.GraphId, type));
         }
-        catch (Exception exception) { Error = exception.Message; }
+        catch (Exception exception) { Error = exception.Message; return false; }
         finally { addingNode = false; }
     }
 

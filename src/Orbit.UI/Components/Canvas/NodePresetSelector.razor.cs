@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Orbit.Application.Graphs.Snapshots;
 using Orbit.Application.Presets;
+using Orbit.Presentation.Canvas;
 
 namespace Orbit.UI.Components.Canvas;
 
@@ -9,6 +10,7 @@ public partial class NodePresetSelector
 {
     [Inject] private NodePresetService Catalog { get; set; } = default!;
     [Parameter, EditorRequired] public GraphNodeSnapshot Node { get; set; } = default!;
+    [Parameter] public NodeAppearance? Appearance { get; set; }
     [Parameter] public EventCallback<NodePresetApplyRequest> OnApply { get; set; }
     [Parameter] public EventCallback<Guid> OnManage { get; set; }
     [Parameter] public long CatalogRevision { get; set; }
