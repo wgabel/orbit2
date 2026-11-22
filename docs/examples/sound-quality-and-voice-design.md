@@ -16,6 +16,8 @@ Foundations record useful, generalizable sound relationships demonstrated by a r
 
 For polished ambient, space music, melodic electronica and bass hybrids, prefer distinctive, dimensional and evolving voices. Avoid the feel of an isolated test oscillator or an exposed steady broadband noise source. This preference comes from the listening feedback on the original ten-minute *Event Horizon — A Signal Returns* patch: the composition and transitions worked, several voices were appreciated, but prominent recognizable noise and hollow/basic synth timbres reduced the quality of the whole. Preserve the successful form when evaluating a revised palette. It is not a rule banning experimental noise, deliberate chip-style tones, minimalist sine music or clear sub fundamentals; a different brief may deliberately choose those qualities.
 
+For the later *Prism Rush* feedback (excellent composition, unintended childish/16-bit sounds), see [modern pop instrument design](modern-pop-instrument-design.md): actual measured articulation, contrasting body/transient designs, and a reusable comparison procedure. Test new voices with the [TEST melody driver](instrument-audition/reference.orbit2.json) at matched volume before applying them to the unchanged score. Do not infer modern production quality from waveform counts, low peaks, or graph validity alone.
+
 | Audible symptom | First inspect | Try instead |
 | --- | --- | --- |
 | A naked sine sounds like a test tone | Partial content, envelope, isolation and context | Keep sine as fundamental/control; add a subordinate octave/third partial, shaped body, transients or evolving effects appropriate to the voice. |

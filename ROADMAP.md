@@ -35,6 +35,7 @@
 | Reusable custom composite modules, grouping, patch-to-module conversion, macros | 7.4.1 selection and 7.4.2a grouping implemented; 7.4.2b ungrouping in review; 7.4.3–7.4.7 planned | [Reusable modules](docs/editor/reusable-modules.md); [PR #45](https://github.com/wgabel/orbit2/pull/45), [PR #47](https://github.com/wgabel/orbit2/pull/47), [PR #48](https://github.com/wgabel/orbit2/pull/48) |
 | Note-mode articulation, direct-velocity modal variants, further physical models, polyphony | Planned · remaining Phase 7 | [Sequencer design](docs/instruments/note-sequencer-design.md), [physical modelling](docs/instruments/physical-modelling.md), [polyphony](docs/instruments/polyphony.md); [PR #9](https://github.com/wgabel/orbit2/pull/9) is design documentation only |
 | Stereo audio, panning and oscillator unison | Planned · Phase 7.5; prioritize 7.3.1, 7.3.2 and 7.3.4 baseline first | [Stereo/unison specification](docs/audio/stereo-panning-and-unison.md) |
+| Instrument audition and modern-pop palette | Partial design/reference fixture available · Phase 7.6; instrument library and production features planned | [Modern pop instrument design and audition](docs/examples/modern-pop-instrument-design.md), [TEST Melody Driver v1](docs/examples/instrument-audition/reference.orbit2.json) |
 | Post-mixer pitch shifter; recorded audio assets and sample synthesis | Planned · 6.20, Phase 8 | [Pitch shifter](docs/audio/pitch-shifter.md), [audio assets](docs/audio/sample-assets.md) |
 
 Use the [roadmap](#13-implementation-roadmap) for delivery status, milestone identifiers and dependencies. Use the relevant architecture sections for implementation contracts and acceptance criteria. Where a design sketch and a later implementation record coexist, follow the latter for the current state.
@@ -59,9 +60,12 @@ Keep identifiers stable even when independent milestones ship out of numerical o
 | Standalone audio transposition | Design only | 6.20.1–6.20.2; independent of keyboard tracking |
 | Performance and diagnostics | Existing clock, playback lifecycle and signal observation foundations | 7.3.1–7.3.4 passive monitor, compilation/UI metrics and profiling; 7.3.5 musical timing; 7.3.6 reports and regressions ([specification](performance.md)) |
 | Stereo, panning and unison | Mono graph and shared waveform DSP foundations | 7.5.1–7.5.5; begin after the 7.3.1/7.3.2 monitor and 7.3.4 benchmark baseline |
+| Modern-pop instrument audition | Importable annotated TEST Melody Driver v1 (four existing pitch-pattern lanes, Gate/Trigger adapters, plain reference voice) | 7.6.1 built-in test discovery, 7.6.2 standard interface/profiles, 7.6.3–7.6.5 candidate palette, user A/B approval and score-preserving production revision; 7.6.6–7.6.7 dynamics/saturation and FM design |
 | Audio assets | Design only | Phase 8 |
 
 **Performance-first priority for stereo/unison:** deliver Phase 7.3.1 passive monitoring, 7.3.2 compiler/runtime/resource diagnostics and the 7.3.4 reproducible DSP benchmark baseline before Phase 7.5. Measure the existing mono graph and then compare voice counts, channel expansion and graph-swap peak load. Use external live renderer profiling when reliable in-app DSP timing is unavailable; 7.3.3 is recommended for UI work, while 7.3.5–7.3.6 can progress independently. See [stereo/unison design](docs/audio/stereo-panning-and-unison.md#1-performance-first). This is a dependency-aware priority, not a blocker for unrelated feature tracks.
+
+**Sound-design priority:** start the [instrument audition track](docs/roadmap/advanced.md#phase-76--instrument-audition-and-modern-production-planned) with the small existing-node test fixture and candidate sounds now; do not postpone the listening work until stereo or sampling ships. Preserve the 7.3 performance-first priority for expanded DSP. Prioritize Note-mode articulation (7.2.8d) and reusable modules (7.4.3–7.4.5) to simplify this workflow, and pursue samples, multisamples, instrument models and production processing based on A/B feedback.
 
 **Completed urgent fix:** dynamic signal tap allocation (6.18.8, [PR #20](https://github.com/wgabel/orbit2/pull/20)) merged. Preserve the regression: a single visible plot on a reachable signal must work even in a large patch; capacity limits simultaneous observed signals, not graph size. Dedicated analyzer sinks and Phase 7.3 remain separate future work.
 
@@ -72,4 +76,4 @@ The most direct drone-performance path is 7.2.2 and 7.2.8a–b (delivered) → 7
 
 - [Phases 1–6.15: foundations, timing, sound generation, workspace and effects](docs/roadmap/foundation.md)
 - [Phases 6.16–6.20: audition, presets, plots, organization and pitch shifting](docs/roadmap/editor-and-effects.md)
-- [Phases 7–8: envelopes, musical control, instruments, performance, reusable modules, stereo/unison and samples](docs/roadmap/advanced.md)
+- [Phases 7–8: envelopes, musical control, instruments, performance, reusable modules, stereo/unison, instrument audition and samples](docs/roadmap/advanced.md)

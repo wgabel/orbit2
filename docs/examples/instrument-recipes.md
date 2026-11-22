@@ -24,6 +24,8 @@ For an analyzed, listener-validated synthetic instrument foundation rather than 
 
 **Goal and scope.** Build editable synthesized instrument approximations from reusable oscillators, noise, filters, effects, envelopes, pitch controllers and resonators. Do not create a separate DSP class for each instrument. An instrument template is an ordinary composite graph with stable named rack inputs, independent state and an audio output. Preserve the possibility of opening it, inspecting its components, changing routing and saving a new configuration. This is sound design, not a claim of exact reproduction of acoustic instruments. Sample-based approximations and hybrid instruments can additionally use Phase 8 assets later.
 
+For developing a distinct contemporary instrument palette, plug candidate voices into the [TEST Melody Driver v1](instrument-audition/reference.orbit2.json) in the [modern pop instrument audition guide](modern-pop-instrument-design.md). Its independent pitch/gate/trigger/velocity controls support the existing playable instruments as well as new experiments; match each instrument's reference tuning and compare on the same score at similar levels. Phase 7.6 plans the tested palette and workflow, not a second set of instrument DSP classes.
+
 ##### Existing capabilities and worked instrument patches
 
 The initial built-in composite catalog uses existing nodes and the registered template mechanism. No new DSP node or event source is needed for these sustained versions. Starting configurations are illustrative and should be adjusted by listening and examining the shared scope/FFT, not treated as measured acoustic spectra.
