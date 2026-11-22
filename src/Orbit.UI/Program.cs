@@ -34,6 +34,7 @@ builder.Services.AddSingleton(new FaustGraphCompiler(emitters));
 builder.Services.AddSingleton<IGraphModulationRangeEstimator>(new GraphModulationRangeEstimator(emitters));
 builder.Services.AddSingleton<IProcessorResponseAnalyzer, ProcessorResponseAnalyzer>();
 builder.Services.AddSingleton<FaustGraphPlaybackService>();
+builder.Services.AddSingleton<IGraphPerformanceSource>(services => services.GetRequiredService<FaustGraphPlaybackService>());
 builder.Services.AddSingleton<IGraphPlaybackService>(services => services.GetRequiredService<FaustGraphPlaybackService>());
 builder.Services.AddSingleton<IRhythmicActionService>(services => services.GetRequiredService<FaustGraphPlaybackService>());
 builder.Services.AddSingleton<IPerformanceNoteService>(services => services.GetRequiredService<FaustGraphPlaybackService>());

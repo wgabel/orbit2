@@ -340,3 +340,41 @@ test("structural replacement preserves the accepted performance session", async 
     engine.stop(request.soundId);
     await playing;
 });
+
+test("runtime preparation counts distinguish a replacement from live parameter changes", async () => {
+    const { engine } = replacementSetup();
+    const playing = engine.play({ ...request, graphRevision: 1 });
+    await new Promise(resolve => setImmediate(resolve));
+    const first = engine.getPerformanceSnapshot().runtime;
+    assert.equal(first.accepted, 1);
+    assert.equal(first.currentVoices, 1);
+    assert.equal(first.lastAccepted.revision, 1);
+    engine.setParameters(request.soundId, { baseFrequency: 330 });
+    assert.equal(engine.getPerformanceSnapshot().runtime.attempts, 1);
+    assert.equal(await engine.replace({ ...request, processor: "replacement", graphRevision: 2 }, 2), true);
+    const second = engine.getPerformanceSnapshot().runtime;
+    assert.equal(second.attempts, 2);
+    assert.equal(second.accepted, 2);
+    assert.equal(second.lastAccepted.revision, 2);
+    assert.equal(second.lastAccepted.fadeDurationMs, 50);
+    assert.equal(second.retiringVoices, 0);
+    assert.ok(second.lastAccepted.completionMs >= second.lastAccepted.acceptanceMs);
+    engine.stop(request.soundId);
+    await playing;
+    assert.equal(engine.getPerformanceSnapshot().runtime.currentVoices, 0);
+});
+
+test("failed replacement leaves the accepted voice diagnostics intact", async () => {
+    const { engine, nodeFactory } = replacementSetup();
+    const playing = engine.play({ ...request, graphRevision: 1 });
+    await new Promise(resolve => setImmediate(resolve));
+    nodeFactory.create = async () => { throw new Error("failed"); };
+    await assert.rejects(engine.replace({ ...request, graphRevision: 2 }, 2), /failed/);
+    const runtime = engine.getPerformanceSnapshot().runtime;
+    assert.equal(runtime.lastAttempt.result, "failed");
+    assert.equal(runtime.failed, 1);
+    assert.equal(runtime.lastAccepted.revision, 1);
+    assert.equal(runtime.currentVoices, 1);
+    engine.stop(request.soundId);
+    await playing;
+});

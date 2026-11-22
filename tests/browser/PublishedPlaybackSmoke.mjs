@@ -517,6 +517,9 @@ try {
     await performanceToggle.click();
     await performancePanel.locator("[data-performance-session]").filter({ hasText: "active" }).waitFor({ timeout: 10000 });
     assert.match(await performancePanel.innerText(), /\d+ Hz/);
+    await performancePanel.locator("[data-performance-worklets]").filter({ hasText: "1 / 0" }).waitFor({ timeout: 10000 });
+    await performancePanel.locator("[data-performance-source-builds]").filter({ hasText: /^1$/ }).waitFor({ timeout: 10000 });
+    assert.match(await performancePanel.innerText(), /Compiler worker round trip/);
     await performancePanel.getByRole("button", { name: "Reset session counters" }).click();
     await performancePanel.getByRole("button", { name: "Reset session counters" }).waitFor({ state: "visible" });
     await page.waitForFunction(() => !document.querySelector("#audio-performance-details button:last-child")?.disabled);

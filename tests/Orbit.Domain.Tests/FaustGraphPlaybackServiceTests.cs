@@ -566,6 +566,54 @@ public sealed class FaustGraphPlaybackServiceTests
         await playing;
     }
 
+    [Fact]
+    public async Task DiagnosticsSeparateSourceBuildReuseAndAcceptedReplacements()
+    {
+        using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings());
+        var engine = new RecordingEngine();
+        var service = new FaustGraphPlaybackService(FaustGraphCompiler.CreateBuiltIn(), engine);
+        var original = session.Snapshot;
+        var playing = service.PlayAsync(original);
+        await service.GetStateAsync(session.GraphId);
+        var initial = service.GetGraphPerformanceSnapshot(session.GraphId)!;
+        Assert.Equal(1L, initial.SourceBuilds);
+        Assert.Equal(original.Revision, initial.AppliedRevision);
+        Assert.Equal(2, initial.ReachableLeafNodes);
+        Assert.NotNull(initial.SourceGenerationMs);
+
+        var oscillator = original.Nodes[1];
+        var frequency = oscillator.Parameters.Single(p => p.Definition.Key == "frequency");
+        session.Execute(new SetParameterValueCommand(session.GraphId, new(oscillator.Id, frequency.Id), 330));
+        await service.UpdateAsync(session.Snapshot);
+        var live = service.GetGraphPerformanceSnapshot(session.GraphId)!;
+        Assert.Equal(1L, live.SourceBuilds);
+        Assert.Equal(1L, live.ReusedUpdates);
+        Assert.Equal(1L, live.ControlUpdates);
+        Assert.NotNull(live.ControlUpdateMs);
+        Assert.Equal(0L, live.AcceptedReplacements);
+
+        session.Execute(new AddNodeCommand(session.GraphId, original.Nodes[0].TypeKey));
+        await service.UpdateAsync(session.Snapshot);
+        var disconnected = service.GetGraphPerformanceSnapshot(session.GraphId)!;
+        Assert.Equal(2L, disconnected.SourceBuilds);
+        Assert.Equal(2L, disconnected.ReusedUpdates);
+        Assert.Equal(initial.ReachableLeafNodes, disconnected.ReachableLeafNodes);
+        Assert.Empty(engine.Replacements);
+
+        var waveform = oscillator.Parameters.Single(p => p.Definition.Key == "waveform");
+        session.Execute(new SetParameterValueCommand(session.GraphId, new(oscillator.Id, waveform.Id), (int)OscillatorWaveform.Square));
+        await service.UpdateAsync(session.Snapshot);
+        var replacement = service.GetGraphPerformanceSnapshot(session.GraphId)!;
+        Assert.Equal(3L, replacement.SourceBuilds);
+        Assert.Equal(1L, replacement.AcceptedReplacements);
+        Assert.Equal(session.Snapshot.Revision, replacement.AppliedRevision);
+        Assert.Equal(session.Snapshot.Revision, Assert.Single(engine.Replacements).GraphRevision);
+        Assert.Same(replacement, service.GetGraphPerformanceSnapshot(session.GraphId));
+        await service.StopAsync(session.GraphId);
+        await playing;
+        Assert.Equal(replacement, service.GetGraphPerformanceSnapshot(session.GraphId));
+    }
+
     private class RecordingEngine : IAudioEngine
     {
         public bool Initialized { get; private set; }

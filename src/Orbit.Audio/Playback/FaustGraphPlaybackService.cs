@@ -4,6 +4,7 @@ using Orbit.Application.Models;
 using Orbit.Application.Services;
 using Orbit.Audio.Compilation;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Orbit.Domain.Parameters;
 using Orbit.Domain.Nodes.Generators;
 
@@ -12,11 +13,26 @@ namespace Orbit.Audio.Playback;
 /// <summary>Maps a committed graph to an engine request. The compiler and
 /// engine are interchangeable dependencies; the UI knows neither Faust nor JS.</summary>
 public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudioEngine engine)
-    : IGraphPlaybackService, ISignalAnalysisService, IRhythmicActionService, IPerformanceNoteService
+    : IGraphPlaybackService, ISignalAnalysisService, IRhythmicActionService, IPerformanceNoteService, IGraphPerformanceSource
 {
     // Leave headroom at the browser output in addition to graph-defined gain.
     private const double PlaybackVolume = 0.5;
     private readonly ConcurrentDictionary<Guid, ActiveGraphPlayback> active = new();
+    private GraphPerformanceTracker? lastDiagnostics;
+    public GraphPerformanceSnapshot? GetGraphPerformanceSnapshot(Guid patchId)
+    {
+        if (active.TryGetValue(patchId, out var playback)) return playback.Diagnostics.Snapshot;
+        var previous = Volatile.Read(ref lastDiagnostics)?.Snapshot;
+        return previous?.PatchId == patchId ? previous : null;
+    }
+
+    private FaustGraphProgram CompileMeasured(GraphSnapshot graph, GraphPerformanceTracker diagnostics)
+    {
+        var start = Stopwatch.GetTimestamp();
+        try { return compiler.Compile(graph, TapCapacity, Capture?.SupportsDynamicTaps == true); }
+        finally { diagnostics.Build(graph.Revision, Stopwatch.GetElapsedTime(start).TotalMilliseconds); }
+    }
+
     private int TapCapacity => Capture?.SupportsDynamicTaps == true ? SignalTapManifest.MaxAuxiliaryChannels : 0;
     private ISignalCapture? Capture => engine as ISignalCapture;
 
@@ -24,14 +40,22 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
 
     public async Task PlayAsync(GraphSnapshot graph)
     {
-        var program = compiler.Compile(graph, TapCapacity, Capture?.SupportsDynamicTaps == true);
-        var playback = new ActiveGraphPlayback(graph, program);
+        if (active.ContainsKey(graph.Id))
+            throw new InvalidOperationException("Graph playback is already active.");
+        var diagnostics = new GraphPerformanceTracker(graph.Id, graph.Revision);
+        Volatile.Write(ref lastDiagnostics, diagnostics);
+        FaustGraphProgram program;
+        try { program = CompileMeasured(graph, diagnostics); }
+        catch { diagnostics.Failed(graph.Revision); throw; }
+        diagnostics.Prepare(program);
+        var playback = new ActiveGraphPlayback(graph, program, diagnostics);
         if (!active.TryAdd(graph.Id, playback))
             throw new InvalidOperationException("Graph playback is already active.");
         try
         {
             await engine.PlayAsync(CreateRequest(program, playback.Generation));
         }
+        catch { diagnostics.Failed(graph.Revision); throw; }
         finally { active.TryRemove(graph.Id, out _); }
     }
 
@@ -49,32 +73,47 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
             return new(graph.Revision, false);
 
         if (!playback.Request(graph.Revision)) return playback.Result;
+        var diagnostics = playback.Diagnostics;
+        diagnostics.Request(graph.Revision);
         // Announce a newer revision immediately, even while the previous worker
         // request is pending. The browser checks this before starting a new voice.
-        await engine.MarkRevisionAsync(SoundId(graph.Id), graph.Revision);
+        try { await engine.MarkRevisionAsync(SoundId(graph.Id), graph.Revision); }
+        catch { diagnostics.Failed(graph.Revision); throw; }
 
         await playback.UpdateLock.WaitAsync();
         try
         {
             if (playback.Stopping || !active.TryGetValue(graph.Id, out var current) ||
                 !ReferenceEquals(current, playback))
+            {
+                diagnostics.Skipped(graph.Revision);
                 return playback.Result with { IsActive = false };
-            if (graph.Revision != playback.RequestedRevision) return playback.Result;
+            }
+            if (graph.Revision != playback.RequestedRevision)
+            {
+                diagnostics.Skipped(graph.Revision);
+                return playback.Result;
+            }
 
             // Compiling a different topology can still produce identical DSP,
             // e.g. adding an unconnected node. Preserve the existing voice then.
             var program = GraphTopology.Matches(playback.Topology, graph)
-                ? playback.Program : compiler.Compile(graph, TapCapacity, Capture?.SupportsDynamicTaps == true);
+                ? playback.Program : CompileMeasured(graph, diagnostics);
             var values = GetControlValues(graph, program);
             if (program.Source != playback.Program.Source)
             {
                 var generation = Guid.NewGuid();
                 var request = CreateRequest(program, generation, values, playback.LatchedPitchActions);
                 if (!await engine.ReplaceAsync(request, graph.Revision))
+                {
+                    diagnostics.Skipped(graph.Revision);
                     return playback.Result with { IsActive = !playback.Stopping };
+                }
                 foreach (var target in playback.LatchedPitchActions.Keys.Where(key => !program.RhythmicInputs.Any(input =>
                     input.IsPitch && (input.GraphId, input.NodeId) == key)).ToArray()) playback.LatchedPitchActions.Remove(target);
-                return playback.Accept(graph, program, values, generation);
+                var accepted = playback.Accept(graph, program, values, generation);
+                diagnostics.Applied(graph.Revision, program, "replacement");
+                return accepted;
             }
 
             // Use the manifest captured at Play; do not compile source or touch
@@ -85,14 +124,34 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
                 .Select(entry => (entry.index, Previous: PitchPattern.FromNode(playback.Topology.GetGraph(entry.input.GraphId).GetNode(entry.input.NodeId)),
                     Current: PitchPattern.FromNode(graph.GetGraph(entry.input.GraphId).GetNode(entry.input.NodeId))))
                 .Where(entry => !entry.Current.Matches(entry.Previous)).Select(entry => new PitchPatternUpdate(entry.index, entry.Current)).ToArray();
-            if ((changes.Count > 0 || patterns.Length > 0) && !await engine.SetGraphControlsAsync(SoundId(graph.Id), changes, patterns))
-                return playback.Result with { IsActive = false };
-            return playback.Accept(graph, program, values);
+            double? controlMs = null;
+            if (changes.Count > 0 || patterns.Length > 0)
+            {
+                var started = Stopwatch.GetTimestamp();
+                if (!await engine.SetGraphControlsAsync(SoundId(graph.Id), changes, patterns))
+                {
+                    diagnostics.Skipped(graph.Revision);
+                    return playback.Result with { IsActive = false };
+                }
+                controlMs = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+            }
+            var reused = playback.Accept(graph, program, values);
+            diagnostics.Applied(graph.Revision, program, "reused", controlMs);
+            return reused;
         }
+        catch { diagnostics.Failed(graph.Revision); throw; }
         finally { playback.UpdateLock.Release(); }
     }
 
-    public Task<PlaybackState> GetStateAsync(Guid graphId) => engine.GetPlaybackStateAsync(SoundId(graphId));
+    public async Task<PlaybackState> GetStateAsync(Guid graphId)
+    {
+        active.TryGetValue(graphId, out var playback);
+        var state = await engine.GetPlaybackStateAsync(SoundId(graphId));
+        if (state == PlaybackState.Playing && playback is not null &&
+            active.TryGetValue(graphId, out var current) && ReferenceEquals(current, playback))
+            playback.Diagnostics.Playing(playback.Result.AppliedRevision);
+        return state;
+    }
 
     public Task<bool> SendAsync(Guid patchId, Guid graphId, Guid nodeId, RhythmicAction action)
     {
@@ -278,7 +337,7 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
             values ?? program.InitialControlValues(),
             Source: program.Source, RequiresTransport: program.RequiresTransport,
             OutputChannels: program.SignalTaps.ChannelCount, Generation: generation, TapSelectorCount: program.SignalTaps.SelectorCount,
-            TransportInputChannels: program.TransportInputChannels, RhythmicInputs: program.RhythmicInputs.Select(input => input.IsPitch && pitchActions is not null &&
+            GraphRevision: program.Revision, TransportInputChannels: program.TransportInputChannels, RhythmicInputs: program.RhythmicInputs.Select(input => input.IsPitch && pitchActions is not null &&
                 pitchActions.TryGetValue((input.GraphId, input.NodeId), out var code) ? input with { InitialAction = code } : input).ToArray());
 
     private static Dictionary<string, double> GetControlValues(GraphSnapshot graph, FaustGraphProgram program)

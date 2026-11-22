@@ -13,4 +13,7 @@ public sealed record AudioPerformanceSnapshot(
     long? UnderrunEvents,
     double? UnderrunDurationMs,
     double? PlaybackDurationMs,
-    double? MissingAudioPercent);
+    double? MissingAudioPercent)
+{
+    public BrowserRuntimeDiagnostics? Runtime { get; init; }
+}

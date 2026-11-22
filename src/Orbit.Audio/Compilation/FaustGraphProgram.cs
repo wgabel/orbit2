@@ -7,6 +7,9 @@ namespace Orbit.Audio.Compilation;
 public sealed record FaustGraphProgram(
     Guid GraphId, long Revision, string Source, IReadOnlyList<FaustParameterControl> Controls)
 {
+    public int ReachableLeafNodes { get; init; }
+    public int BoundaryRoutes { get; init; }
+    public int ReachableEdges { get; init; }
     public bool RequiresTransport { get; init; }
     public int TransportInputChannels { get; init; }
     public IReadOnlyList<RhythmicInput> RhythmicInputs { get; init; } = [];

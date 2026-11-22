@@ -187,8 +187,12 @@ public sealed class FaustGraphCompiler
             return control with { GraphId = origin.GraphId,
                 Address = control.Address with { NodeId = origin.NodeId } };
         }).ToArray();
+        var reachableIds = ordered.Select(node => node.Id).ToHashSet();
+        var boundaries = ordered.Count(node => node.TypeKey == BoundaryFaustEmitter.NodeType);
         return new FaustGraphProgram(graph.Id, graph.Revision, source, Array.AsReadOnly(manifest))
-            { RequiresTransport = requiresTransportBeat || requiresTransportTempo || actionInputs.Any(input => input.Input.Pattern is not null), TransportInputChannels = transportChannels,
+            { ReachableLeafNodes = ordered.Count - boundaries - 1, BoundaryRoutes = boundaries,
+                ReachableEdges = graph.Connections.Count(edge => reachableIds.Contains(edge.Destination.NodeId)),
+                RequiresTransport = requiresTransportBeat || requiresTransportTempo || actionInputs.Any(input => input.Input.Pattern is not null), TransportInputChannels = transportChannels,
                 RhythmicInputs = actionInputs.Select(input => input.Input).ToArray(), AuditionControls = audition.Manifest,
                 SignalTaps = new SignalTapManifest(tapChannels, outputExpressions.Count, selectorCount), EnvelopeMeters = envelopeMeters.AsReadOnly(), PitchMeters = pitchMeters.AsReadOnly() };
     }
