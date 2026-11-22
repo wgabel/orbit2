@@ -18,6 +18,8 @@ Keep engineering quality separate: valid connections, reliable playback, deliber
 
 ## 2. Structural craft: unity, contrast and purposeful tension
 
+For theory and research focused on simultaneous chord perception, tuning and harmonic direction see [harmony, scales and temperament](harmony-scales-and-temperament.md); for more specific melodic expectation research and historical compositional practice see [classical composition and melody](classical-composition-and-melody.md#2-what-makes-a-melody-memorable-and-expressive). These are practical complements to the quality framework, not alternate universal scoring systems.
+
 A useful starting principle is to establish an intelligible relationship among musical events and then develop it. Unity can come from a motif, tuning, pedal tone, pulse, sound palette, repeating gesture, texture or performance rule; contrast can occur in any of those dimensions. The [theory guide](music-theory-and-sound-design.md#1-what-makes-music-work) covers the individual musical dimensions; the [development guide](compositional-development.md#1-three-levels-of-musical-development) describes how they change at different timescales.
 
 - **Tension and release:** in tonal music, for example, a dominant chord can prepare a return to the tonic; a suspension may resolve by step. In electronic music, rising density, increasing roughness, a withheld beat, narrower register, rhythmic ambiguity or increasing brightness can prepare a contrasting event. Release can mean settling harmony, restoring a groove, opening the register, removing tension layers or even returning to silence. A resolution need not be immediate, tonal or complete. A sustained threatening drone may intentionally leave tension unresolved.

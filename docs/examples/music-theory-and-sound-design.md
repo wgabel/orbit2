@@ -4,6 +4,8 @@ For applying these principles to a particular style, see the [electronic music g
 
 For quality-focused production, see [sound quality and voice design](sound-quality-and-voice-design.md) for rich voices, quiet/shaped noise and candidate presets, and [mixing, mastering and analysis](mixing-mastering-and-analysis.md) for true peak/LUFS, balance and iterative rendering.
 
+For in-depth pitched composition, read [harmony, scales and temperament](harmony-scales-and-temperament.md) (acoustics, wolf intervals, chord functions, voice leading) and [classical composition and melody](classical-composition-and-melody.md) (motifs, non-chord tones, Bach/Mozart, counterpoint, phrase and form). The present guide remains the general theory/sound-design overview.
+
 [Music creation index](README.md) · [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Generative ambient composition](generative-ambient-composition.md) · [Instrument recipes](instrument-recipes.md) · [Roadmap](../../ROADMAP.md)
 
 **Purpose:** A practical musical reference for people and agents creating Orbit 2 patches, instruments, effects and complete pieces. It explains why particular choices may work, how to implement them with the available nodes, and how to evaluate the result. This is not a rulebook for what music must sound like or an implementation specification for new DSP features. All numerical recipes are starting points, not claims of measured or listening-tested sound quality.
@@ -82,11 +84,15 @@ Intervals are relationships, not absolute Hz differences. The same 10 Hz differe
 
 ### Consonance, dissonance and tuning
 
+For historical temperament, simple-ratio/12-TET differences, the Pythagorean and syntonic commas and wolf intervals, see the [extended tuning guide](harmony-scales-and-temperament.md#3-the-wolf-interval-and-the-historical-tuning-problem).
+
 Simple ratios such as 2:1 (octave), 3:2 (fifth), 4:3 (fourth), 5:4 (just major third) and 6:5 (just minor third) align many harmonics when the timbres are harmonic. Nearby partials can create audible beating or roughness; the effect depends on their spacing, register, spectrum and level ([Plomp & Levelt, 1965](https://doi.org/10.1121/1.1909741)). Consonance is also a cultural and musical preference, not merely a property of a ratio ([McDermott et al., 2016](https://doi.org/10.1038/nature18635)).
 
 For an open drone at 110 Hz, try exactly 165 Hz (3:2) and 220 Hz (2:1). In 12-TET the fifth is about 164.81 Hz. The exact ratio can feel settled on a fixed drone; equal temperament is convenient for tracking a chromatic keyboard and modulating between tonal centers. Do not combine just-tuned and equal-tempered doubles unknowingly. Their difference can be a desired slow shimmer or an unwanted beat. No tuning system or interval is intrinsically good or bad.
 
 ## 3. Scales, harmony and tonal color
+
+For expanded scale and chord tables, diatonic chord construction, progressions, cadences, modulation and explicit independent voice leading see [harmony, scales and temperament](harmony-scales-and-temperament.md#2-scales-pitch-vocabulary-with-a-center).
 
 A tonal center is the pitch that feels like home. A scale is a pitch collection; a chord is a simultaneous pitch combination; a mode gives a collection a particular tonal center and interval pattern. Keeping a scale does not force every possible simultaneous note to be consonant. Decide which pitches are structural chord tones and which are passing, suspended or intentionally tense.
 
@@ -141,6 +147,8 @@ This is one possible A-natural-minor progression. Return to step 1 or leave the 
 In Orbit, use one pitch sequence per independently moving voice, with matching reference/base notes and a common transport step grid. Choose four equally timed steps in each lane and start them from the same transport reset. Shared Pitch Control is ideal for fixed-interval transposition; separate Note Sequencers are needed for the chord changes above. Glide 1–4 s for a fluid transition, or use brief independent amplitude fades. Glide is continuous motion through intermediate pitches, not instantaneous note replacement; listen for unwanted clashes during the transition, especially with reverb tails. See [Note Sequencer](../instruments/note-sequencer.md) for actual implementation limits and timing.
 
 ## 4. Melody, rhythm and controlled variation
+
+For research on melodic expectation, worked original themes, non-chord tones, keyboard texture, phrase models and contrapuntal development see [classical composition and melody](classical-composition-and-melody.md#2-what-makes-a-melody-memorable-and-expressive).
 
 Melody is not simply a succession of correct pitches. Begin with a motif: a small distinctive pattern (perhaps A4–C5–E5, then E5–D5–A4), and vary its ending, rhythm, octave or silence. Give the motif a contour (rise, fall, arch) and space for anticipation. For a supporting chord, place accented or long sustained notes on its structural tones; passing notes need not be chord tones. A sparse minor-ninth color may be effective in ambient music, while a sustained clashing lead may distract when unintended.
 

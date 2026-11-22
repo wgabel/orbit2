@@ -14,6 +14,7 @@
 | Make notes articulate individually; use keyboard, patterns, clock, gate and envelopes | [Sound and instruments — pitch and articulation](sound-and-instruments.md#1-pitch-versus-articulation) |
 | Use organ, strings, flute, brass, didgeridoo, impact, handpan, bell, gong and wood percussion | [Sound and instruments — instruments](sound-and-instruments.md#3-built-in-instruments-and-resonators) |
 | Design evolving drones, an individual sound or an entire piece | [Music creation index](../examples/README.md), [foundations catalogue](../examples/foundations/README.md), [genre index](../examples/electronic-music-genres.md) |
+| Compose pitched music, chords, melodies and independent keyboard-like parts | [Harmony, scales and temperament](../examples/harmony-scales-and-temperament.md), [classical composition and melody](../examples/classical-composition-and-melody.md#8-technical-translation-independently-sequenced-keyboard-like-parts) |
 | Improve timbre, layer balance and final presentation | [Voice design](../examples/sound-quality-and-voice-design.md), [music theory](../examples/music-theory-and-sound-design.md), [production workflow](../examples/mixing-mastering-and-analysis.md), [contextual layer balance](../examples/contextual-layer-balance.md) |
 
 ## Recent features and earlier implementation trail
