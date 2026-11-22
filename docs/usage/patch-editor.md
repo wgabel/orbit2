@@ -15,6 +15,14 @@
 
 With [PR #61](https://github.com/wgabel/orbit2/pull/61), close a tool via its Close button, the active bottom tab, Escape or browser/Android Back; changing tools dismisses the previous one. Apply/cancel a protected overview draft before leaving it. The color-coded Node Library ([PR #62](https://github.com/wgabel/orbit2/pull/62), in review) replaces the old dropdown. Automatic node expansion/pinning, new pinch gestures and fullscreen are planned in subsequent milestones. Resizing the browser retains the same active graph and playback controller. 
 
+### Delete a connection on mobile
+
+1. Tap the cable or its numeric amount badge. The selected cable is highlighted and, for a single connection, its amount editor opens. Do not press Cancel or Close in that editor; doing so clears the selection.
+2. Tap **Edit** on the bottom toolbar, check that the summary shows 0 nodes and 1 connection selected, then tap **Delete selected**. Only the selected connection is removed.
+3. To restore it, tap **Undo** in Edit.
+
+If badges obscure a cable, open **View → Connection labels → Off**, close View and tap the exposed cable. Use **Fit** or zoom/pan to make it easier to reach. Setting a connection amount to zero does not delete it.
+
 ### Node Library
 
 On desktop, click **Add node**; on mobile, tap **+ Nodes**. Search by name, keyword or purpose, or choose a category. Each row shows a recognizable icon, category accent, canonical node name and short description. Click/tap the row to add it at the current visible canvas; star a row to favorite it (tap again to remove). Favorites and up to six recently added types appear first when no filter is active, and persist in this browser. The list adapts to the graph (Master output is root-only); composite and instrument templates remain available. Close the library to return to the canvas without adding anything. Node frames and the outline share the category icons/colors; signal colors still indicate signal semantics. See [PR #62](https://github.com/wgabel/orbit2/pull/62).
