@@ -12,6 +12,8 @@ Use this workflow whenever an instrument, synthesized voice, percussion sound, e
 
 Reuse the comparison method, not necessarily the same melody. Choose a suitable stimulus, define the intended sound and role, design and level-match candidates, evaluate them in isolation and context, and save the exact successful revision with evidence. Long-form or interacting sounds may need a reproducible contextual test rather than a short monophonic melody. Genre and role tags are optional, multiple-valued discovery aids, not restrictions on reuse.
 
+For acoustic/electromechanical realism, consult [Faust-first instrument emulation](../instruments/realistic-instrument-emulation.md) for instrument-specific excitation, continuous expression and model candidates. Keep the existing synthetic presets as baselines, choose suitable sustained/repeated/chord/strike profiles, and distinguish listener approval from native DSP correctness. License clearance and performance validation precede inclusion of new physical-model dependencies.
+
 ## 1. Case study: Prism Rush and the unintended chiptune character
 
 In *Prism Rush* (three minutes, 128 BPM, D major/B minor), the listener strongly approved the composition and intricate melodies, but described the individual tones as childish, 16-bit/chiptune, and unlike recent pop production. This is a sound-design problem to investigate while retaining the successful score, not a reason to simplify its counterpoint, remove its breaks or rewrite its harmony.
