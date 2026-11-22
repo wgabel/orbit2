@@ -23,7 +23,7 @@ For exact serialized keys, Hold code, ramp behavior and the combined 30 reachabl
 
 ### Play held notes with Note Source
 
-For live keyboard articulation (7.2.3 in review, [PR #41](https://github.com/wgabel/orbit2/pull/41)), add **Note Source** rather than Note Sequencer. Set Reference note to A3 for a 220 Hz oscillator or handpan, and Keyboard velocity (default 0.8). Connect Pitch at amount 1 and Trigger to Modal — Handpan; connect Handpan Audio to Master output. Play patch, select Note Source and Arm keyboard, then hold keys or on-screen piano keys. For velocity, open Handpan and set the shared excitation Gain receiving Strength offset to base zero, then connect Note Source Velocity to Strength offset at unity.
+For live keyboard articulation (7.2.3, [PR #41](https://github.com/wgabel/orbit2/pull/41)), add **Note Source** rather than Note Sequencer. Set Reference note to A3 for a 220 Hz oscillator or handpan, and Keyboard velocity (default 0.8). Connect Pitch at amount 1 and Trigger to Modal — Handpan; connect Handpan Audio to Master output. Play patch, select Note Source and Arm keyboard, then hold keys or on-screen piano keys. For velocity, open Handpan and set the shared excitation Gain receiving Strength offset to base zero, then connect Note Source Velocity to Strength offset at unity.
 
 For sustained voices, wire Gate to an ADSR Envelope and its output to zero-base oscillator amplitude; use a separate zero-base Gain controlled by Velocity if desired. Last pressed key wins; releasing it falls back to the previous held key without triggering a new strike. Final release closes Gate while Pitch and Velocity remain held for release tails. This is monophonic; Note-mode patterns and polyphony remain future work. See the [Note Source contract](../instruments/pitch-control.md#phase-723--note-source-in-review).
 
@@ -71,6 +71,17 @@ Choose an **Instrument — …** composite from Add node, then connect its Audio
 | Instrument — Didgeridoo | A1 / 55 Hz | Low drone and evolving vocal/formant color |
 
 Use Note Sequencer reference matching the native tuning and connect it to **Pitch (st)** at unity. **Gain offset** is additive around a base of 0.5, not a zero-based envelope input: −0.5 silences, 0 keeps default, +0.5 reaches unity. For simple articulated notes, insert an external Gain with base zero after the composite and modulate it using Envelope as in §2; place reverb after that gain for tails. Genuine note polyphony is not implemented: use independent instrument composites for separate chord tones. For exact internal recipes and gain limits see [instrument recipes](../examples/instrument-recipes.md#phase-721--built-in-instrument-composites-implemented).
+
+### Playable sustained instruments
+
+For held notes rather than drones, choose **Playable — Organ**, **Playable — Flute**, **Playable — Brass**, **Playable — Bowed strings** or **Playable — Didgeridoo** (7.2.6a, in review).
+
+1. Add Note Source and Playable — Flute. Set Reference note to A3 (A2 for organ, brass and strings; A1 for didgeridoo).
+2. Connect Note Source Pitch → Pitch (st) at amount 1, Gate → Gate, and Velocity → Velocity at amount 1. Connect Audio → Master output.
+3. Play patch, select Note Source, Arm keyboard, hold a note and release. Try a lower Keyboard velocity and press again; the note is quieter. Overlap keys to play legato, or release before playing a new note for a fresh attack.
+4. Open the composite and edit the ADSR for slower swells or shorter articulation. Reverb follows the envelope so it can ring after release.
+
+If silent, check that both Gate and Velocity are connected and that the keyboard is armed. No Trigger cable is needed for these ADSR voices. The original **Instrument — …** entries still sound continuously. These are monophonic editable voices, not sample-based or polyphonic instruments. See [settings and technical recipe](../examples/instrument-recipes.md#phase-726a--playable-sustained-instruments-in-review).
 
 ### Impact — AD percussion
 

@@ -22,7 +22,8 @@ Use this as a discovery index, not a substitute for the feature contracts or roa
 
 | Feature | Where to find practical instructions | Evidence |
 | --- | --- | --- |
-| Monophonic Note Source | [Play held keyboard notes](sound-and-instruments.md#play-held-notes-with-note-source), [contract](../instruments/pitch-control.md#phase-723--note-source-in-review) | [PR #41](https://github.com/wgabel/orbit2/pull/41) — in review |
+| Playable sustained instruments | [Play organ, flute, brass, strings and didgeridoo](sound-and-instruments.md#playable-sustained-instruments), [recipe](../examples/instrument-recipes.md#phase-726a--playable-sustained-instruments-in-review) | In review |
+| Monophonic Note Source | [Play held keyboard notes](sound-and-instruments.md#play-held-notes-with-note-source), [contract](../instruments/pitch-control.md#phase-723--note-source-in-review) | [PR #41](https://github.com/wgabel/orbit2/pull/41) |
 | Searchable nested patch outline | [Search and navigate the entire patch](patch-editor.md#search-and-navigate-the-entire-patch-in-review), [contract](../editor/patch-annotations.md#3-patch-outline-and-navigation-6198--in-review) | [PR #39](https://github.com/wgabel/orbit2/pull/39) — merged |
 | Annotation visibility, zoom-dependent detail, hidden-item finder, signal-only fit | [Organize and perform](patch-editor.md#3-document-and-organize-a-patch), [contract](../editor/patch-annotations.md#2-annotation-visibility-and-zoom-dependent-detail-6197--implemented) | [PR #35](https://github.com/wgabel/orbit2/pull/35) |
 | Local and recursive entire-patch counts | [Understand counts](patch-editor.md#understand-the-two-counts), [canvas contract](../editor/canvas.md#the-canvases) | [PR #36](https://github.com/wgabel/orbit2/pull/36) |
