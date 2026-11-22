@@ -60,6 +60,8 @@ For AD driven by a continuous oscillator, select **Continuous signal** and use S
 
 ## 3. Built-in instruments and resonators
 
+For a more realistic organ experiment, follow the [Hammond and pipe-rank recipes](../instruments/realistic-instrument-emulation.md#3-organ-design-with-existing-nodes) or [step-by-step rotary speaker wiring](../instruments/realistic-instrument-emulation.md#32-rotary-speaker-approximation--hands-on-existing-node-patch): independent LFOs modulate Gain and Delay after low/high filters. These use existing nodes, not a shipped Rotary Speaker or acoustic model.
+
 ### Sustained instruments
 
 Choose an **Instrument — …** composite from Add node, then connect its Audio to Master or Mixer. These preset graphs sound continuously while playing. Open each composite to edit its real nodes, filters and effects; each added instance has independent IDs. They are editable synthesized approximations, not recordings or guaranteed acoustic replicas. [PR #31](https://github.com/wgabel/orbit2/pull/31).
