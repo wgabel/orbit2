@@ -105,20 +105,21 @@
 .canvas-selection-panel { max-height: 65vh; overflow: auto; }
 .canvas-selection-panel input { min-width: 0; max-width: 100%; }
 /* Unscaled aiming aids: visible at any world zoom and never intercept pointer input. */
-.touch-wire-assist { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.touch-wire-assist { position: absolute; inset: 0; z-index: var(--component-touch-wire-layer); pointer-events: none; }
 .touch-wire-target, .touch-wire-cursor {
-    position: absolute; transform: translate(-50%, -50%); border-radius: 50%; box-sizing: border-box;
+    position: absolute; transform: translate(-50%, -50%); border-radius: var(--semantic-radius-round); box-sizing: border-box;
     pointer-events: none;
 }
 .touch-wire-target {
-    width: 16px; height: 16px; border: 1px solid var(--semantic-color-selected);
-    box-shadow: 0 0 6px var(--semantic-color-selected);
-    transition: width 120ms ease-out, height 120ms ease-out;
+    width: var(--component-touch-wire-target-size); height: var(--component-touch-wire-target-size);
+    border: var(--semantic-border-width) solid var(--semantic-color-selected);
+    box-shadow: 0 0 var(--component-touch-wire-target-glow) var(--semantic-color-selected);
+    transition: width var(--component-touch-wire-target-duration) var(--component-touch-wire-target-easing), height var(--component-touch-wire-target-duration) var(--component-touch-wire-target-easing);
 }
-.touch-wire-target.is-snapped { width: 26px; height: 26px; border-width: 2px; }
-.touch-wire-cursor { width: 10px; height: 10px; border: 2px solid var(--semantic-color-selected); background: var(--semantic-color-canvas); }
+.touch-wire-target.is-snapped { width: var(--component-touch-wire-snapped-size); height: var(--component-touch-wire-snapped-size); border-width: var(--semantic-border-focus-width); }
+.touch-wire-cursor { width: var(--component-touch-wire-cursor-size); height: var(--component-touch-wire-cursor-size); border: var(--semantic-border-focus-width) solid var(--semantic-color-selected); background: var(--semantic-color-canvas); }
 .touch-wire-label {
-    position: absolute; z-index: 5; top: var(--semantic-space-compact); left: 50%; transform: translateX(-50%);
+    position: absolute; z-index: var(--component-touch-wire-layer); top: var(--semantic-space-compact); left: 50%; transform: translateX(-50%);
     max-width: calc(100% - 2 * var(--semantic-space-compact));
     padding: var(--semantic-space-compact); border-radius: var(--semantic-radius-control);
     border: var(--semantic-border-width) solid var(--semantic-color-selected);

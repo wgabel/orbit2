@@ -237,6 +237,16 @@
       "toolbar-gap": "{semantic.space.compact}",
       "zoom-width": "4rem"
     },
+    "touch-wire": {
+      "target-size": "16px",
+      "snapped-size": "26px",
+      "cursor-size": "10px",
+      "target-glow": "6px",
+      "target-duration": "120ms",
+      "target-easing": "ease-out",
+      "candidate-brightness": "1.5",
+      "layer": "5"
+    },
     "node-library": {
       "icon-size": "1.25rem",
       "row-icon-size": "2rem",

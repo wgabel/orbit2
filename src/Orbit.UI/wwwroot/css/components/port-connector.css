@@ -27,5 +27,5 @@
 .port-active { outline: var(--semantic-border-focus-width) solid var(--semantic-color-selected); }
 .port-dormant { color: var(--semantic-color-muted); }
 .port-dormant .port-marker { background: var(--semantic-color-muted); }
-.port-wire-candidate .port-marker { filter: brightness(1.5); }
+.port-wire-candidate .port-marker { filter: brightness(var(--component-touch-wire-candidate-brightness)); }
 .port-wire-incompatible { opacity: var(--semantic-opacity-disabled); }
