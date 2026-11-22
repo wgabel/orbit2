@@ -1,0 +1,128 @@
+@namespace Orbit.UI.Components.Canvas
+@using Orbit.Presentation.Canvas
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JavaScript
+
+@if (Open)
+{
+    <section class="node-library-panel" role="region" aria-label="Node library">
+        <div class="node-library-heading">
+            <strong>Node library</strong>
+            <button type="button" class="secondary" @onclick="OnClose">Close library</button>
+        </div>
+        <label for="node-library-search">Search nodes</label>
+        <input id="node-library-search" type="search" placeholder="Name, category or keyword…" disabled="@(!loaded)" @bind="query" @bind:event="oninput" />
+        <label for="node-library-category">Category</label>
+        <select id="node-library-category" disabled="@(!loaded)" @bind="category">
+            <option value="">All categories</option>
+            @foreach (var item in Enum.GetValues<NodeCategory>())
+            {
+                <option value="@item">@NodeAppearanceCatalog.Label(item)</option>
+            }
+        </select>
+        <div class="node-library-results">
+            @foreach (var group in Sections())
+            {
+                <h3>@group.Label</h3>
+                @foreach (var entry in group.Entries)
+                {
+                    <div class="node-library-row @entry.Appearance.CssClass" data-node-key="@entry.Key" @key="entry.Key">
+                        <button type="button" class="secondary node-library-add" disabled="@(Disabled || !loaded)" @onclick="() => AddAsync(entry.Key)">
+                            <NodeAppearanceIcon Appearance="@entry.Appearance" />
+                            <span><span class="node-library-name">@entry.Name</span><small>@entry.Appearance.Description</small></span>
+                        </button>
+                        <button type="button" class="secondary node-library-favorite" aria-label="@($"Favorite {entry.Name}")" aria-pressed="@(preferences.Favorites.Contains(entry.Key) ? "true" : "false")"
+                                title="Toggle favorite" disabled="@(!loaded)" @onclick="() => ToggleAsync(entry.Key)">@(preferences.Favorites.Contains(entry.Key) ? "★" : "☆")</button>
+                    </div>
+                }
+            }
+            @if (!Entries.Any(entry => entry.Matches(query, category)))
+            {
+                <p class="workspace-notice">No matching nodes.</p>
+            }
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter, EditorRequired] public IReadOnlyList<NodeLibraryEntry> Entries { get; set; } = [];
+    [Parameter, EditorRequired] public IReadOnlySet<string> KnownKeys { get; set; } = new HashSet<string>();
+    [Parameter, EditorRequired] public Func<string, Task<bool>> OnAdd { get; set; } = default!;
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private string query = "";
+    private NodeCategory? category;
+    private bool wasOpen;
+    private bool loaded;
+    private bool loading;
+    private IJSObjectReference? storage;
+    private NodeLibraryPreferences preferences = NodeLibraryPreferences.Empty;
+
+    protected override void OnParametersSet()
+    {
+        if (Open && !wasOpen) { query = ""; category = null; }
+        wasOpen = Open;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!Open || loaded || loading) return;
+        loading = true;
+        try
+        {
+            storage = await JavaScript.InvokeAsync<IJSObjectReference>("import", "./js/nodeLibraryStorage.js");
+            preferences = (await storage.InvokeAsync<NodeLibraryPreferences?>("read") ?? NodeLibraryPreferences.Empty).Normalize(KnownKeys);
+        }
+        catch (JSException) { }
+        finally { loaded = true; loading = false; StateHasChanged(); }
+    }
+
+    private IEnumerable<(string Label, NodeLibraryEntry[] Entries)> Sections()
+    {
+        var found = Entries.Where(entry => entry.Matches(query, category)).OrderBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+        var used = new HashSet<string>(StringComparer.Ordinal);
+        if (string.IsNullOrWhiteSpace(query) && category is null)
+        {
+            foreach (var section in new[] { (Label: "Favorites", Keys: preferences.Favorites), (Label: "Recently used", Keys: preferences.Recent) })
+            {
+                var rows = section.Keys.Select(key => found.FirstOrDefault(entry => entry.Key == key))
+                    .OfType<NodeLibraryEntry>().Where(entry => used.Add(entry.Key)).ToArray();
+                if (rows.Length > 0) yield return (section.Label, rows);
+            }
+        }
+        foreach (var item in Enum.GetValues<NodeCategory>())
+        {
+            var rows = found.Where(entry => entry.Appearance.Category == item && !used.Contains(entry.Key)).ToArray();
+            if (rows.Length > 0) yield return (NodeAppearanceCatalog.Label(item), rows);
+        }
+    }
+
+    private async Task AddAsync(string key)
+    {
+        if (Disabled || !await OnAdd(key)) return;
+        preferences = preferences.RecordUse(key);
+        await SaveAsync();
+    }
+
+    private async Task ToggleAsync(string key)
+    {
+        preferences = preferences.ToggleFavorite(key);
+        await SaveAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (storage is null) return;
+        try { await storage.InvokeVoidAsync("write", preferences); }
+        catch (JSException) { }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (storage is not null) await storage.DisposeAsync();
+    }
+}

@@ -21,7 +21,14 @@
       "modulator": "{primitive.color.modulator-green}",
       "processor": "{primitive.color.processor-amber}",
       "composite": "{primitive.color.composite-violet}",
-      "routing": "{primitive.color.routing-slate}"
+      "routing": "{primitive.color.routing-slate}",
+      "category-audio": "{primitive.color.category-audio}",
+      "category-modulation": "{primitive.color.category-modulation}",
+      "category-effects": "{primitive.color.category-effects}",
+      "category-sequencing": "{primitive.color.category-sequencing}",
+      "category-processing": "{primitive.color.category-processing}",
+      "category-composites": "{primitive.color.category-composites}",
+      "category-routing": "{primitive.color.category-routing}"
     }
   }
 }

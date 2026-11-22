@@ -36,7 +36,7 @@
                         <button type="button" class="secondary patch-outline-locate" disabled="@Locked"
                                 aria-label="@($"{(entry.Target.Kind == OutlineKind.Canvas ? "Open" : "Locate")} {entry.Target.Kind.ToString().ToLowerInvariant()}: {entry.Title}")"
                                 title="@($"{entry.Breadcrumb} · {entry.Target.Id}")" @onclick="() => OnNavigate.InvokeAsync(new OutlineNavigationRequest(entry.Target))">
-                            <span>@Icon(entry.Target.Kind) @entry.Title</span>
+                            <span>@if (entry.NodeTypeKey is not null) { <NodeAppearanceIcon Appearance="@NodeAppearanceCatalog.Get(entry.NodeTypeKey, entry.VisualRole)" /> } else { @Icon(entry.Target.Kind) } <span>@entry.Title</span></span>
                             <small>@entry.Detail · @entry.Target.Id.ToString("N")[..8]</small>
                             @if (Searching) { <small>@entry.Breadcrumb</small> }
                         </button>

@@ -8,7 +8,7 @@ public enum OutlineKind { Canvas, Composite, Node, Group, Note }
 public readonly record struct OutlineTarget(Guid GraphId, OutlineKind Kind, Guid Id);
 
 public sealed record OutlineEntry(OutlineTarget Target, string Title, string Detail, string Breadcrumb,
-    string SearchText, Guid? ChildGraphId, IReadOnlyList<OutlineEntry> Children);
+    string SearchText, Guid? ChildGraphId, IReadOnlyList<OutlineEntry> Children, string? NodeTypeKey = null, NodeVisualRole? VisualRole = null);
 
 public sealed record OutlineRow(OutlineEntry Entry, int Depth);
 
@@ -37,7 +37,7 @@ public sealed class PatchOutline
                 var child = node.Composite?.Graph;
                 return new OutlineEntry(new OutlineTarget(graph.Id, child is null ? OutlineKind.Node : OutlineKind.Composite, node.Id),
                     name, node.Name, path, $"{name} {node.Name} {node.TypeKey} {description?.Description}", child?.Id,
-                    child is null ? [] : BuildGraph(child, $"{path} / {name}"));
+                    child is null ? [] : BuildGraph(child, $"{path} / {name}"), node.TypeKey, NodeRoleClassifier.Classify(graph, node));
             });
             var notes = (layout?.Notes ?? []).ToDictionary(note => note.Id, note =>
                 new OutlineEntry(new OutlineTarget(graph.Id, OutlineKind.Note, note.Id), note.Title, "Note", path,

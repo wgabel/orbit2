@@ -19,17 +19,19 @@ Non-signal note cards, group frames, authored labels and planned responsive visi
 
 #### Visual vocabulary
 
-All nodes have a filled background and a role-specific accent color from shared semantic theme tokens. The colors below are the initial palette, not values hard-coded into individual components.
+All nodes have a filled background and a category-specific accent from shared semantic theme tokens. [PR #62](https://github.com/wgabel/orbit2/pull/62) (6.21.3, in review) introduces the presentation-owned `NodeAppearanceCatalog` and shared `NodeAppearanceIcon`. The library, node frames, outline, preset selector and composite breadcrumbs reuse this catalog. Category colors have their own theme keys; the existing role colors and signal/port semantics are unchanged.
 
-| Node role | Accent |
+| Node category | Accent |
 | --- | --- |
-| Audio generator | Cyan / blue |
-| Modulation source (e.g. sine used as an LFO) | Green |
-| Signal processor / effect | Amber |
-| Composite / drone | Violet |
-| Input rack, output rack, master output | Slate |
+| Audio generators | Cyan / blue |
+| Modulation | Mint |
+| Effects | Purple |
+| Sequencing & timing | Amber |
+| Processing & mixing | Orange |
+| Composites & instruments | Pink |
+| Input / output & canvas | Slate |
 
-A sine used as an LFO remains the same generator implementation: the displayed role does not create a new DSP class. Processors that produce modulation retain their processor role; port types distinguish their signals.
+A sine used as an LFO remains the same generator implementation: its displayed category changes to modulation while retaining its waveform icon. Processor roles remain independent from category accents. Instantiated composites use their common composite type icon; registered templates have recognizable instrument-family icons in the library. The catalog includes a fallback for new registered types; add specific metadata for each new type. Icons are decorative for assistive technology because labels communicate the same meaning.
 
 | Signal kind | Port shape |
 | --- | --- |
@@ -89,7 +91,7 @@ Keep layout structure in CSS and markup, with numeric styling constants in JSON.
 | CanvasViewport | Coordinate conversion, pan, zoom and viewport state |
 | CanvasToolbar | Zoom controls, percentage readout, fit and reset |
 | PerformanceMonitor | Shared passive toolbar indicator and expandable diagnostics; token-based panel, local reset; independent of graph/canvas state (7.3.1 in review, [PR #53](https://github.com/wgabel/orbit2/pull/53)) |
-| NodeFrame | Shared node background, role accent, header, input/output layout and content slot |
+| NodeFrame | Shared node background, category accent, header, input/output layout and content slot |
 | NoteCard / NoteEditor | Presentation-only text, semantic accent, header, resize, collapse and isolated unscaled text draft (6.19.1, implemented) |
 | DescriptionEditor | Unscaled node alias/description or cable label editor, shared annotation draft lifecycle (6.19.2, implemented) |
 | VisualGroupFrame / VisualGroupEditor | Background frame, header drag, frame-only resize, explicit membership and unscaled metadata draft (6.19.3, implemented) |

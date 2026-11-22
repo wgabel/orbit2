@@ -21,7 +21,14 @@
       "modulator": "{primitive.color.light-modulator}",
       "processor": "{primitive.color.light-processor}",
       "composite": "{primitive.color.light-composite}",
-      "routing": "{primitive.color.light-routing}"
+      "routing": "{primitive.color.light-routing}",
+      "category-audio": "{primitive.color.light-category-audio}",
+      "category-modulation": "{primitive.color.light-category-modulation}",
+      "category-effects": "{primitive.color.light-category-effects}",
+      "category-sequencing": "{primitive.color.light-category-sequencing}",
+      "category-processing": "{primitive.color.light-category-processing}",
+      "category-composites": "{primitive.color.light-category-composites}",
+      "category-routing": "{primitive.color.light-category-routing}"
     }
   }
 }

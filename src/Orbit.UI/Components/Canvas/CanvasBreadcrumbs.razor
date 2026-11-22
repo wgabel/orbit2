@@ -9,11 +9,11 @@
     {
         @if (crumb.GraphId == Path[^1].GraphId)
         {
-            <span aria-current="page">@crumb.Name</span>
+            <span aria-current="page">@if (crumb.GraphId != Path[0].GraphId) { <NodeAppearanceIcon Appearance="@(NodeAppearanceCatalog.Get("composite.graph"))" /> } @crumb.Name</span>
         }
         else
         {
-            <button type="button" class="secondary" @onclick="() => OnNavigate.InvokeAsync(crumb.GraphId)">@crumb.Name</button>
+            <button type="button" class="secondary" @onclick="() => OnNavigate.InvokeAsync(crumb.GraphId)">@if (crumb.GraphId != Path[0].GraphId) { <NodeAppearanceIcon Appearance="@(NodeAppearanceCatalog.Get("composite.graph"))" /> } @crumb.Name</button>
             <span aria-hidden="true">/</span>
         }
     }

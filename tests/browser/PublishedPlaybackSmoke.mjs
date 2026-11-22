@@ -26,6 +26,26 @@ const server = createServer(async (request, response) => {
     } catch (error) { response.writeHead(404); response.end(String(error)); }
 });
 await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+const libraryRow = (page, key) => page.locator(`.node-library-panel [data-node-key="${key}"]`);
+async function openNodeLibrary(page) {
+    const library = page.getByRole("region", { name: "Node library", exact: true });
+    if (!await library.isVisible()) {
+        const mobile = page.getByRole("button", { name: "+ Nodes", exact: true });
+        if (await mobile.isVisible()) await mobile.click();
+        else await page.getByRole("button", { name: "Add node", exact: true }).click();
+    }
+    await library.waitFor();
+    return library;
+}
+async function closeNodeLibrary(page) {
+    await page.getByRole("button", { name: "Close library", exact: true }).click();
+    await page.locator(".node-library-panel").waitFor({ state: "hidden" });
+}
+async function addNode(page, key) {
+    await openNodeLibrary(page);
+    await libraryRow(page, key).locator(".node-library-add").click();
+    await page.locator(".node-library-panel").waitFor({ state: "hidden" });
+}
 let browser;
 try {
     browser = await chromium.launch({ executablePath: process.env.ORBIT_CHROME, headless: true,
@@ -33,6 +53,7 @@ try {
     // Exercise device-pixel bitmap resizing independently of CSS plot width.
     const page = await browser.newPage({ deviceScaleFactor: 2 });
     page.on("pageerror", error => console.error(error.message));
+    page.on("console", message => { if (message.type() === "error") console.error(message.text()); });
     await page.goto("http://127.0.0.1:" + server.address().port);
     const status = page.locator(".playback-toolbar").getByRole("status");
     const play = page.getByRole("button", { name: "Play patch" });
@@ -92,15 +113,34 @@ try {
     // remaining screen height rather than using a fixed viewport fraction.
     const toolbar = page.locator(".canvas-caption");
     await toolbar.getByRole("button", { name: "Zoom out" }).waitFor();
-    await toolbar.getByRole("button", { name: "Add", exact: true }).waitFor();
+    await toolbar.getByRole("button", { name: "Add node", exact: true }).waitFor();
+    await openNodeLibrary(page);
     await toolbar.getByRole("button", { name: "Play patch" }).waitFor();
-    assert.equal(await page.locator('#node-type option[value="processor.resonator"]').textContent(), "Resonator");
-    assert.equal(await page.locator('#node-type option[value="generator.note-source"]').textContent(), "Note Source");
+    assert.equal(await libraryRow(page, "processor.resonator").locator(".node-library-name").textContent(), "Resonator");
+    assert.equal(await libraryRow(page, "generator.note-source").locator(".node-library-name").textContent(), "Note Source");
     for (const [key, name] of [["organ", "Organ"], ["flute", "Flute"], ["brass", "Brass"],
         ["bowed-strings", "Bowed strings"], ["didgeridoo", "Didgeridoo"]]) {
-        assert.equal(await page.locator(`#node-type option[value="preset.instrument.${key}"]`).textContent(), `Instrument — ${name}`);
-        assert.equal(await page.locator(`#node-type option[value="preset.instrument.playable-${key}"]`).textContent(), `Playable — ${name}`);
+        assert.equal(await libraryRow(page, `preset.instrument.${key}`).locator(".node-library-name").textContent(), `Instrument — ${name}`);
+        assert.equal(await libraryRow(page, `preset.instrument.playable-${key}`).locator(".node-library-name").textContent(), `Playable — ${name}`);
     }
+    // Search, category filters, colors and favorites share the same list.
+    const library = page.getByRole("region", { name: "Node library", exact: true });
+    await library.getByLabel("Search nodes").fill("echo");
+    await libraryRow(page, "processor.delay").waitFor();
+    await libraryRow(page, "generator.oscillator").waitFor({ state: "hidden" });
+    assert.equal(await library.locator("[data-node-key]").count(), 1);
+    await libraryRow(page, "processor.delay").locator(".node-library-favorite").click();
+    await libraryRow(page, "processor.delay").locator('.node-library-favorite[aria-pressed="true"]').filter({ hasText: "★" }).waitFor();
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem("orbit2.node-library.v1") || "null")?.favorites?.includes("processor.delay"));
+    await library.getByLabel("Search nodes").fill("");
+    await library.locator(".node-library-results h3").first().filter({ hasText: "Favorites" }).waitFor();
+    await library.getByLabel("Category", { exact: true }).selectOption("Audio");
+    await libraryRow(page, "processor.delay").waitFor({ state: "hidden" });
+    assert.equal(await libraryRow(page, "processor.delay").count(), 0);
+    assert.ok(await libraryRow(page, "generator.oscillator").locator("svg.node-category-audio").count());
+    await library.getByLabel("Search nodes").fill("no-such-node");
+    await library.getByText("No matching nodes.").waitFor();
+    await closeNodeLibrary(page);
     const viewport = page.locator(".canvas-viewport");
     const panCanvas = async delta => {
         const world = page.locator(".canvas-world");
@@ -116,9 +156,7 @@ try {
     const exerciseNote = async (revision, title) => {
         const nodeCount = await articles.count();
         const undoEnabled = await page.getByRole("button", { name: "Undo", exact: true }).isEnabled();
-        const previousType = await page.locator("#node-type").inputValue();
-        await page.locator("#node-type").selectOption("canvas.note");
-        await toolbar.getByRole("button", { name: "Add", exact: true }).click();
+        await addNode(page, "canvas.note");
         const note = page.locator(".note-card");
         await note.waitFor();
         assert.equal(await articles.count(), nodeCount);
@@ -190,7 +228,6 @@ try {
             await note.locator(".annotation-marker").press("Enter");
         await note.getByRole("button", { name: "Delete", exact: true }).click();
         assert.equal(await note.count(), 0);
-        await page.locator("#node-type").selectOption(previousType);
         assert.equal(await page.getByRole("button", { name: "Undo", exact: true }).isEnabled(), undoEnabled);
         assert.equal(await status.innerText(), `Playing revision ${revision}`);
     };
@@ -811,7 +848,7 @@ try {
     assert.equal(await synchronizedFrequency.count(), 0);
     await marker.waitFor({ timeout: 10000 });
     // Unconnected nodes do not require a new worklet.
-    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await addNode(page, "generator.oscillator");
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 2}$`) }).waitFor({ timeout: 10000 });
     // With badges hidden, the cable itself must still be selectable. A badge
     // may otherwise cover the only exposed part of a short wire.
@@ -860,8 +897,7 @@ try {
 
     // Create an editable drone and connect its public sockets using the same
     // graph editor. Only the root has a master output.
-    await page.locator("#node-type").selectOption("composite.graph");
-    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await addNode(page, "composite.graph");
     const drone = page.locator(".node-role-composite");
     await drone.waitFor();
     await page.getByRole("button", { name: "Fit", exact: true }).click();
@@ -896,7 +932,9 @@ try {
     assert.equal(await tempo.inputValue(), "90");
     await transportState.filter({ hasText: "Running" }).waitFor();
     assert.ok(Number(await beat.innerText()) >= Number(frozenBeat));
-    assert.equal(await page.locator("#node-type option[value='output.master']").count(), 0);
+    await openNodeLibrary(page);
+    assert.equal(await libraryRow(page, "output.master").count(), 0);
+    await closeNodeLibrary(page);
     assert.equal(await articles.count(), 4);
     assert.equal(await viewport.locator(".canvas-count").innerText(), "4 nodes · 4 connections");
     assert.equal(await viewport.locator(".canvas-patch-value").innerText(), wholePatchCount);
@@ -981,9 +1019,8 @@ try {
     await beat.filter({ hasText: /^0$/ }).waitFor();
     assert.equal(await tempo.inputValue(), "90");
     // Any oscillator can be a synchronized modulation source.
-    await page.locator("#node-type").selectOption("generator.oscillator");
     const newNodeIndex = await articles.count();
-    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await addNode(page, "generator.oscillator");
     const tempoLfo = articles.nth(newNodeIndex);
     await tempoLfo.getByLabel("Timing mode").selectOption("1");
     await tempoLfo.getByLabel("Waveform").selectOption("1");
@@ -1152,10 +1189,9 @@ try {
         const world = page.locator(".canvas-world");
         await panCanvas(delta);
         await page.getByRole("button", { name: "Zoom in", exact: true }).click();
-        await page.locator("#node-type").selectOption(type);
         const transform = await world.getAttribute("style");
         const existing = await articles.evaluateAll(nodes => Object.fromEntries(nodes.map(node => [node.dataset.nodeId, node.getAttribute("style")])));
-        await page.getByRole("button", { name: "Add", exact: true }).click();
+        await addNode(page, type);
         // Boundary racks paint above ordinary nodes, so DOM order no longer
         // matches addition order in nested canvases. Identify the new node by ID.
         const added = page.locator("article[data-node-id]" + Object.keys(existing)
@@ -1218,8 +1254,7 @@ try {
     const master = responseNodes.first();
     const addResponseNode = async type => {
         const count = await responseNodes.count();
-        await responsePage.locator("#node-type").selectOption(type);
-        await responsePage.getByRole("button", { name: "Add", exact: true }).click();
+        await addNode(responsePage, type);
         const node = responseNodes.nth(count);
         await node.waitFor();
         await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
@@ -1472,8 +1507,10 @@ try {
     await responseManager.getByRole("button", { name: "Close", exact: true }).click();
     await responsePage.locator(".canvas-count").filter({ hasText: "1 nodes · 0 connections" }).waitFor();
     const noteSource = await addResponseNode("generator.note-source");
+    await openNodeLibrary(responsePage);
     for (const [key, name] of [["handpan", "Handpan"], ["bell", "Bell"], ["gong", "Gong"], ["wood", "Wood percussion"]])
-        assert.equal(await responsePage.locator(`#node-type option[value="preset.modal.playable-${key}"]`).textContent(), `Playable — ${name}`);
+        assert.equal(await libraryRow(responsePage, `preset.modal.playable-${key}`).locator(".node-library-name").textContent(), `Playable — ${name}`);
+    await closeNodeLibrary(responsePage);
     const handpan = await addResponseNode("preset.modal.playable-handpan");
     await noteSource.getByRole("button", { name: "Output: Gate (Gate)" }).waitFor();
     await noteSource.getByRole("button", { name: "Output: Velocity (Modulation)" }).waitFor();
@@ -1661,8 +1698,7 @@ try {
     // Instrument templates use the same add-node and editable nested canvas path.
     const instrumentPage = await browser.newPage();
     await instrumentPage.goto("http://127.0.0.1:" + server.address().port);
-    await instrumentPage.locator("#node-type").selectOption("preset.instrument.flute");
-    await instrumentPage.getByRole("button", { name: "Add", exact: true }).click();
+    await addNode(instrumentPage, "preset.instrument.flute");
     const flute = instrumentPage.locator(".node-role-composite").filter({ has: instrumentPage.getByRole("button", { name: "Open Flute" }) });
     await flute.getByRole("button", { name: "Input: Pitch (st) (Modulation)" }).waitFor();
     await instrumentPage.getByRole("button", { name: "Outline", exact: true }).click();
@@ -1688,8 +1724,7 @@ try {
     const annotationViewport = annotationPage.locator(".canvas-viewport");
     await annotationPage.getByRole("button", { name: "100%", exact: true }).click();
     await annotationPage.getByLabel("Current zoom", { exact: true }).filter({ hasText: /^100%$/ }).waitFor();
-    await annotationPage.locator("#node-type").selectOption("canvas.note");
-    await annotationPage.getByRole("button", { name: "Add", exact: true }).click();
+    await addNode(annotationPage, "canvas.note");
     await annotationPage.locator(".note-card").waitFor();
     await annotationPage.locator(".note-card").getByRole("button", { name: "Edit", exact: true }).click();
     const outlineDraft = annotationPage.getByRole("region", { name: "Edit canvas note" });
@@ -1810,11 +1845,13 @@ try {
     }
     await mobilePage.setViewportSize({ width: 390, height: 844 });
     await mobileBar.getByRole("button", { name: "+ Nodes", exact: true }).click();
-    await mobilePage.locator("#node-type").selectOption("generator.oscillator");
     const previousMobileCount = await mobileCanvas.locator("article[data-node-id]").count();
-    await mobilePage.getByRole("button", { name: "Add", exact: true }).click();
+    await addNode(mobilePage, "generator.oscillator");
     await mobileCanvas.locator("article[data-node-id]").nth(previousMobileCount).waitFor();
-    await mobilePage.locator("#node-type").waitFor({ state: "hidden" });
+    await mobilePage.locator(".node-library-panel").waitFor({ state: "hidden" });
+    await openNodeLibrary(mobilePage);
+    await mobilePage.locator(".node-library-results h3").first().filter({ hasText: "Recently used" }).waitFor();
+    await closeNodeLibrary(mobilePage);
     await mobileBar.getByRole("button", { name: "Edit", exact: true }).click();
     await mobilePage.getByRole("button", { name: "Undo", exact: true }).click();
     await mobileCanvas.locator("article[data-node-id]").nth(previousMobileCount).waitFor({ state: "detached" });

@@ -40,15 +40,9 @@ else
                        ZoomIn="@(() => canvasView!.ZoomIn())" ZoomOut="@(() => canvasView!.ZoomOut())"
                        Reset="@(() => canvasView!.ResetViewport())" Fit="@(() => canvasView!.FitAsync())" />
         <div class="workspace-toolbar toolbar-group workspace-nodes-tools" data-mobile-sheet="nodes" role="region" aria-label="Add nodes">
-        <MobileSheetHeader Title="Nodes" OnClose="DismissMobilePanelAsync" />
-        <label for="node-type">Add node</label>
-        <select id="node-type" @bind="SelectedType">
-            @foreach (var type in RegisteredTypes)
-            {
-                <option value="@type">@DescribeType(type)</option>
-            }
-        </select>
-        <button type="button" disabled="@(addingNode || switchingWorkspace || annotationDraft)" @onclick="AddNodeFromToolbarAsync">Add</button>
+        <NodeLibrary Open="@NodeLibraryOpen" Entries="@LibraryEntries" KnownKeys="@LibraryKeys" Disabled="@(addingNode || switchingWorkspace || annotationDraft)"
+                     OnAdd="@AddNodeFromLibraryAsync" OnClose="CloseNodeLibrary" />
+        <button type="button" class="desktop-node-library-trigger" aria-expanded="@(NodeLibraryOpen ? "true" : "false")" disabled="@(addingNode || switchingWorkspace || annotationDraft)" @onclick="ToggleNodeLibrary">Add node</button>
         @if (Canvas.Snapshot.Graph.Nodes.FirstOrDefault(node => node.TypeKey == OutputRack.NodeType) is { } outputRack)
         {
             <button type="button" class="secondary workspace-locate-output" @onclick="() => canvasView!.FocusNodeAsync(outputRack.Id)">Locate output rack</button>

@@ -5,7 +5,7 @@
 {
     <div class="node-preset-selector" @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true">
         <div class="node-preset-heading parameter-heading">
-            <label for="@InputId">Preset</label>
+            <label for="@InputId">@if (Appearance is not null) { <NodeAppearanceIcon Appearance="@Appearance" /> } Preset</label>
             <select id="@InputId" aria-label="@($"Preset for {Node.Name}")" aria-describedby="@DescriptionId"
                     @bind:get="SelectedPresetId" @bind:set="SelectPresetAsync">
                 <option value="" disabled>Modified / no preset</option>

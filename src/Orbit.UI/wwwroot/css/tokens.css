@@ -34,6 +34,20 @@
     --primitive-color-light-processor: #9a620e;
     --primitive-color-light-composite: #7151a9;
     --primitive-color-light-routing: #52657d;
+    --primitive-color-category-audio: #42aaca;
+    --primitive-color-light-category-audio: #146b85;
+    --primitive-color-category-modulation: #65cdb1;
+    --primitive-color-light-category-modulation: #16755b;
+    --primitive-color-category-effects: #ac82dc;
+    --primitive-color-light-category-effects: #69439c;
+    --primitive-color-category-sequencing: #e5b563;
+    --primitive-color-light-category-sequencing: #825806;
+    --primitive-color-category-processing: #e28b67;
+    --primitive-color-light-category-processing: #a34322;
+    --primitive-color-category-composites: #d27ba8;
+    --primitive-color-light-category-composites: #a03670;
+    --primitive-color-category-routing: #9ba9ba;
+    --primitive-color-light-category-routing: #53667c;
     --primitive-space-xxs: 0.3rem;
     --primitive-space-xs: 0.45rem;
     --primitive-space-sm: 0.5rem;
@@ -168,6 +182,11 @@
     --component-canvas-grid-dot: 1px;
     --component-canvas-toolbar-gap: var(--semantic-space-compact);
     --component-canvas-zoom-width: 4rem;
+    --component-node-library-icon-size: 1.25rem;
+    --component-node-library-row-icon-size: 2rem;
+    --component-node-library-width: 32rem;
+    --component-node-library-max-width: 95vw;
+    --component-node-library-max-height: 70dvh;
     --semantic-color-canvas: var(--primitive-color-ink-950);
     --semantic-color-surface: var(--primitive-color-ink-900);
     --semantic-color-input: var(--primitive-color-ink-950);
@@ -189,6 +208,13 @@
     --semantic-color-processor: var(--primitive-color-processor-amber);
     --semantic-color-composite: var(--primitive-color-composite-violet);
     --semantic-color-routing: var(--primitive-color-routing-slate);
+    --semantic-color-category-audio: var(--primitive-color-category-audio);
+    --semantic-color-category-modulation: var(--primitive-color-category-modulation);
+    --semantic-color-category-effects: var(--primitive-color-category-effects);
+    --semantic-color-category-sequencing: var(--primitive-color-category-sequencing);
+    --semantic-color-category-processing: var(--primitive-color-category-processing);
+    --semantic-color-category-composites: var(--primitive-color-category-composites);
+    --semantic-color-category-routing: var(--primitive-color-category-routing);
 }
 
 /* Explicit root theme; dark is the default. */
@@ -214,4 +240,11 @@
     --semantic-color-processor: var(--primitive-color-light-processor);
     --semantic-color-composite: var(--primitive-color-light-composite);
     --semantic-color-routing: var(--primitive-color-light-routing);
+    --semantic-color-category-audio: var(--primitive-color-light-category-audio);
+    --semantic-color-category-modulation: var(--primitive-color-light-category-modulation);
+    --semantic-color-category-effects: var(--primitive-color-light-category-effects);
+    --semantic-color-category-sequencing: var(--primitive-color-light-category-sequencing);
+    --semantic-color-category-processing: var(--primitive-color-light-category-processing);
+    --semantic-color-category-composites: var(--primitive-color-light-category-composites);
+    --semantic-color-category-routing: var(--primitive-color-light-category-routing);
 }
