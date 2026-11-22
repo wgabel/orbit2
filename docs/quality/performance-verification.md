@@ -65,7 +65,7 @@ Add feature-detected foreground frame/long-task monitoring, p95 frame gaps, slow
 
 ### 7.3.4 — DSP profiling and benchmark baseline
 
-First build the deterministic fixture harness (baseline, increasing oscillator counts, layered/analysis-heavy graphs, edit/lifecycle suites) and record offline throughput plus external DevTools renderer measurements. Evaluate in-app worklet timing feasibility on the pinned library/platform; ship a live DSP-only load/headroom metric only if the timing source and measured overhead meet acceptance. Otherwise preserve "unavailable" and document how to use the external/offline approach. Measure node categories only as relative profile-specific costs. Establish baseline before introducing costly resonator/modal, sample or polyphonic DSP.
+First build the deterministic fixture harness (baseline, increasing oscillator counts, layered/analysis-heavy graphs, edit/lifecycle suites) and record offline throughput plus external DevTools renderer measurements. Evaluate in-app worklet timing feasibility on the pinned library/platform; ship a live DSP-only load/headroom metric only if the timing source and measured overhead meet acceptance. Otherwise preserve "unavailable" and document how to use the external/offline approach. Measure node categories only as relative profile-specific costs. Establish baseline before introducing costly resonator/modal, sample or polyphonic DSP. Phase 7.5 stereo/unison specifically prioritizes 7.3.1, 7.3.2 and this benchmark baseline before implementation; compare mono/stereo and voice-count profiles, including graph-replacement peak load (see [7.5 performance contract](../audio/stereo-panning-and-unison.md#1-performance-first)).
 
 ### 7.3.5 — Musical timing diagnostics
 
