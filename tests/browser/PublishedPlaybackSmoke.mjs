@@ -94,6 +94,10 @@ try {
     await toolbar.getByRole("button", { name: "Zoom out" }).waitFor();
     await toolbar.getByRole("button", { name: "Add", exact: true }).waitFor();
     await toolbar.getByRole("button", { name: "Play patch" }).waitFor();
+    for (const [key, name] of [["organ", "Organ"], ["flute", "Flute"], ["brass", "Brass"],
+        ["bowed-strings", "Bowed strings"], ["didgeridoo", "Didgeridoo"]]) {
+        assert.equal(await page.locator(`#node-type option[value="preset.instrument.${key}"]`).textContent(), `Instrument — ${name}`);
+    }
     const viewport = page.locator(".canvas-viewport");
     const panCanvas = async delta => {
         const world = page.locator(".canvas-world");
@@ -1469,6 +1473,17 @@ try {
     await rhythmEditor.getByRole("button", { name: "Add port", exact: true }).click();
     await rhythmRack.getByRole("button", { name: "Output: Clock in (Clock)" }).waitFor();
     await responsePage.close();
+    // Instrument templates use the same add-node and editable nested canvas path.
+    const instrumentPage = await browser.newPage();
+    await instrumentPage.goto("http://127.0.0.1:" + server.address().port);
+    await instrumentPage.locator("#node-type").selectOption("preset.instrument.flute");
+    await instrumentPage.getByRole("button", { name: "Add", exact: true }).click();
+    const flute = instrumentPage.locator(".node-role-composite").filter({ has: instrumentPage.getByRole("button", { name: "Open Flute" }) });
+    await flute.getByRole("button", { name: "Input: Pitch (st) (Modulation)" }).waitFor();
+    await flute.getByRole("button", { name: "Open Flute" }).press("Enter");
+    await instrumentPage.getByRole("button", { name: "Output: Pitch (st) (Modulation)" }).waitFor();
+    assert.equal(await instrumentPage.getByRole("combobox", { name: "Pitch tracking (free)" }).count(), 3);
+    await instrumentPage.close();
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {
     await browser?.close();
