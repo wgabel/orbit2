@@ -2,6 +2,8 @@
 
 [Voice quality and palette](../sound-quality-and-voice-design.md) · [Composition](../generative-ambient-composition.md) · [Theory](../music-theory-and-sound-design.md) · [Production analysis](../mixing-mastering-and-analysis.md) · [Genre techniques](../genres/orbit-techniques.md)
 
+Documentation provenance: [PR #33](https://github.com/wgabel/orbit2/pull/33) (listener-validated reference and analysis, not a shipped preset or new DSP implementation).
+
 ## The principle: design relationships, not just layers
 
 **A distinctive evolving voice can emerge from the relationships between sound generators, modulation sources and processors.** Where the desired sound calls for it, design the nodes to influence one another in musically consequential ways: shared or offset modulation, overlapping partials, controlled nonlinear transformations, and independently moving timescales. A sound should be able to breathe, change character and interact with the rest of the music, rather than merely hold a note while its volume changes. The musical interest can arise without new notes, extra noise, or a large number of effects.
