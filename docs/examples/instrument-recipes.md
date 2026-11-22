@@ -14,13 +14,27 @@ For a richer musical sound palette and candidate editable instrument recipes, in
 
 #### Musical instrument synthesis and physical modelling (Phase 7.2 — partial)
 
-**Status:** shared oscillator pitch and Pitch Control (7.2.2) implemented. The instrument recipes below use existing capabilities; additional packaged instrument templates, playable note sources, keyboard pitch sequencing, resonators and polyphony are planned.
+**Status:** shared oscillator pitch and Pitch Control (7.2.2) and pitch-only keyboard sequencing (7.2.8a–c) implemented. Five sustained instrument composites (7.2.1) are in review; articulated note sources, resonators and polyphony remain planned.
 
 **Goal and scope.** Build editable synthesized instrument approximations from reusable oscillators, noise, filters, effects, envelopes, pitch controllers and resonators. Do not create a separate DSP class for each instrument. An instrument template is an ordinary composite graph with stable named rack inputs, independent state and an audio output. Preserve the possibility of opening it, inspecting its components, changing routing and saving a new configuration. This is sound design, not a claim of exact reproduction of acoustic instruments. Sample-based approximations and hybrid instruments can additionally use Phase 8 assets later.
 
 ##### Existing capabilities and worked instrument patches
 
-Start with a built-in example-patch/composite catalog using existing nodes and the existing registered template mechanism. No DSP node or event source is needed for these initial sustained versions. Examples contain documented settings and safe gain staging, not just a name on an oscillator preset. Add the Phase 6.19 notes and labels when available; independent examples can ship before that work. Starting configurations are illustrative and should be adjusted by listening and examining the shared scope/FFT, not treated as measured acoustic spectra.
+The initial built-in composite catalog uses existing nodes and the registered template mechanism. No new DSP node or event source is needed for these sustained versions. Starting configurations are illustrative and should be adjusted by listening and examining the shared scope/FFT, not treated as measured acoustic spectra.
+
+### Phase 7.2.1 — built-in instrument composites (in review)
+
+Select an **Instrument — …** entry in Add node and connect its Audio output to Master output or to a mixer. Open the composite to edit all constituent nodes, settings, and routes; adding the same preset again creates an independent graph. All five have a `Pitch (st)` modulation input (relative semitones, unity connection from Pitch Control or Note Sequencer) and a `Gain offset` input (additive normalized modulation on the final gain, base 0.5, clamped to 0–1). Zero pitch offset is A in the instrument's native register; +12 doubles every voice frequency, including detuned layers, without changing fixed body filter frequencies. Gain offset −0.5 silences the composite; unconnected gain defaults to 0.5. External envelope-controlled gain can articulate the sustained sound, but this is not yet a self-contained note-triggered or polyphonic instrument.
+
+| Catalog entry | Base tuning | Internal voice and tone construction |
+|---|---:|---|
+| Organ | A2 (110 Hz) | Five sine partials at ratios 1:2:3:4:5, amplitudes .30/.15/.10/.05/.025, light chorus and reverb. |
+| Flute | A3 (220 Hz) | Fundamental and second sine partial, quiet third triangle partial, white noise .025 through a 1.8 kHz band-pass (Q 2), reverb. |
+| Brass | A2 (110 Hz) | Saw and triangle fundamental plus a quieter octave saw, 1.45 kHz low-pass, reverb. |
+| Bowed strings | A2 (110 Hz) | Two saws (one +7 cents), octave triangle, pink noise .018 filtered at 950 Hz, 2.2 kHz body low-pass, chorus and reverb. |
+| Didgeridoo | A1 (55 Hz) | Low saw feeding parallel low-pass and vocal-formant band-passes at 460/1150 Hz, triangle fundamental, filtered brown noise .025, reverb. |
+
+The quiet filtered noise layers serve breath and bow textures rather than presenting exposed broadband hiss. The voices use conservative default levels, with a final gain of .5 and modest wet reverb. These are synthesized timbral approximations, not acoustic recordings or listening-validated replicas. Offline regression tests render the registered composites at 44.1/48 kHz, check finite non-silent audio, peak headroom and octave tracking; graph tests exercise editing, independent copies and JSON round trips. Audible character and perceived loudness still require listening in a musical context.
 
 | Instrument | Existing synthesis recipe | Later improvement |
 |---|---|---|

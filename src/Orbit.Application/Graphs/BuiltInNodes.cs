@@ -43,6 +43,7 @@ public static class BuiltInNodes
         registry.Register(CompositeNode.NodeType, DroneTemplate.Create, "Drone (composite)");
         registry.RegisterCompositePreset(DroneTemplate.LayeredPresetKey, "Drone — Layered fifth", DroneTemplate.CreateLayered);
         registry.RegisterCompositePreset(ImpactTemplate.PresetKey, "Impact — AD percussion", ImpactTemplate.Create);
+        InstrumentTemplates.Register(registry);
         return registry;
     }
 }
