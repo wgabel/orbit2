@@ -1,0 +1,65 @@
+@namespace Orbit.UI.Components.Canvas
+@using Orbit.Application.Persistence
+@using Microsoft.AspNetCore.Components.Web
+
+<section class="note-editor visual-group-editor" role="region" aria-label="Edit visual group"
+         @onpointerdown:stopPropagation="true" @onwheel:stopPropagation="true"
+         @onkeydown="HandleKey" @onkeydown:stopPropagation="true">
+    <strong>Edit visual group</strong>
+    <label>Title <input @ref="titleInput" maxlength="@SavedNote.MaxTitleLength" @bind="title" @bind:event="oninput" /></label>
+    <label>Description <textarea maxlength="@SavedNote.MaxBodyLength" @bind="description" @bind:event="oninput"></textarea></label>
+    <label>Accent <select @bind="accent">
+        @foreach (var option in Enum.GetValues<NoteAccent>())
+        {
+            <option value="@option">@option</option>
+        }
+    </select></label>
+    <fieldset class="visual-group-members">
+        <legend>Members</legend>
+        <p class="workspace-notice">Choose items explicitly. Each item can belong to one group. Items in other groups are not listed.</p>
+        @foreach (var option in Options)
+        {
+            <label @key="(option.IsNote, option.Id)">
+                <input type="checkbox" checked="@IsMember(option)" @onchange="args => SetMember(option, args)" />
+                <span>@(option.IsNote ? "Note" : "Node"): @option.Name</span>
+            </label>
+        }
+    </fieldset>
+    <div class="note-actions">
+        <button type="button" @onclick="Apply">Apply</button>
+        <button type="button" class="secondary" @onclick="OnCancel">Cancel</button>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public SavedVisualGroup Group { get; set; } = default!;
+    [Parameter] public IReadOnlyList<GroupMemberOption> Options { get; set; } = [];
+    [Parameter] public EventCallback<SavedVisualGroup> OnApply { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    private ElementReference titleInput;
+    private string title = "";
+    private string description = "";
+    private NoteAccent accent;
+    private readonly HashSet<Guid> nodes = [];
+    private readonly HashSet<Guid> notes = [];
+
+    protected override void OnInitialized()
+    {
+        title = Group.Title; description = Group.Description; accent = Group.Accent;
+        nodes.UnionWith(Group.NodeIds); notes.UnionWith(Group.NoteIds);
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await titleInput.FocusAsync(preventScroll: true);
+    }
+    private bool IsMember(GroupMemberOption option) => (option.IsNote ? notes : nodes).Contains(option.Id);
+    private void SetMember(GroupMemberOption option, ChangeEventArgs args)
+    {
+        var target = option.IsNote ? notes : nodes;
+        if (args.Value is true) target.Add(option.Id); else target.Remove(option.Id);
+    }
+    private Task Apply() => OnApply.InvokeAsync(Group with { Title = title, Description = description, Accent = accent,
+        NodeIds = Options.Where(option => !option.IsNote && nodes.Contains(option.Id)).Select(option => option.Id).ToArray(),
+        NoteIds = Options.Where(option => option.IsNote && notes.Contains(option.Id)).Select(option => option.Id).ToArray() });
+    private Task HandleKey(KeyboardEventArgs args) => args.Key == "Escape" ? OnCancel.InvokeAsync() : Task.CompletedTask;
+}

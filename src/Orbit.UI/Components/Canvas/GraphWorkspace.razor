@@ -23,6 +23,8 @@ else
             <button type="button" class="secondary" disabled="@(!Canvas.Snapshot.CanRedoAnnotations || annotationDraft || switchingWorkspace)" @onclick="RedoAnnotation">Redo annotation</button>
             <button type="button" class="secondary" disabled="@(annotationDraft || switchingWorkspace || !CanDescribeSelection)"
                     @onclick="() => canvasView!.EditSelectedDescriptionAsync()">Describe selected</button>
+            <button type="button" class="secondary" disabled="@(annotationDraft || switchingWorkspace)"
+                    @onclick="() => canvasView!.AddGroupAsync()">Create visual group</button>
         </div>
     </header>
     <div class="canvas-caption">

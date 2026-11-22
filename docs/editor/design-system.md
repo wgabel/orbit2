@@ -8,7 +8,7 @@ Related: [canvas](canvas.md) · [parameters and modulation](../core/parameters-a
 
 Every root canvas and nested canvas uses the same editor and viewport behavior. A canvas is a view over a signal graph, not a separate audio engine.
 
-Planned non-signal note cards, group frames, authored labels and responsive visibility follow the same semantic theme tokens and geometry; see [patch annotations](patch-annotations.md) for their distinct interaction contract.
+Non-signal note cards, group frames, authored labels and planned responsive visibility follow the same semantic theme tokens and geometry; see [patch annotations](patch-annotations.md) for their distinct interaction contract.
 
 - Pan freely along both axes using a background drag (middle mouse or space + drag also works over nodes). Panning must not move graph nodes.
 - Zoom with the wheel or toolbar controls, anchored at the pointer when zooming on the canvas. Show the current percentage at all times, with zoom in/out, reset to 100%, and fit-to-content controls. Use a configurable bounded zoom range (initially 25–400%).
@@ -90,7 +90,8 @@ Keep layout structure in CSS and markup, with numeric styling constants in JSON.
 | CanvasToolbar | Zoom controls, percentage readout, fit and reset |
 | NodeFrame | Shared node background, role accent, header, input/output layout and content slot |
 | NoteCard / NoteEditor | Presentation-only text, semantic accent, header, resize, collapse and isolated unscaled text draft (6.19.1, implemented) |
-| DescriptionEditor | Unscaled node alias/description or cable label editor, shared annotation draft lifecycle (6.19.2, in review) |
+| DescriptionEditor | Unscaled node alias/description or cable label editor, shared annotation draft lifecycle (6.19.2, implemented) |
+| VisualGroupFrame / VisualGroupEditor | Background frame, header drag, frame-only resize, explicit membership and unscaled metadata draft (6.19.3, in review) |
 | PortConnector | Render shape, label, typed endpoint, hit area and connection gesture |
 | ConnectionLayer / ConnectionPath | Render and hit-test Bézier connections using shared port geometry |
 | ParameterSlider | Name, unit, editable numeric base value, min/max, range slider, inline error, modulation band and effective marker |

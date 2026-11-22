@@ -25,6 +25,11 @@ public interface ICanvasStateService : IDisposable
     CanvasChangeResult RedoAnnotation();
     CanvasChangeResult SetNodeDescription(SavedNodeDescription description);
     CanvasChangeResult SetConnectionDescription(SavedConnectionDescription description);
+    CanvasChangeResult AddGroup(CanvasBounds bounds);
+    CanvasChangeResult SelectGroup(Guid id);
+    CanvasChangeResult UpdateGroup(SavedVisualGroup group);
+    CanvasChangeResult MoveGroup(Guid id, CanvasPoint delta);
+    CanvasChangeResult DeleteGroup(Guid id);
     CanvasChangeResult PanBy(CanvasPoint screenDelta);
     CanvasChangeResult ZoomAt(double zoom, CanvasPoint screenAnchor);
     CanvasChangeResult ResetViewport();
