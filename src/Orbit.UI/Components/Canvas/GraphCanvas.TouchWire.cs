@@ -10,61 +10,119 @@ namespace Orbit.UI.Components.Canvas;
 public partial class GraphCanvas
 {
     private bool assistedWire;
+    private bool offsetWireForTouch;
     private bool touchWireMoved;
     private CanvasPoint touchWireStart;
     private TouchWireGeometry? touchWireGeometry;
     private WireTarget[] wireTargets = [];
+    private readonly Dictionary<PortAddress, bool> wireCompatibility = [];
+    private PortDefinition? touchWireSource;
     private IReadOnlySet<PortAddress>? wireTargetAddresses;
-    private HashSet<PortAddress> compatibleWireAddresses = [];
     private WireAim? wireAim;
     private long touchWireRevision;
     private long touchWireLayoutRevision;
+    private long touchWireGeneration;
     private readonly WireEdgePan edgePan = new();
-    private int wireGestureGeneration;
     private bool wirePanRunning;
     private bool wirePanStopped;
     private bool wireHasPanned;
     private bool wireGeometryDirty;
     private bool wireGeometryRefreshing;
+    private DotNetObjectReference<GraphCanvas>? touchWireReference;
+    private IJSObjectReference? touchWireWatcher;
 
     private async Task PrepareWireGestureAsync(PortPointerStart start)
     {
         if (module is null || TouchWireStale) return;
+        var generation = touchWireGeneration;
         var snapshot = Snapshot;
         var source = snapshot.Graph.Nodes.FirstOrDefault(node => node.Id == start.Address.NodeId)?
             .Outputs.FirstOrDefault(port => port.Id == start.Address.PortId);
         if (source is null) return;
-        compatibleWireAddresses = snapshot.Graph.Nodes.SelectMany(node => node.Inputs
-                .Where(input => node.IsInputActive(input.Id))
-                .Select(input => (Address: new PortAddress(node.Id, input.Id), Input: input)))
-            .Where(candidate => SignalGraphValidator.RoutingRejection(start.Address, source, candidate.Address,
-                    candidate.Input, snapshot.Graph.Connections) is null)
-            .Select(candidate => candidate.Address).ToHashSet();
-        if (await RefreshWireGeometryAsync()) MaybeStartWirePan();
+        touchWireSource = source;
+        var geometry = await module.InvokeAsync<TouchWireGeometry>("measureTouchWire", viewportElement);
+        if (!IsCurrentTouchWire(generation) || wirePanStopped) return;
+        ApplyTouchWireGeometry(geometry, lastClientPoint);
+        MaybeStartWirePan();
+        touchWireReference ??= DotNetObjectReference.Create(this);
+        var watcher = await module.InvokeAsync<IJSObjectReference>("watchTouchWireGeometry",
+            viewportElement, touchWireReference, generation);
+        if (!IsCurrentTouchWire(generation) || wirePanStopped)
+            await DisposeTouchWireWatcherAsync(watcher);
+        else
+            touchWireWatcher = watcher;
     }
 
-    private async Task<bool> RefreshWireGeometryAsync()
-    {
-        if (module is null || !drawingWire || TouchWireStale) return false;
-        var generation = wireGestureGeneration;
-        var revision = Snapshot.LayoutRevision;
-        var geometry = await module.InvokeAsync<TouchWireGeometry>("measureTouchWire", viewportElement);
-        if (disposed || generation != wireGestureGeneration || !drawingWire || TouchWireStale ||
-            revision != Snapshot.LayoutRevision || !geometry.Visible.IsValid) return false;
+    private bool IsCurrentTouchWire(long generation) =>
+        !disposed && drawingWire && gesturePointer is not null &&
+        generation == touchWireGeneration && !TouchWireStale;
 
-        var previous = wireAim?.Target?.Address;
-        wireTargets = geometry.Ports.Select(port => new WireTarget(new PortAddress(port.NodeId, port.PortId), new CanvasPoint(port.X, port.Y)))
-            .Where(target => compatibleWireAddresses.Contains(target.Address)).ToArray();
+    [JSInvokable]
+    public Task TouchWireGeometryChanged(long generation, TouchWireGeometry geometry) => InvokeAsync(async () =>
+    {
+        if (!IsCurrentTouchWire(generation) || wirePanStopped || wireGeometryDirty || wireGeometryRefreshing) return;
+        // A queued browser notification may predate an edge-pan transform.
+        // After panning, read the current DOM instead of applying such a snapshot.
+        if (wireHasPanned && module is not null)
+        {
+            var revision = Snapshot.LayoutRevision;
+            geometry = await module.InvokeAsync<TouchWireGeometry>("measureTouchWire", viewportElement);
+            if (!IsCurrentTouchWire(generation) || wirePanStopped || wireGeometryDirty || wireGeometryRefreshing ||
+                revision != Snapshot.LayoutRevision) return;
+        }
+        ApplyTouchWireGeometry(geometry, lastClientPoint);
+        MaybeStartWirePan();
+        StateHasChanged();
+    });
+
+    private void ApplyTouchWireGeometry(TouchWireGeometry geometry, CanvasPoint finger)
+    {
+        if (!geometry.Visible.IsValid)
+        {
+            touchWireGeometry = null;
+            wireAim = null;
+            wireTargets = [];
+            wireTargetAddresses = null;
+            draftEnd = null;
+            return;
+        }
+        wireTargets = geometry.Ports.Select(port => new WireTarget(
+                new PortAddress(port.NodeId, port.PortId), new CanvasPoint(port.X, port.Y)))
+            .Where(target => IsCompatibleWireTarget(target.Address)).ToArray();
         touchWireGeometry = geometry;
         wireTargetAddresses = wireTargets.Select(target => target.Address).ToHashSet();
-        wireGeometryDirty = false;
-        if (assistedWire)
+        if (assistedWire) UpdateTouchWire(finger);
+        else if (touchWireMoved) UpdateMouseWire(finger, Snapshot.Viewport);
+    }
+
+    private bool IsCompatibleWireTarget(PortAddress target)
+    {
+        if (wireCompatibility.TryGetValue(target, out var compatible)) return compatible;
+        // Cache validation only for measured inputs, including newly exposed
+        // ones. Do not repeatedly traverse the graph or validate offscreen ports.
+        var node = Snapshot.Graph.Nodes.FirstOrDefault(node => node.Id == target.NodeId);
+        var input = node?.Inputs.FirstOrDefault(port => port.Id == target.PortId);
+        compatible = node is not null && input is not null && node.IsInputActive(input.Id) &&
+            pendingSource is PortAddress source && touchWireSource is { } output &&
+            SignalGraphValidator.RoutingRejection(source, output, target, input, Snapshot.Graph.Connections) is null;
+        wireCompatibility[target] = compatible;
+        return compatible;
+    }
+
+    private async Task<bool> RefreshTouchWireForReleaseAsync(CanvasPoint finger)
+    {
+        var generation = touchWireGeneration;
+        if (!IsCurrentTouchWire(generation)) return false;
+        wirePanStopped = true;
+        lastClientPoint = finger;
+        if (module is not null && touchWireSource is not null)
         {
-            var prior = wireTargets.FirstOrDefault(target => target.Address == previous);
-            if (wireAim is { } aim) wireAim = aim with { Target = prior };
-            if (UpdateTouchWire(lastClientPoint) && module is not null) await module.InvokeVoidAsync("touchWireFeedback");
+            var geometry = await module.InvokeAsync<TouchWireGeometry>("measureTouchWire", viewportElement);
+            if (!IsCurrentTouchWire(generation)) return false;
+            ApplyTouchWireGeometry(geometry, finger);
         }
-        else if (touchWireMoved) UpdateMouseWire(lastClientPoint, Snapshot.Viewport);
+        else
+            UpdateTouchWire(finger);
         return true;
     }
 
@@ -72,16 +130,17 @@ public partial class GraphCanvas
     {
         touchWireMoved |= TouchWireAssist.HasMoved(touchWireStart, finger);
         if (!touchWireMoved || touchWireGeometry is not { } geometry) return false;
-        var previous = wireAim?.Target;
-        wireAim = TouchWireAssist.Resolve(finger, geometry.Visible, wireTargets, previous);
+        var previousAddress = wireAim?.Target?.Address;
+        // The same address may have moved since the previous measurement.
+        var previous = wireTargets.FirstOrDefault(target => target.Address == previousAddress);
+        wireAim = TouchWireAssist.Resolve(finger, geometry.Visible, wireTargets, previous, offsetWireForTouch);
         var point = wireAim.Point.Subtract(new CanvasPoint(geometry.Left, geometry.Top));
         draftEnd = Snapshot.Viewport.ScreenToWorld(point);
-        return wireAim.Target is not null && wireAim.Target != previous;
+        return wireAim.Target is not null && wireAim.Target.Address != previousAddress;
     }
 
     private bool TouchWireStale => drawingWire &&
         (touchWireRevision != Snapshot.GraphRevision || touchWireLayoutRevision != Snapshot.LayoutRevision);
-
     private void UpdateMouseWire(CanvasPoint pointer, CanvasViewport viewport)
     {
         if (touchWireGeometry is { } geometry)
@@ -98,27 +157,29 @@ public partial class GraphCanvas
         }
         if (wirePanRunning) return;
         wirePanRunning = true;
-        _ = RunWirePanAsync(wireGestureGeneration);
+        _ = RunWirePanAsync(touchWireGeneration);
     }
 
-    private async Task RunWirePanAsync(int generation)
+    private async Task RunWirePanAsync(long generation)
     {
         var clock = Stopwatch.StartNew();
         var last = clock.Elapsed.TotalSeconds;
         try
         {
-            while (!disposed && generation == wireGestureGeneration && drawingWire && !wirePanStopped && !TouchWireStale && touchWireGeometry is { } geometry)
+            while (IsCurrentTouchWire(generation) && !wirePanStopped && touchWireGeometry is { } geometry)
             {
                 var now = clock.Elapsed.TotalSeconds;
                 var elapsed = Math.Clamp(now - last, 0, 0.064);
                 last = now;
                 if (WireEdgePan.Velocity(geometry.Visible, lastClientPoint) == CanvasPoint.Zero) { edgePan.Reset(); break; }
-                var snapped = assistedWire && wireAim?.Target is not null;
-                if (!assistedWire && module is not null)
+                // Both lifted touch and unshifted mouse/pen use the same snap target.
+                // A precise desktop drop on the wider button also holds the viewport.
+                var snapped = wireAim?.Target is not null;
+                if (!snapped && !offsetWireForTouch && module is not null && !wireGeometryDirty && !wireGeometryRefreshing)
                 {
                     var hit = await module.InvokeAsync<PortAddress?>("findInputPortAt", viewportElement, lastClientPoint.X, lastClientPoint.Y);
-                    if (disposed || generation != wireGestureGeneration || !drawingWire || wirePanStopped || TouchWireStale) break;
-                    snapped = hit is PortAddress address && compatibleWireAddresses.Contains(address);
+                    if (!IsCurrentTouchWire(generation) || wirePanStopped) break;
+                    snapped = hit is PortAddress address && wireTargetAddresses?.Contains(address) == true;
                 }
                 var velocity = edgePan.Update(geometry.Visible, lastClientPoint, Environment.TickCount64, snapped);
                 // Wait for the rendered transform and real DOM hit-test before
@@ -129,21 +190,18 @@ public partial class GraphCanvas
                     var delta = next.Pan.Subtract(Snapshot.Viewport.Pan);
                     if (next != Snapshot.Viewport)
                     {
-                        wireHasPanned = true;
+                        wireHasPanned = wireGeometryDirty = true;
                         var prior = wireAim?.Target?.Address;
                         if (assistedWire)
                         {
-                            wireGeometryDirty = true;
                             wireTargets = wireTargets.Select(target => target with { Point = target.Point.Add(delta) })
                                 .Where(target => TouchWireAssist.Contains(geometry.Visible, target.Point)).ToArray();
                             wireTargetAddresses = wireTargets.Select(target => target.Address).ToHashSet();
                             wireAim = TouchWireAssist.Resolve(lastClientPoint, geometry.Visible, wireTargets,
-                                wireTargets.FirstOrDefault(target => target.Address == prior));
+                                wireTargets.FirstOrDefault(target => target.Address == prior), offsetWireForTouch);
                             draftEnd = next.ScreenToWorld(wireAim.Point.Subtract(new CanvasPoint(geometry.Left, geometry.Top)));
                         }
                         else UpdateMouseWire(lastClientPoint, next);
-                        // Layout revision advances synchronously for this owned
-                        // viewport change; all other layout/graph changes cancel.
                         touchWireLayoutRevision = Snapshot.LayoutRevision + 1;
                         State.SetViewport(next);
                     }
@@ -151,26 +209,30 @@ public partial class GraphCanvas
                 await Task.Delay(33);
             }
         }
-        catch (JSException) { if (generation == wireGestureGeneration) { pendingSource = null; EndGesture(); } }
-        finally { if (generation == wireGestureGeneration) wirePanRunning = false; }
+        catch (JSException) { if (generation == touchWireGeneration) { pendingSource = null; EndGesture(); } }
+        finally { if (generation == touchWireGeneration) wirePanRunning = false; }
     }
 
     private async Task RefreshPannedWireAfterRenderAsync()
     {
-        if (!wireGeometryDirty || wireGeometryRefreshing || !drawingWire || wirePanStopped) return;
-        var generation = wireGestureGeneration;
+        if (!wireGeometryDirty || wireGeometryRefreshing || !drawingWire || wirePanStopped || module is null) return;
+        var generation = touchWireGeneration;
+        var revision = Snapshot.LayoutRevision;
         wireGeometryRefreshing = true;
         try
         {
-            if (await RefreshWireGeometryAsync()) await InvokeAsync(StateHasChanged);
-            else if (generation == wireGestureGeneration && drawingWire && !wirePanStopped)
-            {
-                pendingSource = null;
-                EndGesture();
-                await InvokeAsync(StateHasChanged);
-            }
+            var geometry = await module.InvokeAsync<TouchWireGeometry>("measureTouchWire", viewportElement);
+            // A release or takeover owns the gesture now; never overwrite its
+            // fresh release measurement with an older render's geometry.
+            if (!IsCurrentTouchWire(generation) || wirePanStopped || revision != Snapshot.LayoutRevision) return;
+            var previous = wireAim?.Target?.Address;
+            ApplyTouchWireGeometry(geometry, lastClientPoint);
+            wireGeometryDirty = false;
+            if (offsetWireForTouch && wireAim?.Target is { } target && target.Address != previous)
+                await module.InvokeVoidAsync("touchWireFeedback");
+            await InvokeAsync(StateHasChanged);
         }
-        finally { if (generation == wireGestureGeneration) wireGeometryRefreshing = false; }
+        finally { if (generation == touchWireGeneration) wireGeometryRefreshing = false; }
     }
 
     private string WireTargetStyle(CanvasPoint point)
@@ -187,15 +249,31 @@ public partial class GraphCanvas
 
     private void ClearTouchWire()
     {
-        wireGestureGeneration++;
+        touchWireGeneration++;
         edgePan.Reset();
         wirePanRunning = wirePanStopped = wireHasPanned = wireGeometryDirty = wireGeometryRefreshing = false;
-        compatibleWireAddresses = [];
-        assistedWire = touchWireMoved = false;
+        assistedWire = touchWireMoved = offsetWireForTouch = false;
         wireAim = null;
         wireTargets = [];
+        wireCompatibility.Clear();
+        touchWireSource = null;
         wireTargetAddresses = null;
         touchWireGeometry = null;
+        if (touchWireWatcher is { } watcher)
+        {
+            touchWireWatcher = null;
+            _ = DisposeTouchWireWatcherAsync(watcher);
+        }
+    }
+
+    private static async Task DisposeTouchWireWatcherAsync(IJSObjectReference watcher)
+    {
+        try
+        {
+            await watcher.InvokeVoidAsync("dispose");
+            await watcher.DisposeAsync();
+        }
+        catch (JSDisconnectedException) { }
     }
 }
 

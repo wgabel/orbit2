@@ -374,7 +374,8 @@ public partial class GraphCanvas : IAsyncDisposable
         ClearTouchWire();
         pendingSource = start.Address;
         draftEnd = PortPoint(start.Address);
-        assistedWire = start.Pointer.PointerType == "touch";
+        assistedWire = start.Pointer.PointerType is "touch" or "mouse" or "pen";
+        offsetWireForTouch = start.Pointer.PointerType == "touch";
         touchWireStart = new CanvasPoint(start.Pointer.ClientX, start.Pointer.ClientY);
         touchWireRevision = Snapshot.GraphRevision;
         touchWireLayoutRevision = Snapshot.LayoutRevision;
@@ -398,6 +399,7 @@ public partial class GraphCanvas : IAsyncDisposable
     {
         if (MovePinch(args)) return;
         if (gesturePointer != args.PointerId) return;
+        if (drawingWire && wirePanStopped) return;
         var current = new CanvasPoint(args.ClientX, args.ClientY);
         CheckTapMovement(current);
         var delta = current.Subtract(lastClientPoint);
@@ -420,7 +422,7 @@ public partial class GraphCanvas : IAsyncDisposable
             touchWireMoved |= TouchWireAssist.HasMoved(touchWireStart, current);
             if (assistedWire)
             {
-                if (UpdateTouchWire(current) && module is not null)
+                if (UpdateTouchWire(current) && offsetWireForTouch && module is not null)
                     await module.InvokeVoidAsync("touchWireFeedback");
             }
             else
@@ -455,33 +457,41 @@ public partial class GraphCanvas : IAsyncDisposable
         }
         if (assistedWire)
         {
-            wirePanStopped = true;
-            var generation = wireGestureGeneration;
-            lastClientPoint = new CanvasPoint(args.ClientX, args.ClientY);
-            // After auto-pan, require an actual visible, unobscured DOM target
-            // at release rather than trusting the projected preview.
-            var geometryValid = !TouchWireStale && (!wireHasPanned || await RefreshWireGeometryAsync());
-            if (generation != wireGestureGeneration || gesturePointer != args.PointerId) return;
-            if (geometryValid) UpdateTouchWire(lastClientPoint);
-            var snappedTarget = geometryValid ? wireAim?.Target : null;
+            // Stop edge pan and remeasure even if no pan took place: layout
+            // may have changed since the last observer notification.
+            if (!await RefreshTouchWireForReleaseAsync(new CanvasPoint(args.ClientX, args.ClientY))) return;
+            var snappedTarget = TouchWireStale ? null : wireAim?.Target;
+            // A precise mouse/pen drop on the wider input button remains valid
+            // even when its marker is farther than the magnetic radius.
+            PortAddress? directTarget = null;
+            if (snappedTarget is null && touchWireMoved && !offsetWireForTouch && module is not null)
+            {
+                var generation = touchWireGeneration;
+                var hit = await module.InvokeAsync<PortAddress?>("findInputPortAt", viewportElement, args.ClientX, args.ClientY);
+                if (!IsCurrentTouchWire(generation)) return;
+                if (hit is PortAddress address && wireTargetAddresses?.Contains(address) == true)
+                    directTarget = address;
+            }
             var moved = touchWireMoved;
             EndGesture();
             if (snappedTarget is not null)
                 await ActivatePortAsync(snappedTarget.Address);
+            else if (directTarget is PortAddress direct)
+                await ActivatePortAsync(direct);
             else if (moved)
                 pendingSource = null;
             return;
         }
         if (drawingWire)
         {
-            wirePanStopped = true;
-            var generation = wireGestureGeneration;
+            var generation = touchWireGeneration;
+            if (!await RefreshTouchWireForReleaseAsync(new CanvasPoint(args.ClientX, args.ClientY))) return;
             var target = module is null || TouchWireStale ? null :
                 await module.InvokeAsync<PortAddress?>("findInputPortAt", viewportElement, args.ClientX, args.ClientY);
-            if (generation != wireGestureGeneration || gesturePointer != args.PointerId) return;
+            if (!IsCurrentTouchWire(generation) || gesturePointer != args.PointerId) return;
             var panned = wireHasPanned;
             var valid = !TouchWireStale && target is PortAddress address &&
-                (!panned || compatibleWireAddresses.Contains(address));
+                (!panned || wireTargetAddresses?.Contains(address) == true);
             EndGesture();
             if (valid && target is PortAddress destination) await ActivatePortAsync(destination);
             else if (panned) pendingSource = null;
@@ -700,6 +710,11 @@ public partial class GraphCanvas : IAsyncDisposable
     {
         disposed = true;
         subscription?.Dispose();
+        var watcher = touchWireWatcher;
+        touchWireWatcher = null;
+        ClearTouchWire();
+        if (watcher is not null) await DisposeTouchWireWatcherAsync(watcher);
+        touchWireReference?.Dispose();
         await DisposeContextAsync();
         if (module is not null)
         {

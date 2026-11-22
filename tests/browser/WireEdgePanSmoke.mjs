@@ -123,7 +123,17 @@ export async function verifyWireEdgePan(browser, url) {
             }, null, { timeout: 10000 });
             const end = await center(target);
             await move({ x: end.x, y: fingerY(end.y) });
-            if (touch) await canvas.locator('.touch-wire-label').filter({ hasText: /→ Amplitude/ }).waitFor();
+            await canvas.locator('.touch-wire-label').filter({ hasText: /→ Amplitude/ }).waitFor();
+            // The corrected snap overlay must track the actual socket even
+            // after edge-pan changes the world transform, on both devices.
+            await page.waitForFunction(() => {
+                const marker = document.querySelector('[data-edge-pan-target]');
+                const ring = document.querySelector('.touch-wire-target.is-snapped');
+                if (!marker || !ring || ring.dataset.targetPort !== marker.dataset.portId) return false;
+                const a = marker.getBoundingClientRect(), b = ring.getBoundingClientRect();
+                return Math.hypot(a.x + a.width / 2 - b.x - b.width / 2,
+                    a.y + a.height / 2 - b.y - b.height / 2) <= 2;
+            });
             await page.waitForTimeout(80);
             const panned = await currentViewport(page);
             assert.equal(panned.zoom, before.zoom);
