@@ -157,6 +157,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pages: write
       id-token: write
     concurrency:
@@ -166,7 +167,23 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # Builds finish independently. Check the head only after this job acquires
+      # the deployment lock; otherwise a slower old build could roll Pages back.
+      - name: Check current main revision
+        id: current-main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          latest="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          if [[ "$latest" == "$GITHUB_SHA" ]]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping stale Pages build $GITHUB_SHA; current main is $latest"
+          fi
       - uses: actions/configure-pages@v5
+        if: steps.current-main.outputs.deploy == 'true'
       - name: Deploy to GitHub Pages
+        if: steps.current-main.outputs.deploy == 'true'
         id: deployment
         uses: actions/deploy-pages@v4

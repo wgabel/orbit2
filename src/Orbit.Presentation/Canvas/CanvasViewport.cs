@@ -60,4 +60,21 @@ public sealed record CanvasViewport
         var worldAnchor = ScreenToWorld(anchor);
         return new CanvasViewport(anchor.Subtract(worldAnchor.Scale(nextZoom)), nextZoom);
     }
+
+    /// <summary>Map the previous two-finger midpoint to its new location while scaling.</summary>
+    public CanvasViewport Pinch(CanvasPoint previousFirst, CanvasPoint previousSecond,
+        CanvasPoint first, CanvasPoint second)
+    {
+        var previous = previousFirst.Add(previousSecond).Scale(0.5);
+        var current = first.Add(second).Scale(0.5);
+        static double Distance(CanvasPoint a, CanvasPoint b)
+        {
+            var delta = a.Subtract(b);
+            return Math.Sqrt(delta.X * delta.X + delta.Y * delta.Y);
+        }
+        var oldDistance = Distance(previousFirst, previousSecond);
+        var distance = Distance(first, second);
+        var ratio = oldDistance < 1 || distance < 1 ? 1 : distance / oldDistance;
+        return ZoomAt(Zoom * ratio, previous).PanBy(current.Subtract(previous));
+    }
 }

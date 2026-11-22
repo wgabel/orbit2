@@ -59,6 +59,50 @@ public sealed class CanvasViewportTests
     }
 
     [Fact]
+    public void PinchScalesAndMovesTheWorldAnchorAtomically()
+    {
+        var viewport = new CanvasViewport(new CanvasPoint(-40, 60), 1);
+        var world = viewport.ScreenToWorld(new CanvasPoint(100, 100));
+        var next = viewport.Pinch(new(50, 100), new(150, 100), new(25, 130), new(225, 130));
+        Assert.Equal(2d, next.Zoom);
+        Assert.Equal(new CanvasPoint(125, 130), next.WorldToScreen(world));
+        var pan = next.Pinch(new(25, 130), new(225, 130), new(45, 100), new(245, 100));
+        Assert.Equal(2d, pan.Zoom);
+        Assert.Equal(new CanvasPoint(145, 100), pan.WorldToScreen(world));
+    }
+
+    [Theory]
+    [InlineData(4, 250, 4)]
+    [InlineData(0.25, 20, 0.25)]
+    public void PinchClampsWhileStillFollowingMidpoint(double zoom, double distance, double expected)
+    {
+        var viewport = new CanvasViewport(CanvasPoint.Zero, zoom);
+        var world = viewport.ScreenToWorld(new CanvasPoint(100, 100));
+        var next = viewport.Pinch(new(50, 100), new(150, 100),
+            new(130 - distance / 2, 120), new(130 + distance / 2, 120));
+        Assert.Equal(expected, next.Zoom);
+        Assert.Equal(new CanvasPoint(130, 120), next.WorldToScreen(world));
+    }
+
+    [Fact]
+    public void ThreeNearbyTapsFitButSlowMixedOrInterruptedSequencesDoNot()
+    {
+        var taps = new CanvasFitTaps();
+        Assert.False(taps.Register(0, new(10, 10), "touch"));
+        Assert.False(taps.Register(120, new(11, 10), "touch"));
+        Assert.True(taps.Register(240, new(12, 10), "touch"));
+        Assert.False(taps.Register(300, new(10, 10), "touch"));
+        Assert.False(taps.Register(950, new(10, 10), "touch"));
+        Assert.False(taps.Register(1000, new(80, 80), "touch"));
+        Assert.False(taps.Register(1100, new(80, 80), "mouse"));
+        Assert.False(taps.Register(1200, new(80, 80), "mouse"));
+        taps.Reset();
+        Assert.False(taps.Register(1300, new(80, 80), "mouse"));
+        Assert.False(taps.Register(1400, new(80, 80), "mouse"));
+        Assert.True(taps.Register(1500, new(80, 80), "mouse"));
+    }
+
+    [Fact]
     public void PlacesNewNodesInUnoccupiedWorldGridSlots()
     {
         var placement = new GridNodePlacementPolicy(columnSpacing: 100, rowSpacing: 80, columns: 2);

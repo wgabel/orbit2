@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { fitCanvas } from "./CanvasNavigationSmoke.mjs";
 
 // Use real Chromium touch events, not mouse emulation or synthetic DOM events.
 export async function verifyTouchWire(browser, url) {
@@ -12,7 +13,7 @@ export async function verifyTouchWire(browser, url) {
             const output = nodes.nth(0).locator(".port-output .port-marker");
             const amplitude = nodes.nth(1).locator('.port-input[aria-label^="Input: Amplitude"]');
             const frequency = nodes.nth(1).locator('.port-input[aria-label^="Input: Frequency"]');
-            await page.getByRole("button", { name: "Fit", exact: true }).click();
+            await fitCanvas(page);
             await page.waitForFunction(() => {
                 const viewport = document.querySelector(".canvas-viewport");
                 const frames = viewport.querySelectorAll("article[data-node-id]");
@@ -57,6 +58,18 @@ export async function verifyTouchWire(browser, url) {
             await send("touchCancel");
             await label.waitFor({ state: "detached" });
             assert.equal(await wires.count(), 3);
+            // A second finger on the aimed input must cancel the draft, not
+            // accidentally activate the port or commit the snapped wire.
+            await aim();
+            await cdp.send("Input.dispatchTouchEvent", {
+                type: "touchStart", touchPoints: [{ ...end, id: 1, radiusX: 10, radiusY: 10 },
+                    { ...target, id: 2, radiusX: 10, radiusY: 10 }]
+            });
+            await page.waitForFunction(() => document.querySelector(".canvas-viewport").dataset.pinching === "true");
+            await label.waitFor({ state: "detached" });
+            await send("touchEnd");
+            await page.waitForFunction(() => document.querySelector(".canvas-viewport").dataset.pinching === "false");
+            assert.equal(await wires.count(), 3, "Pinch takeover must not commit the wire");
             await aim();
             await send("touchEnd");
             await label.waitFor({ state: "detached" });

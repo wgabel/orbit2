@@ -6,6 +6,7 @@ import { readFile } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { verifyTouchWire } from "./TouchWireSmoke.mjs";
+import { fitCanvas, resetCanvas, zoomStep, tripleTapFit, verifyCanvasNavigation } from "./CanvasNavigationSmoke.mjs";
 
 const { chromium } = await import(pathToFileURL(resolve(process.env.ORBIT_PLAYWRIGHT_DIR, "index.mjs")));
 const root = resolve("publish/wwwroot");
@@ -113,7 +114,7 @@ try {
     // Primary controls share one compact toolbar; the canvas consumes the
     // remaining screen height rather than using a fixed viewport fraction.
     const toolbar = page.locator(".canvas-caption");
-    await toolbar.getByRole("button", { name: "Zoom out" }).waitFor();
+    assert.equal(await toolbar.locator(".canvas-toolbar, .canvas-zoom").count(), 0);
     await toolbar.getByRole("button", { name: "Add node", exact: true }).waitFor();
     await openNodeLibrary(page);
     await toolbar.getByRole("button", { name: "Play patch" }).waitFor();
@@ -637,7 +638,7 @@ try {
     await articles.nth(1).locator(".node-header > span").click();
     const compact = articles.nth(1).locator(".node-visualization-panel");
     await compact.getByRole("button", { name: "Show plot" }).click();
-    await page.getByRole("button", { name: "Fit", exact: true }).click();
+    await fitCanvas(page);
     await compact.locator("[data-scope-status]").filter({ hasText: /Live/ }).waitFor({ timeout: 15000 });
     await assertCompactPlotFits(compact);
     await panCanvas(4000);
@@ -715,7 +716,7 @@ try {
     assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
     await compact.getByRole("button", { name: "Hide plot" }).click();
     await compact.locator("canvas").waitFor({ state: "detached" });
-    await page.getByRole("button", { name: "Fit", exact: true }).click();
+    await fitCanvas(page);
     // Select the existing modulation wire via its keyboard-accessible badge,
     // even if a node covers it, then edit depth and retain its identity.
     const wire = page.locator(".connection-modulation .connection-hit");
@@ -751,8 +752,7 @@ try {
     // Fit may enter the automatic compact annotation band. At full zoom the
     // authored tooltip is visible, and titles-only suppresses it without
     // changing the numeric badge, selected cable, or pending amount draft.
-    await page.getByRole("button", { name: "100%", exact: true }).click();
-    await page.getByLabel("Current zoom", { exact: true }).filter({ hasText: /^100%$/ }).waitFor();
+    await resetCanvas(page);
     const labeledBadge = badges.filter({ hasText: /^\+100 Hz$/ });
     await labeledBadge.and(page.locator('[title*="Brightness sweep"]')).waitFor();
     const annotationDisplay = viewport.getByLabel("Annotations", { exact: true });
@@ -762,7 +762,7 @@ try {
     assert.equal(await amountEditor.getByText("Brightness sweep", { exact: true }).count(), 1);
     await annotationDisplay.selectOption("Show");
     await labeledBadge.and(page.locator('[title*="Brightness sweep"]')).waitFor();
-    await page.getByRole("button", { name: "Fit", exact: true }).click();
+    await fitCanvas(page);
     await page.getByRole("button", { name: "Undo annotation", exact: true }).click();
     assert.equal(await amountEditor.getByText("Brightness sweep", { exact: true }).count(), 0);
     assert.equal(await amount.inputValue(), "75");
@@ -906,7 +906,7 @@ try {
     await addNode(page, "composite.graph");
     const drone = page.locator(".node-role-composite");
     await drone.waitFor();
-    await page.getByRole("button", { name: "Fit", exact: true }).click();
+    await fitCanvas(page);
     const masterWire = page.locator(".connection-audio .connection-hit").nth(1);
     await selectVisibleWire(masterWire);
     await page.getByRole("button", { name: "Delete selected" }).click();
@@ -953,7 +953,7 @@ try {
     await page.getByRole("button", { name: "Locate output rack" }).click();
     await outputRack.and(page.locator(".node-selected")).waitFor();
     assert.match(await outputRack.getAttribute("class"), /node-selected/);
-    await page.getByRole("button", { name: "Fit", exact: true }).click();
+    await fitCanvas(page);
     const rack = articles.filter({ hasText: "Input Parameters Rack" });
     await rack.getByRole("button", { name: "Output: Pitch (Modulation)" }).waitFor();
     const childFrequency = page.getByRole("spinbutton", { name: "Frequency (Hz)" });
@@ -975,7 +975,7 @@ try {
     await childFrequency.fill("330");
     await status.filter({ hasText: new RegExp(`^Playing revision ${droneRevision + 1}$`) }).waitFor({ timeout: 15000 });
     assert.equal(await play.isEnabled(), false);
-    await page.getByRole("button", { name: "Zoom out" }).click();
+    await zoomStep(page, -1);
     const childTransform = await page.locator(".canvas-world").getAttribute("style");
     await breadcrumbs.getByRole("button", { name: "Patch" }).click();
     await page.locator(".node-role-composite").getByRole("button", { name: "Open Drone" }).waitFor();
@@ -1055,7 +1055,7 @@ try {
     // Wait for the debounced save before closing the editor, then restore a nested workspace.
     await drone.getByRole("button", { name: "Open Drone" }).click();
     await childFrequency.waitFor();
-    await page.getByRole("button", { name: "Zoom out" }).click();
+    await zoomStep(page, -1);
     const savedTransform = await page.locator(".canvas-world").getAttribute("style");
     const readSavedWorkspace = async () => page.evaluate(async () => {
         const database = await new Promise((resolve, reject) => {
@@ -1194,7 +1194,7 @@ try {
     const addInPannedView = async (type, delta) => {
         const world = page.locator(".canvas-world");
         await panCanvas(delta);
-        await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+        await zoomStep(page, 1);
         const transform = await world.getAttribute("style");
         const existing = await articles.evaluateAll(nodes => Object.fromEntries(nodes.map(node => [node.dataset.nodeId, node.getAttribute("style")])));
         await addNode(page, type);
@@ -1230,7 +1230,7 @@ try {
     await viewport.locator(".canvas-count").filter({ hasText: /^4 nodes · 4 connections$/ }).waitFor();
     await addInPannedView("generator.noise", 3200);
     // A custom exposed port can have a much longer label than built-in signals.
-    await page.getByRole("button", { name: "Fit", exact: true }).click();
+    await fitCanvas(page);
     await rack.getByRole("button", { name: "Edit ports" }).click();
     const longSignal = "Slow atmospheric modulation for the resonant filter in this drone";
     await editor.getByLabel("New port name").fill(longSignal);
@@ -1263,7 +1263,7 @@ try {
         await addNode(responsePage, type);
         const node = responseNodes.nth(count);
         await node.waitFor();
-        await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
+        await fitCanvas(responsePage);
         return node;
     };
     const responseOsc = await addResponseNode("generator.oscillator");
@@ -1382,7 +1382,7 @@ try {
     await rangeB.filter({ hasText: "330–330 Hz" }).waitFor();
     assert.equal(await frequencyA.inputValue(), "110");
     assert.equal(await frequencyB.inputValue(), "165");
-    await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
+    await fitCanvas(responsePage);
     await responsePage.getByRole("button", { name: "Play patch" }).click();
     await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
     const waitForLiveHz = async (voice, expected) => {
@@ -1414,7 +1414,7 @@ try {
         await sequencer.getByRole("button", { name: "Output: Pitch (Modulation)" }).press("Enter");
         await voice.getByRole("button", { name: "Input: Pitch (Modulation)" }).press("Enter");
     }
-    await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
+    await fitCanvas(responsePage);
     await sequencer.locator(".node-header > span").click();
     const performance = responsePage.getByRole("region", { name: "Performance keyboard" });
     await responsePage.bringToFront();
@@ -1529,7 +1529,7 @@ try {
     await handpan.getByRole("button", { name: "Output: Audio (Audio)" }).press("Enter");
     await master.getByRole("button", { name: "Input: Audio (Audio)" }).press("Enter");
     await responsePage.locator(".canvas-count").filter({ hasText: "3 nodes · 4 connections" }).waitFor();
-    await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
+    await fitCanvas(responsePage);
     await noteSource.locator(".node-header > span").click();
     await responsePage.locator('.performance-keyboard[data-keyboard-ready="true"]').waitFor();
     await performance.getByRole("button", { name: "Collapse keyboard" }).waitFor();
@@ -1538,10 +1538,13 @@ try {
     await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
     const noteRevision = await responseStatus.innerText();
     // Ordinary node selection must not discard the keyboard target.
-    await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
+    await fitCanvas(responsePage);
     await handpan.locator(".node-header > span").click();
     assert.equal(await performance.getAttribute("data-target-node"), await noteSource.getAttribute("data-node-id"));
     await performance.focus();
+    await responsePage.keyboard.down("f");
+    await performance.locator('[data-live-pitch-offset="-4"]').waitFor();
+    await responsePage.keyboard.up("f");
     await responsePage.keyboard.down("a");
     await performance.locator('[data-live-pitch-offset="-9"]').waitFor();
     await responsePage.keyboard.down("s");
@@ -1617,7 +1620,7 @@ try {
     await performance.getByRole("button", { name: "Release all notes" }).click();
     // Navigate inside the played instrument; the root note source stays targeted.
     const noteTargetId = await noteSource.getAttribute("data-node-id");
-    await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
+    await fitCanvas(responsePage);
     await handpan.getByRole("button", { name: /^Open / }).click();
     assert.equal(await performance.getAttribute("data-target-node"), noteTargetId);
     await performance.getByRole("button", { name: "Play C5 (A)" }).click();
@@ -1627,7 +1630,7 @@ try {
     await responsePage.getByRole("button", { name: "Stop", exact: true }).click();
     await responseStatus.filter({ hasText: /Ready/ }).waitFor();
     const otherNoteSource = await addResponseNode("generator.note-source");
-    await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
+    await fitCanvas(responsePage);
     await otherNoteSource.locator(".node-header > span").click();
     await responsePage.waitForFunction(id => document.querySelector(".performance-keyboard")?.dataset.targetNode === id, await otherNoteSource.getAttribute("data-node-id"));
 
@@ -1672,7 +1675,7 @@ try {
     await expandedEnvelope.locator('.envelope-preview[data-envelope-mode="Ad"]').waitFor();
     await expandedEnvelope.getByRole("button", { name: "Close scope" }).press("Enter");
     await envelopePreview.waitFor();
-    await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
+    await fitCanvas(responsePage);
     await responsePage.getByRole("button", { name: "Play patch" }).click();
     await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
     await ampSlider.getByLabel("Live effective value").waitFor({ timeout: 15000 });
@@ -1810,8 +1813,7 @@ try {
     const annotationPage = await browser.newPage();
     await annotationPage.goto("http://127.0.0.1:" + server.address().port);
     const annotationViewport = annotationPage.locator(".canvas-viewport");
-    await annotationPage.getByRole("button", { name: "100%", exact: true }).click();
-    await annotationPage.getByLabel("Current zoom", { exact: true }).filter({ hasText: /^100%$/ }).waitFor();
+    await resetCanvas(annotationPage);
     await addNode(annotationPage, "canvas.note");
     await annotationPage.locator(".note-card").waitFor();
     await annotationPage.locator(".note-card").getByRole("button", { name: "Edit", exact: true }).click();
@@ -1836,8 +1838,7 @@ try {
     await annotationViewport.getByRole("button", { name: "Reveal group: Visual group", exact: true }).waitFor();
     await annotationMode.selectOption("Show");
     for (let i = 1; i <= 6; i++) {
-        await annotationPage.getByRole("button", { name: "Zoom out", exact: true }).click();
-        await annotationPage.getByLabel("Current zoom", { exact: true }).filter({ hasText: new RegExp(`^${Math.round(100 * 0.8 ** i)}%$`) }).waitFor();
+        await zoomStep(annotationPage, -1);
     }
     const markerButton = annotationViewport.getByRole("button", { name: "Reveal note: Note", exact: true });
     await markerButton.waitFor();
@@ -1967,10 +1968,10 @@ try {
     // DOM updates before calculating a tap coordinate.
     const mobileWorld = mobileCanvas.locator(".canvas-world");
     const beforeZoom = await mobileWorld.getAttribute("style");
-    await mobilePage.getByRole("button", { name: "Zoom in", exact: true }).tap();
+    await zoomStep(mobilePage, 1);
     await mobilePage.waitForFunction(old => document.querySelector(".canvas-world")?.getAttribute("style") !== old, beforeZoom);
     const zoomed = await mobileWorld.getAttribute("style");
-    await mobilePage.getByRole("button", { name: "Fit", exact: true }).tap();
+    await tripleTapFit(mobilePage);
     await mobilePage.waitForFunction(old => document.querySelector(".canvas-world")?.getAttribute("style") !== old, zoomed);
     const mobileWire = mobileCanvas.locator(".connection-modulation .connection-hit");
     const mobileWires = mobileCanvas.locator(".connection-path");
@@ -2063,6 +2064,7 @@ try {
     await mobilePage.getByRole("button", { name: "Stop", exact: true }).click();
     await mobilePage.close();
     await verifyTouchWire(browser, "http://127.0.0.1:" + server.address().port);
+    await verifyCanvasNavigation(browser, "http://127.0.0.1:" + server.address().port);
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {
     await browser?.close();

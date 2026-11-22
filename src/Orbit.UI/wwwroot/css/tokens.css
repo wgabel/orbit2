@@ -189,7 +189,6 @@
     --component-canvas-grid-spacing: 24px;
     --component-canvas-grid-dot: 1px;
     --component-canvas-toolbar-gap: var(--semantic-space-compact);
-    --component-canvas-zoom-width: 4rem;
     --component-touch-wire-target-size: 16px;
     --component-touch-wire-snapped-size: 26px;
     --component-touch-wire-cursor-size: 10px;

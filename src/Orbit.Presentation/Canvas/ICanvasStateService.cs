@@ -34,6 +34,7 @@ public interface ICanvasStateService : IDisposable
     CanvasChangeResult DeleteGroup(Guid id);
     CanvasChangeResult PanBy(CanvasPoint screenDelta);
     CanvasChangeResult ZoomAt(double zoom, CanvasPoint screenAnchor);
+    CanvasChangeResult SetViewport(CanvasViewport viewport);
     CanvasChangeResult ResetViewport();
     CanvasChangeResult FitToBounds(CanvasBounds bounds, double width, double height, double padding);
 }

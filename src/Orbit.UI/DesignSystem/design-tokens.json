@@ -244,8 +244,7 @@
       "min-height": "15rem",
       "grid-spacing": "24px",
       "grid-dot": "1px",
-      "toolbar-gap": "{semantic.space.compact}",
-      "zoom-width": "4rem"
+      "toolbar-gap": "{semantic.space.compact}"
     },
     "touch-wire": {
       "target-size": "16px",

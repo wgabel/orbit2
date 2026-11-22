@@ -27,6 +27,9 @@ export function mountPerformanceKeyboard(root, receiver, codes) {
     };
     const down = event => {
         const stepKey = root.dataset.stepEntry === 'true' && ['Space', 'ArrowLeft', 'ArrowRight'].includes(event.code);
+        // Canvas-focused F fits the graph; piano-focused F still plays a note.
+        if ((event.key === 'f' || event.key === 'F') && event.target instanceof Element &&
+            event.target.matches('.canvas-viewport') && !held.has(event.code)) return;
         if (!active() || excluded(event.target) || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey ||
             (!recognized.has(event.code) && !stepKey)) return;
         event.preventDefault();

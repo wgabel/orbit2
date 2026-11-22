@@ -18,7 +18,7 @@ class Target {
     }
 }
 
-class ElementStub extends Target {}
+class ElementStub extends Target { matches() { return false; } }
 
 function fixture() {
     const root = new ElementStub(), piano = new ElementStub();
@@ -43,12 +43,29 @@ function fixture() {
     document.elementFromPoint = () => null;
     const original = { window: globalThis.window, document: globalThis.document, Element: globalThis.Element };
     Object.assign(globalThis, { window, document, Element: ElementStub });
-    const adapter = mountPerformanceKeyboard(root, { invokeMethodAsync: async (...args) => { calls.push(args); } }, ["KeyA"]);
+    const adapter = mountPerformanceKeyboard(root, { invokeMethodAsync: async (...args) => { calls.push(args); } }, ["KeyA", "KeyF"]);
     const pointer = { pointerId: 4, button: 0, pointerType: "touch" };
     const flush = () => new Promise(resolve => setImmediate(resolve));
     return { root, window, document, c, d, cs, calls, pointer, flush, adapter,
         dispose() { adapter.dispose(); Object.assign(globalThis, original); } };
 }
+
+test("canvas-focused F fits instead of playing; piano-focused F plays and releases after focus changes", async () => {
+    const f = fixture();
+    try {
+        const canvas = new ElementStub();
+        canvas.matches = selector => selector === ".canvas-viewport";
+        canvas.closest = () => null;
+        f.window.emit("keydown", { code: "KeyF", key: "f", target: canvas });
+        f.window.emit("keyup", { code: "KeyF", key: "f", target: canvas });
+        await f.flush();
+        assert.deepEqual(f.calls, []);
+        f.window.emit("keydown", { code: "KeyF", key: "f", target: f.root });
+        f.window.emit("keyup", { code: "KeyF", key: "f", target: canvas });
+        await f.flush();
+        assert.deepEqual(f.calls, [["PhysicalKey", "KeyF", true], ["PhysicalKey", "KeyF", false]]);
+    } finally { f.dispose(); }
+});
 
 test("captured pointer slides across white and black keys and releases outside", async () => {
     const f = fixture();
