@@ -4,7 +4,7 @@
 
 Related: [canvas](canvas.md) · [design system](design-system.md) · [persistence and history](persistence-and-history.md) · [commands and events](../core/commands-and-events.md) · [connection visualization](annotations-and-connections.md) · [composite nodes](composite-nodes.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
 
-**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) implemented ([PR #28](https://github.com/wgabel/orbit2/pull/28)); visual groups (6.19.3) implemented ([PR #30](https://github.com/wgabel/orbit2/pull/30)); overview and discovery (6.19.4) implemented ([PR #32](https://github.com/wgabel/orbit2/pull/32)); annotation visibility and zoom detail (6.19.7) in review; outline (6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
+**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) implemented ([PR #28](https://github.com/wgabel/orbit2/pull/28)); visual groups (6.19.3) implemented ([PR #30](https://github.com/wgabel/orbit2/pull/30)); overview and discovery (6.19.4) implemented ([PR #32](https://github.com/wgabel/orbit2/pull/32)); annotation visibility and zoom detail (6.19.7) in review ([PR #35](https://github.com/wgabel/orbit2/pull/35)); outline (6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
 
 <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>
 
@@ -230,6 +230,8 @@ Use shared configurable screen-space thresholds/hysteresis and theme tokens; tun
 Persist per-canvas annotation display preference in the existing optional `SavedCanvas` layout settings, with visible annotations as a backward-compatible default. If a workspace-wide toggle is offered, document whether it is a temporary override (recommended for clean performance mode) rather than rewriting every child preference. Visibility and zoom are presentation changes, not annotation content/history edits. Navigation preserves an active canvas's preference. No graph revision or audio/capture lifecycle changes beyond existing independent view visibility decisions.
 
 ### Implementation (6.19.7, in review)
+
+Implementation: [PR #35](https://github.com/wgabel/orbit2/pull/35).
 
 Use **Annotations** at the lower left of the canvas:
 
