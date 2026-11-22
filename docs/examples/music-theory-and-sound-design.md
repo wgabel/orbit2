@@ -271,6 +271,8 @@ These are example settings within current controls, not realistic distance calib
 
 Choose an emotional trajectory and give each sound a reason to exist. Establish a focal voice, then selectively introduce or withdraw other layers. A build can be created by a widening register range, increasing note density, brightening filtered harmonics or raising a supporting texture; it need not simply get louder. The quiet before a climax makes the contrast meaningful.
 
+Layer changes are only one dimension of form. Where appropriate, develop the actual melody, harmony, groove and section identity as well as the timbres. See [compositional development](compositional-development.md) for micro/meso/macro distinctions, contrasting section design and a listener-feedback example about monotony despite good layering.
+
 Example 10-minute structure (not a fixed genre template):
 
 | Time | Action | Musical intent |
@@ -310,7 +312,7 @@ For a new patch or piece, adapt this checklist to the task rather than requiring
 
 1. **Intent:** establish desired mood, genre, duration, focal element and whether this is a sound/effect or a whole piece.
 2. **Vocabulary:** choose tonal center/scale/intervals or explicitly non-tonal tuning; calculate pitches; assign each voice its register, role and level.
-3. **Time:** choose whether notes follow free seconds or BPM, phrase lengths, modulation times and whether events actually articulate notes. Document the expected repeating period or manual actions.
+3. **Time:** choose whether notes follow free seconds or BPM, phrase lengths, modulation times and whether events actually articulate notes. Document the expected repeating period or manual actions. For a whole piece, plan and evaluate meaningful phrase and section development using the [development guide](compositional-development.md).
 4. **Build:** use registered node types and actual parameter/port definitions. Reuse current composites, recipes, validated patch serialization and the application's routing invariants. Document future capabilities separately.
 5. **Audition in stages:** listen to dry sources, each processed voice, then the mix. Compare at similar perceived level; change one variable at a time when diagnosing. Check whether an important layer is masked, a chord sounds congested or tails collide. Listening is indispensable for subjective quality. If an agent cannot listen, say so, provide a plausible recipe and request human audition rather than claiming that it sounds excellent.
 6. **Measure:** confirm pitch and expected note intervals, ranges, timing, envelope shape, finite output, headroom, no unexpected discontinuities, and representative later sections (not only first few seconds). Use master-feed scope/FFT and offline/browser render checks when available; distinguish sample peak/RMS from LUFS or acoustic loudness. Check performance on complex patches separately via [performance diagnostics](../../performance.md).

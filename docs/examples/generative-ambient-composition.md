@@ -154,6 +154,8 @@ Different loop lengths cause the same familiar materials to meet at different po
 
 ### Long-range form: compose a performance
 
+Long-range evolution can involve new melodic gestures, rhythmic phrasing and harmonic movement as well as introducing or withdrawing layers. The [compositional development guide](compositional-development.md) distinguishes micro, meso and macro development and provides adaptable contrast checks. A slowly evolving texture may itself be the intended form; no chorus or drop is required for ambient.
+
 The patch can generate notes and evolving timbres without playing every key. The following hour-long timeline still needs a composer to shape section changes with the root Gains and continuous parameters. Start with all voices connected and turn off the quiet layers via their root Gains, rather than repeatedly removing/rebuilding nodes. Fade gradually; each new layer needs room.
 
 | Time | Section | Performance plan |
