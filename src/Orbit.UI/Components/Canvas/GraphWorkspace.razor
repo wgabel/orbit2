@@ -15,7 +15,9 @@ else
     <header class="workspace-header">
         <h1>Orbit 2</h1>
         <CanvasBreadcrumbs Path="@Navigation.Path" OnNavigate="NavigateTo" />
-        <PatchManager Capture="CaptureCommittedWorkspace" OpenDocument="ReplaceWorkspaceAsync" NewDocument="NewWorkspaceAsync" />
+        <PatchManager Capture="CaptureCommittedWorkspace" OpenDocument="ReplaceWorkspaceAsync" NewDocument="NewWorkspaceAsync"
+                      Overview="@overview" OverviewEditDisabled="@(annotationDraft || switchingWorkspace)"
+                      OnOverviewDraftChanged="SetOverviewDraftAsync" OnOverviewApplied="ApplyOverview" />
         <div class="workspace-toolbar toolbar-group">
             <button type="button" class="secondary" disabled="@(!session.CanUndo || switchingWorkspace)" @onclick="Undo">Undo</button>
             <button type="button" class="secondary" disabled="@(!session.CanRedo || switchingWorkspace)" @onclick="Redo">Redo</button>
@@ -75,7 +77,7 @@ else
     }
     <GraphCanvas @key="(workspaceGeneration, graphId)" @ref="canvasView" State="@Canvas" PatchId="@session.GraphId" AutoFitOnFirstRender="@Navigation.IsFirstVisit"
                  DispatchConnectionAmount="@DispatchConnectionCommand"
-                 AnnotationActionsDisabled="@switchingWorkspace" OnAnnotationDraftChanged="OnAnnotationDraftChanged" OnAnnotationError="@(value => Error = value)"
+                 AnnotationActionsDisabled="@(switchingWorkspace || overviewDraft)" OnAnnotationDraftChanged="OnAnnotationDraftChanged" OnAnnotationError="@(value => Error = value)"
                  CanShowScope="@(ScopeSelection is not null || ScopeOpen)" ScopeOpen="@ScopeOpen" OnToggleScope="ToggleScope"
                  OnConnect="@(request => Connect(graphId, request))" OnParameterEdit="@(request => EditParameter(graphId, request))"
                  OnParameterGestureEnded="@(id => CompleteParameterGesture(graphId, id))"

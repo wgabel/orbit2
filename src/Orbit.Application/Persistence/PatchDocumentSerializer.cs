@@ -15,18 +15,38 @@ namespace Orbit.Application.Persistence;
 /// <summary>Versioned data-only format. Current registered definitions and domain validation are authoritative.</summary>
 public sealed class PatchDocumentSerializer
 {
-    public PatchDocument Capture(IPatchSession session, double tempo, Guid activeGraphId, SavedCanvas[] layouts) =>
-        new(PatchDocument.CurrentVersion, session.PatchId, CaptureGraph(session.Snapshot), tempo, activeGraphId, layouts);
+    public PatchDocument Capture(IPatchSession session, double tempo, Guid activeGraphId, SavedCanvas[] layouts,
+        SavedPatchOverview? overview = null) =>
+        new(PatchDocument.CurrentVersion, session.PatchId, CaptureGraph(session.Snapshot), tempo, activeGraphId, layouts)
+        { Overview = SavedPatchOverview.Validate(overview ?? SavedPatchOverview.Empty) };
 
-    public string Serialize(PatchDocument document) => JsonSerializer.Serialize(document, PatchJsonContext.Default.PatchDocument);
+    public string Serialize(PatchDocument document) =>
+        JsonSerializer.Serialize(document with { Overview = SavedPatchOverview.Validate(document.Overview) }, PatchJsonContext.Default.PatchDocument);
 
-    public PatchDocument Deserialize(string json) => JsonSerializer.Deserialize(json, PatchJsonContext.Default.PatchDocument)
-        ?? throw new JsonException("Missing patch document.");
+    public PatchDocument Deserialize(string json)
+    {
+        var document = JsonSerializer.Deserialize(json, PatchJsonContext.Default.PatchDocument)
+            ?? throw new JsonException("Missing patch document.");
+        return document with { Overview = SavedPatchOverview.Validate(document.Overview) };
+    }
+
+    // Read only the overview and version. Do not reconstruct the graph or allocate runtime nodes.
+    public SavedPatchOverview ReadOverview(string json)
+    {
+        using var parsed = JsonDocument.Parse(json);
+        var root = parsed.RootElement;
+        if (!root.TryGetProperty("schemaVersion", out var version) || version.GetInt32() != PatchDocument.CurrentVersion)
+            throw new NotSupportedException("Unsupported patch schema.");
+        return root.TryGetProperty("overview", out var metadata)
+            ? SavedPatchOverview.Validate(metadata.Deserialize(PatchJsonContext.Default.SavedPatchOverview))
+            : SavedPatchOverview.Empty;
+    }
 
     public IPatchSession Restore(PatchDocument document, NodeRegistry registry)
     {
         if (document.SchemaVersion != PatchDocument.CurrentVersion)
             throw new NotSupportedException($"Unsupported patch schema {document.SchemaVersion}.");
+        SavedPatchOverview.Validate(document.Overview);
         _ = new MusicalTransport(document.BeatsPerMinute);
         var root = RestoreGraph(document.RootGraph, registry);
         var graphs = new Dictionary<Guid, (Guid[] Nodes, Guid[] Connections)>();

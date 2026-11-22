@@ -128,7 +128,14 @@ public partial class GraphCanvas : IAsyncDisposable
     private async Task SetAnnotationDraftAsync(bool active)
     {
         await OnAnnotationDraftChanged.InvokeAsync(active);
+        await SetExternalDraftWarningAsync(active);
+    }
+
+    private bool draftWarningActive;
+    public async Task SetExternalDraftWarningAsync(bool active)
+    {
         if (module is not null) await module.InvokeVoidAsync("setAnnotationDraftWarning", active);
+        draftWarningActive = active;
     }
 
     private async Task BeginNoteEditAsync(Guid id)
@@ -531,7 +538,7 @@ public partial class GraphCanvas : IAsyncDisposable
         subscription?.Dispose();
         if (module is not null)
         {
-            if (HasAnnotationDraft) await module.InvokeVoidAsync("setAnnotationDraftWarning", false);
+            if (draftWarningActive) await module.InvokeVoidAsync("setAnnotationDraftWarning", false);
             await module.DisposeAsync();
         }
     }

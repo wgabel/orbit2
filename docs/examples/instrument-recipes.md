@@ -22,6 +22,8 @@ For a richer musical sound palette and candidate editable instrument recipes, in
 
 Start with a built-in example-patch/composite catalog using existing nodes and the existing registered template mechanism. No DSP node or event source is needed for these initial sustained versions. Examples contain documented settings and safe gain staging, not just a name on an oscillator preset. Add the Phase 6.19 notes and labels when available; independent examples can ship before that work. Starting configurations are illustrative and should be adjusted by listening and examining the shared scope/FFT, not treated as measured acoustic spectra.
 
+The **Impact — AD percussion** worked patch is exportable from Patches → Annotated examples (6.19.4); import the JSON to inspect its root/nested descriptions and notes. See [patch overview and discovery](../editor/patch-annotations.md#patch-overview-and-discovery-6194).
+
 | Instrument | Existing synthesis recipe | Later improvement |
 |---|---|---|
 | Organ | Additive bank of sines at a fundamental and integer multiples, weighted mixer, chorus/reverb. | Pitch tracking, gate, independent drawbar-style macro controls. |
