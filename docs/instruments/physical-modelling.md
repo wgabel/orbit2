@@ -19,6 +19,8 @@ In `Orbit.Audio`, implement a reusable sample-rate-aware damped second-order mod
 
 ### Phase 7.2.4 — Resonator (in review)
 
+Implementation: [PR #34](https://github.com/wgabel/orbit2/pull/34).
+
 Add **Resonator** from the normal node catalog. It accepts mono audio, emits mono audio, and supports the standard mute/bypass controls, presets, scope/spectrum and graph persistence. It does not generate a tone from silence. All six parameters are live and continuously modulatable; no new runtime or special editor is required.
 
 | Parameter | Default | Range / meaning |
