@@ -241,7 +241,7 @@ public partial class GraphCanvas : IAsyncDisposable
     {
         if (disposed) return;
         if (module is null)
-            module = await JavaScript.InvokeAsync<IJSObjectReference>("import", "./js/canvasDom.js");
+            module = await JavaScript.InvokeAsync<IJSObjectReference>("import", BrowserBuild.ModulePath("canvasDom.js"));
 
         // Node offsets are invariant under pan and zoom. Re-measure after a
         // committed graph edit, or explicitly before fitting measured bounds.

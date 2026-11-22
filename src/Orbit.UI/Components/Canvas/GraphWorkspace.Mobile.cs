@@ -102,7 +102,7 @@ public partial class GraphWorkspace
         // DOM-only focus/navigation adapter; graph and panel state remain in C#.
         try
         {
-            mobilePanelModule = await MobileJavaScript.InvokeAsync<IJSObjectReference>("import", "./js/workspacePanels.js");
+            mobilePanelModule = await MobileJavaScript.InvokeAsync<IJSObjectReference>("import", BrowserBuild.ModulePath("workspacePanels.js"));
             if (disposed) { await mobilePanelModule.DisposeAsync(); return; }
             mobilePanelReference = DotNetObjectReference.Create(this);
             mobilePanelController = await mobilePanelModule.InvokeAsync<IJSObjectReference>("mountWorkspacePanels", workspaceElement, mobilePanelReference);

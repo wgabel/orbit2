@@ -74,7 +74,7 @@
         loading = true;
         try
         {
-            storage = await JavaScript.InvokeAsync<IJSObjectReference>("import", "./js/nodeLibraryStorage.js");
+            storage = await JavaScript.InvokeAsync<IJSObjectReference>("import", BrowserBuild.ModulePath("nodeLibraryStorage.js"));
             preferences = (await storage.InvokeAsync<NodeLibraryPreferences?>("read") ?? NodeLibraryPreferences.Empty).Normalize(KnownKeys);
         }
         catch (JSException) { }

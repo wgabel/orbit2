@@ -13,7 +13,6 @@
 @inject IPerformanceNoteService Performance
 @inject IMusicalTransportService Transport
 @inject IJSRuntime JavaScript
-@inject Orbit.UI.Components.Analysis.ScopeBrowserAssets BrowserAssets
 
 <section class="performance-keyboard" aria-label="Performance keyboard" data-target-node="@Node.Id" data-target-graph="@GraphId" data-armed="@armed.ToString().ToLowerInvariant()" data-tall="@tall.ToString().ToLowerInvariant()" data-step-entry="@((stepEntry && showPattern).ToString().ToLowerInvariant())" data-keyboard-ready="@((adapter is not null).ToString().ToLowerInvariant())" tabindex="0" @ref="root">
     <div class="performance-dock-bar">
@@ -293,7 +292,7 @@
     {
         try
         {
-            module = await JavaScript.InvokeAsync<IJSObjectReference>("import", $"./js/performanceKeyboard.js?v={Uri.EscapeDataString(BrowserAssets.AudioModulePath)}");
+            module = await JavaScript.InvokeAsync<IJSObjectReference>("import", BrowserBuild.ModulePath("performanceKeyboard.js"));
             if (disposed) return;
             reference = DotNetObjectReference.Create(this);
             adapter = await module.InvokeAsync<IJSObjectReference>("mountPerformanceKeyboard", root, reference, PerformanceKeyboardLayout.Keys.Select(key => key.Code).ToArray());

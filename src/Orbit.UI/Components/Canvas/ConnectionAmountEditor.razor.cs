@@ -87,7 +87,7 @@ public partial class ConnectionAmountEditor : IAsyncDisposable
 
     private async Task InitializeAsync()
     {
-        module = await JavaScript.InvokeAsync<IJSObjectReference>("import", "./js/canvasDom.js");
+        module = await JavaScript.InvokeAsync<IJSObjectReference>("import", BrowserBuild.ModulePath("canvasDom.js"));
         if (!disposed)
             placement = await module.InvokeAsync<IJSObjectReference>("mountConnectionEditor", root);
     }
