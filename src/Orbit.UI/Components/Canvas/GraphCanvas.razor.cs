@@ -6,6 +6,7 @@ using Orbit.Domain.Ports;
 using Orbit.Domain.Parameters;
 using Orbit.Domain.Timing;
 using Orbit.Presentation.Canvas;
+using Orbit.Application.Persistence;
 
 namespace Orbit.UI.Components.Canvas;
 
@@ -32,6 +33,8 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter] public bool CanShowScope { get; set; }
     [Parameter] public bool ScopeOpen { get; set; }
     [Parameter] public EventCallback OnToggleScope { get; set; }
+    [Parameter] public EventCallback<bool> OnNoteDraftChanged { get; set; }
+    [Parameter] public EventCallback<string> OnNoteError { get; set; }
     [Parameter] public double BeatsPerMinute { get; set; } = MusicalTransport.DefaultTempo;
     [Parameter] public int? SampleRate { get; set; }
     [Parameter] public IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
@@ -68,6 +71,48 @@ public partial class GraphCanvas : IAsyncDisposable
     private CanvasPoint lastClientPoint;
     private PortAddress? pendingSource;
     private CanvasPoint? draftEnd;
+    private SavedNote? notePreview;
+    private bool resizingNote;
+    private Guid? editingNote;
+    public bool HasNoteDraft => editingNote is not null;
+
+    private async Task BeginNoteEditAsync(Guid id)
+    {
+        if (HasNoteDraft) return;
+        State.SelectNote(id);
+        pendingSource = null;
+        editingNote = id;
+        if (module is not null) await module.InvokeVoidAsync("setNoteDraftWarning", true);
+        await OnNoteDraftChanged.InvokeAsync(true);
+    }
+
+    private async Task FinishNoteEditAsync(SavedNote? note)
+    {
+        try { if (note is not null) State.UpdateNote(note); }
+        catch (Exception exception) { await OnNoteError.InvokeAsync(exception.Message); return; }
+        editingNote = null;
+        if (module is not null) await module.InvokeVoidAsync("setNoteDraftWarning", false);
+        await OnNoteDraftChanged.InvokeAsync(false);
+    }
+
+    private Task UpdateNote(SavedNote note) => NoteAction(() => State.UpdateNote(note));
+
+    private async Task NoteAction(Func<CanvasChangeResult> action)
+    {
+        if (HasNoteDraft) return;
+        try { action(); }
+        catch (Exception exception) { await OnNoteError.InvokeAsync(exception.Message); }
+    }
+
+    private async Task BeginNoteAsync(SavedNote note, PointerEventArgs args, bool resize)
+    {
+        if (HasNoteDraft || args.Button != 0) return;
+        State.SelectNote(note.Id);
+        pendingSource = null;
+        notePreview = note;
+        resizingNote = resize;
+        await BeginGesture(args, null, wire: false);
+    }
 
     private CanvasStateSnapshot Snapshot => State.Snapshot;
     private string Hint => pendingSource is not null
@@ -113,7 +158,7 @@ public partial class GraphCanvas : IAsyncDisposable
         if (measuredRevision != Snapshot.GraphRevision || measuredVisualizationGeneration != visualizationGeometryGeneration)
         {
             await MeasureAsync();
-            if (!initialFit && measurement is not null && measurement.Nodes.Length > 0)
+            if (!initialFit && measurement is not null && (measurement.Nodes.Length > 0 || Snapshot.Notes.Count > 0))
             {
                 initialFit = true;
                 FitMeasured();
@@ -218,7 +263,16 @@ public partial class GraphCanvas : IAsyncDisposable
         var current = new CanvasPoint(args.ClientX, args.ClientY);
         var delta = current.Subtract(lastClientPoint);
         lastClientPoint = current;
-        if (drawingWire)
+        if (notePreview is { } note)
+        {
+            var world = Snapshot.Viewport.ScreenDeltaToWorld(delta);
+            notePreview = resizingNote
+                ? note with { Width = Math.Clamp(note.Width + world.X, SavedNote.MinWidth, SavedNote.MaxSize),
+                    Height = Math.Clamp(note.Height + world.Y, SavedNote.MinHeight, SavedNote.MaxSize) }
+                : note with { X = Math.Clamp(note.X + world.X, -SavedNote.MaxCoordinate, SavedNote.MaxCoordinate),
+                    Y = Math.Clamp(note.Y + world.Y, -SavedNote.MaxCoordinate, SavedNote.MaxCoordinate) };
+        }
+        else if (drawingWire)
         {
             // Delta conversion uses the same viewport transform as nodes.
             draftEnd = (draftEnd ?? CanvasPoint.Zero).Add(Snapshot.Viewport.ScreenDeltaToWorld(delta));
@@ -233,7 +287,13 @@ public partial class GraphCanvas : IAsyncDisposable
     {
         if (gesturePointer != args.PointerId) return;
         var wasWire = drawingWire;
+        var note = notePreview;
         EndGesture();
+        if (note is not null)
+        {
+            await UpdateNote(note);
+            return;
+        }
         if (!wasWire || pendingSource is null || module is null) return;
         var target = await module.InvokeAsync<PortAddress?>("findInputPortAt", viewportElement, args.ClientX, args.ClientY);
         if (target is PortAddress destination)
@@ -251,6 +311,8 @@ public partial class GraphCanvas : IAsyncDisposable
         draggedNode = null;
         drawingWire = false;
         draftEnd = null;
+        notePreview = null;
+        resizingNote = false;
     }
 
     private async Task ActivatePortAsync(PortAddress address)
@@ -339,6 +401,20 @@ public partial class GraphCanvas : IAsyncDisposable
     /// The reservation is consumed by the next synchronous node-add commit on this canvas.</summary>
     public async Task<IDisposable?> ReserveVisibleNodePlacementAsync()
     {
+        var context = await MeasurePlacementAsync();
+        return context is { } value ? State.ReserveVisibleNodePlacement(value.Visible, value.Occupied) : null;
+    }
+
+    public async Task<bool> AddNoteAsync()
+    {
+        var context = await MeasurePlacementAsync();
+        if (context is not { } value || HasNoteDraft) return false;
+        State.AddNote(value.Visible, value.Occupied);
+        return true;
+    }
+
+    private async Task<(CanvasBounds Visible, CanvasBounds[] Occupied)?> MeasurePlacementAsync()
+    {
         if (module is null || disposed) return null;
         var state = State;
         var snapshot = state.Snapshot;
@@ -359,23 +435,25 @@ public partial class GraphCanvas : IAsyncDisposable
                 var position = snapshot.NodePositions[node.NodeId];
                 return new CanvasBounds(position.X, position.Y, position.X + node.Width, position.Y + node.Height);
             });
-        return state.ReserveVisibleNodePlacement(new CanvasBounds(start.X, start.Y, end.X, end.Y), occupied);
+        return (new CanvasBounds(start.X, start.Y, end.X, end.Y), occupied.ToArray());
     }
 
     private void FitMeasured()
     {
         if (measurement is null || measurement.Width <= 0 || measurement.Height <= 0) return;
         var rectangles = measurement.Nodes.Where(node => Snapshot.NodePositions.ContainsKey(node.NodeId))
-            .Select(node => (Position: Snapshot.NodePositions[node.NodeId], node.Width, node.Height)).ToArray();
+            .Select(node =>
+            {
+                var position = Snapshot.NodePositions[node.NodeId];
+                return new CanvasBounds(position.X, position.Y, position.X + node.Width, position.Y + node.Height);
+            }).Concat(Snapshot.Notes.Select(CanvasStateService.NoteBounds)).ToArray();
         if (rectangles.Length == 0)
         {
             State.ResetViewport();
             return;
         }
-        var bounds = new CanvasBounds(rectangles.Min(node => node.Position.X),
-            rectangles.Min(node => node.Position.Y),
-            rectangles.Max(node => node.Position.X + node.Width),
-            rectangles.Max(node => node.Position.Y + node.Height));
+        var bounds = new CanvasBounds(rectangles.Min(node => node.Left), rectangles.Min(node => node.Top),
+            rectangles.Max(node => node.Right), rectangles.Max(node => node.Bottom));
         if (bounds.IsValid)
             State.FitToBounds(bounds, measurement.Width, measurement.Height, 32);
     }
@@ -385,6 +463,9 @@ public partial class GraphCanvas : IAsyncDisposable
         disposed = true;
         subscription?.Dispose();
         if (module is not null)
+        {
+            if (HasNoteDraft) await module.InvokeVoidAsync("setNoteDraftWarning", false);
             await module.DisposeAsync();
+        }
     }
 }

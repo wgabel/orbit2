@@ -15,10 +15,12 @@ else
     <header class="workspace-header">
         <h1>Orbit 2</h1>
         <CanvasBreadcrumbs Path="@Navigation.Path" OnNavigate="NavigateTo" />
-        <PatchManager Capture="CaptureWorkspace" OpenDocument="ReplaceWorkspaceAsync" NewDocument="NewWorkspaceAsync" />
+        <PatchManager Capture="CaptureCommittedWorkspace" OpenDocument="ReplaceWorkspaceAsync" NewDocument="NewWorkspaceAsync" />
         <div class="workspace-toolbar toolbar-group">
             <button type="button" class="secondary" disabled="@(!session.CanUndo || switchingWorkspace)" @onclick="Undo">Undo</button>
             <button type="button" class="secondary" disabled="@(!session.CanRedo || switchingWorkspace)" @onclick="Redo">Redo</button>
+            <button type="button" class="secondary" disabled="@(!Canvas.Snapshot.CanUndoNotes || noteDraft || switchingWorkspace)" @onclick="UndoNote">Undo note</button>
+            <button type="button" class="secondary" disabled="@(!Canvas.Snapshot.CanRedoNotes || noteDraft || switchingWorkspace)" @onclick="RedoNote">Redo note</button>
         </div>
     </header>
     <div class="canvas-caption">
@@ -37,8 +39,8 @@ else
                 <option value="@type">@DescribeType(type)</option>
             }
         </select>
-        <button type="button" disabled="@(addingNode || switchingWorkspace)" @onclick="AddNodeAsync">Add</button>
-        <button type="button" class="secondary" disabled="@(!HasSelection)" @onclick="DeleteSelection">Delete selected</button>
+        <button type="button" disabled="@(addingNode || switchingWorkspace || noteDraft)" @onclick="AddNodeAsync">Add</button>
+        <button type="button" class="secondary" disabled="@(!HasSelection || noteDraft)" @onclick="DeleteSelection">Delete selected</button>
         </div>
         <GraphPlaybackControls @key="workspaceGeneration" @ref="playbackControls" Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" TempoChanged="OnTempoChanged" SampleRateChanged="OnSampleRateChanged" PlaybackStopped="DisarmPerformance" Disabled="switchingWorkspace" />
     </div>
@@ -69,6 +71,7 @@ else
     }
     <GraphCanvas @key="(workspaceGeneration, graphId)" @ref="canvasView" State="@Canvas" PatchId="@session.GraphId" AutoFitOnFirstRender="@Navigation.IsFirstVisit"
                  DispatchConnectionAmount="@DispatchConnectionCommand"
+                 OnNoteDraftChanged="@(value => noteDraft = value)" OnNoteError="@(value => Error = value)"
                  CanShowScope="@(ScopeSelection is not null || ScopeOpen)" ScopeOpen="@ScopeOpen" OnToggleScope="ToggleScope"
                  OnConnect="@(request => Connect(graphId, request))" OnParameterEdit="@(request => EditParameter(graphId, request))"
                  OnParameterGestureEnded="@(id => CompleteParameterGesture(graphId, id))"

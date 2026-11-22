@@ -13,7 +13,7 @@ namespace Orbit.Presentation.Canvas;
 /// viewport state. Use on the presentation dispatcher/UI thread, including graph
 /// commands observed by this projection; immutable snapshots can be read elsewhere.
 /// </summary>
-public sealed class CanvasStateService : ICanvasStateService
+public sealed partial class CanvasStateService : ICanvasStateService
 {
     private readonly INodePlacementPolicy placement;
     private readonly NotificationChannel<CanvasStateChange> notifications = new();
@@ -52,12 +52,15 @@ public sealed class CanvasStateService : ICanvasStateService
             if (preference is not null && graph.Nodes.FirstOrDefault(node => node.Id == preference.NodeId) is { } node &&
                 NodeVisualizationCapabilities.EligiblePorts(node).Any())
                 visualizations[node.Id] = NodeVisualizationCapabilities.Normalize(node, preference.Settings);
+        var notes = saved is null ? [] : saved.Notes;
+        SavedNote.Validate(notes);
         snapshot = new CanvasStateSnapshot(graph, 0, viewport,
             Freeze(positions), Array.Empty<Guid>(), Array.Empty<Guid>())
         {
             ConnectionLabels = saved?.ConnectionLabels ?? ConnectionLabelMode.All,
             Visualizations = FreezeVisualizations(visualizations),
-            ExpandedVisualizationNodeId = ValidExpandedNode(graph, saved?.ExpandedVisualizationNodeId)
+            ExpandedVisualizationNodeId = ValidExpandedNode(graph, saved?.ExpandedVisualizationNodeId),
+            Notes = Array.AsReadOnly(notes.ToArray())
         };
         // Observe patch commits, including edits of descendants and deletion of
         // the composite that owns this canvas. Each local projection has its own layout.
@@ -79,7 +82,7 @@ public sealed class CanvasStateService : ICanvasStateService
         EnsureEditable();
         if (nextPlacement is not null) throw new InvalidOperationException("A node placement is already reserved.");
         return nextPlacement = new NodePlacementReservation(this,
-            placement.FindVisiblePosition(visibleBounds, occupiedBounds).RequireFinite("placement"));
+            placement.FindVisiblePosition(visibleBounds, occupiedBounds.Concat(snapshot.Notes.Select(NoteBounds))).RequireFinite("placement"));
     }
 
     public CanvasChangeResult SetConnectionLabels(ConnectionLabelMode mode)
@@ -258,12 +261,13 @@ public sealed class CanvasStateService : ICanvasStateService
     private CanvasChangeResult CommitSelection(Guid[] nodes, Guid[] connections)
     {
         if (snapshot.SelectedNodeIds.SequenceEqual(nodes) &&
-            snapshot.SelectedConnectionIds.SequenceEqual(connections))
+            snapshot.SelectedConnectionIds.SequenceEqual(connections) && snapshot.SelectedNoteId is null)
             return NoChange();
         return CommitLayout(CanvasChangeKind.SelectionChanged, snapshot with
         {
             SelectedNodeIds = Array.AsReadOnly(nodes),
-            SelectedConnectionIds = Array.AsReadOnly(connections)
+            SelectedConnectionIds = Array.AsReadOnly(connections),
+            SelectedNoteId = null
         });
     }
 

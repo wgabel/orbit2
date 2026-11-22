@@ -9,5 +9,6 @@ public enum CanvasChangeKind
     ViewportChanged,
     GraphRemoved,
     ConnectionLabelsChanged,
-    VisualizationChanged
+    VisualizationChanged,
+    NotesChanged
 }

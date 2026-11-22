@@ -6,6 +6,7 @@
 @import url("./components/graph-workspace.css");
 @import url("./components/graph-canvas.css");
 @import url("./components/node-frame.css");
+@import url("./components/note-card.css");
 @import url("./components/node-preset-selector.css");
 @import url("./components/port-connector.css");
 @import url("./components/connection-path.css");

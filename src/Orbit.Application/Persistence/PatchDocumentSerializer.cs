@@ -29,6 +29,22 @@ public sealed class PatchDocumentSerializer
             throw new NotSupportedException($"Unsupported patch schema {document.SchemaVersion}.");
         _ = new MusicalTransport(document.BeatsPerMinute);
         var root = RestoreGraph(document.RootGraph, registry);
+        var graphIds = new HashSet<Guid>();
+        void Collect(SavedGraph graph)
+        {
+            graphIds.Add(graph.Id);
+            foreach (var node in graph.Nodes)
+                if (node.Composite is { } composite) Collect(composite.Graph);
+        }
+        Collect(document.RootGraph);
+        var canvasIds = new HashSet<Guid>();
+        foreach (var canvas in document.CanvasLayouts)
+        {
+            SavedNote.Validate(canvas.Notes);
+            if (!canvasIds.Add(canvas.GraphId) ||
+                (canvas.Notes.Length > 0 && !graphIds.Contains(canvas.GraphId)))
+                throw new ArgumentException("Invalid canvas note ownership or duplicate canvas.");
+        }
         return new PatchSession(registry, root, document.PatchId);
     }
 

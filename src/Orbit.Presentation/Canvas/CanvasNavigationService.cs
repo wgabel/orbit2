@@ -52,7 +52,8 @@ public sealed class CanvasNavigationService : IDisposable
         {
             ConnectionLabels = snapshot.ConnectionLabels,
             Visualizations = snapshot.Visualizations.Select(pair => new SavedNodeVisualization(pair.Key, pair.Value)).ToArray(),
-            ExpandedVisualizationNodeId = snapshot.ExpandedVisualizationNodeId
+            ExpandedVisualizationNodeId = snapshot.ExpandedVisualizationNodeId,
+            Notes = snapshot.Notes.ToArray()
         };
 
     private static bool TryFindPath(GraphSnapshot graph, Guid target, out List<CanvasBreadcrumb> path)

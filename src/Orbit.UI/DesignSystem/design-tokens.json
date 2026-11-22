@@ -176,6 +176,15 @@
       "size": "12px",
       "hit-size": "24px"
     },
+    "note": {
+      "accent": "{semantic.color.border}",
+      "header-height": "42px",
+      "editor-min-height": "76px",
+      "action-height": "24px",
+      "action-gap": "{semantic.space.tight}",
+      "padding": "{semantic.space.compact}",
+      "layer": "2"
+    },
     "connection": {
       "width": "2px",
       "hit-width": "12px",

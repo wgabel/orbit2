@@ -20,6 +20,10 @@ public sealed record CanvasStateSnapshot(
     public IReadOnlyDictionary<Guid, NodeVisualizationSettings> Visualizations { get; init; } =
         new ReadOnlyDictionary<Guid, NodeVisualizationSettings>(new Dictionary<Guid, NodeVisualizationSettings>());
     public Guid? ExpandedVisualizationNodeId { get; init; }
+    public IReadOnlyList<SavedNote> Notes { get; init; } = [];
+    public Guid? SelectedNoteId { get; init; }
+    public bool CanUndoNotes { get; init; }
+    public bool CanRedoNotes { get; init; }
     public NodeVisualizationSettings VisualizationFor(Guid nodeId) =>
         Visualizations.GetValueOrDefault(nodeId, NodeVisualizationSettings.Default);
     /// <summary>False once the owning composite disappears. The last graph is retained read-only.</summary>
