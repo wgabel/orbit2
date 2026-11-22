@@ -31,6 +31,14 @@ public partial class GraphCanvas
         await BeginGesture(args, null, wire: false);
     }
 
+    // A single input tap remains a port activation. A second finger landing
+    // on an input during another canvas gesture must not create a wire.
+    private async Task BeginInputNavigationAsync(PointerEventArgs args)
+    {
+        fitTaps.Reset();
+        await TakeOverNavigationAsync(args);
+    }
+
     // Promote an active single-pointer gesture to navigation before any new
     // selection, cable, annotation or node edit is started.
     private async Task<bool> TakeOverNavigationAsync(PointerEventArgs args)

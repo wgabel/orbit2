@@ -102,6 +102,13 @@ export async function verifyCanvasNavigation(browser, url) {
                 type, touchPoints: points.map((point, i) => ({ ...point, id: i + 1, radiusX: 8, radiusY: 8 }))
             });
             try {
+                await canvas(page).evaluate(element => {
+                    element.navigationTestPointers = [];
+                    element.addEventListener("pointerdown", event => {
+                        if (event.pointerType === "touch")
+                            element.navigationTestPointers.push({ id: event.pointerId, x: event.clientX });
+                    }, true);
+                });
                 await send("touchStart", [a, b]);
                 await page.waitForFunction(() => document.querySelector(".canvas-viewport").dataset.pinching === "true");
                 const expanded = [{ x: a.x - 20, y: a.y + 24 }, { x: b.x + 20, y: b.y + 24 }];
@@ -117,12 +124,22 @@ export async function verifyCanvasNavigation(browser, url) {
                 }, first);
                 const beforeLift = await currentViewport(page);
                 // Retain finger #1; lifting #2 must not change the transform.
-                // CDP touchMove describes the complete active set; omitting id 2
-                // generates its release. touchEnd itself requires an empty set.
-                await send("touchMove", [panned[0]]);
+                // Chromium CDP can only release all touch contacts together.
+                // Exercise the partial-release PointerEvent handler using the
+                // real browser's second pointer ID, then move the first contact
+                // using CDP while the other contact stays still.
+                await canvas(page).evaluate((element, { point, initialX }) => {
+                    if (element.navigationTestPointers.length !== 2) throw Error("Expected two real touch pointers");
+                    const second = element.navigationTestPointers.reduce((nearest, pointer) =>
+                        Math.abs(pointer.x - initialX) < Math.abs(nearest.x - initialX) ? pointer : nearest);
+                    element.dispatchEvent(new PointerEvent("pointerup", {
+                        bubbles: true, pointerType: "touch", pointerId: second.id,
+                        clientX: point.x, clientY: point.y, button: 0, buttons: 0
+                    }));
+                }, { point: panned[1], initialX: b.x });
                 await page.waitForFunction(() => document.querySelector(".canvas-viewport").dataset.pinching === "false");
                 assert.deepEqual(await currentViewport(page), beforeLift);
-                await send("touchMove", [{ x: panned[0].x + 10, y: panned[0].y + 12 }]);
+                await send("touchMove", [{ x: panned[0].x + 10, y: panned[0].y + 12 }, panned[1]]);
                 await page.waitForFunction(old => {
                     const m = new DOMMatrix(getComputedStyle(document.querySelector(".canvas-world")).transform);
                     return Math.abs(m.e - old.x - 10) < 1 && Math.abs(m.f - old.y - 12) < 1;

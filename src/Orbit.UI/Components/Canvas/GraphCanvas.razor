@@ -53,7 +53,7 @@
                            WireTargets="@(wireAim is not null ? wireTargetAddresses : null)"
                            OnHeaderPointerDown="@(args => BeginNode(node.Id, args))"
                            OnBodyPointerDown="BeginNodeSurfaceAsync"
-                           OnOutputPointerDown="BeginOutput" OnPortActivate="ActivatePortAsync"
+                           OnOutputPointerDown="BeginOutput" OnInputPointerDown="BeginInputNavigationAsync" OnPortActivate="ActivatePortAsync"
                            OnOpenComposite="OnOpenComposite"
                            OnEditRack="OnEditRack"
                            OnAudition="OnAudition"

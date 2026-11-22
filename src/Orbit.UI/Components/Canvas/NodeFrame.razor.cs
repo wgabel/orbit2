@@ -38,6 +38,7 @@ public partial class NodeFrame
     [Parameter] public EventCallback<PointerEventArgs> OnBodyPointerDown { get; set; }
     [Parameter] public EventCallback<PortAddress> OnPortActivate { get; set; }
     [Parameter] public EventCallback<PortPointerStart> OnOutputPointerDown { get; set; }
+    [Parameter] public EventCallback<PointerEventArgs> OnInputPointerDown { get; set; }
     [Parameter] public EventCallback<ParameterEditRequest> OnParameterEdit { get; set; }
     [Parameter] public EventCallback<NodeAuditionRequest> OnAudition { get; set; }
     [Parameter] public EventCallback<NodePresetApplyRequest> OnPresetApply { get; set; }

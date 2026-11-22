@@ -58,6 +58,18 @@ export async function verifyTouchWire(browser, url) {
             await send("touchCancel");
             await label.waitFor({ state: "detached" });
             assert.equal(await wires.count(), 3);
+            // A second finger on the aimed input must cancel the draft, not
+            // accidentally activate the port or commit the snapped wire.
+            await aim();
+            await cdp.send("Input.dispatchTouchEvent", {
+                type: "touchStart", touchPoints: [{ ...end, id: 1, radiusX: 10, radiusY: 10 },
+                    { ...target, id: 2, radiusX: 10, radiusY: 10 }]
+            });
+            await page.waitForFunction(() => document.querySelector(".canvas-viewport").dataset.pinching === "true");
+            await label.waitFor({ state: "detached" });
+            await send("touchEnd");
+            await page.waitForFunction(() => document.querySelector(".canvas-viewport").dataset.pinching === "false");
+            assert.equal(await wires.count(), 3, "Pinch takeover must not commit the wire");
             await aim();
             await send("touchEnd");
             await label.waitFor({ state: "detached" });
