@@ -1,0 +1,2710 @@
+{
+  "schemaVersion": 1,
+  "patchId": "52f6cf70-0400-572f-b286-231302e7fe14",
+  "rootGraph": {
+    "id": "85957693-6699-5b6f-b3c0-5fba1e55e7d1",
+    "nodes": [
+      {
+        "id": "f5d2600e-1e17-5611-819b-f087b9024eae",
+        "typeKey": "composite.graph",
+        "parameters": [],
+        "ports": [
+          {
+            "key": "boundary-917f5a123af255d9b0d63cec81f4d742",
+            "id": "917f5a12-3af2-55d9-b0d6-3cec81f4d742"
+          },
+          {
+            "key": "boundary-de4bf062170f52ba9adafe9112ada18f",
+            "id": "de4bf062-170f-52ba-9ada-fe9112ada18f"
+          },
+          {
+            "key": "boundary-fdb1ddb69eb95385a55390e2d6a8c825",
+            "id": "fdb1ddb6-9eb9-5385-a553-90e2d6a8c825"
+          },
+          {
+            "key": "boundary-28b5aa2f00c358aba2acf6774c1fe051",
+            "id": "28b5aa2f-00c3-58ab-a2ac-f6774c1fe051"
+          }
+        ],
+        "composite": {
+          "name": "00 · TEST — Melody driver v1",
+          "inputRackId": "1bf86ae1-0ccc-5a60-b26d-d2bd7c1bd0b2",
+          "outputRackId": "b42d2513-8779-5647-8c5f-050bfdc32e45",
+          "inputs": [],
+          "outputs": [
+            {
+              "id": "917f5a12-3af2-55d9-b0d6-3cec81f4d742",
+              "name": "Pitch (st)",
+              "signalType": 1,
+              "channelCount": 1,
+              "fanIn": 0
+            },
+            {
+              "id": "de4bf062-170f-52ba-9ada-fe9112ada18f",
+              "name": "Gate",
+              "signalType": 3,
+              "channelCount": 1,
+              "fanIn": 0
+            },
+            {
+              "id": "fdb1ddb6-9eb9-5385-a553-90e2d6a8c825",
+              "name": "Trigger",
+              "signalType": 2,
+              "channelCount": 1,
+              "fanIn": 0
+            },
+            {
+              "id": "28b5aa2f-00c3-58ab-a2ac-f6774c1fe051",
+              "name": "Velocity",
+              "signalType": 1,
+              "channelCount": 1,
+              "fanIn": 0
+            }
+          ],
+          "graph": {
+            "id": "520dcfa9-0edd-5e0f-a787-98ed46fa0d06",
+            "nodes": [
+              {
+                "id": "4f05d15d-2dfb-5b75-9e58-e6cd46fb3788",
+                "typeKey": "generator.note-sequencer",
+                "parameters": [
+                  {
+                    "key": "reference-note",
+                    "id": "5a82a6a0-cd1c-5440-b44d-684b1b082327",
+                    "baseValue": 69
+                  },
+                  {
+                    "key": "initial-pitch",
+                    "id": "c8326f86-fb7d-598c-ba6f-852070a901d9",
+                    "baseValue": -7
+                  },
+                  {
+                    "key": "pattern-loop",
+                    "id": "b09215a6-fa43-5167-8709-856e4f468d81",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pattern-count",
+                    "id": "674d9b53-ba1f-5228-b7d8-81ec9ed204dc",
+                    "baseValue": 64
+                  },
+                  {
+                    "key": "pattern-timing",
+                    "id": "5094e945-cfdb-5711-b5f6-e6ffa29dce36",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-division",
+                    "id": "38ba36ee-3960-5b15-9027-79f65ed8cfc0",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pattern-multiplier",
+                    "id": "3bb56291-8906-5624-b8c2-dab59323b623",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pattern-seconds",
+                    "id": "386d397b-8dd7-55a1-81f1-43d60f307d54",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pattern-glide",
+                    "id": "2377f645-ef1e-5cfc-91ea-84aa3cb8e50d",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-01",
+                    "id": "40b90309-1719-523a-b079-dfd0045526b7",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-02",
+                    "id": "86827255-d1ed-54f7-8325-bab1d7edb0c7",
+                    "baseValue": 63
+                  },
+                  {
+                    "key": "pattern-step-03",
+                    "id": "c92ef1b8-7298-54d5-a51f-1ad2328a8e50",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-04",
+                    "id": "6ab40bb2-6087-5f42-b298-b4fccce248ab",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-05",
+                    "id": "60902f2b-c15c-5637-a154-d0b21ebab3e1",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-06",
+                    "id": "ce6a70ff-36dd-566f-90d1-6a5567ec9074",
+                    "baseValue": 67
+                  },
+                  {
+                    "key": "pattern-step-07",
+                    "id": "ca29d62b-7fed-57ce-9736-288857c3f110",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-08",
+                    "id": "a3eabc6b-4f24-528a-b147-3772458cf176",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-09",
+                    "id": "fd2165c5-e5a1-572a-b47f-3797b13abd0c",
+                    "baseValue": 70
+                  },
+                  {
+                    "key": "pattern-step-10",
+                    "id": "92553449-4e0d-5ecf-8407-dc566b6f3962",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-11",
+                    "id": "1968a035-4920-5ccf-83de-b7113a3cf805",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-12",
+                    "id": "76c89746-50aa-57ff-a92c-ea3f5b62e12d",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-13",
+                    "id": "58d1b057-f23b-50d8-b7f4-1ac954422030",
+                    "baseValue": 68
+                  },
+                  {
+                    "key": "pattern-step-14",
+                    "id": "22bdcf85-7bd7-5523-9847-0db86978dc9d",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-15",
+                    "id": "22182459-b41f-5c69-b9ca-879dd134b0fc",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-16",
+                    "id": "03581e83-93fb-5654-85a8-29ba88e77678",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-17",
+                    "id": "1c94f89c-35ae-5ddc-81ee-c8d2ffdfe1d7",
+                    "baseValue": 67
+                  },
+                  {
+                    "key": "pattern-step-18",
+                    "id": "1070113c-64bf-507e-aea9-ba39f747f6c8",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-19",
+                    "id": "d516f119-a490-5a0c-8f13-1a806d392f21",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-20",
+                    "id": "054eff6b-f471-5b13-abbd-bdcc8e7a3312",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-21",
+                    "id": "ea3d50ac-eefd-5260-afa8-36583ccc734c",
+                    "baseValue": 65
+                  },
+                  {
+                    "key": "pattern-step-22",
+                    "id": "15e60e65-b9b0-5405-880b-51f84b78e74b",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-23",
+                    "id": "61dd8bc8-f963-5b9a-a374-0327bc6b399b",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-24",
+                    "id": "054e0f27-24df-5f9c-be95-1954ac445aa0",
+                    "baseValue": 63
+                  },
+                  {
+                    "key": "pattern-step-25",
+                    "id": "e15c288c-d3ba-5a51-a5d9-7781b9704945",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-26",
+                    "id": "c3926c44-4675-52a8-b2b2-15dd324a7cc2",
+                    "baseValue": 63
+                  },
+                  {
+                    "key": "pattern-step-27",
+                    "id": "8d5c4f2a-8254-5f1b-92f2-32388f50945f",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-28",
+                    "id": "65264af2-d278-5891-8013-08b9ba38d86f",
+                    "baseValue": 70
+                  },
+                  {
+                    "key": "pattern-step-29",
+                    "id": "5c888cf7-a887-5b24-a8f5-19fcf36f7757",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-30",
+                    "id": "5b0fa448-ee2e-5cc3-a87f-b2e9e13c0de7",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-31",
+                    "id": "82363144-fb81-5370-a8d6-17207af8a015",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-32",
+                    "id": "78de0d30-4b62-5eb6-bac6-b8cc3e2f7390",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-33",
+                    "id": "1d99c90f-8b88-5ce6-9141-d1e34fbff932",
+                    "baseValue": 75
+                  },
+                  {
+                    "key": "pattern-step-34",
+                    "id": "ea29986f-e443-5ea0-8a24-6a2faef721df",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-35",
+                    "id": "2123c302-b6eb-5fc8-a280-94dc1df51473",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-36",
+                    "id": "9ef6d801-1485-5121-9356-f7e7d5c01d91",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-37",
+                    "id": "8fdbcc42-b131-5941-8e6b-03d177962c72",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-38",
+                    "id": "efef090a-04f1-5d82-a4ce-34b3c9cf3e1d",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-39",
+                    "id": "8cbeb916-3478-5a0f-a2cb-2b1125bbc98d",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-40",
+                    "id": "5f5e3db2-c3be-5c01-8aaa-6c2a3bb9ca9c",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-41",
+                    "id": "4cb95253-4008-5e54-b571-c2a07612196f",
+                    "baseValue": 77
+                  },
+                  {
+                    "key": "pattern-step-42",
+                    "id": "a0d6a1a7-4e34-5588-b00e-8ca09f68f132",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-43",
+                    "id": "cb6ddf76-f0f7-53f1-b99b-58b975b43f77",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-44",
+                    "id": "3258ee86-ba17-5143-b93a-b49ef95d39d1",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-45",
+                    "id": "b8a8aa7a-02e5-5471-b71a-db1b63ceccea",
+                    "baseValue": 79
+                  },
+                  {
+                    "key": "pattern-step-46",
+                    "id": "d7694914-4943-5d8b-b5d7-7ce930d92b37",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-47",
+                    "id": "cfbc12ad-45bb-5c44-99ee-153e65b58b6e",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-48",
+                    "id": "056c47c9-5dcb-52ff-886c-cab57442f6b9",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-49",
+                    "id": "d7d68161-5ab8-52ee-9364-7e02dc14d7b0",
+                    "baseValue": 60
+                  },
+                  {
+                    "key": "pattern-step-50",
+                    "id": "eb8d9669-dd95-5424-8f42-d60ead17bd2c",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-51",
+                    "id": "19499cc5-68a1-5035-b07a-a7f77cb93c28",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-52",
+                    "id": "f8e0b0af-7f3c-5a47-a26d-8a1f6aedd566",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-53",
+                    "id": "187590df-ce8e-542c-99d3-0139ba39c7aa",
+                    "baseValue": 65
+                  },
+                  {
+                    "key": "pattern-step-54",
+                    "id": "ac86d95c-1da9-5a2e-b58a-8760285b8931",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-55",
+                    "id": "979d899f-f4dd-572d-a5b1-827ae00332aa",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-56",
+                    "id": "8e71ba85-2de6-54be-974e-77e00bef1578",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-57",
+                    "id": "84789e57-f4ec-5620-ba6b-da8e40f783fe",
+                    "baseValue": 63
+                  },
+                  {
+                    "key": "pattern-step-58",
+                    "id": "5c802e55-9129-594d-a3bb-415670d1260d",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-59",
+                    "id": "4a010917-9e93-5fa4-aed9-7b35335e7174",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-60",
+                    "id": "a306b1ce-39ef-5ae2-a19d-402352f5dea2",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-61",
+                    "id": "f43104ac-0770-523f-b147-4f0d1b3444bf",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-62",
+                    "id": "dcc0376c-8f1e-5a5d-a503-bde10207b79e",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-63",
+                    "id": "5b9cfcd2-3176-57ec-bf82-e6ea2c17d491",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-64",
+                    "id": "11ea6c83-4045-5194-9c89-da50a566ed1c",
+                    "baseValue": 0
+                  }
+                ],
+                "ports": [
+                  {
+                    "key": "pitch-out",
+                    "id": "84bef90b-1c1c-562f-b5cc-7f988f1edc1f"
+                  }
+                ],
+                "composite": null,
+                "isMuted": false,
+                "isBypassed": false
+              },
+              {
+                "id": "fb385260-c0d7-5b02-ac5d-673d52ffac61",
+                "typeKey": "generator.note-sequencer",
+                "parameters": [
+                  {
+                    "key": "reference-note",
+                    "id": "a3ef3938-27ca-5349-9d19-a2d01e5ab77a",
+                    "baseValue": 60
+                  },
+                  {
+                    "key": "initial-pitch",
+                    "id": "eef1a7c3-340f-5ed1-a08c-e54296c95c8d",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-loop",
+                    "id": "d8362401-777e-5ea6-a2b8-ca5167c400a7",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pattern-count",
+                    "id": "d5a60bc0-7314-5b7e-a4b1-d1e2e67c5363",
+                    "baseValue": 64
+                  },
+                  {
+                    "key": "pattern-timing",
+                    "id": "94203398-b92a-58d5-ac47-87ce737fa9f4",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-division",
+                    "id": "df544111-a752-54dc-80b9-40f531d83f60",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pattern-multiplier",
+                    "id": "83b78817-afc5-5d82-87f8-0e1a22b707c5",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pattern-seconds",
+                    "id": "12113e72-66ce-5bc6-a55e-1ea2ee99787b",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pattern-glide",
+                    "id": "951f004c-b6a7-5731-8101-ff726dba6045",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-01",
+                    "id": "2befaf9e-6a2c-5f5e-abc2-04d961df039c",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-02",
+                    "id": "8069d186-8b59-5a0d-8297-b4be73c22b21",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-03",
+                    "id": "87813da6-33ca-5897-a7ad-9e3058fbb79d",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-04",
+                    "id": "3616fea7-aa0b-5c88-8451-46a4cfda0d24",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-05",
+                    "id": "6784ef8b-950d-581d-95f3-5295f10ccb09",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-06",
+                    "id": "33eb009b-6f70-546a-a540-222c03db17c7",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-07",
+                    "id": "ce3dc57e-5537-587e-ad57-e141ef8cc986",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-08",
+                    "id": "73482a31-e4ae-513a-b454-ba716b535e00",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-09",
+                    "id": "345e8535-7312-5697-b542-f3e2840a5da6",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-10",
+                    "id": "8bc00ed1-30f0-59dc-8568-63f024793684",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-11",
+                    "id": "94164781-6213-58e5-822e-bd20f5b7448e",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-12",
+                    "id": "3bc38501-fc56-5206-bce9-e932dcbf0d46",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-13",
+                    "id": "10a8b360-0c52-549a-b1a5-0b2dda669820",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-14",
+                    "id": "590806fb-6f86-59a1-837a-c8041a240904",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-15",
+                    "id": "d5f20782-c7ea-5796-a701-93be3dfbe258",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-16",
+                    "id": "7f952152-12f1-5aa1-9c55-6e5577bbbe3d",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-17",
+                    "id": "5b133280-e10c-5e5a-b255-0e59e142b50d",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-18",
+                    "id": "d4b7e6f8-9ce7-52b6-a6b7-c02b349e8ee7",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-19",
+                    "id": "a2d6d570-4d94-5121-94a2-1f25af5737c3",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-20",
+                    "id": "bba7b934-5909-5766-855d-f6bb30337e30",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-21",
+                    "id": "d09da8e6-9884-5c28-984e-ef40a7288f90",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-22",
+                    "id": "225897ae-a409-5ae5-8a92-897f65d3843f",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-23",
+                    "id": "3cf2bd0a-ea03-5b1d-abe1-0815a4e9273b",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-24",
+                    "id": "0c4b244e-8871-53b8-a006-5dadb5e7e1df",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-25",
+                    "id": "19f8e14c-ce50-58b2-b179-504fe8108855",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-26",
+                    "id": "fca53a03-38ea-586d-a9b2-34baff5d349d",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-27",
+                    "id": "d97f459e-5ae6-5129-95de-39fa6122675d",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-28",
+                    "id": "53c2ea23-ccbd-5427-bd79-a20c3e3756de",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-29",
+                    "id": "a85b2df7-14e0-5e5a-a19e-8564a4728e2a",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-30",
+                    "id": "83cb0edd-a3a3-5f5c-9142-a97e815c9de6",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-31",
+                    "id": "daa5833c-d5ca-53e7-9286-c436b20b19ad",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-32",
+                    "id": "faf6e668-0ec4-5321-a85c-ca4819346b23",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-33",
+                    "id": "63d4d560-bbca-5191-91d9-b01b1ae21ec5",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-34",
+                    "id": "04bb171c-f571-5616-9fde-17756fd7ab51",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-35",
+                    "id": "66eebfdb-8e77-53b7-9a91-024e6b279d66",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-36",
+                    "id": "9b87df5d-69e4-58b8-b8c2-7433a9fce81c",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-37",
+                    "id": "c43277f5-7594-550a-a176-659e913c7c2a",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-38",
+                    "id": "874c5932-1c8b-50ab-ade6-f427c12615ed",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-39",
+                    "id": "92acd8dd-1cda-583e-9b32-215ab895b63f",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-40",
+                    "id": "359da178-9ba6-52d4-bfdf-a3c50517a4bd",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-41",
+                    "id": "77b31032-a403-5a7b-8a4a-6864520f4485",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-42",
+                    "id": "8ddbf7b5-30ba-5416-bff3-9c23b4597b3a",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-43",
+                    "id": "9d3410fc-0b0d-550b-8afe-b736c177908f",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-44",
+                    "id": "4d6098ec-2333-55cd-b726-08a9519c8ea0",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-45",
+                    "id": "57ad319a-6ac4-599b-a016-7cabd3b9f484",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-46",
+                    "id": "3398b694-4d32-5039-8612-7016e1130621",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-47",
+                    "id": "e4cc1c98-0bcd-53eb-ac6d-0e0952b7320d",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-48",
+                    "id": "faf81d7d-3b2a-58b3-9fe3-1537dbe4244c",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-49",
+                    "id": "39ba48a0-a046-5a0c-9ec6-eda3306d82f8",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-50",
+                    "id": "84c15a97-b3b5-58a4-b11c-c240ecfecca9",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-51",
+                    "id": "b58c06b9-da7c-5367-ac78-85c09a340a84",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-52",
+                    "id": "e3930306-5955-594e-bf2c-7f1c0d9be2f2",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-53",
+                    "id": "c49a24ae-1842-50f1-8079-bd81762616de",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-54",
+                    "id": "78d0ffb4-a39b-5176-afa5-e7eee1b0a3d2",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-55",
+                    "id": "9bba8c6b-4652-5e17-9083-9b8e7d425d38",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-56",
+                    "id": "1da3de9b-c7e4-5da1-860a-e844b0f9e3fc",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-57",
+                    "id": "cd7604dd-fd9c-540b-b156-c4ef6c265c86",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-58",
+                    "id": "6313bbf0-505d-54e2-b067-ad2dc7ba2b6d",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-59",
+                    "id": "52114eb1-1722-5195-8330-18a231f89188",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-60",
+                    "id": "aaf6304d-4ec6-59ff-9fa5-b62a0fe18af3",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-61",
+                    "id": "5cb6644b-7888-5370-ae4a-9ffbc4d87fd7",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-62",
+                    "id": "0d92530b-f149-5edf-9450-822789ae87b9",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-63",
+                    "id": "a28e1f26-c0ef-56ab-aedb-7524a8e6f7a2",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-64",
+                    "id": "1934c67b-65a1-5515-af28-596da788ac9f",
+                    "baseValue": 61
+                  }
+                ],
+                "ports": [
+                  {
+                    "key": "pitch-out",
+                    "id": "71686826-3969-5aaf-a85b-b4ccf4071e71"
+                  }
+                ],
+                "composite": null,
+                "isMuted": false,
+                "isBypassed": false
+              },
+              {
+                "id": "49fa53ed-ce13-5b02-8a03-0746db00b582",
+                "typeKey": "generator.note-sequencer",
+                "parameters": [
+                  {
+                    "key": "reference-note",
+                    "id": "2b2628fa-860c-53f1-888f-32de1fb07027",
+                    "baseValue": 60
+                  },
+                  {
+                    "key": "initial-pitch",
+                    "id": "74fa16ca-838a-5bb7-8fe8-24187fedfb4f",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-loop",
+                    "id": "20da43c2-655e-57e2-b670-7f2d2b65c47f",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pattern-count",
+                    "id": "d6c5d968-3974-5f7d-8eb7-feafc19984cd",
+                    "baseValue": 64
+                  },
+                  {
+                    "key": "pattern-timing",
+                    "id": "6fc45002-4160-5557-954c-88f65939ec3b",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-division",
+                    "id": "11c7b1a8-2255-50c7-ac3a-aeaa2004e70b",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pattern-multiplier",
+                    "id": "fecc5432-2021-5fcb-a62c-672575902104",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pattern-seconds",
+                    "id": "35e76af3-4a6c-52d5-a624-3cdebcd736ce",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pattern-glide",
+                    "id": "5ee91409-f652-5d86-8d8e-2810dd667b4b",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-01",
+                    "id": "029d7129-3d6b-5769-8b5a-0f73f7081e0c",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-02",
+                    "id": "32f54338-1781-5114-89a2-9f122f45fec5",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-03",
+                    "id": "643d3582-0ba8-548a-8006-570b65fc5f5c",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-04",
+                    "id": "c3c4da84-d048-56eb-ac0b-9fdff9d2d42e",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-05",
+                    "id": "691c2263-9686-5d4b-8ad5-95c3857ef5d3",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-06",
+                    "id": "ce1a7185-4fb4-5f27-91df-619dbb749181",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-07",
+                    "id": "0bd5a243-849f-552b-9426-19dafaa5c99a",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-08",
+                    "id": "9f0b3499-973d-5c4a-ad12-a2f5403d1757",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-09",
+                    "id": "1a7669fb-2723-564c-894a-109bdb638e9f",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-10",
+                    "id": "0a064533-b238-53db-b476-96546cdf2074",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-11",
+                    "id": "55eb2bd1-afc0-5a3c-b3eb-7a843a9acf20",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-12",
+                    "id": "52a28bc4-d561-54fa-98ea-e8113fa9d6a3",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-13",
+                    "id": "592eec4c-7078-5a1c-95c1-216007fc1d1d",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-14",
+                    "id": "a2388bd7-407e-5128-b686-be2ab2cb8d7d",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-15",
+                    "id": "0e60c9ba-4634-5420-8b1d-dc9eb4fb03cf",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-16",
+                    "id": "27621a27-707c-5e46-a9a0-440f2d16a285",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-17",
+                    "id": "c7b495bf-2800-5769-824d-0abd724a2d95",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-18",
+                    "id": "3127c94e-494b-5655-b26d-5f2a19af40cb",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-19",
+                    "id": "593173c8-3064-5b81-be35-7f07796717c0",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-20",
+                    "id": "32ea438d-22e4-5654-9cb9-eea287044991",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-21",
+                    "id": "42a32163-f717-5c98-b7c6-80516df2fc83",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-22",
+                    "id": "07f58062-e1f9-5efb-b7b1-7e17b1e93e68",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-23",
+                    "id": "5062fa8f-fae3-53b9-82d1-572ea685b127",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-24",
+                    "id": "273461c1-5a26-5181-a7fa-d2caef04c5a9",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-25",
+                    "id": "e7b6955f-bf7c-5c67-8674-17e946f9367c",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-26",
+                    "id": "9e737398-2c44-50a2-8d99-3d545ea7d74f",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-27",
+                    "id": "958e5eaf-f59b-5dec-979d-dab207bbf15a",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-28",
+                    "id": "066b0af9-d494-5d6b-9720-06e41a3ac10e",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-29",
+                    "id": "8f53465e-e4ed-5fc8-afe4-4b9c3ee9d5c9",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-30",
+                    "id": "df840ef2-6b0e-540a-8bdd-6356bf207b8e",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-31",
+                    "id": "5593d99d-5609-57e8-b5ce-c3f371025c3b",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-32",
+                    "id": "4e9323b9-bd0c-541d-9fcb-5b669f56eb98",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-33",
+                    "id": "c94a7d70-4350-53c2-b060-826ade3dd2df",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-34",
+                    "id": "a40b9078-f065-53a8-a65b-c3d61adec99a",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-35",
+                    "id": "ba89e433-b021-5a59-9ca4-9492203e22e8",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-36",
+                    "id": "aaaa0882-9336-5b77-a7a8-fb980280f086",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-37",
+                    "id": "c23de8cb-4544-5da5-b9b4-c48555d27d2c",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-38",
+                    "id": "3558ed28-783d-5f2d-9a23-2281254fc9b1",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-39",
+                    "id": "70b4ddf0-9693-5fd3-a5bc-30ab08095078",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-40",
+                    "id": "7838fd91-be66-53b5-8f72-c27a0e28b50f",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-41",
+                    "id": "0e2346fd-281f-556f-8c55-670f7584987d",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-42",
+                    "id": "a32649f2-2e27-5e3d-ac53-dd9a4c5c84fb",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-43",
+                    "id": "1764ffde-3132-5978-9e54-3b9ba933ea4c",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-44",
+                    "id": "2554c3f8-4e3b-57c5-8d21-919cd066b8ad",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-45",
+                    "id": "6523fe63-52f3-5efa-81b9-724dd5e62c61",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-46",
+                    "id": "675dbb3d-9b6f-50ef-a3bf-cd5a45fa7578",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-47",
+                    "id": "b9832fac-53e1-558d-96e2-e89d8f6b468e",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-48",
+                    "id": "f8177fd6-5c51-543d-80c3-f783e9a6e788",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-49",
+                    "id": "1e69ea13-7cb8-55e8-9d1f-17b18e821216",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-50",
+                    "id": "f7f14299-4ed6-5473-99f5-95e1bfc28888",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-51",
+                    "id": "5dc305d7-e4fc-5148-a740-38bf154a38ea",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-52",
+                    "id": "28980818-7535-5636-b1f5-be1b2dda54a6",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-53",
+                    "id": "f2942c21-c512-5464-aef3-f1959aa1ae52",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-54",
+                    "id": "c88c8548-f52f-5874-9dfd-27247ce5aa5a",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-55",
+                    "id": "56982b08-0a3a-5762-b3de-87fd486a1e9f",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-56",
+                    "id": "e49c4899-e054-5206-b6d9-a905b54b766e",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-57",
+                    "id": "d8dd0aa4-0ec1-5711-b480-54637858a15c",
+                    "baseValue": 73
+                  },
+                  {
+                    "key": "pattern-step-58",
+                    "id": "574ddfde-b3ed-5176-9875-461f4a9b6904",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-59",
+                    "id": "ef727aea-1b5b-5d06-95ab-55a272fe8339",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-60",
+                    "id": "1567f6dd-384c-50a6-ac84-c10a6230376b",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-61",
+                    "id": "0f04c9cc-6132-5cc2-b5bd-91d71ef2d657",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-62",
+                    "id": "5c3fbd60-7a16-5071-a99d-53ab4a38aae8",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-63",
+                    "id": "02c02910-321a-5a58-bbac-57eb861d9a1e",
+                    "baseValue": 61
+                  },
+                  {
+                    "key": "pattern-step-64",
+                    "id": "3db7a163-13a8-5a4f-b420-4c2d01f0afaa",
+                    "baseValue": 61
+                  }
+                ],
+                "ports": [
+                  {
+                    "key": "pitch-out",
+                    "id": "59048f96-6d14-57af-b7ee-ffead910f819"
+                  }
+                ],
+                "composite": null,
+                "isMuted": false,
+                "isBypassed": false
+              },
+              {
+                "id": "a2712121-06bf-503e-b812-b61ce333f026",
+                "typeKey": "generator.note-sequencer",
+                "parameters": [
+                  {
+                    "key": "reference-note",
+                    "id": "5fe9084e-0eb2-51ec-b7b1-e95c799d178b",
+                    "baseValue": 60
+                  },
+                  {
+                    "key": "initial-pitch",
+                    "id": "bacc3ea2-3dfb-501d-a3fa-ff9058b1ec2c",
+                    "baseValue": 9
+                  },
+                  {
+                    "key": "pattern-loop",
+                    "id": "41bc5529-ea67-54ca-a266-7d63ef91b968",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pattern-count",
+                    "id": "f749a45f-9533-5351-90b5-643eac7d52f2",
+                    "baseValue": 64
+                  },
+                  {
+                    "key": "pattern-timing",
+                    "id": "b3e00aa6-0193-50b5-aa98-1cdbb3c03638",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-division",
+                    "id": "70a07097-7ba7-5427-8d42-466a925d04cd",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pattern-multiplier",
+                    "id": "504b6292-4639-556e-b8f8-1c1add38c166",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pattern-seconds",
+                    "id": "dc9b0980-8a23-5ed3-9b70-332cdb33fb34",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pattern-glide",
+                    "id": "ecde8c08-95cd-57bb-8d7c-f18f83c38739",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "pattern-step-01",
+                    "id": "4204baa8-edd0-5aee-b235-a4506f496b0d",
+                    "baseValue": 70
+                  },
+                  {
+                    "key": "pattern-step-02",
+                    "id": "50827116-f4c2-5755-a532-f700195b2557",
+                    "baseValue": 70
+                  },
+                  {
+                    "key": "pattern-step-03",
+                    "id": "3606bfd2-82c0-5c2b-9c3f-a8528273f20e",
+                    "baseValue": 70
+                  },
+                  {
+                    "key": "pattern-step-04",
+                    "id": "2a86e8bb-287b-5d79-a995-11f45d9429e2",
+                    "baseValue": 70
+                  },
+                  {
+                    "key": "pattern-step-05",
+                    "id": "4485d140-d987-5fca-8c24-ad29958e8dbf",
+                    "baseValue": 70
+                  },
+                  {
+                    "key": "pattern-step-06",
+                    "id": "ab8944a0-4013-58da-a81b-8408d5026dcf",
+                    "baseValue": 69
+                  },
+                  {
+                    "key": "pattern-step-07",
+                    "id": "29eebfca-d5cf-57cb-992b-845ee91b410f",
+                    "baseValue": 69
+                  },
+                  {
+                    "key": "pattern-step-08",
+                    "id": "4d8356b7-1e36-5c38-ae1b-61439220af60",
+                    "baseValue": 69
+                  },
+                  {
+                    "key": "pattern-step-09",
+                    "id": "0ed7ef6d-0cb0-50e0-a902-741bd414c992",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-10",
+                    "id": "53d6178b-492a-579e-8a8b-8efea9692958",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-11",
+                    "id": "bd152c33-b5f2-5bfb-9851-603cfde0a270",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-12",
+                    "id": "c5185f3b-9ad3-59f6-bb9b-97e25c6ea4f9",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-13",
+                    "id": "eedca93a-5eb5-56f0-b7c5-1647b709bddc",
+                    "baseValue": 70
+                  },
+                  {
+                    "key": "pattern-step-14",
+                    "id": "83dc2445-11f9-56f2-939b-7dbb4b5779ea",
+                    "baseValue": 70
+                  },
+                  {
+                    "key": "pattern-step-15",
+                    "id": "258928ee-56fc-54ae-bdc0-777b036e56fa",
+                    "baseValue": 70
+                  },
+                  {
+                    "key": "pattern-step-16",
+                    "id": "77a5fd8f-b89d-5c5e-a04a-c0bee3f52df0",
+                    "baseValue": 70
+                  },
+                  {
+                    "key": "pattern-step-17",
+                    "id": "d4902b57-dd2f-5ebe-8539-9dd1271e55e0",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-18",
+                    "id": "dd4c1c29-59fb-5fd6-b79d-d7ef79e4c4c3",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-19",
+                    "id": "9c7f1229-b389-535c-a07b-6a2c1c45dad4",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-20",
+                    "id": "1d03566c-885b-5ed4-8f77-813d938a3be4",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-21",
+                    "id": "44328249-1152-56be-bc58-63ae9b5732a3",
+                    "baseValue": 69
+                  },
+                  {
+                    "key": "pattern-step-22",
+                    "id": "ded8a03a-87c8-5cb1-a7b6-107c05bc5561",
+                    "baseValue": 69
+                  },
+                  {
+                    "key": "pattern-step-23",
+                    "id": "71fa204d-85a9-5618-96e6-d1ee710dc4f3",
+                    "baseValue": 69
+                  },
+                  {
+                    "key": "pattern-step-24",
+                    "id": "7d1c00e5-2dbb-5df1-a6e1-d1c9912fa9db",
+                    "baseValue": 68
+                  },
+                  {
+                    "key": "pattern-step-25",
+                    "id": "cfdea933-a5a5-5d2e-ab89-f5fd485aec6b",
+                    "baseValue": 68
+                  },
+                  {
+                    "key": "pattern-step-26",
+                    "id": "70cc950a-88f1-5a96-9861-e9492010ee28",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-27",
+                    "id": "761673d0-7b4d-5bdb-8a2f-187277a23a26",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-28",
+                    "id": "90cdbacf-7097-5555-a68c-c7dea60a614b",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-29",
+                    "id": "36961ec2-2f27-5e76-a0aa-9ebfa086cee2",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-30",
+                    "id": "c2455e57-27be-5acb-abe4-049c4f279bf3",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-31",
+                    "id": "8db63acf-679b-510c-bec8-9dcb62719d2c",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-32",
+                    "id": "7dee45c6-5f95-5bec-a115-d1306aad8a47",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-33",
+                    "id": "8253bf32-2f58-5975-a0b8-ea3fe6e4f007",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-34",
+                    "id": "a5da01d4-9bfe-504c-96d1-a16c923261cd",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-35",
+                    "id": "5f79e905-49eb-5bcc-b316-d4d89f6ceaae",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-36",
+                    "id": "ca21dfdf-a285-5fb4-a60a-9132c17fd44c",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-37",
+                    "id": "d40c5150-c110-546a-9ca6-b62cc8b7022d",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-38",
+                    "id": "e0bb1461-2491-50f8-b699-69e1ed9bd044",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-39",
+                    "id": "66e708f4-184c-5e5d-ab3c-5d0fcfb36276",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-40",
+                    "id": "11c02e3f-ee24-539b-aa3a-1141315d0acd",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-41",
+                    "id": "016658ea-f188-5587-9433-c83c4749bf63",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-42",
+                    "id": "ea92c39d-58d2-53fb-8d0a-500fff7497a6",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-43",
+                    "id": "8165d21b-8b48-5152-9535-882cc42bac4c",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-44",
+                    "id": "527c19e3-85c2-5026-a142-2d47061f9ca6",
+                    "baseValue": 71
+                  },
+                  {
+                    "key": "pattern-step-45",
+                    "id": "3b0b91ca-cf49-5c50-a130-2333c5ff6735",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-46",
+                    "id": "887fbdf1-4887-5be9-8be1-d68a1953ae23",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-47",
+                    "id": "38748cce-0478-5387-a35d-2e77d5ac12c2",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-48",
+                    "id": "46a5d590-3454-53fc-b07f-069579312424",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-49",
+                    "id": "a257b729-cd3b-52ff-91ab-1e278cb34683",
+                    "baseValue": 69
+                  },
+                  {
+                    "key": "pattern-step-50",
+                    "id": "5a5e7966-b313-5389-b9af-52bd0f202cb4",
+                    "baseValue": 69
+                  },
+                  {
+                    "key": "pattern-step-51",
+                    "id": "1370af35-5625-5b48-afe3-952bff39c4b8",
+                    "baseValue": 69
+                  },
+                  {
+                    "key": "pattern-step-52",
+                    "id": "b94ac62d-cb8c-50cb-b65f-acd2886d8169",
+                    "baseValue": 69
+                  },
+                  {
+                    "key": "pattern-step-53",
+                    "id": "def67aec-1e9f-5235-b17e-5dc07c70e3aa",
+                    "baseValue": 70
+                  },
+                  {
+                    "key": "pattern-step-54",
+                    "id": "2368eb1f-2c02-584a-8c98-cff2c95a724d",
+                    "baseValue": 70
+                  },
+                  {
+                    "key": "pattern-step-55",
+                    "id": "a47d9950-b2a2-51f1-87dd-f41444f4b39f",
+                    "baseValue": 70
+                  },
+                  {
+                    "key": "pattern-step-56",
+                    "id": "ff0273db-a1ab-5d65-8828-3cb9c317779f",
+                    "baseValue": 70
+                  },
+                  {
+                    "key": "pattern-step-57",
+                    "id": "45bf77e0-8ede-5f0e-a495-1ee816b8ab80",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-58",
+                    "id": "8dae4e58-6c6a-5993-91aa-298b317b650a",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-59",
+                    "id": "0803715c-13c0-5361-84a3-54841344a2f1",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-60",
+                    "id": "fb3f688a-4359-54ce-9a68-7f80c0006f9d",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-61",
+                    "id": "e37602bd-f136-59bc-9bc6-e269764c7449",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-62",
+                    "id": "e9d0960d-390e-570d-81ab-74695eb0f002",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-63",
+                    "id": "7c73d65a-bc15-5cbf-89e2-2658f95b211f",
+                    "baseValue": 72
+                  },
+                  {
+                    "key": "pattern-step-64",
+                    "id": "d9be4001-cae2-5a84-a3bf-1e3ef2e7fb75",
+                    "baseValue": 72
+                  }
+                ],
+                "ports": [
+                  {
+                    "key": "pitch-out",
+                    "id": "b155b76f-e2f0-5a7a-a38c-69c0e99b013c"
+                  }
+                ],
+                "composite": null,
+                "isMuted": false,
+                "isBypassed": false
+              },
+              {
+                "id": "fc4030c5-39f8-5530-bbb8-3ea741d5ec99",
+                "typeKey": "generator.signal-to-gate",
+                "parameters": [],
+                "ports": [
+                  {
+                    "key": "signal-in",
+                    "id": "c2f818fa-0e15-5985-a64d-bdab3fd1b39a"
+                  },
+                  {
+                    "key": "event-out",
+                    "id": "52478f55-9252-5bb6-b6a0-43d944a52dac"
+                  }
+                ],
+                "composite": null,
+                "isMuted": false,
+                "isBypassed": false
+              },
+              {
+                "id": "ebe21c26-c9c6-5bf3-a010-fffe8720d4b1",
+                "typeKey": "generator.signal-to-trigger",
+                "parameters": [],
+                "ports": [
+                  {
+                    "key": "signal-in",
+                    "id": "d7716515-f12e-51c1-b0bd-54d0d89d5338"
+                  },
+                  {
+                    "key": "event-out",
+                    "id": "6aefae04-a6a6-51f5-82be-29e7ebf5a547"
+                  }
+                ],
+                "composite": null,
+                "isMuted": false,
+                "isBypassed": false
+              }
+            ],
+            "connections": [
+              {
+                "id": "10cb335b-0781-53f1-ab26-4de1ec37fb62",
+                "source": {
+                  "nodeId": "fb385260-c0d7-5b02-ac5d-673d52ffac61",
+                  "portId": "71686826-3969-5aaf-a85b-b4ccf4071e71"
+                },
+                "destination": {
+                  "nodeId": "fc4030c5-39f8-5530-bbb8-3ea741d5ec99",
+                  "portId": "c2f818fa-0e15-5985-a64d-bdab3fd1b39a"
+                },
+                "amount": 0.08333333333333333
+              },
+              {
+                "id": "0163782d-c599-54f4-ba61-834f167340cc",
+                "source": {
+                  "nodeId": "49fa53ed-ce13-5b02-8a03-0746db00b582",
+                  "portId": "59048f96-6d14-57af-b7ee-ffead910f819"
+                },
+                "destination": {
+                  "nodeId": "ebe21c26-c9c6-5bf3-a010-fffe8720d4b1",
+                  "portId": "d7716515-f12e-51c1-b0bd-54d0d89d5338"
+                },
+                "amount": 0.08333333333333333
+              },
+              {
+                "id": "b144fe51-ceee-52a5-a202-a4a6df39de37",
+                "source": {
+                  "nodeId": "4f05d15d-2dfb-5b75-9e58-e6cd46fb3788",
+                  "portId": "84bef90b-1c1c-562f-b5cc-7f988f1edc1f"
+                },
+                "destination": {
+                  "nodeId": "b42d2513-8779-5647-8c5f-050bfdc32e45",
+                  "portId": "917f5a12-3af2-55d9-b0d6-3cec81f4d742"
+                },
+                "amount": 1
+              },
+              {
+                "id": "efe00d97-9a27-5493-9b87-6545b01aa14e",
+                "source": {
+                  "nodeId": "fc4030c5-39f8-5530-bbb8-3ea741d5ec99",
+                  "portId": "52478f55-9252-5bb6-b6a0-43d944a52dac"
+                },
+                "destination": {
+                  "nodeId": "b42d2513-8779-5647-8c5f-050bfdc32e45",
+                  "portId": "de4bf062-170f-52ba-9ada-fe9112ada18f"
+                },
+                "amount": 1
+              },
+              {
+                "id": "15d71990-f49d-51e6-a823-90ce12b9c698",
+                "source": {
+                  "nodeId": "ebe21c26-c9c6-5bf3-a010-fffe8720d4b1",
+                  "portId": "6aefae04-a6a6-51f5-82be-29e7ebf5a547"
+                },
+                "destination": {
+                  "nodeId": "b42d2513-8779-5647-8c5f-050bfdc32e45",
+                  "portId": "fdb1ddb6-9eb9-5385-a553-90e2d6a8c825"
+                },
+                "amount": 1
+              },
+              {
+                "id": "8879b034-1be8-5cf1-8a00-7b6cf3753ace",
+                "source": {
+                  "nodeId": "a2712121-06bf-503e-b812-b61ce333f026",
+                  "portId": "b155b76f-e2f0-5a7a-a38c-69c0e99b013c"
+                },
+                "destination": {
+                  "nodeId": "b42d2513-8779-5647-8c5f-050bfdc32e45",
+                  "portId": "28b5aa2f-00c3-58ab-a2ac-f6774c1fe051"
+                },
+                "amount": 0.08333333333333333
+              }
+            ]
+          }
+        },
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "e9fd72c2-1010-5960-8d63-bbca50be7413",
+        "typeKey": "composite.graph",
+        "parameters": [],
+        "ports": [
+          {
+            "key": "boundary-db420c5b9aca5f829102d271c1f81b4b",
+            "id": "db420c5b-9aca-5f82-9102-d271c1f81b4b"
+          },
+          {
+            "key": "boundary-5ff4ae4eecea55e29031313690203956",
+            "id": "5ff4ae4e-ecea-55e2-9031-313690203956"
+          },
+          {
+            "key": "boundary-d427444f020a5469b56c42e493e8efce",
+            "id": "d427444f-020a-5469-b56c-42e493e8efce"
+          },
+          {
+            "key": "boundary-3d8512fa387652459c18dad02fbb7f21",
+            "id": "3d8512fa-3876-5245-9c18-dad02fbb7f21"
+          },
+          {
+            "key": "boundary-88c6f0e0013e5ec9b990c98b026ef66c",
+            "id": "88c6f0e0-013e-5ec9-b990-c98b026ef66c"
+          }
+        ],
+        "composite": {
+          "name": "01 · TEST reference instrument — replace me",
+          "inputRackId": "a89eed45-b15b-57c9-8af0-cb842a16a5ce",
+          "outputRackId": "62acccd9-7c6f-5567-8400-7729674a2d7f",
+          "inputs": [
+            {
+              "id": "db420c5b-9aca-5f82-9102-d271c1f81b4b",
+              "name": "Pitch (st)",
+              "signalType": 1,
+              "channelCount": 1,
+              "fanIn": 0
+            },
+            {
+              "id": "5ff4ae4e-ecea-55e2-9031-313690203956",
+              "name": "Gate",
+              "signalType": 3,
+              "channelCount": 1,
+              "fanIn": 0
+            },
+            {
+              "id": "d427444f-020a-5469-b56c-42e493e8efce",
+              "name": "Trigger",
+              "signalType": 2,
+              "channelCount": 1,
+              "fanIn": 0
+            },
+            {
+              "id": "3d8512fa-3876-5245-9c18-dad02fbb7f21",
+              "name": "Velocity",
+              "signalType": 1,
+              "channelCount": 1,
+              "fanIn": 0
+            }
+          ],
+          "outputs": [
+            {
+              "id": "88c6f0e0-013e-5ec9-b990-c98b026ef66c",
+              "name": "Audio",
+              "signalType": 0,
+              "channelCount": 1,
+              "fanIn": 0
+            }
+          ],
+          "graph": {
+            "id": "ccb9b2ac-e413-5a7e-894a-6f4501448020",
+            "nodes": [
+              {
+                "id": "54d5d2f6-6f58-5be2-a953-e819d68baa9c",
+                "typeKey": "generator.envelope",
+                "parameters": [
+                  {
+                    "key": "attack",
+                    "id": "b72647df-74ac-5ffc-ab68-33ffb0884265",
+                    "baseValue": 12
+                  },
+                  {
+                    "key": "decay",
+                    "id": "c300da36-d5c7-57eb-b0c9-98c859c1a44d",
+                    "baseValue": 110
+                  },
+                  {
+                    "key": "attack-curve",
+                    "id": "0501c5cf-932b-5f91-8f22-7e8f2bdb2350",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "decay-curve",
+                    "id": "dd86fb56-0e19-59a8-8db4-c73e605c4863",
+                    "baseValue": 1.5
+                  },
+                  {
+                    "key": "mode",
+                    "id": "2429e8d7-003d-5d1b-9c86-5f1404ca24ef",
+                    "baseValue": 2
+                  },
+                  {
+                    "key": "trigger-source",
+                    "id": "d1482cc6-677e-5c0c-ae0f-0fbc21eafd51",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "release",
+                    "id": "4be82f22-243c-554d-b6b2-77ee83bb5634",
+                    "baseValue": 125
+                  },
+                  {
+                    "key": "release-curve",
+                    "id": "d1fba925-0778-5d0a-93cd-967b7cfd2bd5",
+                    "baseValue": 1.4
+                  },
+                  {
+                    "key": "sustain",
+                    "id": "cba9aadc-942b-55e7-a657-45f6b983fc1c",
+                    "baseValue": 0.68
+                  },
+                  {
+                    "key": "rest",
+                    "id": "3a8c257a-2507-50e7-83a5-c3f5b4492d3f",
+                    "baseValue": 0
+                  }
+                ],
+                "ports": [
+                  {
+                    "key": "signal-trigger-in",
+                    "id": "a9ac6e34-792c-54cc-9081-47f042592a70"
+                  },
+                  {
+                    "key": "event-trigger-in",
+                    "id": "20d37d65-ad23-55a7-8ee8-36cb6f1499dd"
+                  },
+                  {
+                    "key": "gate-in",
+                    "id": "19447670-91de-5a48-9555-d6465c7753fd"
+                  },
+                  {
+                    "key": "attack-modulation-in",
+                    "id": "9b68c735-d9b0-580a-bfa3-2a7bd74c9003"
+                  },
+                  {
+                    "key": "decay-modulation-in",
+                    "id": "7683eed5-3c8c-5602-a718-892a2d9be06d"
+                  },
+                  {
+                    "key": "attack-curve-modulation-in",
+                    "id": "5e791764-aec3-58df-b517-5a9532b1cf12"
+                  },
+                  {
+                    "key": "decay-curve-modulation-in",
+                    "id": "2109bb3e-d4f9-5209-8d38-0d708f9e4898"
+                  },
+                  {
+                    "key": "release-modulation-in",
+                    "id": "87b43263-7d2b-53b9-a407-ce626fc51625"
+                  },
+                  {
+                    "key": "release-curve-modulation-in",
+                    "id": "87e7caed-a05f-5407-b6c2-3dbbb6db4cc1"
+                  },
+                  {
+                    "key": "sustain-modulation-in",
+                    "id": "50610f48-9a94-5488-879d-88490ccce3c0"
+                  },
+                  {
+                    "key": "rest-modulation-in",
+                    "id": "0898a78f-8129-57e8-af95-b7f24cb48cc2"
+                  },
+                  {
+                    "key": "envelope-out",
+                    "id": "9c38db2a-8749-522b-bdaa-c770a43cadc4"
+                  }
+                ],
+                "composite": null,
+                "isMuted": false,
+                "isBypassed": false
+              },
+              {
+                "id": "4e767d68-eaa3-5ec2-93f3-573e97481c64",
+                "typeKey": "generator.envelope",
+                "parameters": [
+                  {
+                    "key": "attack",
+                    "id": "8bf1bb4a-02ed-5ad3-996e-95d1a2e96479",
+                    "baseValue": 3
+                  },
+                  {
+                    "key": "decay",
+                    "id": "d607b006-5a72-5037-b9bb-d7884b8bc6e3",
+                    "baseValue": 65
+                  },
+                  {
+                    "key": "attack-curve",
+                    "id": "ad6fac01-7552-57c8-98c2-b860237a6aad",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "decay-curve",
+                    "id": "3f036085-33c0-575a-93a5-ee399d5bdbef",
+                    "baseValue": 2
+                  },
+                  {
+                    "key": "mode",
+                    "id": "8d7159bf-040b-57d2-bda6-adfa98fa2d1a",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "trigger-source",
+                    "id": "e6cb0861-2cea-5c36-a5fc-e62912ee019e",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "release",
+                    "id": "a41552c5-76ab-5768-84e5-dc448db25413",
+                    "baseValue": 500
+                  },
+                  {
+                    "key": "release-curve",
+                    "id": "78e28ab4-cacc-5e21-b194-87fb9ce77e67",
+                    "baseValue": 3
+                  },
+                  {
+                    "key": "sustain",
+                    "id": "a715e05d-5b5e-54e3-b168-8968e2224266",
+                    "baseValue": 0.5
+                  },
+                  {
+                    "key": "rest",
+                    "id": "783bc8cd-8e75-5946-853a-1a3f25657a70",
+                    "baseValue": 0
+                  }
+                ],
+                "ports": [
+                  {
+                    "key": "signal-trigger-in",
+                    "id": "151da6c4-343d-5c6a-a775-7dc0b55cff14"
+                  },
+                  {
+                    "key": "event-trigger-in",
+                    "id": "b45431ee-741e-53fc-bd2c-755d14e9df74"
+                  },
+                  {
+                    "key": "gate-in",
+                    "id": "82a5a2dc-90b0-50aa-8133-a50e224b366d"
+                  },
+                  {
+                    "key": "attack-modulation-in",
+                    "id": "5731e21e-3119-5423-acb3-14498923d840"
+                  },
+                  {
+                    "key": "decay-modulation-in",
+                    "id": "c08e822f-4714-52dc-898d-19da3ebc1a4a"
+                  },
+                  {
+                    "key": "attack-curve-modulation-in",
+                    "id": "fc5ff3c3-ca17-503c-a68b-dd1a4fff42f5"
+                  },
+                  {
+                    "key": "decay-curve-modulation-in",
+                    "id": "2fc3cccb-5287-554d-b89f-4d59d67ad1ed"
+                  },
+                  {
+                    "key": "release-modulation-in",
+                    "id": "469d01a1-a244-54ea-af01-9d879e076fe3"
+                  },
+                  {
+                    "key": "release-curve-modulation-in",
+                    "id": "0609f708-60fd-567a-bba6-925cd48d6b3f"
+                  },
+                  {
+                    "key": "sustain-modulation-in",
+                    "id": "8c30dcec-a552-5b62-8124-c11c84145001"
+                  },
+                  {
+                    "key": "rest-modulation-in",
+                    "id": "f6f9446e-9dc8-507b-8d06-4b494200b455"
+                  },
+                  {
+                    "key": "envelope-out",
+                    "id": "3edac6ac-b206-540d-b1b7-27a69fafc859"
+                  }
+                ],
+                "composite": null,
+                "isMuted": false,
+                "isBypassed": false
+              },
+              {
+                "id": "c9335f3b-71b8-5230-b369-66de2569b4ac",
+                "typeKey": "generator.oscillator",
+                "parameters": [
+                  {
+                    "key": "frequency",
+                    "id": "b2d9ad3b-e2c3-50fc-856d-68bdbe7dc0b4",
+                    "baseValue": 440
+                  },
+                  {
+                    "key": "amplitude",
+                    "id": "c72669ae-d85d-5221-9838-4490f11ad246",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "phase",
+                    "id": "abcae22a-8bc0-59c0-b9b3-ac3151123cc7",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "waveform",
+                    "id": "05a4411f-675c-506f-a502-7de7f8209118",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "timing",
+                    "id": "a4be94af-421f-500e-890c-e3da8dd8d8e5",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "division",
+                    "id": "83b53b1b-d07d-5eb8-bbdd-f6240bbc87d8",
+                    "baseValue": 2
+                  },
+                  {
+                    "key": "pulse-width",
+                    "id": "0f77d0ed-b5e0-502b-acb4-7b4ed33bcfc2",
+                    "baseValue": 0.5
+                  },
+                  {
+                    "key": "pitch-tracking",
+                    "id": "9df75550-a4d8-5f9b-95a6-32e345650651",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pitch-offset",
+                    "id": "9ce6f626-d547-5c8a-8de5-f37d55a1a89e",
+                    "baseValue": 0
+                  }
+                ],
+                "ports": [
+                  {
+                    "key": "frequency-modulation-in",
+                    "id": "5d49dba2-2eb5-5b97-acfa-8189c2c973bd"
+                  },
+                  {
+                    "key": "amplitude-modulation-in",
+                    "id": "8901cc2a-df0f-5ee6-abc4-898cd97beac0"
+                  },
+                  {
+                    "key": "phase-modulation-in",
+                    "id": "6b24202a-277a-51a2-87c0-baeca398ec8e"
+                  },
+                  {
+                    "key": "pulse-width-modulation-in",
+                    "id": "0a6feb2a-4b36-53c5-8e6d-2f3c71996825"
+                  },
+                  {
+                    "key": "pitch-modulation-in",
+                    "id": "91d89772-4b2c-5daa-a543-f79075b61dae"
+                  },
+                  {
+                    "key": "signal-out",
+                    "id": "b7ec4081-cdf8-5a11-bc40-454d72d61307"
+                  }
+                ],
+                "composite": null,
+                "isMuted": false,
+                "isBypassed": false
+              },
+              {
+                "id": "05f82178-3abb-5f0a-9ffb-df0c5110bd13",
+                "typeKey": "generator.oscillator",
+                "parameters": [
+                  {
+                    "key": "frequency",
+                    "id": "5edfbdbd-4861-592f-a5bc-3b6996f978b4",
+                    "baseValue": 880
+                  },
+                  {
+                    "key": "amplitude",
+                    "id": "08789917-52a6-5817-bc0e-619e95808846",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "phase",
+                    "id": "28e2b06b-e247-53ad-9ac2-ff75712fdabc",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "waveform",
+                    "id": "8213d89d-e45a-5741-94ff-5fbc66f62e00",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "timing",
+                    "id": "222f852f-7e91-5662-b7e8-eaa206cd0bea",
+                    "baseValue": 0
+                  },
+                  {
+                    "key": "division",
+                    "id": "adb483b7-79f1-58a5-8bd7-f235ca6d67a6",
+                    "baseValue": 2
+                  },
+                  {
+                    "key": "pulse-width",
+                    "id": "4178e15f-10cf-580d-bc76-a4377223e865",
+                    "baseValue": 0.5
+                  },
+                  {
+                    "key": "pitch-tracking",
+                    "id": "0a960d2c-5e62-57e8-b6e5-c6ba4d7d6576",
+                    "baseValue": 1
+                  },
+                  {
+                    "key": "pitch-offset",
+                    "id": "403794ae-1b40-564f-a2c9-c3eb022af313",
+                    "baseValue": 0
+                  }
+                ],
+                "ports": [
+                  {
+                    "key": "frequency-modulation-in",
+                    "id": "b2b6dc18-3737-54eb-8847-1a0ef1e2593c"
+                  },
+                  {
+                    "key": "amplitude-modulation-in",
+                    "id": "21757343-bb6f-5cc1-b6db-2dca98aff75d"
+                  },
+                  {
+                    "key": "phase-modulation-in",
+                    "id": "87e970e7-65d4-539a-b141-8e1c2a5abeec"
+                  },
+                  {
+                    "key": "pulse-width-modulation-in",
+                    "id": "8cf0b213-d3e9-576f-9ffe-073b1ab3bfde"
+                  },
+                  {
+                    "key": "pitch-modulation-in",
+                    "id": "6a0df646-c39a-540a-87b1-9d8f98963aaf"
+                  },
+                  {
+                    "key": "signal-out",
+                    "id": "704cafee-0839-5942-ac3e-308df763343c"
+                  }
+                ],
+                "composite": null,
+                "isMuted": false,
+                "isBypassed": false
+              },
+              {
+                "id": "a5937768-8ddb-53a4-8400-5300f1ea00d0",
+                "typeKey": "processor.mixer",
+                "parameters": [],
+                "ports": [
+                  {
+                    "key": "audio-in",
+                    "id": "b8b7d16b-226e-5407-b5ac-149f0b9b2d98"
+                  },
+                  {
+                    "key": "audio-out",
+                    "id": "73d4b9fa-c39a-58c7-8db2-93f4c7acbbfd"
+                  }
+                ],
+                "composite": null,
+                "isMuted": false,
+                "isBypassed": false
+              },
+              {
+                "id": "c038a5a9-356f-558d-bd15-e82e0b4dd7a3",
+                "typeKey": "processor.gain",
+                "parameters": [
+                  {
+                    "key": "gain",
+                    "id": "c3c368e8-6028-5967-bd99-8d226374748d",
+                    "baseValue": 0
+                  }
+                ],
+                "ports": [
+                  {
+                    "key": "audio-in",
+                    "id": "0eae9dfb-72f8-5191-9f60-48c38e838529"
+                  },
+                  {
+                    "key": "gain-modulation-in",
+                    "id": "b0e79a74-8c7d-56f2-a4a8-d1a7d2699765"
+                  },
+                  {
+                    "key": "audio-out",
+                    "id": "f342d505-81b8-5e7c-b639-28821e190cbf"
+                  }
+                ],
+                "composite": null,
+                "isMuted": false,
+                "isBypassed": false
+              }
+            ],
+            "connections": [
+              {
+                "id": "ed254194-78ab-536f-9e5a-d6012a2f43ed",
+                "source": {
+                  "nodeId": "a89eed45-b15b-57c9-8af0-cb842a16a5ce",
+                  "portId": "5ff4ae4e-ecea-55e2-9031-313690203956"
+                },
+                "destination": {
+                  "nodeId": "54d5d2f6-6f58-5be2-a953-e819d68baa9c",
+                  "portId": "19447670-91de-5a48-9555-d6465c7753fd"
+                },
+                "amount": 1
+              },
+              {
+                "id": "9cd275a6-7ad4-5280-8b7c-2a513a0d17e3",
+                "source": {
+                  "nodeId": "a89eed45-b15b-57c9-8af0-cb842a16a5ce",
+                  "portId": "d427444f-020a-5469-b56c-42e493e8efce"
+                },
+                "destination": {
+                  "nodeId": "4e767d68-eaa3-5ec2-93f3-573e97481c64",
+                  "portId": "b45431ee-741e-53fc-bd2c-755d14e9df74"
+                },
+                "amount": 1
+              },
+              {
+                "id": "de3c894d-6d69-5238-874f-b128f7b2cd40",
+                "source": {
+                  "nodeId": "a89eed45-b15b-57c9-8af0-cb842a16a5ce",
+                  "portId": "db420c5b-9aca-5f82-9102-d271c1f81b4b"
+                },
+                "destination": {
+                  "nodeId": "c9335f3b-71b8-5230-b369-66de2569b4ac",
+                  "portId": "91d89772-4b2c-5daa-a543-f79075b61dae"
+                },
+                "amount": 1
+              },
+              {
+                "id": "9c4237a7-3d8e-5523-84ca-d22892d7d07b",
+                "source": {
+                  "nodeId": "a89eed45-b15b-57c9-8af0-cb842a16a5ce",
+                  "portId": "db420c5b-9aca-5f82-9102-d271c1f81b4b"
+                },
+                "destination": {
+                  "nodeId": "05f82178-3abb-5f0a-9ffb-df0c5110bd13",
+                  "portId": "6a0df646-c39a-540a-87b1-9d8f98963aaf"
+                },
+                "amount": 1
+              },
+              {
+                "id": "21d6d1f0-8fcf-5216-9cd5-f2a126ba52f0",
+                "source": {
+                  "nodeId": "54d5d2f6-6f58-5be2-a953-e819d68baa9c",
+                  "portId": "9c38db2a-8749-522b-bdaa-c770a43cadc4"
+                },
+                "destination": {
+                  "nodeId": "c9335f3b-71b8-5230-b369-66de2569b4ac",
+                  "portId": "8901cc2a-df0f-5ee6-abc4-898cd97beac0"
+                },
+                "amount": 0.2
+              },
+              {
+                "id": "2678fe75-4c58-51e5-9838-d63989baee45",
+                "source": {
+                  "nodeId": "4e767d68-eaa3-5ec2-93f3-573e97481c64",
+                  "portId": "3edac6ac-b206-540d-b1b7-27a69fafc859"
+                },
+                "destination": {
+                  "nodeId": "05f82178-3abb-5f0a-9ffb-df0c5110bd13",
+                  "portId": "21757343-bb6f-5cc1-b6db-2dca98aff75d"
+                },
+                "amount": 0.033
+              },
+              {
+                "id": "f0391472-4d64-578e-8c40-90c4fd5ff497",
+                "source": {
+                  "nodeId": "c9335f3b-71b8-5230-b369-66de2569b4ac",
+                  "portId": "b7ec4081-cdf8-5a11-bc40-454d72d61307"
+                },
+                "destination": {
+                  "nodeId": "a5937768-8ddb-53a4-8400-5300f1ea00d0",
+                  "portId": "b8b7d16b-226e-5407-b5ac-149f0b9b2d98"
+                },
+                "amount": 1
+              },
+              {
+                "id": "f025c217-158f-59e9-97a2-d1c8135fcf57",
+                "source": {
+                  "nodeId": "05f82178-3abb-5f0a-9ffb-df0c5110bd13",
+                  "portId": "704cafee-0839-5942-ac3e-308df763343c"
+                },
+                "destination": {
+                  "nodeId": "a5937768-8ddb-53a4-8400-5300f1ea00d0",
+                  "portId": "b8b7d16b-226e-5407-b5ac-149f0b9b2d98"
+                },
+                "amount": 1
+              },
+              {
+                "id": "b87e7963-98ab-527a-9e8d-8de4ef7cdf61",
+                "source": {
+                  "nodeId": "a5937768-8ddb-53a4-8400-5300f1ea00d0",
+                  "portId": "73d4b9fa-c39a-58c7-8db2-93f4c7acbbfd"
+                },
+                "destination": {
+                  "nodeId": "c038a5a9-356f-558d-bd15-e82e0b4dd7a3",
+                  "portId": "0eae9dfb-72f8-5191-9f60-48c38e838529"
+                },
+                "amount": 1
+              },
+              {
+                "id": "71fbc656-bff2-5b5b-8b9a-0cf3dfc07e1b",
+                "source": {
+                  "nodeId": "a89eed45-b15b-57c9-8af0-cb842a16a5ce",
+                  "portId": "3d8512fa-3876-5245-9c18-dad02fbb7f21"
+                },
+                "destination": {
+                  "nodeId": "c038a5a9-356f-558d-bd15-e82e0b4dd7a3",
+                  "portId": "b0e79a74-8c7d-56f2-a4a8-d1a7d2699765"
+                },
+                "amount": 1
+              },
+              {
+                "id": "48dcf755-eb33-53ff-b77b-42aede90c78a",
+                "source": {
+                  "nodeId": "c038a5a9-356f-558d-bd15-e82e0b4dd7a3",
+                  "portId": "f342d505-81b8-5e7c-b639-28821e190cbf"
+                },
+                "destination": {
+                  "nodeId": "62acccd9-7c6f-5567-8400-7729674a2d7f",
+                  "portId": "88c6f0e0-013e-5ec9-b990-c98b026ef66c"
+                },
+                "amount": 1
+              }
+            ]
+          }
+        },
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "070ff4e1-9ce5-50e3-b5ff-c6b37f75968c",
+        "typeKey": "processor.mixer",
+        "parameters": [],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "845a2369-35b5-53c9-a678-fced60fa1e93"
+          },
+          {
+            "key": "audio-out",
+            "id": "1043fdfa-cabb-5702-abf8-ff97b3f609aa"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "6353f081-ba92-5519-a425-8e01296973c7",
+        "typeKey": "output.master",
+        "parameters": [],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ad4faeef-51e2-5ad2-9c61-94710150f2cb"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      }
+    ],
+    "connections": [
+      {
+        "id": "e4773765-e59c-59f0-af6a-cd5241973d54",
+        "source": {
+          "nodeId": "f5d2600e-1e17-5611-819b-f087b9024eae",
+          "portId": "917f5a12-3af2-55d9-b0d6-3cec81f4d742"
+        },
+        "destination": {
+          "nodeId": "e9fd72c2-1010-5960-8d63-bbca50be7413",
+          "portId": "db420c5b-9aca-5f82-9102-d271c1f81b4b"
+        },
+        "amount": 1
+      },
+      {
+        "id": "e146357f-0553-5403-8986-db9a5cb0b2be",
+        "source": {
+          "nodeId": "f5d2600e-1e17-5611-819b-f087b9024eae",
+          "portId": "de4bf062-170f-52ba-9ada-fe9112ada18f"
+        },
+        "destination": {
+          "nodeId": "e9fd72c2-1010-5960-8d63-bbca50be7413",
+          "portId": "5ff4ae4e-ecea-55e2-9031-313690203956"
+        },
+        "amount": 1
+      },
+      {
+        "id": "6ac2afdc-f5ef-5cd1-9d48-e38a65ce57e1",
+        "source": {
+          "nodeId": "f5d2600e-1e17-5611-819b-f087b9024eae",
+          "portId": "fdb1ddb6-9eb9-5385-a553-90e2d6a8c825"
+        },
+        "destination": {
+          "nodeId": "e9fd72c2-1010-5960-8d63-bbca50be7413",
+          "portId": "d427444f-020a-5469-b56c-42e493e8efce"
+        },
+        "amount": 1
+      },
+      {
+        "id": "af3d3197-9465-5478-9f0e-400f2b32bfea",
+        "source": {
+          "nodeId": "f5d2600e-1e17-5611-819b-f087b9024eae",
+          "portId": "28b5aa2f-00c3-58ab-a2ac-f6774c1fe051"
+        },
+        "destination": {
+          "nodeId": "e9fd72c2-1010-5960-8d63-bbca50be7413",
+          "portId": "3d8512fa-3876-5245-9c18-dad02fbb7f21"
+        },
+        "amount": 1
+      },
+      {
+        "id": "c47e1b17-c60c-577d-a19b-b9cd0f37ca19",
+        "source": {
+          "nodeId": "e9fd72c2-1010-5960-8d63-bbca50be7413",
+          "portId": "88c6f0e0-013e-5ec9-b990-c98b026ef66c"
+        },
+        "destination": {
+          "nodeId": "070ff4e1-9ce5-50e3-b5ff-c6b37f75968c",
+          "portId": "845a2369-35b5-53c9-a678-fced60fa1e93"
+        },
+        "amount": 0.7
+      },
+      {
+        "id": "b8412d05-7608-560a-9b60-8379d1844097",
+        "source": {
+          "nodeId": "070ff4e1-9ce5-50e3-b5ff-c6b37f75968c",
+          "portId": "1043fdfa-cabb-5702-abf8-ff97b3f609aa"
+        },
+        "destination": {
+          "nodeId": "6353f081-ba92-5519-a425-8e01296973c7",
+          "portId": "ad4faeef-51e2-5ad2-9c61-94710150f2cb"
+        },
+        "amount": 1
+      }
+    ]
+  },
+  "beatsPerMinute": 120,
+  "activeGraphId": "85957693-6699-5b6f-b3c0-5fba1e55e7d1",
+  "canvasLayouts": [
+    {
+      "graphId": "520dcfa9-0edd-5e0f-a787-98ed46fa0d06",
+      "panX": 35,
+      "panY": 50,
+      "zoom": 0.3,
+      "positions": [
+        {
+          "nodeId": "1bf86ae1-0ccc-5a60-b26d-d2bd7c1bd0b2",
+          "x": -702.0,
+          "y": 112.00000000000001
+        },
+        {
+          "nodeId": "b42d2513-8779-5647-8c5f-050bfdc32e45",
+          "x": 1638.0,
+          "y": 336.00000000000006
+        },
+        {
+          "nodeId": "4f05d15d-2dfb-5b75-9e58-e6cd46fb3788",
+          "x": 0.0,
+          "y": 112.00000000000001
+        },
+        {
+          "nodeId": "fb385260-c0d7-5b02-ac5d-673d52ffac61",
+          "x": 0.0,
+          "y": 952.0000000000001
+        },
+        {
+          "nodeId": "49fa53ed-ce13-5b02-8a03-0746db00b582",
+          "x": 0.0,
+          "y": 1792.0000000000002
+        },
+        {
+          "nodeId": "a2712121-06bf-503e-b812-b61ce333f026",
+          "x": 0.0,
+          "y": 2632.0000000000005
+        },
+        {
+          "nodeId": "fc4030c5-39f8-5530-bbb8-3ea741d5ec99",
+          "x": 760.5,
+          "y": 952.0000000000001
+        },
+        {
+          "nodeId": "ebe21c26-c9c6-5bf3-a010-fffe8720d4b1",
+          "x": 760.5,
+          "y": 1792.0000000000002
+        }
+      ],
+      "visualizations": [],
+      "connectionLabels": 1,
+      "expandedVisualizationNodeId": null,
+      "notes": [
+        {
+          "id": "d8d1845b-1758-5915-9621-b38b940426fc",
+          "title": "TEST score v1 — keep fixed",
+          "body": "120 BPM · D major · 4 bars · 64 sixteenths (125 ms). Pitch Hold is not a rest: separate gate controls note length. Trigger has a pulse at every written onset including legato. Velocity stays at the last strike through release. Pitch reference A4 = 440 Hz. First slot and final 4 slots are silent.",
+          "accent": 2,
+          "x": -1050,
+          "y": 20,
+          "width": 940,
+          "height": 420,
+          "collapsed": false
+        }
+      ],
+      "nodeDescriptions": [
+        {
+          "nodeId": "4f05d15d-2dfb-5b75-9e58-e6cd46fb3788",
+          "alias": "Score · A4 reference",
+          "description": ""
+        },
+        {
+          "nodeId": "fb385260-c0d7-5b02-ac5d-673d52ffac61",
+          "alias": "Note lengths · zero = rest",
+          "description": ""
+        },
+        {
+          "nodeId": "49fa53ed-ce13-5b02-8a03-0746db00b582",
+          "alias": "Distinct onsets · one step high",
+          "description": ""
+        },
+        {
+          "nodeId": "a2712121-06bf-503e-b812-b61ce333f026",
+          "alias": "Strike dynamics · retained through release",
+          "description": ""
+        },
+        {
+          "nodeId": "fc4030c5-39f8-5530-bbb8-3ea741d5ec99",
+          "alias": "Gate adapter",
+          "description": ""
+        },
+        {
+          "nodeId": "ebe21c26-c9c6-5bf3-a010-fffe8720d4b1",
+          "alias": "Trigger adapter",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "graphId": "ccb9b2ac-e413-5a7e-894a-6f4501448020",
+      "panX": 35,
+      "panY": 45,
+      "zoom": 0.3,
+      "positions": [
+        {
+          "nodeId": "a89eed45-b15b-57c9-8af0-cb842a16a5ce",
+          "x": -702.0,
+          "y": 224.00000000000003
+        },
+        {
+          "nodeId": "62acccd9-7c6f-5567-8400-7729674a2d7f",
+          "x": 3042.0,
+          "y": 224.00000000000003
+        },
+        {
+          "nodeId": "54d5d2f6-6f58-5be2-a953-e819d68baa9c",
+          "x": 0.0,
+          "y": 112.00000000000001
+        },
+        {
+          "nodeId": "4e767d68-eaa3-5ec2-93f3-573e97481c64",
+          "x": 0.0,
+          "y": 1120.0
+        },
+        {
+          "nodeId": "c9335f3b-71b8-5230-b369-66de2569b4ac",
+          "x": 702.0,
+          "y": 112.00000000000001
+        },
+        {
+          "nodeId": "05f82178-3abb-5f0a-9ffb-df0c5110bd13",
+          "x": 702.0,
+          "y": 1120.0
+        },
+        {
+          "nodeId": "a5937768-8ddb-53a4-8400-5300f1ea00d0",
+          "x": 1462.5,
+          "y": 336.00000000000006
+        },
+        {
+          "nodeId": "c038a5a9-356f-558d-bd15-e82e0b4dd7a3",
+          "x": 2223.0,
+          "y": 336.00000000000006
+        }
+      ],
+      "visualizations": [],
+      "connectionLabels": 1,
+      "expandedVisualizationNodeId": null,
+      "notes": [
+        {
+          "id": "027a94bb-ac7d-517a-ab6b-8ad164e9e4bd",
+          "title": "Simple reference tone",
+          "body": "One triangle plus a quiet octave transient. Dry, deliberately plain and easy to compare. Gate controls ADSR, Trigger controls separate transient, Velocity scales the final instrument. This is a test signal, not an approved instrument preset.",
+          "accent": 2,
+          "x": -1050,
+          "y": -500,
+          "width": 950,
+          "height": 400,
+          "collapsed": false
+        }
+      ],
+      "nodeDescriptions": [
+        {
+          "nodeId": "54d5d2f6-6f58-5be2-a953-e819d68baa9c",
+          "alias": "Body ADSR",
+          "description": ""
+        },
+        {
+          "nodeId": "4e767d68-eaa3-5ec2-93f3-573e97481c64",
+          "alias": "Onset transient AD",
+          "description": ""
+        },
+        {
+          "nodeId": "c9335f3b-71b8-5230-b369-66de2569b4ac",
+          "alias": "Reference triangle",
+          "description": ""
+        },
+        {
+          "nodeId": "05f82178-3abb-5f0a-9ffb-df0c5110bd13",
+          "alias": "Quiet octave transient",
+          "description": ""
+        },
+        {
+          "nodeId": "a5937768-8ddb-53a4-8400-5300f1ea00d0",
+          "alias": "Voice sum",
+          "description": ""
+        },
+        {
+          "nodeId": "c038a5a9-356f-558d-bd15-e82e0b4dd7a3",
+          "alias": "Strike strength",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "graphId": "85957693-6699-5b6f-b3c0-5fba1e55e7d1",
+      "panX": 45,
+      "panY": 120,
+      "zoom": 0.4,
+      "positions": [
+        {
+          "nodeId": "f5d2600e-1e17-5611-819b-f087b9024eae",
+          "x": 0.0,
+          "y": 100.80000000000001
+        },
+        {
+          "nodeId": "e9fd72c2-1010-5960-8d63-bbca50be7413",
+          "x": 760.5,
+          "y": 100.80000000000001
+        },
+        {
+          "nodeId": "070ff4e1-9ce5-50e3-b5ff-c6b37f75968c",
+          "x": 1521.0,
+          "y": 280.0
+        },
+        {
+          "nodeId": "6353f081-ba92-5519-a425-8e01296973c7",
+          "x": 2281.5,
+          "y": 280.0
+        }
+      ],
+      "visualizations": [],
+      "connectionLabels": 1,
+      "expandedVisualizationNodeId": null,
+      "notes": [
+        {
+          "id": "6f484053-1edb-5caf-975d-bef58445157c",
+          "title": "TEST · Instrument audition v1",
+          "body": "120 BPM · 8-second loop.\n1. Reset transport, Play. Listen to the plain reference.\n2. Add another playable instrument or design an editable composite with matching inputs. Connect Pitch, Gate and Velocity (or Trigger for a struck sound), then Audio to the mixer. Use the appropriate port reference.\n3. Mute the entire inactive instrument (not the driver) and match levels with its mixer connection. Compare solo, then in a piece.\n4. Save as a new named patch. Keep this test score unchanged.",
+          "accent": 2,
+          "x": 0,
+          "y": -570,
+          "width": 1110,
+          "height": 530,
+          "collapsed": false
+        }
+      ],
+      "nodeDescriptions": [
+        {
+          "nodeId": "070ff4e1-9ce5-50e3-b5ff-c6b37f75968c",
+          "alias": "A/B mixer",
+          "description": ""
+        },
+        {
+          "nodeId": "6353f081-ba92-5519-a425-8e01296973c7",
+          "alias": "Master output",
+          "description": ""
+        }
+      ]
+    }
+  ],
+  "overview": {
+    "title": "TEST — Melody driver / instrument audition v1",
+    "description": "Repeatable D-major 4-bar test score; separate pitch, gate, trigger and velocity. Replace the plain reference voice while preserving the score.",
+    "instructions": "Reset transport, play at 120 BPM. Connect driver outputs to a candidate instrument and its Audio to the root mixer. Match levels, mute inactive instrument, compare and save a copy. Pitch reference A4. See the modern pop instrument guide.",
+    "tags": [
+      "TEST",
+      "Instrument audition",
+      "Sound design",
+      "D major"
+    ]
+  }
+}
