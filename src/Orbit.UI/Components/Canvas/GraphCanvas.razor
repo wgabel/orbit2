@@ -7,7 +7,7 @@
 @{ var wires = Wires; }
 <div class="graph-canvas">
     <div class="canvas-viewport" @ref="viewportElement" tabindex="0" aria-label="Graph canvas"
-         aria-keyshortcuts="F + - 0" data-fit-sequence="@fitSequence" data-pinching="@(pinchOrigin is not null ? "true" : "false")"
+         aria-keyshortcuts="F 0" data-fit-sequence="@fitSequence" data-pinching="@(pinchOrigin is not null ? "true" : "false")"
          @onpointerdown="BeginBackground" @onpointerdown:preventDefault="true"
          @onpointermove="PointerMoved" @onpointerup="PointerReleasedAsync"
          @onpointercancel="CancelGesture" @onpointerleave="CancelGesture" @onlostpointercapture="CancelGesture"
@@ -188,7 +188,10 @@
         </div>
         <span class="canvas-count">@($"{Snapshot.Graph.Nodes.Count} nodes · {Snapshot.Graph.Connections.Count} connections{(Snapshot.Notes.Count > 0 ? $" · {Snapshot.Notes.Count} notes" : "")}")</span>
         <span class="canvas-patch-count">Entire patch: <span class="canvas-patch-value">@($"{PatchCounts.Nodes} nodes · {PatchCounts.Connections} connections")</span></span>
-        <span class="canvas-hint">@Hint</span>
+        @if (Hint is { } hint)
+        {
+            <span class="canvas-hint">@hint</span>
+        }
         @if (Snapshot.SelectedConnectionIds.Count == 1 && wires.FirstOrDefault(wire => wire.Selected) is { } selectedWire)
         {
             <ConnectionAmountEditor @key="(Snapshot.GraphId, selectedWire.Id)" Graph="@Snapshot.Graph"

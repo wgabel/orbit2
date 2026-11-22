@@ -186,10 +186,10 @@ public partial class GraphCanvas : IAsyncDisposable
     }
 
     private CanvasStateSnapshot Snapshot => State.Snapshot;
-    private string Hint => pendingSource is not null
+    private string? Hint => pendingSource is not null
         ? "Connect to an input · Esc to cancel"
         : marqueeMode ? "Drag background to select · Ctrl/Meta adds · Esc cancels"
-        : "Drag header · drag background to pan · wheel to zoom · triple-click or F to fit · Shift+drag selects";
+        : null;
     private string WorldStyle => FormattableString.Invariant(
         $"transform:translate({Snapshot.Viewport.Pan.X}px,{Snapshot.Viewport.Pan.Y}px) scale({Snapshot.Viewport.Zoom});");
 
@@ -505,6 +505,7 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private async Task ActivatePortAsync(PortAddress address)
     {
+        fitTaps.Reset();
         if (assistedWire) return;
         var node = Snapshot.Graph.Nodes.FirstOrDefault(candidate => candidate.Id == address.NodeId);
         if (node is null) return;
@@ -524,6 +525,7 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private void SelectConnection(Guid connectionId)
     {
+        fitTaps.Reset();
         pendingSource = null;
         State.SelectConnection(connectionId);
     }
@@ -548,7 +550,7 @@ public partial class GraphCanvas : IAsyncDisposable
             if (!selecting) State.ClearSelection();
         }
         else if (module is not null && gesturePointer is null && !args.CtrlKey && !args.MetaKey && !args.AltKey &&
-            args.Key is "f" or "F" or "+" or "=" or "-" or "0" &&
+            (args.Key is "f" or "F" or "+" or "=" or "-" or "0") &&
             await module.InvokeAsync<bool>("canvasHasFocus", viewportElement))
         {
             fitTaps.Reset();

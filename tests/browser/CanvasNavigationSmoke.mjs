@@ -32,7 +32,8 @@ export async function zoomStep(page, direction) {
 async function emptyPoints(page) {
     return canvas(page).evaluate(element => {
         const rect = element.getBoundingClientRect();
-        for (const y of [rect.top + 12, rect.bottom - 15, rect.top + rect.height / 2]) {
+        for (const y of [rect.top + 12, rect.bottom - 15, rect.top + rect.height / 2,
+            rect.top + rect.height * 0.25, rect.top + rect.height * 0.75]) {
             const first = { x: Math.round(rect.left + rect.width * 0.35), y: Math.round(y) };
             const second = { x: Math.round(rect.left + rect.width * 0.65), y: Math.round(y) };
             if ([first, second].every(point => document.elementFromPoint(point.x, point.y) === element))
@@ -43,7 +44,14 @@ async function emptyPoints(page) {
 }
 
 export async function tripleTapFit(page, touch = true) {
-    const [point] = await emptyPoints(page);
+    const point = await canvas(page).evaluate(element => {
+        const rect = element.getBoundingClientRect();
+        for (let y = rect.top + 8; y < rect.bottom - 6; y += 16)
+            for (let x = rect.left + 8; x < rect.right - 6; x += 16)
+                if (document.elementFromPoint(x, y) === element)
+                    return { x: Math.round(x), y: Math.round(y) };
+        throw new Error("No empty canvas point for Fit");
+    });
     const sequence = await canvas(page).getAttribute("data-fit-sequence");
     if (touch) {
         const cdp = await page.context().newCDPSession(page);
@@ -54,7 +62,7 @@ export async function tripleTapFit(page, touch = true) {
             }
         } finally { await cdp.detach(); }
     } else {
-        await page.mouse.click(point.x, point.y, { clickCount: 3 });
+        await page.mouse.click(point.x, point.y, { clickCount: 3, delay: 30 });
     }
     await waitFit(page, sequence);
 }

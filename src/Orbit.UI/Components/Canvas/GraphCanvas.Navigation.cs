@@ -16,11 +16,15 @@ public partial class GraphCanvas
     private long? pinchPointer;
     private CanvasPoint pinchPoint;
     private CanvasPoint? pinchOrigin;
+    private CanvasPoint pinchStartFirst;
+    private CanvasPoint pinchStartSecond;
+    private CanvasViewport? pinchStartViewport;
     private int fitGeneration;
     private int fitSequence;
 
     private async Task BeginNodeSurfaceAsync(PointerEventArgs args)
     {
+        fitTaps.Reset();
         if (args.PointerType != "touch" || module is null || args.Button != 0 ||
             !await module.InvokeAsync<bool>("isNodeNavigationSurface", viewportElement, args.ClientX, args.ClientY)) return;
         if (await TakeOverNavigationAsync(args)) return;
@@ -54,7 +58,12 @@ public partial class GraphCanvas
         {
             var bounds = await module.InvokeAsync<ViewportMeasurement>("viewportBounds", viewportElement);
             if (pinchPointer == args.PointerId && gesturePointer == first)
+            {
                 pinchOrigin = new CanvasPoint(bounds.Left, bounds.Top);
+                pinchStartViewport = Snapshot.Viewport;
+                pinchStartFirst = lastClientPoint.Subtract(pinchOrigin.Value);
+                pinchStartSecond = pinchPoint.Subtract(pinchOrigin.Value);
+            }
             await module.InvokeVoidAsync("capturePointer", viewportElement, args.PointerId);
         }
         return true;
@@ -64,14 +73,15 @@ public partial class GraphCanvas
     {
         if (pinchPointer is not long second) return false;
         if (args.PointerId != gesturePointer && args.PointerId != second) return true;
-        var previousFirst = lastClientPoint;
-        var previousSecond = pinchPoint;
         var point = new CanvasPoint(args.ClientX, args.ClientY);
         if (args.PointerId == second) pinchPoint = point;
         else lastClientPoint = point;
-        if (pinchOrigin is CanvasPoint origin)
-            State.SetViewport(Snapshot.Viewport.Pinch(previousFirst.Subtract(origin),
-                previousSecond.Subtract(origin), lastClientPoint.Subtract(origin), pinchPoint.Subtract(origin)));
+        // Browsers may deliver the two moves separately. Compute from the
+        // gesture baseline, not from the already clamped previous frame, so
+        // translating both fingers at a zoom limit never ratchets the zoom.
+        if (pinchOrigin is CanvasPoint origin && pinchStartViewport is { } start)
+            State.SetViewport(start.Pinch(pinchStartFirst, pinchStartSecond,
+                lastClientPoint.Subtract(origin), pinchPoint.Subtract(origin)));
         return true;
     }
 
@@ -88,6 +98,7 @@ public partial class GraphCanvas
         }
         pinchPointer = null;
         pinchOrigin = null;
+        pinchStartViewport = null;
         return true;
     }
 
@@ -130,6 +141,7 @@ public partial class GraphCanvas
         draggedNodeStart = null;
         pinchPointer = null;
         pinchOrigin = null;
+        pinchStartViewport = null;
     }
 
     private async Task FitFromGestureAsync()
