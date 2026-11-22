@@ -5,6 +5,7 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
+import { verifyTouchWire } from "./TouchWireSmoke.mjs";
 
 const { chromium } = await import(pathToFileURL(resolve(process.env.ORBIT_PLAYWRIGHT_DIR, "index.mjs")));
 const root = resolve("publish/wwwroot");
@@ -1908,6 +1909,7 @@ try {
     assert.equal(await mobileStatus.textContent(), playingRevision, "Responsive reflow must not restart playback");
     await mobilePage.getByRole("button", { name: "Stop", exact: true }).click();
     await mobilePage.close();
+    await verifyTouchWire(browser, "http://127.0.0.1:" + server.address().port);
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {
     await browser?.close();

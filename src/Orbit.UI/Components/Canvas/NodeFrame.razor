@@ -57,6 +57,7 @@
             @foreach (var port in Node.Inputs)
             {
                 <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
+                               WireCandidate="@(WireTargets?.Contains(new PortAddress(Node.Id, port.Id)))"
                                OnOutputPointerDown="OnOutputPointerDown" />
             }
         </div>

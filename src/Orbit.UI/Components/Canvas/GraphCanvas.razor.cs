@@ -177,7 +177,7 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private async Task BeginNoteAsync(SavedNote note, PointerEventArgs args, bool resize)
     {
-        if (HasAnnotationDraft || AnnotationActionsDisabled || args.Button != 0) return;
+        if (RejectAdditionalWirePointer(args) || HasAnnotationDraft || AnnotationActionsDisabled || args.Button != 0) return;
         State.SelectNote(note.Id);
         pendingSource = null;
         notePreview = note;
@@ -218,6 +218,11 @@ public partial class GraphCanvas : IAsyncDisposable
                 visualizationGeometryGeneration++;
             previousSecondaryDetail = change.Snapshot.ShowSecondaryAnnotations;
             previousSelectedNodes = change.Snapshot.SelectedNodeIds;
+            if (TouchWireStale)
+            {
+                pendingSource = null;
+                EndGesture();
+            }
             if (pendingSource is PortAddress source &&
                 !Snapshot.Graph.Nodes.Any(node => node.Id == source.NodeId &&
                     node.Outputs.Any(port => port.Id == source.PortId)))
@@ -332,7 +337,7 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private async Task BeginBackground(PointerEventArgs args)
     {
-        if (args.Button is not (0 or 1)) return;
+        if (RejectAdditionalWirePointer(args) || args.Button is not (0 or 1)) return;
         if (args.Button == 0 && (marqueeMode || args.ShiftKey))
         {
             await BeginMarqueeAsync(args);
@@ -348,7 +353,7 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private async Task BeginNode(Guid nodeId, PointerEventArgs args)
     {
-        if (args.Button is not (0 or 1)) return;
+        if (RejectAdditionalWirePointer(args) || args.Button is not (0 or 1)) return;
         if (args.Button == 0)
             State.SelectNode(nodeId, args.ShiftKey || args.CtrlKey || args.MetaKey);
         pendingSource = null;
@@ -357,9 +362,17 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private async Task BeginOutput(PortPointerStart start)
     {
+        if (RejectAdditionalWirePointer(start.Pointer)) return;
+        ClearTouchWire();
         pendingSource = start.Address;
         draftEnd = PortPoint(start.Address);
+        assistedWire = start.Pointer.PointerType == "touch";
+        touchWireStart = new CanvasPoint(start.Pointer.ClientX, start.Pointer.ClientY);
+        touchWireRevision = Snapshot.GraphRevision;
+        touchWireLayoutRevision = Snapshot.LayoutRevision;
         await BeginGesture(start.Pointer, null, wire: true);
+        if (assistedWire && gesturePointer == start.Pointer.PointerId)
+            await PrepareTouchWireAsync(start);
     }
 
     private async Task BeginGesture(PointerEventArgs args, Guid? nodeId, bool wire)
@@ -372,7 +385,7 @@ public partial class GraphCanvas : IAsyncDisposable
             await module.InvokeVoidAsync("capturePointer", viewportElement, args.PointerId);
     }
 
-    private void PointerMoved(PointerEventArgs args)
+    private async Task PointerMoved(PointerEventArgs args)
     {
         if (gesturePointer != args.PointerId) return;
         var current = new CanvasPoint(args.ClientX, args.ClientY);
@@ -393,8 +406,16 @@ public partial class GraphCanvas : IAsyncDisposable
         }
         else if (drawingWire)
         {
-            // Delta conversion uses the same viewport transform as nodes.
-            draftEnd = (draftEnd ?? CanvasPoint.Zero).Add(Snapshot.Viewport.ScreenDeltaToWorld(delta));
+            if (assistedWire)
+            {
+                if (UpdateTouchWire(current) && module is not null)
+                    await module.InvokeVoidAsync("touchWireFeedback");
+            }
+            else
+            {
+                // Mouse drag uses the existing world delta.
+                draftEnd = (draftEnd ?? CanvasPoint.Zero).Add(Snapshot.Viewport.ScreenDeltaToWorld(delta));
+            }
         }
         else if (draggedNode is Guid nodeId && Snapshot.NodePositions.ContainsKey(nodeId))
             State.MoveNodeByScreenDelta(nodeId, delta);
@@ -409,6 +430,18 @@ public partial class GraphCanvas : IAsyncDisposable
         {
             EndGesture();
             await CompleteMarqueeAsync(selection with { End = new CanvasPoint(args.ClientX, args.ClientY) });
+            return;
+        }
+        if (assistedWire)
+        {
+            if (!TouchWireStale) UpdateTouchWire(new CanvasPoint(args.ClientX, args.ClientY));
+            var target = TouchWireStale ? null : wireAim?.Target;
+            var moved = touchWireMoved;
+            EndGesture();
+            if (target is not null)
+                await ActivatePortAsync(target.Address);
+            else if (moved)
+                pendingSource = null;
             return;
         }
         var wasWire = drawingWire;
@@ -435,11 +468,14 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private void CancelGesture(PointerEventArgs args)
     {
-        if (gesturePointer == args.PointerId) EndGesture();
+        if (gesturePointer != args.PointerId) return;
+        if (assistedWire) pendingSource = null;
+        EndGesture();
     }
 
     private void EndGesture()
     {
+        ClearTouchWire();
         gesturePointer = null;
         draggedNode = null;
         drawingWire = false;
@@ -453,6 +489,7 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private async Task ActivatePortAsync(PortAddress address)
     {
+        if (assistedWire) return;
         var node = Snapshot.Graph.Nodes.FirstOrDefault(candidate => candidate.Id == address.NodeId);
         if (node is null) return;
         if (node.Outputs.Any(port => port.Id == address.PortId))

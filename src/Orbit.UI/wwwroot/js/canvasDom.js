@@ -63,6 +63,39 @@ export function findInputPortAt(viewport, clientX, clientY) {
     return frame && marker ? { nodeId: frame.dataset.nodeId, portId: marker.dataset.portId } : null;
 }
 
+// Measure once at touch-drag start, excluding clipped or covered markers.
+// The C# gesture owns compatibility, snapping, the draft path and release.
+export function measureTouchWire(viewport) {
+    const bounds = viewportBounds(viewport);
+    const visual = window.visualViewport;
+    const left = visual?.offsetLeft ?? 0;
+    const top = visual?.offsetTop ?? 0;
+    const visible = {
+        left: Math.max(bounds.left, left),
+        top: Math.max(bounds.top, top),
+        right: Math.min(bounds.left + bounds.width, left + (visual?.width ?? innerWidth)),
+        bottom: Math.min(bounds.top + bounds.height, top + (visual?.height ?? innerHeight))
+    };
+    const ports = [];
+    for (const button of viewport.querySelectorAll(".port-input")) {
+        const marker = button.querySelector("[data-port-id]");
+        const frame = button.closest("[data-node-id]");
+        if (!marker || !frame) continue;
+        const rect = marker.getBoundingClientRect();
+        const x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
+        if (!rect.width || !rect.height || x < visible.left || x > visible.right ||
+            y < visible.top || y > visible.bottom ||
+            document.elementFromPoint(x, y)?.closest(".port-input") !== button) continue;
+        ports.push({ nodeId: frame.dataset.nodeId, portId: marker.dataset.portId, x, y });
+    }
+    return { left: bounds.left, top: bounds.top, visible, ports };
+}
+
+export function touchWireFeedback() {
+    // Haptics are an enhancement, not a requirement (some browsers omit or reject them).
+    try { navigator.vibrate?.(12); } catch { /* unsupported */ }
+}
+
 // Clamp the unscaled panel to the visible canvas. Prefer below the cable,
 // switch above when needed, and keep the badge itself uncovered when possible.
 export function connectionEditorPosition(anchor, bounds, panel, gap) {

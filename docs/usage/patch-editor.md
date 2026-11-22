@@ -30,6 +30,10 @@ Use **M** (mute) to silence an eligible node's outputs, including modulation. Us
 
 For individual node settings, use the Preset selector and its adjacent **…** menu to save, apply, import/export and manage custom presets. Presets contain parameter values (including inactive settings), not routes, graph IDs or layout. For a full instrument graph choose a built-in composite in Add node; save it within a named patch or export the patch JSON. A reusable custom composite library is still planned. See [node presets](../editor/node-presets.md) and [reusable modules](../editor/reusable-modules.md).
 
+### Assisted touch cable dragging
+
+In review (PR link to be recorded before merge). On a touchscreen, touch and hold an output port, then drag. Aim with the small cursor above your finger, not the fingertip itself. Compatible input sockets show rings even when zoomed out; invalid or already connected destinations dim. Move until the larger ring and floating label name the intended parameter, for example **Oscillator → Amplitude**. Release to connect. Move away from all highlighted ports (or cancel the gesture) to abandon it without adding a cable. Closely spaced sockets switch as you aim directly at the next one; near the lower edge the offset reduces. The cursor and magnetic radius are screen-sized at every zoom. No extra picker or node expansion is necessary. Touch vibration is optional, and mouse/keyboard operation is unchanged. If a port is covered or off-screen, pan/zoom to expose it first. Undo removes a successful connection as usual.
+
 ## 2. Interpret and edit connections
 
 - Audio links carry sound. Modulation values add a contribution in the receiving parameter's unit. Pitch expects relative semitones; Frequency expects Hz. A unit-amplitude bipolar 0.5 Hz sine into a 440 Hz carrier's Frequency at +100 gives 340–540 Hz before constraints. A Pitch Control +12 into a semitone-tracked Pitch at unity doubles the base frequency; connecting it to Frequency instead adds 12 Hz.
