@@ -1,11 +1,13 @@
 @namespace Orbit.UI.Components.Canvas
 @using Orbit.Application.Persistence
 @using Orbit.Presentation.Canvas
+@using Microsoft.AspNetCore.Components.Web
 
 <button type="button" class="annotation-marker note-@Accent.ToString().ToLowerInvariant()"
         style="@Style" title="@Title" aria-label="@($"Reveal {Kind}: {Title}")"
         disabled="@Locked" @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true"
-        @onclick="OnReveal" @onkeydown:stopPropagation="true">
+        @onclick="RevealAsync" @onkeydown="ActivateKeyAsync" @onkeydown:stopPropagation="true"
+        @onfocusin:stopPropagation="true">
     <span aria-hidden="true">@(Kind == "note" ? "▤" : "▣")</span>
     <span class="annotation-marker-title">@Title</span>
 </button>
@@ -19,5 +21,12 @@
     [Parameter] public AnnotationDetail Detail { get; set; }
     [Parameter] public bool Locked { get; set; }
     [Parameter] public EventCallback OnReveal { get; set; }
+    private Task RevealAsync() => Locked ? Task.CompletedTask : OnReveal.InvokeAsync();
+
+    // The marker is replaced by the full card and focus moves to the viewport
+    // on activation. Handle keyboard activation before that DOM replacement,
+    // without relying on the native synthesized click or suppressing Tab.
+    private Task ActivateKeyAsync(KeyboardEventArgs args) =>
+        !args.Repeat && args.Key is "Enter" or " " ? RevealAsync() : Task.CompletedTask;
     private string Style => FormattableString.Invariant($"width:{AnnotationDetailPolicy.MarkerWidth(WorldWidth, Zoom, Detail)}px;height:{AnnotationDetailPolicy.MarkerHeight}px;transform:scale({1 / Zoom})");
 }

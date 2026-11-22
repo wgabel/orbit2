@@ -247,6 +247,8 @@ The shared `AnnotationDetailPolicy` enters title detail at 65% zoom and returns 
 
 Changing the display mode clears note/group selection, but preserves node/cable selection; the control and reveal actions are disabled while an annotation or overview draft is open. **Find annotation** lists the current canvas's notes and groups by title, including hidden items; choose one and **Reveal and fit** selects and fits it without changing the stored mode. Selection of a hidden item temporarily reveals it until selection changes. Use **Fit signals** to fit measured node bounds only. Normal Fit excludes hidden items; Show uses authored visible bounds so a note revealed by the resulting zoom can still fit, Titles only uses a compact header extent for unselected notes and the frame for groups. The full searchable nested outline is still Phase 6.19.8.
 
+Compact note and group markers handle Enter and Space explicitly, as well as pointer activation, because their activating element is replaced by the full card/frame. Compact-marker focus does not invoke the ancestor's full-card focus handler; Tab remains available for navigation. The published editor regression exercises both keyboard paths.
+
 Schema-1 layouts add optional `annotationVisibility`: `0` (Show, also the default when absent), `1` (Titles only), or `2` (Hide). Invalid enum values are rejected on restore. Root and child canvases save independent preferences in recovery and portable files; selection, finder state and zoom-detail hysteresis are transient. Visibility and viewport edits do not enter graph or annotation history and do not create graph/audio events.
 
 ## 3. Patch outline and navigation (6.19.8 — planned)

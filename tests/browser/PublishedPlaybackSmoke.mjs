@@ -158,7 +158,11 @@ try {
         await visibility.selectOption("TitlesOnly");
         await note.getByRole("button", { name: `Reveal note: ${title}`, exact: true }).waitFor();
         assert.equal(await note.locator(".note-body").count(), 0);
-        await note.getByRole("button", { name: `Reveal note: ${title}`, exact: true }).press("Enter");
+        const compactNote = note.getByRole("button", { name: `Reveal note: ${title}`, exact: true });
+        await compactNote.focus();
+        assert.equal(await compactNote.evaluate(button => document.activeElement === button), true, "Compact note accepts keyboard focus");
+        await compactNote.press("Enter");
+        await note.and(page.locator(".note-selected")).waitFor();
         await note.locator(".note-body").waitFor();
         assert.equal(await note.locator(".note-body").textContent(), "A minor\nOpen fifth");
         await visibility.selectOption("Hide");
@@ -1558,6 +1562,10 @@ try {
     await annotationViewport.getByRole("button", { name: "Reveal note: Note", exact: true }).waitFor();
     await annotationViewport.getByRole("button", { name: "Reveal group: Visual group", exact: true }).waitFor();
     assert.equal(await annotationViewport.locator(".annotation-marker").count(), 2);
+    await annotationViewport.getByRole("button", { name: "Reveal group: Visual group", exact: true }).press("Space");
+    await annotationViewport.locator(".visual-group-selected .visual-group-header").waitFor();
+    await annotationViewport.press("Escape");
+    await annotationViewport.getByRole("button", { name: "Reveal group: Visual group", exact: true }).waitFor();
     await annotationMode.selectOption("Show");
     for (let i = 1; i <= 6; i++) {
         await annotationPage.getByRole("button", { name: "Zoom out", exact: true }).click();
