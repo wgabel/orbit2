@@ -2,7 +2,7 @@
 
 [Faust-first design](realistic-instrument-emulation.md) · [Pinned artifact/license audit](faust-dependency-audit.md) · [Roadmap](../roadmap/advanced.md#phase-727--faust-first-physical-models-planned) · [Audition workflow](../examples/instrument-design-and-audition.md)
 
-**Status:** local offline engineering proof of concept, partial. Neither candidate is a registered Orbit node, shipped instrument or listening-approved preset. The production distribution gate in 7.2.7a remains open. No generated DSP binaries, vendor source files or audio are checked into the repository.
+**Status:** local offline engineering proof of concept, partial ([PR #81](https://github.com/wgabel/orbit2/pull/81)). Neither candidate is a registered Orbit node, shipped instrument or listening-approved preset. The production distribution gate in 7.2.7a remains open. No generated DSP binaries, vendor source files or audio are checked into the repository.
 
 ## Reproduce
 
