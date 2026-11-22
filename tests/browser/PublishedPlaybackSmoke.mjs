@@ -510,6 +510,9 @@ try {
     const performancePanel = page.getByRole("region", { name: "Audio performance diagnostics" });
     await performancePanel.locator("[data-performance-session]").filter({ hasText: "idle" }).waitFor({ timeout: 10000 });
     assert.match(await performancePanel.innerText(), /not-created/);
+    await performancePanel.locator("[data-performance-editor-fps]").filter({ hasText: /[0-9]+(?:[.,][0-9]+)? FPS/ }).waitFor({ timeout: 15000 });
+    await performancePanel.locator("[data-performance-editor-history]").filter({ hasText: /[1-9][0-9]* \/ 120/ }).waitFor({ timeout: 10000 });
+    assert.match(await performanceToggle.innerText(), /UI [0-9]+ FPS/);
     await performancePanel.getByRole("button", { name: "Close" }).click();
     await play.click({ timeout: 30000 });
     await status.filter({ hasText: /Playing revision/ }).waitFor({ timeout: 30000 });

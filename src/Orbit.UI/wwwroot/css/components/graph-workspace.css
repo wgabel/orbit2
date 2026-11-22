@@ -80,7 +80,8 @@
 .canvas-caption button { padding: var(--component-workspace-toolbar-button-block) var(--component-workspace-toolbar-button-inline); font-size: var(--semantic-typography-label); }
 .canvas-caption select { font-size: var(--semantic-typography-label); }
 .playback-toolbar { flex: 1 1 auto; }
-.audio-performance-toggle { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.audio-performance-monitor { max-width: 100%; min-width: 0; }
+.audio-performance-toggle { max-width: 100%; white-space: normal; font-variant-numeric: tabular-nums; }
 .audio-performance-panel { width: var(--component-workspace-patch-panel-width); box-sizing: border-box; }
 .audio-performance-metrics { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--semantic-space-compact); margin: 0; font-size: var(--semantic-typography-label); }
 .audio-performance-metrics dt { color: var(--semantic-color-muted); }

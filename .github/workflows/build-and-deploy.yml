@@ -85,6 +85,7 @@ jobs:
           test -s publish/wwwroot/css/components.css
           test -s publish/wwwroot/js/canvasDom.js
           test -s publish/wwwroot/js/performanceKeyboard.js
+          test -s publish/wwwroot/js/editorPerformance.js
           for file in src/Orbit.UI/wwwroot/css/components/*.css; do
             test -s "publish/wwwroot/css/components/$(basename "$file")"
           done
