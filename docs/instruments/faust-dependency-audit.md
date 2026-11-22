@@ -123,6 +123,6 @@ See the official [Faust library contribution licensing guidance](https://faustli
 
 ## 5. Follow-up: Phase 7.2.7b
 
-The [native offline probe results](faust-physical-model-probes.md) now document the two models' rendering, calibration and pressure/damping behavior. The local experiment does not resolve the production distribution gate above.
+The [native offline probe results](faust-physical-model-probes.md) now document the two models' rendering, calibration and pressure/damping behavior. The [calibrated Physical Pluck wrapper](faust-physical-pluck.md#3-license-delta-research-only) adds two audited local-research library dependencies (basics.lib and noises.lib) with exact hashes. The local experiments do not resolve the production distribution gate above.
 
 Render the pluck and flute as local, unshipped mono experiments with the same pinned toolchain at 44.1/48 kHz. Measure pitch/decay/stability, deliberate idle behavior and headroom; exercise time-varying controls and compare level-matched against existing Orbit approximations using the [audition workflow](../examples/instrument-design-and-audition.md). The pluck is the simpler first fixture, and the flute tests sustained physical excitation. Keep the release compliance follow-up open, independent of sound-quality experiments.
