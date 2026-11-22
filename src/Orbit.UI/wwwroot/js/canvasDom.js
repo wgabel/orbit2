@@ -79,7 +79,7 @@ export function findInputPortAt(viewport, clientX, clientY) {
     return frame && marker ? { nodeId: frame.dataset.nodeId, portId: marker.dataset.portId } : null;
 }
 
-// Measure once at touch-drag start, excluding clipped or covered markers.
+// Measure at wire-drag start and after edge-pan renders, excluding clipped or covered markers.
 // The C# gesture owns compatibility, snapping, the draft path and release.
 export function measureTouchWire(viewport) {
     const bounds = viewportBounds(viewport);

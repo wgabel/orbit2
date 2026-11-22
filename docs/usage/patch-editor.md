@@ -27,7 +27,7 @@ Implemented: [PR #69](https://github.com/wgabel/orbit2/pull/69).
 
 ### Contextual canvas actions
 
-In review: [PR #71](https://github.com/wgabel/orbit2/pull/71).
+Implemented: [PR #71](https://github.com/wgabel/orbit2/pull/71).
 
 If a node fills the entire screen, put two fingers directly on the node—even on a slider, button, port or plot—and pinch inward to zoom out, or move them together to pan. There is no need to find empty canvas. Adding the second finger cancels a still-active local drag/edit; a single finger still edits or moves as before. Lift one finger to continue panning with the remaining finger. Tool sheets and open editors retain their own controls.
 
@@ -70,7 +70,11 @@ For individual node settings, use the Preset selector and its adjacent **…** m
 
 ### Assisted touch cable dragging
 
-Implemented ([PR #65](https://github.com/wgabel/orbit2/pull/65)). On a touchscreen, touch and hold an output port, then drag. Aim with the small cursor above your finger, not the fingertip itself. Compatible input sockets show rings even when zoomed out; invalid or already connected destinations dim. Move until the larger ring and floating label name the intended parameter, for example **Oscillator → Amplitude**. Release to connect. Move away from all highlighted ports (or cancel the gesture) to abandon it without adding a cable. Closely spaced sockets switch as you aim directly at the next one; near the lower edge the offset reduces. The cursor and magnetic radius are screen-sized at every zoom. No extra picker or node expansion is necessary. Touch vibration is optional, and mouse/keyboard operation is unchanged. If a port is covered or off-screen, pan/zoom to expose it first. Undo removes a successful connection as usual.
+Implemented ([PR #65](https://github.com/wgabel/orbit2/pull/65)). On a touchscreen, touch and hold an output port, then drag. Aim with the small cursor above your finger, not the fingertip itself. Compatible input sockets show rings even when zoomed out; invalid or already connected destinations dim. Move until the larger ring and floating label name the intended parameter, for example **Oscillator → Amplitude**. Release to connect. Move away from all highlighted ports (or cancel the gesture) to abandon it without adding a cable. Closely spaced sockets switch as you aim directly at the next one; near the lower edge the offset reduces. The cursor and magnetic radius are screen-sized at every zoom. No extra picker or node expansion is necessary. Touch vibration is optional, and mouse/keyboard operation is unchanged. If a port is covered, reposition the view or nodes to expose it. Undo removes a successful connection as usual.
+
+### Drag a cable to an off-screen node
+
+In review ([PR #73](https://github.com/wgabel/orbit2/pull/73)): on Android/touch or desktop, start dragging from an output and keep the finger or mouse near the edge of the canvas. After a short pause the canvas scrolls automatically, faster nearer the edge; corners scroll diagonally. You can keep holding until the destination comes into view, without zooming out or releasing the cable. Move away from the edge or aim at the compatible input to stop the scrolling, then release to connect. On touch the lifted cursor, magnetic rings and target label still work; a second finger takes over for pinch navigation and cancels the cable. Escape or dropping the panned cable away from a target cancels the connection. See [canvas behavior](../editor/canvas.md#cable-edge-panning).
 
 ## 2. Interpret and edit connections
 
