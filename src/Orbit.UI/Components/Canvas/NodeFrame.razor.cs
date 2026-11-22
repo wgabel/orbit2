@@ -35,6 +35,7 @@ public partial class NodeFrame
     [Parameter] public PortAddress? PendingSource { get; set; }
     [Parameter] public IReadOnlySet<PortAddress>? WireTargets { get; set; }
     [Parameter] public EventCallback<PointerEventArgs> OnHeaderPointerDown { get; set; }
+    [Parameter] public EventCallback<PointerEventArgs> OnBodyPointerDown { get; set; }
     [Parameter] public EventCallback<PortAddress> OnPortActivate { get; set; }
     [Parameter] public EventCallback<PortPointerStart> OnOutputPointerDown { get; set; }
     [Parameter] public EventCallback<ParameterEditRequest> OnParameterEdit { get; set; }

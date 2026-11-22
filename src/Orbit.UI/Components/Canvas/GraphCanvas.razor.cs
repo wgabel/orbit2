@@ -177,7 +177,7 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private async Task BeginNoteAsync(SavedNote note, PointerEventArgs args, bool resize)
     {
-        if (RejectAdditionalWirePointer(args) || HasAnnotationDraft || AnnotationActionsDisabled || args.Button != 0) return;
+        if (await TakeOverNavigationAsync(args) || HasAnnotationDraft || AnnotationActionsDisabled || args.Button != 0) return;
         State.SelectNote(note.Id);
         pendingSource = null;
         notePreview = note;
@@ -189,7 +189,7 @@ public partial class GraphCanvas : IAsyncDisposable
     private string Hint => pendingSource is not null
         ? "Connect to an input · Esc to cancel"
         : marqueeMode ? "Drag background to select · Ctrl/Meta adds · Esc cancels"
-        : "Drag header · drag background to pan · Shift+drag selects · wheel to zoom";
+        : "Drag header · drag background to pan · wheel to zoom · triple-click or F to fit · Shift+drag selects";
     private string WorldStyle => FormattableString.Invariant(
         $"transform:translate({Snapshot.Viewport.Pan.X}px,{Snapshot.Viewport.Pan.Y}px) scale({Snapshot.Viewport.Zoom});");
 
@@ -209,6 +209,8 @@ public partial class GraphCanvas : IAsyncDisposable
         selectionCandidate = "";
         previousSecondaryDetail = Snapshot.ShowSecondaryAnnotations;
         previousSelectedNodes = Snapshot.SelectedNodeIds;
+        fitGeneration++;
+        fitTaps.Reset();
         EndGesture();
         subscription = State.Subscribe(change =>
         {
@@ -337,7 +339,7 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private async Task BeginBackground(PointerEventArgs args)
     {
-        if (RejectAdditionalWirePointer(args) || args.Button is not (0 or 1)) return;
+        if (await TakeOverNavigationAsync(args) || args.Button is not (0 or 1)) return;
         if (args.Button == 0 && (marqueeMode || args.ShiftKey))
         {
             await BeginMarqueeAsync(args);
@@ -348,12 +350,13 @@ public partial class GraphCanvas : IAsyncDisposable
             State.ClearSelection();
             pendingSource = null;
         }
-        await BeginGesture(args, null, wire: false);
+        await BeginGesture(args, null, wire: false,
+            backgroundTap: args.Button == 0 && !args.ShiftKey && !args.CtrlKey && !args.MetaKey && !args.AltKey);
     }
 
     private async Task BeginNode(Guid nodeId, PointerEventArgs args)
     {
-        if (RejectAdditionalWirePointer(args) || args.Button is not (0 or 1)) return;
+        if (await TakeOverNavigationAsync(args) || args.Button is not (0 or 1)) return;
         if (args.Button == 0)
             State.SelectNode(nodeId, args.ShiftKey || args.CtrlKey || args.MetaKey);
         pendingSource = null;
@@ -362,7 +365,7 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private async Task BeginOutput(PortPointerStart start)
     {
-        if (RejectAdditionalWirePointer(start.Pointer)) return;
+        if (await TakeOverNavigationAsync(start.Pointer)) return;
         ClearTouchWire();
         pendingSource = start.Address;
         draftEnd = PortPoint(start.Address);
@@ -375,8 +378,9 @@ public partial class GraphCanvas : IAsyncDisposable
             await PrepareTouchWireAsync(start);
     }
 
-    private async Task BeginGesture(PointerEventArgs args, Guid? nodeId, bool wire)
+    private async Task BeginGesture(PointerEventArgs args, Guid? nodeId, bool wire, bool backgroundTap = false)
     {
+        StartNavigationGesture(args, nodeId, backgroundTap);
         gesturePointer = args.PointerId;
         draggedNode = nodeId;
         drawingWire = wire;
@@ -387,8 +391,10 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private async Task PointerMoved(PointerEventArgs args)
     {
+        if (MovePinch(args)) return;
         if (gesturePointer != args.PointerId) return;
         var current = new CanvasPoint(args.ClientX, args.ClientY);
+        CheckTapMovement(current);
         var delta = current.Subtract(lastClientPoint);
         lastClientPoint = current;
         if (marquee is { } selection)
@@ -425,7 +431,15 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private async Task PointerReleasedAsync(PointerEventArgs args)
     {
+        if (ReleasePinch(args)) return;
         if (gesturePointer != args.PointerId) return;
+        var shouldFit = CompleteFitTap(args);
+        if (shouldFit)
+        {
+            EndGesture();
+            await FitFromGestureAsync();
+            return;
+        }
         if (marquee is { } selection)
         {
             EndGesture();
@@ -468,13 +482,15 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private void CancelGesture(PointerEventArgs args)
     {
-        if (gesturePointer != args.PointerId) return;
+        if (gesturePointer != args.PointerId && pinchPointer != args.PointerId) return;
+        fitTaps.Reset();
         if (assistedWire) pendingSource = null;
         EndGesture();
     }
 
     private void EndGesture()
     {
+        ClearNavigationGesture();
         ClearTouchWire();
         gesturePointer = null;
         draggedNode = null;
@@ -518,22 +534,39 @@ public partial class GraphCanvas : IAsyncDisposable
         await viewportElement.FocusAsync(preventScroll: true);
     }
 
-    private void KeyDown(KeyboardEventArgs args)
+    private async Task KeyDown(KeyboardEventArgs args)
     {
         if (args.Key == "Escape")
         {
             var selecting = marquee is not null || marqueeMode;
+            fitGeneration++;
+            fitTaps.Reset();
             EndGesture();
             pendingSource = null;
             marqueeMode = false;
             selectionPanelOpen = false;
             if (!selecting) State.ClearSelection();
         }
+        else if (module is not null && gesturePointer is null && !args.CtrlKey && !args.MetaKey && !args.AltKey &&
+            args.Key is "f" or "F" or "+" or "=" or "-" or "0" &&
+            await module.InvokeAsync<bool>("canvasHasFocus", viewportElement))
+        {
+            fitTaps.Reset();
+            if (args.Key is "f" or "F") await FitFromGestureAsync();
+            else
+            {
+                fitGeneration++;
+                if (args.Key == "0") State.ResetViewport();
+                else await ZoomByAsync(args.Key == "-" ? 0.8 : 1.25);
+            }
+        }
     }
 
     private async Task OnWheelAsync(WheelEventArgs args)
     {
-        if (module is null || marquee is not null) return;
+        if (module is null || marquee is not null || gesturePointer is not null) return;
+        fitGeneration++;
+        fitTaps.Reset();
         var bounds = await module.InvokeAsync<ViewportMeasurement>("viewportBounds", viewportElement);
         var anchor = new CanvasPoint(args.ClientX - bounds.Left, args.ClientY - bounds.Top);
         var delta = args.DeltaY * (args.DeltaMode == 1 ? 16 : args.DeltaMode == 2 ? bounds.Height : 1);
@@ -541,22 +574,11 @@ public partial class GraphCanvas : IAsyncDisposable
         State.ZoomAt(Snapshot.Viewport.Zoom * factor, anchor);
     }
 
-    public Task ZoomIn() => ZoomByAsync(1.25);
-    public Task ZoomOut() => ZoomByAsync(0.8);
-
     private async Task ZoomByAsync(double factor)
     {
         if (module is null) return;
         var bounds = await module.InvokeAsync<ViewportMeasurement>("viewportBounds", viewportElement);
         State.ZoomAt(Snapshot.Viewport.Zoom * factor, new CanvasPoint(bounds.Width / 2, bounds.Height / 2));
-    }
-
-    public void ResetViewport() => State.ResetViewport();
-
-    public async Task FitAsync()
-    {
-        await MeasureAsync();
-        FitMeasured();
     }
 
     public async Task FocusNodeAsync(Guid nodeId)
@@ -619,7 +641,12 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private void FitMeasured(bool signalOnly = false)
     {
-        if (measurement is null || measurement.Width <= 0 || measurement.Height <= 0) return;
+        if (MeasuredFit(signalOnly) is { } viewport) State.SetViewport(viewport);
+    }
+
+    private CanvasViewport? MeasuredFit(bool signalOnly = false)
+    {
+        if (measurement is null || measurement.Width <= 0 || measurement.Height <= 0) return null;
         var rectangles = measurement.Nodes.Where(node => Snapshot.NodePositions.ContainsKey(node.NodeId))
             .Select(node =>
             {
@@ -628,13 +655,11 @@ public partial class GraphCanvas : IAsyncDisposable
             }).Concat(signalOnly ? [] : AnnotationDetailPolicy.FitBounds(Snapshot)).ToArray();
         if (rectangles.Length == 0)
         {
-            State.ResetViewport();
-            return;
+            return CanvasViewport.Initial;
         }
         var bounds = new CanvasBounds(rectangles.Min(node => node.Left), rectangles.Min(node => node.Top),
             rectangles.Max(node => node.Right), rectangles.Max(node => node.Bottom));
-        if (bounds.IsValid)
-            State.FitToBounds(bounds, measurement.Width, measurement.Height, 32);
+        return bounds.IsValid ? CanvasViewport.Fit(bounds, measurement.Width, measurement.Height, 32) : null;
     }
 
     public async ValueTask DisposeAsync()

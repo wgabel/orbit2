@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { fitCanvas } from "./CanvasNavigationSmoke.mjs";
 
 // Use real Chromium touch events, not mouse emulation or synthetic DOM events.
 export async function verifyTouchWire(browser, url) {
@@ -12,7 +13,7 @@ export async function verifyTouchWire(browser, url) {
             const output = nodes.nth(0).locator(".port-output .port-marker");
             const amplitude = nodes.nth(1).locator('.port-input[aria-label^="Input: Amplitude"]');
             const frequency = nodes.nth(1).locator('.port-input[aria-label^="Input: Frequency"]');
-            await page.getByRole("button", { name: "Fit", exact: true }).click();
+            await fitCanvas(page);
             await page.waitForFunction(() => {
                 const viewport = document.querySelector(".canvas-viewport");
                 const frames = viewport.querySelectorAll("article[data-node-id]");

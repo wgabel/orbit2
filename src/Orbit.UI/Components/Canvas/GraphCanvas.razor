@@ -7,6 +7,7 @@
 @{ var wires = Wires; }
 <div class="graph-canvas">
     <div class="canvas-viewport" @ref="viewportElement" tabindex="0" aria-label="Graph canvas"
+         aria-keyshortcuts="F + - 0" data-fit-sequence="@fitSequence" data-pinching="@(pinchOrigin is not null ? "true" : "false")"
          @onpointerdown="BeginBackground" @onpointerdown:preventDefault="true"
          @onpointermove="PointerMoved" @onpointerup="PointerReleasedAsync"
          @onpointercancel="CancelGesture" @onpointerleave="CancelGesture" @onlostpointercapture="CancelGesture"
@@ -51,6 +52,7 @@
                            Selected="@Snapshot.SelectedNodeIds.Contains(node.Id)" PendingSource="@pendingSource"
                            WireTargets="@(wireAim is not null ? wireTargetAddresses : null)"
                            OnHeaderPointerDown="@(args => BeginNode(node.Id, args))"
+                           OnBodyPointerDown="BeginNodeSurfaceAsync"
                            OnOutputPointerDown="BeginOutput" OnPortActivate="ActivatePortAsync"
                            OnOpenComposite="OnOpenComposite"
                            OnEditRack="OnEditRack"
@@ -144,7 +146,7 @@
         <div class="workspace-mobile-only workspace-view-summary">
             <p class="workspace-notice">Canvas: @Snapshot.Graph.Nodes.Count nodes · @Snapshot.Graph.Connections.Count connections</p>
             <p class="workspace-notice">Entire patch: @PatchCounts.Nodes nodes · @PatchCounts.Connections connections</p>
-            <p class="workspace-notice">Drag the background to pan; use the floating zoom controls. Drag a cable and aim with the cursor above your finger. Edit → Selection actions enables marquee selection.</p>
+            <p class="workspace-notice">Drag the background to pan; pinch to zoom and pan with two fingers. Triple-tap empty canvas to fit. On desktop use the wheel and triple-click or F. Drag a cable and aim with the cursor above your finger. Edit → Selection actions enables marquee selection.</p>
         </div>
         <div class="annotation-display-control" @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true" @onwheel:stopPropagation="true">
             <label for="annotation-visibility">Annotations</label>
