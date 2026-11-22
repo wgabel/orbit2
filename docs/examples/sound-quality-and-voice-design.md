@@ -8,7 +8,7 @@ This is a practical companion for **finished musical voices**, rather than a cat
 
 ### Sound-design foundations (listening-validated references)
 
-Foundations record useful, generalizable sound relationships demonstrated by a real patch and listener feedback. They are a growing palette, not prescribed recipes for every piece or a claim of shipped presets. Different musical roles may call for simpler or entirely different designs.
+Foundations record useful, generalizable sound relationships demonstrated by a real patch and evidence, including listener feedback where available. They are a growing palette, not prescribed recipes for every piece or a claim of shipped presets. Different musical roles may call for simpler or entirely different designs. See the [foundation catalogue](foundations/README.md) for downloadable reference patches, evidence statuses and maintenance instructions.
 
 - **01 — [Breathing harmonic drone](foundations/breathing-harmonic-drone.md):** monumental, heavy, wet, industrial, grungy, dark and grim. Weighted, slightly detuned octaves, audio-rate-to-amplitude interaction on a slow oscillator, coordinated cutoff and chorus generate emergent harmonic movement with no raw noise. The reference documents the nonlinear behavior, headroom/subsonic risks and transferable experiments. Design relationships rather than just layering sounds.
 

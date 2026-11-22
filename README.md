@@ -4,6 +4,8 @@ A browser-based modular synthesizer built with independent C# application logic,
 
 **Using the app:** start with the [user and agent usage guide](docs/usage/README.md) for patch editing, annotation visibility, recursive counts, plots, keyboard/pattern sequencing, rhythmic articulation, Resonator and the instrument composites. It links working examples with their actual implementation PRs.
 
+**Creating music:** start with the [music creation guide](docs/examples/README.md) for composition, sound design, analysis and refinement. Browse the [sound-design foundations](docs/examples/foundations/README.md) for reference patch downloads, musical character, analysis and validation status.
+
 The long-term modular synthesizer design is documented in [ORBIT2-ARCHITECTURE.md](ORBIT2-ARCHITECTURE.md). Phase 1 adds the independent signal graph model. Phase 2 executes a fixed modulation graph using Faust and exposes the shared audio clock. Phase 3 adds a session-owned command and committed event system plus the framework-neutral canvas presentation state. Phase 4 connects the editable graph to a runtime Faust compiler and AudioWorklet playback. Phase 5 begins with composite nodes and immutable nested graph snapshots.
 
 ## Requirements and local execution

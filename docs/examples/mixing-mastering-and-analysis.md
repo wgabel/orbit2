@@ -1,6 +1,6 @@
 # Mixing, mastering and analysis of electronic pieces
 
-[Architecture](../../ORBIT2-ARCHITECTURE.md) · [Musical theory and psychoacoustics](music-theory-and-sound-design.md) · [Voice design](sound-quality-and-voice-design.md) · [Genre reference](electronic-music-genres.md)
+[Music creation index](README.md) · [Architecture](../../ORBIT2-ARCHITECTURE.md) · [Musical theory and psychoacoustics](music-theory-and-sound-design.md) · [Voice design](sound-quality-and-voice-design.md) · [Genre reference](electronic-music-genres.md)
 
 Documentation provenance: [PR #29](https://github.com/wgabel/orbit2/pull/29) (production guidance and measured case study, not new mastering DSP or native rendering implementation).
 

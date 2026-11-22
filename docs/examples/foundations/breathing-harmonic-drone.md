@@ -1,8 +1,16 @@
 # Sound-design foundation 01 — breathing harmonic drone
 
-[Voice quality and palette](../sound-quality-and-voice-design.md) · [Composition](../generative-ambient-composition.md) · [Theory](../music-theory-and-sound-design.md) · [Production analysis](../mixing-mastering-and-analysis.md) · [Genre techniques](../genres/orbit-techniques.md)
+[Foundations catalogue](README.md) · [Voice quality and palette](../sound-quality-and-voice-design.md) · [Composition](../generative-ambient-composition.md) · [Theory](../music-theory-and-sound-design.md) · [Production analysis](../mixing-mastering-and-analysis.md) · [Genre techniques](../genres/orbit-techniques.md)
 
 Documentation provenance: [PR #33](https://github.com/wgabel/orbit2/pull/33) (listener-validated reference and analysis, not a shipped preset or new DSP implementation).
+
+Original reference asset and serializer regression: [PR #42](https://github.com/wgabel/orbit2/pull/42).
+
+## Reference asset and evidence
+
+[Download original patch JSON](breathing-harmonic-drone/reference.orbit2.json) (GitHub raw/download). This is the exact user-supplied `orbit2-patch-harmonics.json`, schema 1, 120 BPM, 14 root nodes and 16 connections, preserved byte-for-byte (SHA-256 `3ae679119e198a9fedab9a74daf272941aa175ab9a25d9038501c36df13db7e7`). Import on a stopped transport using **Patches → Import JSON**. **Do not audition at normal output level:** the original lacks final attenuation and the independent analysis estimates overload and substantial subsonic content. Read [measurements and safety](#4-measurements-and-safety); start with very low monitoring level, add final Gain on a separate working copy before playback, then measure. The original is intentionally not mastered or silently modified.
+
+Evidence: **listener validated** for the original sonic character; **audio analyzed** by an independent reconstruction as described below; **technically validated for import/graph restoration** with `FoundationReferenceTests.OriginalBreathingHarmonicDroneRestoresItsSavedGraph` on main baseline [`0eee66f`](https://github.com/wgabel/orbit2/commit/0eee66f) plus this asset/test. The regression uses the real serializer and registry, checks schema, tempo, graph identity, node/connection counts and the saved muted oscillator. It passed locally (.NET 10.0.404). It is not a claim of native playback, full-duration peak safety or subjective approval of a safer variant. No composition validation of this exact reference has been recorded.
 
 ## The principle: design relationships, not just layers
 

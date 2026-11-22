@@ -1,6 +1,6 @@
 # Electronic music genres — composition reference
 
-[Architecture](../../ORBIT2-ARCHITECTURE.md) · [Generative composition](generative-ambient-composition.md) · [Music theory and sound design](music-theory-and-sound-design.md)
+[Music creation index](README.md) · [Architecture](../../ORBIT2-ARCHITECTURE.md) · [Generative composition](generative-ambient-composition.md) · [Music theory and sound design](music-theory-and-sound-design.md)
 
 Documentation provenance: [PR #26](https://github.com/wgabel/orbit2/pull/26) introduces the genre reference, technique bridge and agent routing (documentation only; not evidence of new engine capabilities).
 
