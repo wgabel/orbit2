@@ -18,6 +18,8 @@ The levels overlap; they are analytical tools, not fixed durations. The [breathi
 
 ## 2. Compose the changes before building the voices
 
+For pitched pieces, use [harmony, scales and temperament](harmony-scales-and-temperament.md) to plan actual voice-led harmony, cadence goals and modulation; the [classical composition and melody guide](classical-composition-and-melody.md#3-how-baroque-and-classical-musicians-learned-composition) provides motif/skeleton development, counterpoint, phrase structure and original keyboard score exercises that can transfer to electronic genres. Start with a simple score reduction when appropriate; complexity of timbre should not substitute for development of the material.
+
 - Establish a memorable motif or identity and an emotional trajectory. For tonal music choose a suitable harmonic palette; for non-tonal music consider recurring rhythmic, gestural or textural identities instead.
 - For each important section, specify its musical content as well as the active layer names: theme/phrase, pitch contour and register, rhythm and note density, harmonic progression or pedal, dynamics, timbre, and the relationship to the preceding section. A short passage may not need every dimension to change.
 - Keep recognizable connections between sections (e.g. a shared melodic interval, rhythm, bass pedal or timbral signature), while making the important departures substantial enough to hear. A distinct chorus can use a new melody, broader intervals, new chord movement or a contrasting groove; it should not merely be the verse with extra oscillators. A drop can change groove, bass phrasing, rhythmic gaps and melodic interaction, rather than only volume or distortion.
