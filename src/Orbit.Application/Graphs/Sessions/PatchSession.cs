@@ -78,6 +78,13 @@ public sealed class PatchSession : IPatchSession
                     events = [new NodesGrouped(grouping.GraphId, grouped, Array.AsReadOnly(grouping.NodeIds.Distinct().ToArray())),
                         new NodeAdded(grouping.GraphId, grouped)];
                 }
+                else if (command is UngroupCompositeCommand ungrouping)
+                {
+                    var candidate = CompositeUngrouping.Build(snapshot, ungrouping, registry);
+                    graph = candidate.Root;
+                    events = [new CompositeUngrouped(ungrouping.GraphId, candidate.Plan.Wrapper, candidate.Plan.NodeIds,
+                        candidate.Plan.MovedConnectionIds)];
+                }
                 else events = commands.Execute(targetGraph, command, nextRevision);
                 if (events.Count == 0)
                     return new GraphCommandResult(null, Array.Empty<Exception>());

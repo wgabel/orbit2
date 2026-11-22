@@ -2,7 +2,7 @@
 
 [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap, Phase 7.4](../roadmap/advanced.md#phase-74--reusable-composite-modules-planned)
 
-**Status:** Phase 7.4.1 multi-node selection and actions implemented; 7.4.2a grouping in review. Ungrouping (7.4.2b), library, portability and macros remain planned. This is the design contract and implementation record for general-purpose reusable graphs. Existing composite graphs, boundary racks, built-in drone/impact factories and individual node presets are already implemented; see [composite nodes](composite-nodes.md) and [node presets](node-presets.md).
+**Status:** Phase 7.4.1 multi-node selection and actions and 7.4.2a grouping implemented; 7.4.2b conservative ungrouping in review. Library, portability and macros remain planned. This is the design contract and implementation record for general-purpose reusable graphs. Existing composite graphs, boundary racks, built-in drone/impact factories and individual node presets are already implemented; see [composite nodes](composite-nodes.md) and [node presets](node-presets.md).
 
 Related: [canvas](canvas.md) · [persistence and history](persistence-and-history.md) · [signals and ports](../core/signals-and-ports.md) · [commands and events](../core/commands-and-events.md) · [annotations](annotations-and-connections.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
 
@@ -44,7 +44,9 @@ Drag empty canvas with Shift, or activate **Marquee mode** and drag without a ke
 
 `ModuleSelection` defines eligible node IDs and measured hit testing; `CanvasStateService.SelectModuleNodes` validates all requested IDs, deduplicates, filters protected types, and publishes one selection change without graph history. `GraphCanvas` previews in screen space and resolves the final rectangle against freshly measured world-space node geometry, rejecting stale graph/layout/viewport snapshots during the gesture. No new persistence schema or DSP behavior is required. Grouping is the separate structural operation below; saving reusable modules remains planned.
 
-### Implementation: create composite (7.4.2a, in review)
+<a id="implementation-create-composite-742a-in-review"></a>
+
+### Implementation: create composite (7.4.2a, implemented)
 
 Implementation: [PR #47](https://github.com/wgabel/orbit2/pull/47).
 
@@ -52,7 +54,17 @@ Open **Selection**, select 1–512 eligible nodes, enter a composite name and ex
 
 `CompositeGrouping` builds a detached candidate through the same saved-graph reconstruction and domain validation used by persistence/history. `GroupNodesCommand` verifies the expected revision; `NodesGrouped` describes the atomic ownership change. One port per crossing uses the original **source** type, preserving adapters (Audio → Modulation and Clock → Trigger). The segment entering the original receiver retains the original edge ID and amount; the new segment has unity amount. Internal edges are unchanged, even dormant modulation. Connection order at receivers is retained. Non-contiguous selections that create cycles fail before commit. No new schema or DSP emitter is required.
 
-`CanvasNavigationService` creates a child layout with translated relative positions, rack placement, node/edge descriptions and visualization preferences; existing descendant canvases are retained. The parent layout keeps unrelated positions. One graph Undo restores the nodes and retained parent metadata; Redo restores the composite and retained child layout using existing bounded history caches. Grouping requires the normal structural recompile/crossfade, not guaranteed uninterrupted oscillator phase. Undo is not a general ungroup action: 7.4.2b will expand a composite's current edited routing. The independent Module Library is 7.4.3.
+`CanvasNavigationService` creates a child layout with translated relative positions, rack placement, node/edge descriptions and visualization preferences; existing descendant canvases are retained. The parent layout keeps unrelated positions. One graph Undo restores the nodes and retained parent metadata; Redo restores the composite and retained child layout using existing bounded history caches. Grouping requires the normal structural recompile/crossfade, not guaranteed uninterrupted oscillator phase. Undo is not a general ungroup action: use the explicit expansion below for a composite's current edited routing. The independent Module Library is 7.4.3.
+
+### Implementation: ungroup composite (7.4.2b, in review)
+
+Implementation: [PR #48](https://github.com/wgabel/orbit2/pull/48).
+
+Select exactly one composite in its parent canvas, open **Selection** and choose **Ungroup composite**. The wrapper and its two racks disappear; its current internal ordinary nodes (including nested composites) move into the parent and become selected. The operation uses the current wiring, not the original grouping recipe. For example, an incoming boundary cable at 2 and its internal receiver cable at -25 become one cable at -50. Rack-to-rack passthrough and fan-out are supported when every used boundary has one source. The receiving edge retains its ID and dormant/zero amounts, and the product must be representable as a finite float. Event paths retain unity and the final direct type must pass domain validation.
+
+`CompositeUngrouping.Preview` constructs the candidate routes; `UngroupCompositeCommand` verifies revision and restores a detached complete root candidate through domain validation. `CompositeUngrouped` publishes one structural fact. Reject muted wrappers, used one-sided boundaries, sums of multiple boundary sources, duplicate or colliding identities/routes and any incompatible or cyclic candidate. Completely unused ports are harmless. This deliberately conservative scope avoids inventing zero/default sources, hidden mixers or a replacement mute control; connect or remove one-sided cables, or expose a separate mixer before expanding. A refusal leaves graph, revision and history unchanged.
+
+Before dispatch, `CanvasNavigationService.UngroupComposite` preflights `CompositeExpansionLayout` using the current child presentation. Relative positions are translated around the wrapper's location, including edited positions; neighboring nodes are untouched. Node aliases/descriptions, retained receiving-cable labels and node visualization preferences are transferred rather than recovered from stale grouping caches. Notes/visual groups within the child, parent visual membership of the wrapper, wrapper/rack descriptions and labels on discarded boundary segments prevent expansion until the user moves or removes the affected metadata. Wrapper-only plot state cannot survive its removal. Existing descendant canvases remain accessible with rebuilt breadcrumbs. Undo/redo use the bounded removed-layout caches and restore one structural edit; standalone annotation history remains separate. Normal save/reload and structural crossfade apply, with no promise of live phase continuity.
 
 ### Example: Deep Space Drone
 

@@ -1747,6 +1747,23 @@ try {
     await openGroup.click();
     await groupViewport.getByRole("button", { name: "Edit ports" }).first().waitFor();
     assert.equal(await groupViewport.locator("article[data-node-id]").count(), 5);
+    // Expand from the parent selection rather than undoing the original grouping.
+    await groupPage.getByRole("navigation", { name: "Canvas path" }).getByRole("button", { name: "Patch", exact: true }).click();
+    await openGroup.waitFor();
+    await groupViewport.getByRole("button", { name: "Selection actions" }).click();
+    await groupPanel.getByRole("button", { name: "Clear selection" }).click();
+    await groupPanel.getByLabel("Individual module node").selectOption({ index: 1 });
+    await groupPanel.getByRole("button", { name: "Toggle node selection" }).click();
+    await groupPanel.getByRole("button", { name: "Ungroup composite", exact: true }).click();
+    await openGroup.waitFor({ state: "detached" });
+    await groupViewport.locator("article[data-node-id]").nth(3).waitFor();
+    assert.equal(await groupViewport.locator("article[data-node-id]").count(), 4);
+    assert.equal(await groupViewport.locator(".node-selected").count(), 3);
+    await groupPage.getByRole("button", { name: "Undo", exact: true }).click();
+    await openGroup.waitFor();
+    await groupPage.getByRole("button", { name: "Redo", exact: true }).click();
+    await openGroup.waitFor({ state: "detached" });
+    assert.equal(await groupViewport.locator("article[data-node-id]").count(), 4);
     await groupPage.close();
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {

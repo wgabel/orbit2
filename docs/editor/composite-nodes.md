@@ -47,7 +47,7 @@ The initial domain implementation now creates an owned child graph via `Composit
 
 ### Reusable modules and presets
 
-See [Reusable composite modules (Phase 7.4)](reusable-modules.md) for the planned selection-to-composite and ungroup workflows, persistent custom Module Library, whole-patch conversion, portable graph templates and macro controls. This section remains the record of the existing composite and built-in factory foundation.
+See [Reusable composite modules (Phase 7.4)](reusable-modules.md) for implemented selection-to-composite, single-level ungrouping in review, and planned persistent custom Module Library, whole-patch conversion, portable graph templates and macro controls. This section remains the record of the existing composite and built-in factory foundation.
 
 A saved composite definition consists of its graph, exposed ports and optional canvas layout. This supports:
 

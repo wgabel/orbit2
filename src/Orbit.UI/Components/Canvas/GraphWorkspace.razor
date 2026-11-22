@@ -91,6 +91,7 @@ else
                  OnManagePresets="@(nodeId => OpenPresetManagerAsync(graphId, nodeId))" PresetCatalogRevision="@PresetCatalog.Revision"
                  OnOpenComposite="@(nodeId => OpenComposite(graphId, nodeId))"
                  OnGroupNodes="GroupNodes"
+                 OnUngroupComposite="UngroupComposite"
                  OnEditRack="@(nodeId => OpenRackEditor(graphId, nodeId))"
                  ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" EnvelopePlayheads="@EnvelopePlayheads" BeatsPerMinute="@tempo" SampleRate="@responseSampleRate" />
     @if (ScopeNode is { } scopeNode)

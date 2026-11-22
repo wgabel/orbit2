@@ -727,6 +727,19 @@ var groupingAfter = groupingCompiler.Compile(groupSession.Snapshot);
 File.WriteAllText(Path.Combine(args[0], "grouping.json"), JsonSerializer.Serialize(new[] { groupingBefore, groupingAfter }
     .Select(program => new { source = program.Source, values = program.InitialControlValues() })));
 
+// The expansion must use edited boundary coefficients, not the original grouping recipe.
+var groupedVoice = groupSession.Snapshot.Nodes.Single(node => node.Composite is not null);
+var groupedChild = groupedVoice.Composite!.Graph;
+var groupIncoming = groupSession.Snapshot.Connections.Single(edge => edge.Destination.NodeId == groupedVoice.Id);
+var groupOutgoing = groupedChild.Connections.Single(edge => edge.Destination.NodeId == groupedVoice.Composite.OutputRackId);
+groupSession.Execute(new SetConnectionAmountCommand(groupGraph, groupIncoming.Id, 2));
+groupSession.Execute(new SetConnectionAmountCommand(groupedChild.Id, groupOutgoing.Id, -.5));
+var ungroupingBefore = groupingCompiler.Compile(groupSession.Snapshot);
+groupSession.Execute(new UngroupCompositeCommand(groupGraph, groupedVoice.Id, groupSession.Snapshot.Revision));
+var ungroupingAfter = groupingCompiler.Compile(groupSession.Snapshot);
+File.WriteAllText(Path.Combine(args[0], "ungrouping.json"), JsonSerializer.Serialize(new[] { ungroupingBefore, ungroupingAfter }
+    .Select(program => new { source = program.Source, values = program.InitialControlValues() })));
+
 GraphNodeSnapshot TempoAdd(Guid graph, string type) =>
     tempoSession.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
 

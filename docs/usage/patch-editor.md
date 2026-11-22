@@ -63,13 +63,23 @@ For example, add a Flute instrument, open **Outline**, search `Flute Output Rack
 
 For keyboard-only selection, open **Selection**, choose **Select all module nodes** or choose an **Individual module node** and activate **Toggle node selection**; **Clear selection** resets it. The panel reports selected and eligible counts and warns about protected master/rack nodes or cables in the ordinary selection. Apply/cancel an open annotation draft first. Bulk actions exclude protected targets and clear cable/annotation selection; selection belongs to the active canvas. This does not move nodes, group DSP graphs or change the sound. See [module selection](../editor/reusable-modules.md#implementation-multi-node-selection-741-implemented).
 
-### Create an editable composite (7.4.2a, in review)
+<a id="create-an-editable-composite-742a-in-review"></a>
+
+### Create an editable composite (7.4.2a, implemented)
 
 Implementation: [PR #47](https://github.com/wgabel/orbit2/pull/47).
 
 For example, select a carrier oscillator and gain processor while leaving the external LFO and Master Output outside. In **Selection**, enter a **Composite name**, expand **Boundary preview** (the incoming LFO and outgoing audio each get a port), then choose **Create composite**. The two nodes become one editable composite without changing the mathematical signal routing. Double-click its header or choose **Open** to see the original nodes and racks. The original cable weights are preserved, not applied twice. Use rack port editing to give the generated socket names more musical labels.
 
-**Undo** immediately reverses the structural operation and **Redo** restores it. You can save/reload the resulting patch normally. If grouping is unavailable, exclude master/rack nodes and cables, or remove selected nodes from visual groups first. If the selection surrounds an unselected intervening processor and produces a cycle, include that processor. This is grouping within the current patch; generic ungrouping and saving to a cross-patch Module Library are not available yet. See the [grouping implementation](../editor/reusable-modules.md#implementation-create-composite-742a-in-review).
+**Undo** immediately reverses the structural operation and **Redo** restores it. You can save/reload the resulting patch normally. If grouping is unavailable, exclude master/rack nodes and cables, or remove selected nodes from visual groups first. If the selection surrounds an unselected intervening processor and produces a cycle, include that processor. Grouping is within the current patch; the cross-patch Module Library is still planned. See the [grouping implementation](../editor/reusable-modules.md#implementation-create-composite-742a-implemented).
+
+### Ungroup an edited composite (7.4.2b, in review)
+
+Implementation: [PR #48](https://github.com/wgabel/orbit2/pull/48).
+
+Open the composite created above, change an internal parameter or cable amount, then return to the parent. Select only that composite and choose **Selection → Ungroup composite**. The current nodes appear around the former wrapper; an internal composite remains nested. Their current settings and relative positions are retained, and incoming/outgoing cables reconnect with composed amounts. Undo restores the edited composite, not its original pre-edit configuration; Redo expands it again.
+
+If expansion is refused, read the error: unmute the composite; remove or connect unused rack cables on both sides; use explicit mixers instead of summed boundary inputs/outputs; move wrapper/rack descriptions, labels on disappearing cables, child notes or visual groups before expanding. No partial graph edit occurs on refusal. See the [ungrouping contract](../editor/reusable-modules.md#implementation-ungroup-composite-742b-in-review).
 
 ### Understand the two counts
 

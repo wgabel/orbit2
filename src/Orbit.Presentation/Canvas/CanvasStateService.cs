@@ -22,6 +22,7 @@ public sealed partial class CanvasStateService : ICanvasStateService
     private readonly Dictionary<Guid, CanvasPoint> removedPositions = [];
     private readonly Dictionary<Guid, NodeVisualizationSettings> removedVisualizations = [];
     private NodePlacementReservation? nextPlacement;
+    private CompositeExpansionLayout? pendingExpansion;
     private CanvasStateSnapshot snapshot;
     private bool publishing;
     private bool disposed;
@@ -87,6 +88,15 @@ public sealed partial class CanvasStateService : ICanvasStateService
     }
 
     public CanvasStateSnapshot Snapshot => snapshot;
+
+    internal void PrepareExpansion(CompositeExpansionLayout layout)
+    {
+        EnsureEditable();
+        if (pendingExpansion is not null) throw new InvalidOperationException("A composite expansion is already prepared.");
+        pendingExpansion = layout;
+    }
+
+    internal void CancelExpansion() => pendingExpansion = null;
 
     public IDisposable Subscribe(Action<CanvasStateChange> handler)
     {
@@ -239,6 +249,8 @@ public sealed partial class CanvasStateService : ICanvasStateService
         var nodeIds = graph.Nodes.Select(node => node.Id).ToHashSet();
         var connectionIds = graph.Connections.Select(connection => connection.Id).ToHashSet();
         var grouping = change.Events.OfType<NodesGrouped>().SingleOrDefault(fact => fact.GraphId == graph.Id);
+        var ungrouping = change.Events.OfType<CompositeUngrouped>().SingleOrDefault(fact => fact.GraphId == graph.Id);
+        var expansion = ungrouping is not null && pendingExpansion?.WrapperId == ungrouping.Composite.Id ? pendingExpansion : null;
         var positions = snapshot.NodePositions
             .Where(pair => nodeIds.Contains(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value);
         foreach (var pair in snapshot.NodePositions.Where(pair => !nodeIds.Contains(pair.Key)))
@@ -247,7 +259,12 @@ public sealed partial class CanvasStateService : ICanvasStateService
         foreach (var node in graph.Nodes)
             if (!positions.ContainsKey(node.Id))
             {
-                if (removedPositions.Remove(node.Id, out var restored))
+                if (expansion is not null && expansion.Positions.TryGetValue(node.Id, out var transferred))
+                {
+                    removedPositions.Remove(node.Id);
+                    positions.Add(node.Id, transferred);
+                }
+                else if (removedPositions.Remove(node.Id, out var restored))
                     positions.Add(node.Id, restored);
                 else if (grouping is not null && node.Id == grouping.Composite.Id)
                     positions.Add(node.Id, CanvasNavigationService.GroupAnchor(snapshot, grouping.NodeIds.ToHashSet()));
@@ -260,8 +277,9 @@ public sealed partial class CanvasStateService : ICanvasStateService
                 else positions.Add(node.Id, PlaceNode(positions));
             }
 
-        var selectedNodes = grouping is null ? snapshot.SelectedNodeIds.Where(nodeIds.Contains).ToArray() : [grouping.Composite.Id];
-        var selectedConnections = grouping is null ? snapshot.SelectedConnectionIds.Where(connectionIds.Contains).ToArray() : [];
+        var selectedNodes = ungrouping is not null ? ungrouping.NodeIds.ToArray() :
+            grouping is null ? snapshot.SelectedNodeIds.Where(nodeIds.Contains).ToArray() : [grouping.Composite.Id];
+        var selectedConnections = grouping is null && ungrouping is null ? snapshot.SelectedConnectionIds.Where(connectionIds.Contains).ToArray() : [];
         foreach (var pair in snapshot.Visualizations.Where(pair => !nodeIds.Contains(pair.Key)))
             removedVisualizations[pair.Key] = pair.Value;
         while (removedVisualizations.Count > 512) removedVisualizations.Remove(removedVisualizations.Keys.First());
@@ -272,6 +290,26 @@ public sealed partial class CanvasStateService : ICanvasStateService
         var expanded = ValidExpandedNode(graph, snapshot.ExpandedVisualizationNodeId);
         var nodeDescriptions = ReconcileDescriptions(snapshot.NodeDescriptions, removedNodeDescriptions, nodeIds);
         var connectionDescriptions = ReconcileDescriptions(snapshot.ConnectionDescriptions, removedConnectionDescriptions, connectionIds);
+        if (expansion is not null)
+        {
+            // Current child metadata wins over stale parent caches from earlier grouping.
+            var nodes = nodeDescriptions.ToDictionary(pair => pair.Key, pair => pair.Value);
+            var edges = connectionDescriptions.ToDictionary(pair => pair.Key, pair => pair.Value);
+            foreach (var id in expansion.Positions.Keys)
+            {
+                nodes.Remove(id);
+                if (expansion.NodeDescriptions.TryGetValue(id, out var description)) nodes[id] = description;
+                visualizations.Remove(id);
+                if (expansion.Visualizations.TryGetValue(id, out var settings)) visualizations[id] = settings;
+            }
+            foreach (var id in expansion.MovedConnectionIds)
+            {
+                edges.Remove(id);
+                if (expansion.ConnectionDescriptions.TryGetValue(id, out var description)) edges[id] = description;
+            }
+            nodeDescriptions = FreezeDescriptions(nodes);
+            connectionDescriptions = FreezeDescriptions(edges);
+        }
         var layoutChanged = !positions.Keys.ToHashSet().SetEquals(snapshot.NodePositions.Keys) ||
             selectedNodes.Length != snapshot.SelectedNodeIds.Count ||
             selectedConnections.Length != snapshot.SelectedConnectionIds.Count ||

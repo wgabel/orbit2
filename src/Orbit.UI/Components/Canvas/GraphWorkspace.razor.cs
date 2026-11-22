@@ -417,6 +417,28 @@ public partial class GraphWorkspace : IDisposable
         ClosePresetManager();
         Execute(command);
     }
+
+    private void UngroupComposite(UngroupCompositeCommand command)
+    {
+        if (switchingWorkspace || !CheckAnnotationDraft()) return;
+        if (command.GraphId != Canvas.Snapshot.GraphId || command.ExpectedRevision != Canvas.Snapshot.GraphRevision ||
+            Canvas.Snapshot.SelectedNodeIds.Count != 1 || Canvas.Snapshot.SelectedNodeIds[0] != command.CompositeId ||
+            Canvas.Snapshot.SelectedConnectionIds.Count > 0)
+        {
+            Error = "The selection changed. Select one composite before expanding it.";
+            return;
+        }
+        Error = null;
+        try
+        {
+            CloseRackEditor();
+            ClosePresetManager();
+            var result = Navigation.UngroupComposite(command);
+            if (result.SubscriberErrors.Count > 0)
+                Error = "The graph was committed, but a view failed to update: " + result.SubscriberErrors[0].Message;
+        }
+        catch (Exception exception) { Error = exception.Message; }
+    }
     private void Redo() => RestoreHistory(session.Redo);
     private void UndoAnnotation() { if (CheckAnnotationDraft()) Canvas.UndoAnnotation(); }
     private void RedoAnnotation() { if (CheckAnnotationDraft()) Canvas.RedoAnnotation(); }
