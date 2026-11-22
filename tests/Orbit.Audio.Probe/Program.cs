@@ -191,6 +191,27 @@ File.WriteAllText(Path.Combine(args[0], "layered.json"), JsonSerializer.Serializ
     values = layeredProgram.Controls.ToDictionary(control => control.Name, control => control.InitialValue)
 }));
 
+var instruments = new[] { InstrumentTemplates.Organ, InstrumentTemplates.Flute, InstrumentTemplates.Brass,
+    InstrumentTemplates.Strings, InstrumentTemplates.Didgeridoo }.Select(key =>
+{
+    using var instrumentSession = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+    var instrumentRoot = instrumentSession.GraphId;
+    GraphNodeSnapshot AddInstrumentNode(string type) => instrumentSession.Execute(new AddNodeCommand(instrumentRoot, type))
+        .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+    var instrument = AddInstrumentNode(key);
+    var control = AddInstrumentNode(PitchControlGenerator.NodeType);
+    var output = AddInstrumentNode(MasterOutput.NodeType);
+    instrumentSession.Execute(new ConnectNodesCommand(instrumentRoot, new(control.Id, control.Outputs[0].Id), new(instrument.Id, instrument.Inputs[0].Id)));
+    instrumentSession.Execute(new ConnectNodesCommand(instrumentRoot, new(instrument.Id, instrument.Outputs[0].Id), new(output.Id, output.Inputs[0].Id)));
+    var compiled = FaustGraphCompiler.CreateBuiltIn().Compile(instrumentSession.Snapshot);
+    var voices = instrument.Composite!.Graph.Nodes.Where(n => n.TypeKey == OscillatorGenerator.NodeType).ToArray();
+    return new { key, source = compiled.Source, values = compiled.InitialControlValues(),
+        transpose = compiled.Controls.Single(c => c.Address == new ParameterAddress(control.Id, control.Parameters.Single(p => p.Definition.Key == PitchControlGenerator.SemitonesKey).Id)).Name,
+        frequencies = voices.Select(v => v.Parameters.Single(p => p.Definition.Key == "frequency").BaseValue).ToArray(),
+        meters = voices.Select(v => compiled.Controls.Single(c => c.Address == new ParameterAddress(v.Id, v.Parameters.Single(p => p.Definition.Key == "frequency").Id)).MeterName).ToArray() };
+}).ToArray();
+File.WriteAllText(Path.Combine(args[0], "instruments.json"), JsonSerializer.Serialize(instruments));
+
 using var filterSession = new PatchSession(BuiltInNodes.CreateRegistry());
 var filterRoot = filterSession.GraphId;
 var carrier = FilterAdd(OscillatorGenerator.NodeType);

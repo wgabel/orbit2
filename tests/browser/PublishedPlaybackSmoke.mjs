@@ -94,6 +94,10 @@ try {
     await toolbar.getByRole("button", { name: "Zoom out" }).waitFor();
     await toolbar.getByRole("button", { name: "Add", exact: true }).waitFor();
     await toolbar.getByRole("button", { name: "Play patch" }).waitFor();
+    for (const [key, name] of [["organ", "Organ"], ["flute", "Flute"], ["brass", "Brass"],
+        ["bowed-strings", "Bowed strings"], ["didgeridoo", "Didgeridoo"]]) {
+        assert.equal(await page.locator(`#node-type option[value="preset.instrument.${key}"]`).textContent(), `Instrument — ${name}`);
+    }
     const viewport = page.locator(".canvas-viewport");
     const panCanvas = async delta => {
         const world = page.locator(".canvas-world");
@@ -969,6 +973,8 @@ try {
     // Named saves are independent of recovery and imported/exported documents.
     await page.getByRole("button", { name: "Patches", exact: true }).click();
     const manager = page.locator(".patch-manager");
+    // The overview region also contains "Saved patch" in its accessible name.
+    const savedPatchPicker = manager.getByRole("combobox", { name: "Saved patch", exact: true });
     await manager.waitFor().catch(async error => {
         console.error("Patch menu header:", await page.locator(".workspace-header").innerHTML());
         throw error;
@@ -992,13 +998,13 @@ try {
     await manager.getByRole("button", { name: "Save as" }).click();
     await manager.getByText("Saved Empty study.", { exact: true }).waitFor();
     await manager.getByLabel("Search library").fill("HORIZON evolving");
-    await manager.getByLabel("Saved patch").locator("option[value='Empty study']").waitFor({ state: "detached" });
+    await savedPatchPicker.locator("option[value='Empty study']").waitFor({ state: "detached" });
     await manager.getByLabel("Tag", { exact: true }).selectOption("Ambient");
-    await manager.getByLabel("Saved patch").locator("option[value='Drone study']").waitFor({ state: "attached" });
+    await savedPatchPicker.locator("option[value='Drone study']").waitFor({ state: "attached" });
     await manager.getByLabel("Search library").fill("no-match");
     await manager.getByText("No matching patches.", { exact: true }).waitFor();
     await manager.getByRole("button", { name: "Clear filters" }).click();
-    await manager.getByLabel("Saved patch").selectOption("Drone study");
+    await savedPatchPicker.selectOption("Drone study");
     await manager.getByRole("button", { name: "Open patch" }).click();
     await manager.getByText("Opened Drone study.", { exact: true }).waitFor();
     await manager.getByRole("region", { name: "Current patch overview" }).getByText("Distant horizon", { exact: true }).waitFor();
@@ -1008,7 +1014,7 @@ try {
     await manager.getByLabel("Import JSON").setInputFiles({ name: "bad.json", mimeType: "application/json", buffer: Buffer.from("{}") });
     await manager.getByRole("alert").waitFor();
     await drone.getByRole("button", { name: "Input: Cutoff (Modulation)" }).waitFor();
-    await manager.getByLabel("Saved patch").selectOption("Empty study");
+    await savedPatchPicker.selectOption("Empty study");
     await manager.getByRole("button", { name: "Open patch" }).click();
     await manager.getByText("Opened Empty study.", { exact: true }).waitFor();
     await manager.getByLabel("Import JSON").setInputFiles({ name: "exported.json", mimeType: "application/json", buffer: exported });
@@ -1017,7 +1023,7 @@ try {
     await drone.getByRole("button", { name: "Input: Cutoff (Modulation)" }).waitFor();
     await manager.getByRole("button", { name: "Delete saved patch" }).click();
     await manager.getByText("Saved patch deleted; current workspace unchanged.").waitFor();
-    assert.equal(await manager.getByLabel("Saved patch").locator("option[value='Empty study']").count(), 0);
+    assert.equal(await savedPatchPicker.locator("option[value='Empty study']").count(), 0);
     // Opening and importing other patches does not remove the independent custom library.
     await manager.getByRole("button", { name: "Close" }).click();
     await rootPreset.locator(`optgroup[label='Custom'] option[value='${customId}']`).waitFor({ state: "attached" });
@@ -1502,6 +1508,17 @@ try {
     await rhythmEditor.getByRole("button", { name: "Add port", exact: true }).click();
     await rhythmRack.getByRole("button", { name: "Output: Clock in (Clock)" }).waitFor();
     await responsePage.close();
+    // Instrument templates use the same add-node and editable nested canvas path.
+    const instrumentPage = await browser.newPage();
+    await instrumentPage.goto("http://127.0.0.1:" + server.address().port);
+    await instrumentPage.locator("#node-type").selectOption("preset.instrument.flute");
+    await instrumentPage.getByRole("button", { name: "Add", exact: true }).click();
+    const flute = instrumentPage.locator(".node-role-composite").filter({ has: instrumentPage.getByRole("button", { name: "Open Flute" }) });
+    await flute.getByRole("button", { name: "Input: Pitch (st) (Modulation)" }).waitFor();
+    await flute.getByRole("button", { name: "Open Flute" }).press("Enter");
+    await instrumentPage.getByRole("button", { name: "Output: Pitch (st) (Modulation)" }).waitFor();
+    assert.equal(await instrumentPage.getByRole("combobox", { name: "Pitch tracking (free)" }).count(), 3);
+    await instrumentPage.close();
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {
     await browser?.close();
