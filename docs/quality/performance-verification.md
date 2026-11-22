@@ -44,8 +44,8 @@ Each phase should be a separate reviewable increment. Before implementation read
 
 | Milestone | Status | Deliverable |
 |---|---|---|
-| 7.3.1 | In review · [PR #53](https://github.com/wgabel/orbit2/pull/53) | Passive context statistics + shared Performance Monitor |
-| 7.3.2 | Planned | Compilation, update/replacement, runtime and analysis resource diagnostics |
+| 7.3.1 | Implemented · [PR #53](https://github.com/wgabel/orbit2/pull/53) | Passive context statistics + shared Performance Monitor |
+| 7.3.2 | In review · [PR #56](https://github.com/wgabel/orbit2/pull/56) | Compilation, update/replacement, runtime and analysis resource diagnostics |
 | 7.3.3 | Planned | Foreground editor responsiveness and bounded diagnostics history |
 | 7.3.4 | Planned | Validated DSP profiling and reproducible benchmark fixtures |
 | 7.3.5 | Planned | Input-to-engine and musical timing diagnostics, when note/sequencer events exist |
@@ -53,11 +53,13 @@ Each phase should be a separate reviewable increment. Before implementation read
 
 ### 7.3.1 — Passive monitor
 
-**In review:** [PR #53](https://github.com/wgabel/orbit2/pull/53). Node tests cover idle/unsupported/invalid fields, context changes, local baseline and reset, decrease/recovery, same-interval fraction, overlapping lifetimes, stop/restart, and graph replacement preserving epoch. The published editor smoke test opens diagnostics before Play, verifies no context exists, opens during accepted playback, checks sample rate and resets without changing the accepted revision. Local JavaScript suites passed (23 tests); the .NET/published-browser checks run in CI.
+**Implemented:** [PR #53](https://github.com/wgabel/orbit2/pull/53). Node tests cover idle/unsupported/invalid fields, context changes, local baseline and reset, decrease/recovery, same-interval fraction, overlapping lifetimes, stop/restart, and graph replacement preserving epoch. The published editor smoke test opens diagnostics before Play, verifies no context exists, opens during accepted playback, checks sample rate and resets without changing the accepted revision. Local JavaScript suites passed (23 tests); the .NET/published-browser checks run in CI.
 
 Implement framework-neutral snapshot and optional metrics port, browser context reads, capability/availability states, session baseline/reset and slow polling, compact toolbar and expanded details. Include sample rate, context state, estimated latency and supported playback statistics; unavailable metrics must stay unavailable. Test no graph/audio mutations and lifecycle/disposal. Ship even when render load is unavailable. Do not block on profiling or sequencer work.
 
 ### 7.3.2 — Compilation and runtime resources
+
+**In review:** [PR #56](https://github.com/wgabel/orbit2/pull/56). 32 local Node tests pass across passive monitoring, runtime recorder, worker/factory and AudioEngine; verify acceptance vs completion, stale/failure protection, current/retiring counts, existing capture resource aggregation and live control updates not increasing preparation attempts. .NET regression covers initial build, live control reuse, disconnected source-identical edit, real replacement and stopped snapshot. Published browser test checks actual monitor worklet and source counts; CI runs .NET and browser checks. These tests validate host-stage instrumentation, not audio-render headroom.
 
 Instrument existing compiler and playback stages with attempt/accepted IDs, known cache information, compile/replacement timings and counters. Expose editable/reachable counts, current/retiring voices, auxiliary channels, analyzer/capture counts, and runtime errors. Add bounded operation events. Verify base-only and source-identical edits do not add unnecessary compilation. This can ship independently of worklet instrumentation.
 
