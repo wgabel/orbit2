@@ -1,10 +1,10 @@
 # Orbit 2 — Performance monitoring, profiling and diagnostics
 
-**Status:** 7.3.1 implemented ([PR #53](https://github.com/wgabel/orbit2/pull/53)); 7.3.2 implemented ([PR #56](https://github.com/wgabel/orbit2/pull/56)); 7.3.3 in review ([PR #57](https://github.com/wgabel/orbit2/pull/57)); 7.3.4–7.3.6 planned  
+**Status:** 7.3.1 implemented ([PR #53](https://github.com/wgabel/orbit2/pull/53)); 7.3.2 implemented ([PR #56](https://github.com/wgabel/orbit2/pull/56)); 7.3.3 implemented ([PR #57](https://github.com/wgabel/orbit2/pull/57)); 7.3.4 benchmark baseline in review ([PR #58](https://github.com/wgabel/orbit2/pull/58)); 7.3.5–7.3.6 planned  
 **Scope:** Browser audio playback, Faust DSP, editing/UI, compilation, memory, musical timing and repeatable performance tests.  
 **Repository:** [wgabel/orbit2](https://github.com/wgabel/orbit2)  
 **Parent architecture:** [ORBIT2-ARCHITECTURE.md](ORBIT2-ARCHITECTURE.md)  
-**Implementation baseline:** Reviewed main on 2026-11-21. Existing audio code is referenced below; the proposed later instrumentation and benchmark harness are not implemented merely because this document exists. See the [7.3.1 implementation record](docs/quality/performance-implementation.md#phase-731--passive-monitor-in-review) for the passive monitor and [7.3.2](docs/quality/performance-implementation.md#phase-732--compilation-and-runtime-diagnostics-in-review) for compilation and resource instrumentation. [7.3.3](docs/quality/performance-implementation.md#phase-733--editor-responsiveness-in-review) describes foreground editor cadence and bounded history.
+**Implementation baseline:** Reviewed main on 2026-11-21. Existing audio code is referenced below; later instrumentation is not implemented merely because this document exists. See the [7.3.1 implementation record](docs/quality/performance-implementation.md#phase-731--passive-monitor-in-review) for the passive monitor and [7.3.2](docs/quality/performance-implementation.md#phase-732--compilation-and-runtime-diagnostics-in-review) for compilation and resource instrumentation. [7.3.3](docs/quality/performance-implementation.md#phase-733--editor-responsiveness-in-review) describes foreground editor cadence and bounded history. [7.3.4](docs/quality/dsp-profiling.md#phase-734--benchmark-baseline-in-review) describes runnable benchmark fixtures and report artifacts; production DSP load remains unmeasured.
 
 ## 1. Purpose and goals
 
