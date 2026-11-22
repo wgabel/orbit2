@@ -38,9 +38,13 @@ Add **Resonator** from the normal node catalog. It accepts mono audio, emits mon
 
 Offline WASM regression tests compare the impulse to its analytic damped cosine and −60 dB decay, stress sample-rate modulation at 44.1/48 kHz, verify silence/dry path and check exact shared-pitch transposition through a real registered graph. Domain tests cover independent parameter identities, live controls, effective frequency and JSON round-trip.
 
-### Phase 7.2.5 — Modal instrument composites (in review)
+<a id="phase-725--modal-instrument-composites-in-review"></a>
+
+### Phase 7.2.5 — Modal instrument composites (implemented)
 
 Implementation: [PR #37](https://github.com/wgabel/orbit2/pull/37).
+
+For live keyboard playing with the new monophonic Note Source (7.2.3 in review), see [the wiring example](pitch-control.md#phase-723--note-source-in-review), including direct velocity mapping to Strength offset.
 
 **Modal synthesis** models a vibrating object as several independently tuned decaying modes. Add a **Modal — …** composite from the node catalog, connect its Audio output to Master output (or a mixer), start playback, and connect Manual Trigger or Clock to Trigger. Fire Manual Trigger to strike the body; the resonators ring and decay after the internal noise excitation stops. Optional Pitch Control or Note Sequencer connected to Pitch (st) at amount 1 transposes all modes together, without changing their decay. There is no sound without a strike or external excitation.
 

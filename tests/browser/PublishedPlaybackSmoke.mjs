@@ -95,6 +95,7 @@ try {
     await toolbar.getByRole("button", { name: "Add", exact: true }).waitFor();
     await toolbar.getByRole("button", { name: "Play patch" }).waitFor();
     assert.equal(await page.locator('#node-type option[value="processor.resonator"]').textContent(), "Resonator");
+    assert.equal(await page.locator('#node-type option[value="generator.note-source"]').textContent(), "Note Source");
     for (const [key, name] of [["organ", "Organ"], ["flute", "Flute"], ["brass", "Brass"],
         ["bowed-strings", "Bowed strings"], ["didgeridoo", "Didgeridoo"]]) {
         assert.equal(await page.locator(`#node-type option[value="preset.instrument.${key}"]`).textContent(), `Instrument — ${name}`);
@@ -1402,6 +1403,44 @@ try {
     await responsePage.getByRole("button", { name: "Stop", exact: true }).click();
     await responseStatus.filter({ hasText: /Ready/ }).waitFor();
     await performance.getByRole("button", { name: "Arm keyboard" }).waitFor();
+
+    // The held-note keyboard can play the real modal composite. Overlapping keys
+    // follow last-note priority; fallback and release do not edit the graph.
+    await responsePage.getByRole("button", { name: "Patches", exact: true }).click();
+    await responseManager.getByRole("button", { name: "New patch" }).click();
+    await responseManager.getByText("New workspace created.", { exact: true }).waitFor();
+    await responseManager.getByRole("button", { name: "Close", exact: true }).click();
+    await responsePage.locator(".canvas-count").filter({ hasText: "1 nodes · 0 connections" }).waitFor();
+    const noteSource = await addResponseNode("generator.note-source");
+    const handpan = await addResponseNode("preset.modal.handpan");
+    await noteSource.getByRole("button", { name: "Output: Gate (Gate)" }).waitFor();
+    await noteSource.getByRole("button", { name: "Output: Velocity (Modulation)" }).waitFor();
+    await noteSource.getByRole("button", { name: "Output: Pitch (Modulation)" }).press("Enter");
+    await handpan.getByRole("button", { name: "Input: Pitch (st) (Modulation)" }).press("Enter");
+    await noteSource.getByRole("button", { name: "Output: Trigger (Trigger)" }).press("Enter");
+    await handpan.getByRole("button", { name: "Input: Trigger (Trigger)" }).press("Enter");
+    await handpan.getByRole("button", { name: "Output: Audio (Audio)" }).press("Enter");
+    await master.getByRole("button", { name: "Input: Audio (Audio)" }).press("Enter");
+    await responsePage.locator(".canvas-count").filter({ hasText: "3 nodes · 3 connections" }).waitFor();
+    await responsePage.getByRole("button", { name: "Fit", exact: true }).click();
+    await noteSource.locator(".node-header > span").click();
+    await responsePage.locator('.performance-keyboard[data-keyboard-ready="true"]').waitFor();
+    await performance.getByRole("button", { name: "Arm keyboard" }).click();
+    await responsePage.getByRole("button", { name: "Play patch" }).click();
+    await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
+    const noteRevision = await responseStatus.innerText();
+    await performance.focus();
+    await responsePage.keyboard.down("a");
+    await performance.locator('[data-live-pitch-offset="-9"]').waitFor();
+    await responsePage.keyboard.down("s");
+    await performance.locator('[data-live-pitch-offset="-7"]').waitFor();
+    await responsePage.keyboard.up("s");
+    await performance.locator('[data-live-pitch-offset="-9"]').waitFor();
+    await responsePage.keyboard.up("a");
+    assert.equal(await responseStatus.innerText(), noteRevision);
+    await performance.getByRole("button", { name: "Release all notes" }).click();
+    await responsePage.getByRole("button", { name: "Stop", exact: true }).click();
+    await responseStatus.filter({ hasText: /Ready/ }).waitFor();
 
     // The AD generator uses the normal canvas, preset, range and live-control paths.
     await responsePage.getByRole("button", { name: "Patches", exact: true }).click();

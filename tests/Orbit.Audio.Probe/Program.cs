@@ -244,6 +244,36 @@ var modalInstruments = new[] { ModalInstrumentTemplates.Handpan, ModalInstrument
 }).ToArray();
 File.WriteAllText(Path.Combine(args[0], "modal-instruments.json"), JsonSerializer.Serialize(modalInstruments));
 
+// One note action lane reaches all four output addresses in an ordinary graph.
+using var noteSession = new PatchSession(BuiltInNodes.CreateRegistry());
+var noteRoot = noteSession.GraphId;
+GraphNodeSnapshot NoteAdd(string type) => noteSession.Execute(new AddNodeCommand(noteRoot, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+void NoteSet(GraphNodeSnapshot node, string key, double value) => noteSession.Execute(new SetParameterValueCommand(noteRoot, Address(node, key), value));
+void NoteWire(GraphNodeSnapshot from, string output, GraphNodeSnapshot to, string input, double amount = 1) => noteSession.Execute(new ConnectNodesCommand(noteRoot,
+    new(from.Id, from.Outputs.Single(p => p.Key == output).Id), new(to.Id, to.Inputs.Single(p => p.Key == input).Id), amount));
+var noteSource = NoteAdd(NoteSourceGenerator.NodeType);
+var noteVoice = NoteAdd(OscillatorGenerator.NodeType);
+var noteGate = NoteAdd(EnvelopeGenerator.NodeType);
+var noteTrigger = NoteAdd(EnvelopeGenerator.NodeType);
+var noteMaster = NoteAdd(MasterOutput.NodeType);
+NoteSet(noteVoice, OscillatorGenerator.PitchTrackingKey, 1); NoteSet(noteVoice, "frequency", 440); NoteSet(noteVoice, "amplitude", 0);
+NoteSet(noteGate, EnvelopeGenerator.ModeKey, (int)EnvelopeMode.Adsr);
+NoteSet(noteTrigger, EnvelopeGenerator.TriggerSourceKey, 1);
+NoteWire(noteSource, "pitch-out", noteVoice, OscillatorGenerator.PitchPortKey);
+NoteWire(noteSource, "gate-out", noteGate, EnvelopeGenerator.GatePortKey);
+NoteWire(noteSource, "trigger-out", noteTrigger, EnvelopeGenerator.EventTriggerPortKey);
+NoteWire(noteSource, "velocity-out", noteVoice, "amplitude-modulation-in", .1);
+NoteWire(noteGate, "envelope-out", noteVoice, "amplitude-modulation-in", .1);
+NoteWire(noteTrigger, "envelope-out", noteVoice, "amplitude-modulation-in", .1);
+NoteWire(noteVoice, "signal-out", noteMaster, "audio-in");
+var noteProgram = FaustGraphCompiler.CreateBuiltIn().Compile(noteSession.Snapshot, SignalTapManifest.MaxAuxiliaryChannels);
+File.WriteAllText(Path.Combine(args[0], "note-source.json"), JsonSerializer.Serialize(new {
+    source = noteProgram.Source, values = noteProgram.InitialControlValues(),
+    channels = noteSource.Outputs.ToDictionary(port => port.Key, port => noteProgram.SignalTaps.Channels[new(noteRoot, noteRoot, noteSource.Id, port.Id, PortDirection.Output)]),
+    mute = noteProgram.AuditionControls.Single(c => c.NodeId == noteSource.Id).Name,
+    inputs = noteProgram.RhythmicInputs.Count
+}));
+
 using var filterSession = new PatchSession(BuiltInNodes.CreateRegistry());
 var filterRoot = filterSession.GraphId;
 var carrier = FilterAdd(OscillatorGenerator.NodeType);

@@ -62,3 +62,20 @@ test('pitch lanes accept only bounded note/reset codes, seed a replacement and p
     assert.equal(source.send(0, 129), true);
     assert.equal(source.send(0, 129.5), false);
 });
+
+test('note lanes preserve priority, fallback velocity, reset and overload release', () => {
+    const queue = new RhythmicActionQueue([{isNote:true}]);
+    const on = (note, v) => note+1+512*v, off = note => 130+note;
+    const a = on(60, 31), b = on(64, 100), c = on(67, 127);
+    for (const code of [a,b,c,off(64),off(67),off(60),a,129]) assert.ok(queue.push(0,code));
+    const output = new Float32Array(16);
+    assert.deepEqual([...queue.render([output],0)], [8]);
+    assert.deepEqual([...output], [131072+a,0,131072+b,0,131072+c,0,0,0,a,0,129,0,131072+a,0,129,0]);
+    for (let i=0;i<MAX_ACTIONS;i++) assert.ok(queue.push(0,a));
+    assert.equal(queue.push(0,b), false);
+    assert.ok(queue.push(0,off(60)));
+    assert.deepEqual([...queue.render([output],0)], [MAX_ACTIONS+1]);
+    assert.equal(output[0],129);
+    assert.equal(output.slice(1).every(v => v===0),true);
+    assert.equal(queue.push(0,512+129),false);
+});

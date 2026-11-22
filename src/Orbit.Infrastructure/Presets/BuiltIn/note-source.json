@@ -1,0 +1,7 @@
+[
+  { "schemaVersion": 1, "id": "note-source-a4", "nodeType": "generator.note-source", "name": "Concert A4", "group": "References", "description": "A4 is zero pitch offset; keyboard strikes use 80 percent velocity.", "parameters": { "reference-note": 69, "keyboard-velocity": 0.8 } },
+  { "schemaVersion": 1, "id": "note-source-a3", "nodeType": "generator.note-source", "name": "A3 instrument reference", "group": "References", "description": "Use with a bank tuned around 220 Hz.", "parameters": { "reference-note": 57, "keyboard-velocity": 0.8 } },
+  { "schemaVersion": 1, "id": "note-source-a2", "nodeType": "generator.note-source", "name": "A2 bass reference", "group": "References", "description": "Use with a bank tuned around 110 Hz.", "parameters": { "reference-note": 45, "keyboard-velocity": 0.8 } },
+  { "schemaVersion": 1, "id": "note-source-soft", "nodeType": "generator.note-source", "name": "Soft strike", "group": "Velocity", "description": "Quiet keyboard velocity for softer accents; reference A4.", "parameters": { "reference-note": 69, "keyboard-velocity": 0.35 } },
+  { "schemaVersion": 1, "id": "note-source-hard", "nodeType": "generator.note-source", "name": "Full strike", "group": "Velocity", "description": "Full keyboard velocity; reference A4.", "parameters": { "reference-note": 69, "keyboard-velocity": 1 } }
+]

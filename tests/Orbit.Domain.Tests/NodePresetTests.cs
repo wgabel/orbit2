@@ -90,21 +90,21 @@ public sealed class NodePresetTests
                 session.Execute(new ConnectNodesCommand(graphId, new PortAddress(source.Id, source.Outputs.Single().Id),
                     new PortAddress(target.Id, input.Id), input.Key == EnvelopeGenerator.TriggerPortKey ? 1 : 0.2));
             }
-            if (target.Outputs.Single().SignalType.IsEvent())
+            if (target.Outputs[0].SignalType.IsEvent())
             {
                 var envelope = session.Execute(new AddNodeCommand(graphId, EnvelopeGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
-                var gate = target.Outputs.Single().SignalType == SignalType.Gate;
+                var gate = target.Outputs[0].SignalType == SignalType.Gate;
                 session.Execute(new SetParameterValueCommand(graphId, new ParameterAddress(envelope.Id, envelope.Parameters.Single(p => p.Definition.Key == EnvelopeGenerator.TriggerSourceKey).Id), gate ? 2 : 1));
                 session.Execute(new ConnectNodesCommand(graphId, new(target.Id, target.Outputs[0].Id), new(envelope.Id, envelope.Inputs.Single(p => p.Key == (gate ? EnvelopeGenerator.GatePortKey : EnvelopeGenerator.EventTriggerPortKey)).Id)));
                 var voice = session.Execute(new AddNodeCommand(graphId, OscillatorGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
                 session.Execute(new ConnectNodesCommand(graphId, new(envelope.Id, envelope.Outputs[0].Id), new(voice.Id, voice.Inputs.Single(p => p.Key == "amplitude-modulation-in").Id)));
                 session.Execute(new ConnectNodesCommand(graphId, new(voice.Id, voice.Outputs[0].Id), new(master.Id, master.Inputs[0].Id)));
             }
-            else if (target.Outputs.Single().SignalType == SignalType.Modulation)
+            else if (target.Outputs[0].SignalType == SignalType.Modulation)
             {
                 var carrier = session.Execute(new AddNodeCommand(graphId, OscillatorGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
                 session.Execute(new SetParameterValueCommand(graphId, new ParameterAddress(carrier.Id, carrier.Parameters.Single(p => p.Definition.Key == OscillatorGenerator.PitchTrackingKey).Id), 1));
-                session.Execute(new ConnectNodesCommand(graphId, new PortAddress(target.Id, target.Outputs.Single().Id), new PortAddress(carrier.Id, carrier.Inputs.Single(p => p.Key == OscillatorGenerator.PitchPortKey).Id)));
+                session.Execute(new ConnectNodesCommand(graphId, new PortAddress(target.Id, target.Outputs[0].Id), new PortAddress(carrier.Id, carrier.Inputs.Single(p => p.Key == OscillatorGenerator.PitchPortKey).Id)));
                 session.Execute(new ConnectNodesCommand(graphId, new PortAddress(carrier.Id, carrier.Outputs.Single().Id), new PortAddress(master.Id, master.Inputs.Single().Id)));
             }
             else session.Execute(new ConnectNodesCommand(graphId, new PortAddress(target.Id, target.Outputs.Single().Id),

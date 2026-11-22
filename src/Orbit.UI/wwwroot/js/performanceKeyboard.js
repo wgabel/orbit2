@@ -7,7 +7,7 @@ export function mountPerformanceKeyboard(root, receiver, codes) {
     const excluded = target => target instanceof Element && target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="slider"]') ||
         document.querySelector('[aria-modal="true"], [role="dialog"], .workspace-library-panel, .rack-editor, .connection-amount-editor');
     const send = (code, down) => {
-        if (pending >= 64) return;
+        if (pending >= 64) { release(); return; }
         pending++;
         const current = epoch;
         chain = chain.then(() => active() && current === epoch ? receiver.invokeMethodAsync('PhysicalKey', code, down) : undefined)

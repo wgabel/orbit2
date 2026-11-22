@@ -17,12 +17,15 @@
 
 <section class="performance-keyboard workspace-toolbar toolbar-group" aria-label="Performance keyboard" data-armed="@armed.ToString().ToLowerInvariant()" data-step-entry="@((stepEntry && showPattern).ToString().ToLowerInvariant())" data-keyboard-ready="@((adapter is not null).ToString().ToLowerInvariant())" tabindex="0" @ref="root">
     <button type="button" class="secondary" aria-pressed="@armed.ToString().ToLowerInvariant()" @onclick="ToggleAsync">@(armed ? "Disarm keyboard" : "Arm keyboard")</button>
-    <span class="workspace-notice">@Node.Name · Continuous pitch</span>
+    <span class="workspace-notice">@Node.Name · @(IsNoteSource ? "Monophonic notes" : "Continuous pitch")</span>
     <output class="workspace-notice" data-live-pitch-offset="@(Offset?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "unavailable")">
         @(Offset is double offset ? $"Live: {offset:+0.##;-0.##;0} st" : "Play connected patch")
     </output>
-    <button type="button" class="secondary" disabled="@RecordingLocked" @onclick="() => showPattern = !showPattern" aria-expanded="@showPattern.ToString().ToLowerInvariant()">@(showPattern ? "Hide pattern" : "Edit pattern")</button>
-    @if (showPattern)
+    @if (!IsNoteSource)
+    {
+        <button type="button" class="secondary" disabled="@RecordingLocked" @onclick="() => showPattern = !showPattern" aria-expanded="@showPattern.ToString().ToLowerInvariant()">@(showPattern ? "Hide pattern" : "Edit pattern")</button>
+    }
+    @if (!IsNoteSource && showPattern)
     {
         <div class="pitch-pattern-editor" role="region" aria-label="Pitch pattern">
             <div class="workspace-toolbar pitch-pattern-settings">
@@ -102,7 +105,7 @@
             <button type="button" class="secondary" disabled="@(!PerformanceKeyboardLayout.IsAvailable(octave - 1, Reference))" @onclick="() => ChangeOctave(-1)">Octave − (Z)</button>
             <span>Octave @octave · reference @MusicalPitch.NoteName(Reference)</span>
             <button type="button" class="secondary" disabled="@(!PerformanceKeyboardLayout.IsAvailable(octave + 1, Reference))" @onclick="() => ChangeOctave(1)">Octave + (X)</button>
-            <button type="button" class="secondary" @onclick="ResetAsync">Reset pitch</button>
+            <button type="button" class="secondary" @onclick="ResetAsync">@(IsNoteSource ? "Release all notes" : "Reset pitch")</button>
         </div>
         <div class="performance-piano" role="group" aria-label="On-screen piano">
             @foreach (var pianoKey in PerformanceKeyboardLayout.Keys)
@@ -111,12 +114,13 @@
                 if (note > 127) continue;
                 <button @key="pianoKey.Code" type="button" class="@(pianoKey.Black ? "performance-black-key" : "performance-white-key")"
                         data-midi-note="@note" aria-label="@($"Play {MusicalPitch.NoteName(note)} ({pianoKey.Hint})")"
-                        disabled="@(!NoteSequencerGenerator.IsPlayable(note, Reference))" @onclick="() => EnterNoteAsync(note)">
+                        disabled="@(!NoteSequencerGenerator.IsPlayable(note, Reference))" @onclick="e => ClickNoteAsync(note, e)"
+                        @onpointerdown="e => PointerDownAsync(note, e)" @onpointerup="e => PointerUpAsync(e)" @onpointercancel="e => PointerUpAsync(e)" @onpointerleave="e => PointerUpAsync(e)">
                     <span>@MusicalPitch.NoteName(note)</span><small>@pianoKey.Hint</small>
                 </button>
             }
         </div>
-        <small class="workspace-notice">Keys A–K / W E T Y U · release holds pitch · select another node to disarm</small>
+        <small class="workspace-notice">Keys A–K / W E T Y U · @(IsNoteSource ? "hold to play; release closes gate; last note wins" : "release holds pitch") · select another node to disarm</small>
         @if (notice is not null) { <span class="workspace-notice" role="status">@notice</span> }
     }
 </section>
@@ -146,6 +150,8 @@
     private bool recordingOperation;
     private int takeMode, quantizeSpacing = 1, pendingNotes;
     private bool RecordingLocked => take is not null || recordingOperation;
+    private bool IsNoteSource => Node.TypeKey == NoteSourceGenerator.NodeType;
+    private double KeyboardVelocity => IsNoteSource ? Value(NoteSourceGenerator.VelocityKey) : 1;
     private bool CanStartTake => armed && !stepEntry && Offset is not null && Value(NoteSequencerGenerator.LoopKey) == 1;
     private readonly Dictionary<string, int> held = [];
     private int Reference => (int)Node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.ReferenceKey).BaseValue;
@@ -177,7 +183,7 @@
         if (recordingOperation) return;
         if (stepEntry && showPattern) { await WriteStepAsync(note + 1, true); return; }
         var current = take;
-        if (current is null) { await SendAsync(new(PerformanceNoteKind.NoteOn, note)); return; }
+        if (current is null) { await SendAsync(new(PerformanceNoteKind.NoteOn, note, KeyboardVelocity)); return; }
         pendingNotes++;
         try
         {
@@ -243,6 +249,7 @@
     {
         if (previousReference < 0 || !PerformanceKeyboardLayout.IsAvailable(octave, Reference)) octave = PerformanceKeyboardLayout.ReferenceOctave(Reference);
         previousReference = Reference;
+        if (IsNoteSource) return;
         selectedStep = Math.Clamp(selectedStep, 0, StepCount - 1);
         if (StepCount % quantizeSpacing != 0) quantizeSpacing = 1;
         if (take is { } current && !current.MatchesSource(PitchPattern.FromNode(Node), Reference))
@@ -251,6 +258,7 @@
 
     private async Task ToggleAsync()
     {
+        if (armed && IsNoteSource) await ResetAsync();
         armed = !armed;
         if (!armed && take is not null) CancelTake();
         held.Clear();
@@ -292,7 +300,7 @@
         if (!armed || disposed) return;
         if (!down)
         {
-            if (held.Remove(code, out var released)) await SendAsync(new(PerformanceNoteKind.NoteOff, released));
+            if (held.Remove(code, out var released) && !held.ContainsValue(released)) await SendAsync(new(PerformanceNoteKind.NoteOff, released));
             return;
         }
         if (stepEntry && showPattern && code is "Space" or "ArrowLeft" or "ArrowRight")
@@ -306,14 +314,49 @@
         if (key is null || held.ContainsKey(code)) return;
         var note = PerformanceKeyboardLayout.Note(octave, key);
         if (!NoteSequencerGenerator.IsPlayable(note, Reference)) return;
+        var alreadyHeld = held.ContainsValue(note);
         held.Add(code, note);
-        await EnterNoteAsync(note);
+        if (!IsNoteSource || !alreadyHeld) await EnterNoteAsync(note);
         StateHasChanged();
     });
 
-    [JSInvokable] public Task ReleasePhysicalKeys() => InvokeAsync(() => held.Clear());
+    [JSInvokable] public Task ReleasePhysicalKeys() => InvokeAsync(async () =>
+    {
+        held.Clear();
+        if (IsNoteSource && !disposed) await ReleaseAllAsync();
+    });
 
-    private Task ResetAsync() => SendAsync(new(PerformanceNoteKind.Reset));
+    private async Task PointerDownAsync(int note, PointerEventArgs e)
+    {
+        if (!IsNoteSource || e.Button != 0 || !armed) return;
+        var code = $"pointer-{e.PointerId}";
+        if (held.ContainsKey(code)) return;
+        var alreadyHeld = held.ContainsValue(note);
+        held.Add(code, note);
+        if (!alreadyHeld) await EnterNoteAsync(note);
+    }
+
+    private async Task PointerUpAsync(PointerEventArgs e)
+    {
+        if (IsNoteSource && held.Remove($"pointer-{e.PointerId}", out var note) && !held.ContainsValue(note))
+            await SendAsync(new(PerformanceNoteKind.NoteOff, note));
+    }
+
+    private async Task ClickNoteAsync(int note, MouseEventArgs e)
+    {
+        if (!IsNoteSource) { await EnterNoteAsync(note); return; }
+        // Keyboard/screen-reader activation is a short strike, not a stuck gate.
+        if (e.Detail != 0 || held.ContainsValue(note)) return;
+        if (await SendAsync(new(PerformanceNoteKind.NoteOn, note, KeyboardVelocity)))
+            await SendAsync(new(PerformanceNoteKind.NoteOff, note));
+    }
+
+    private Task ResetAsync() { held.Clear(); return SendAsync(new(PerformanceNoteKind.Reset)); }
+    private async Task ReleaseAllAsync()
+    {
+        try { await Performance.SendAsync(PatchId, GraphId, Node.Id, new(PerformanceNoteKind.Reset)); }
+        catch (Exception) { /* Runtime may already have been disposed. */ }
+    }
     private async Task<bool> SendAsync(PerformanceNoteAction action)
     {
         if (!armed || disposed) return false;
@@ -328,6 +371,7 @@
     {
         disposed = true;
         held.Clear();
+        if (IsNoteSource) await ReleaseAllAsync();
         if (mounting is not null) await mounting;
         try { if (adapter is not null) { await adapter.InvokeVoidAsync("dispose"); await adapter.DisposeAsync(); } }
         finally { reference?.Dispose(); if (module is not null) await module.DisposeAsync(); }

@@ -4,6 +4,8 @@
 
 Related: [note sequencer design](note-sequencer-design.md) · [pitch control](pitch-control.md) · [transport and timing](../audio/transport-and-timing.md) · [envelopes](../audio/envelopes.md) · [commands and events](../core/commands-and-events.md) · [persistence and history](../editor/persistence-and-history.md).
 
+For held keyboard notes, gate, trigger and velocity rather than latched pitch, use the separate [Note Source](pitch-control.md#phase-723--note-source-in-review) (7.2.3 in review). It shares the keyboard adapter but not the pattern/latch mode; Note-mode pattern articulation remains 7.2.8d.
+
 <a id="keyboard-performance-and-continuous-pitch-sequencer-planned-phase-728"></a>
 
 <a id="keyboard-performance-and-continuous-pitch-sequencer-phase-728--planned"></a>
