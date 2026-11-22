@@ -59,16 +59,29 @@ try {
             await page.goto("http://127.0.0.1:" + server.address().port);
             const status = page.locator(".playback-toolbar").getByRole("status");
             const play = page.getByRole("button", { name: "Play patch" });
+            const more = page.getByRole("navigation", { name: "Workspace tools" }).getByRole("button", { name: "More", exact: true });
+            const moreTools = page.getByRole("region", { name: "More tools" });
+            async function openMore() {
+                await more.click();
+                await moreTools.waitFor({ state: "visible" });
+            }
+            async function closeMore() {
+                await more.click();
+                await moreTools.waitFor({ state: "hidden" });
+            }
             await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
-            await page.getByRole("button", { name: "Patches", exact: true }).click();
+            await openMore();
+            await moreTools.getByRole("button", { name: "Patches", exact: true }).click();
             const manager = page.getByRole("region", { name: "Patch manager" });
             await manager.getByLabel("Import JSON").setInputFiles(resolve(directory, profile.patch));
             await manager.getByText("Imported patch.", { exact: true }).waitFor();
             await manager.getByRole("button", { name: "Close" }).click();
+            await closeMore();
             await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
-            const toggle = page.getByRole("button", { name: /^Performance ·/ });
+            const toggle = moreTools.getByRole("button", { name: /^Performance(?: ·|$)/ });
             const panel = page.getByRole("region", { name: "Audio performance diagnostics" });
             async function monitor(state, voices, expectedRevision = null) {
+                await openMore();
                 await toggle.click();
                 await panel.locator("[data-performance-session]").filter({ hasText: new RegExp("^" + state + "$") }).waitFor({ timeout: 10000 });
                 if (voices) await panel.locator("[data-performance-worklets]").filter({ hasText: voices }).waitFor({ timeout: 10000 });
@@ -79,6 +92,7 @@ try {
                 const result = await panel.locator("dl").evaluateAll(lists => Object.fromEntries(
                     lists.flatMap(list => [...list.querySelectorAll("dt")].map(dt => [dt.textContent, dt.nextElementSibling.textContent]))));
                 await panel.getByRole("button", { name: "Close" }).click();
+                await closeMore();
                 return result;
             }
             const before = performance.now();
