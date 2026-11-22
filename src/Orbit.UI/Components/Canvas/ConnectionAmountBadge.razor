@@ -3,7 +3,7 @@
 
 <button type="button" class="connection-amount-badge @(Wire.Selected ? "is-selected" : "") @(Wire.Dormant ? "is-dormant" : "") @(Wire.Zero ? "is-zero" : "")"
         style="@($"left:{Wire.BadgeX.ToString(System.Globalization.CultureInfo.InvariantCulture)}px;top:{Wire.BadgeY.ToString(System.Globalization.CultureInfo.InvariantCulture)}px;transform:translate(-50%,-50%) scale({(1 / Zoom).ToString(System.Globalization.CultureInfo.InvariantCulture)})")"
-        title="@Tooltip" aria-label="@Tooltip"
+        data-connection-id="@Wire.Id" title="@Tooltip" aria-label="@Tooltip"
         @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true" @onclick="Select">
     <span>@Wire.Label</span>
     @if (Wire.Dormant)

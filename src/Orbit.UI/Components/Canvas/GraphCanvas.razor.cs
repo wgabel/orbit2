@@ -206,6 +206,7 @@ public partial class GraphCanvas : IAsyncDisposable
         finderOpen = false;
         finderTarget = "";
         selectionPanelOpen = marqueeMode = false;
+        contextMenu = positionedContext = null;
         selectionCandidate = "";
         previousSecondaryDetail = Snapshot.ShowSecondaryAnnotations;
         previousSelectedNodes = Snapshot.SelectedNodeIds;
@@ -214,6 +215,8 @@ public partial class GraphCanvas : IAsyncDisposable
         EndGesture();
         subscription = State.Subscribe(change =>
         {
+            if (contextMenu is { } openContext && !ReferenceEquals(openContext.Snapshot, change.Snapshot))
+                contextMenu = positionedContext = null;
             if (change.Kind is CanvasChangeKind.VisualizationChanged or CanvasChangeKind.DescriptionsChanged) visualizationGeometryGeneration++;
             if (previousSecondaryDetail != change.Snapshot.ShowSecondaryAnnotations ||
                 (!change.Snapshot.ShowSecondaryAnnotations && !previousSelectedNodes.SequenceEqual(change.Snapshot.SelectedNodeIds)))
@@ -256,6 +259,8 @@ public partial class GraphCanvas : IAsyncDisposable
             if (!disposed) StateHasChanged();
         }
         await ApplyOutlineFocusAsync();
+        await RenderContextAsync();
+        await RefreshPannedWireAfterRenderAsync();
     }
 
     private bool HasPendingElementFocus => OutlineFocus is { } request && request.Token != handledOutlineFocus &&
@@ -357,7 +362,7 @@ public partial class GraphCanvas : IAsyncDisposable
     private async Task BeginNode(Guid nodeId, PointerEventArgs args)
     {
         if (await TakeOverNavigationAsync(args) || args.Button is not (0 or 1)) return;
-        if (args.Button == 0)
+        if (args.Button == 0 && (args.PointerType != "touch" || !Snapshot.SelectedNodeIds.Contains(nodeId)))
             State.SelectNode(nodeId, args.ShiftKey || args.CtrlKey || args.MetaKey);
         pendingSource = null;
         await BeginGesture(args, args.Button == 0 ? nodeId : null, wire: false);
@@ -375,8 +380,8 @@ public partial class GraphCanvas : IAsyncDisposable
         touchWireRevision = Snapshot.GraphRevision;
         touchWireLayoutRevision = Snapshot.LayoutRevision;
         await BeginGesture(start.Pointer, null, wire: true);
-        if (assistedWire && gesturePointer == start.Pointer.PointerId)
-            await PrepareTouchWireAsync(start);
+        if (gesturePointer == start.Pointer.PointerId)
+            await PrepareWireGestureAsync(start);
     }
 
     private async Task BeginGesture(PointerEventArgs args, Guid? nodeId, bool wire, bool backgroundTap = false)
@@ -394,6 +399,7 @@ public partial class GraphCanvas : IAsyncDisposable
     {
         if (MovePinch(args)) return;
         if (gesturePointer != args.PointerId) return;
+        if (drawingWire && wirePanStopped) return;
         var current = new CanvasPoint(args.ClientX, args.ClientY);
         CheckTapMovement(current);
         var delta = current.Subtract(lastClientPoint);
@@ -413,6 +419,7 @@ public partial class GraphCanvas : IAsyncDisposable
         }
         else if (drawingWire)
         {
+            touchWireMoved |= TouchWireAssist.HasMoved(touchWireStart, current);
             if (assistedWire)
             {
                 if (UpdateTouchWire(current) && offsetWireForTouch && module is not null)
@@ -420,9 +427,10 @@ public partial class GraphCanvas : IAsyncDisposable
             }
             else
             {
-                // Mouse drag uses the existing world delta.
-                draftEnd = (draftEnd ?? CanvasPoint.Zero).Add(Snapshot.Viewport.ScreenDeltaToWorld(delta));
+                if (touchWireGeometry is not null) UpdateMouseWire(current, Snapshot.Viewport);
+                else draftEnd = (draftEnd ?? CanvasPoint.Zero).Add(Snapshot.Viewport.ScreenDeltaToWorld(delta));
             }
+            MaybeStartWirePan();
         }
         else if (draggedNode is Guid nodeId && Snapshot.NodePositions.ContainsKey(nodeId))
             State.MoveNodeByScreenDelta(nodeId, delta);
@@ -449,7 +457,8 @@ public partial class GraphCanvas : IAsyncDisposable
         }
         if (assistedWire)
         {
-            // Layout may have changed since the last observer notification.
+            // Stop edge pan and remeasure even if no pan took place: layout
+            // may have changed since the last observer notification.
             if (!await RefreshTouchWireForReleaseAsync(new CanvasPoint(args.ClientX, args.ClientY))) return;
             var snappedTarget = TouchWireStale ? null : wireAim?.Target;
             // A precise mouse/pen drop on the wider input button remains valid
@@ -473,7 +482,21 @@ public partial class GraphCanvas : IAsyncDisposable
                 pendingSource = null;
             return;
         }
-        var wasWire = drawingWire;
+        if (drawingWire)
+        {
+            var generation = touchWireGeneration;
+            if (!await RefreshTouchWireForReleaseAsync(new CanvasPoint(args.ClientX, args.ClientY))) return;
+            var target = module is null || TouchWireStale ? null :
+                await module.InvokeAsync<PortAddress?>("findInputPortAt", viewportElement, args.ClientX, args.ClientY);
+            if (!IsCurrentTouchWire(generation) || gesturePointer != args.PointerId) return;
+            var panned = wireHasPanned;
+            var valid = !TouchWireStale && target is PortAddress address &&
+                (!panned || wireTargetAddresses?.Contains(address) == true);
+            EndGesture();
+            if (valid && target is PortAddress destination) await ActivatePortAsync(destination);
+            else if (panned) pendingSource = null;
+            return;
+        }
         var note = notePreview;
         var originalGroup = groupStart;
         var group = groupPreview;
@@ -489,18 +512,22 @@ public partial class GraphCanvas : IAsyncDisposable
             await UpdateNote(note);
             return;
         }
-        if (!wasWire || pendingSource is null || module is null) return;
-        var target = await module.InvokeAsync<PortAddress?>("findInputPortAt", viewportElement, args.ClientX, args.ClientY);
-        if (target is PortAddress destination)
-            await ActivatePortAsync(destination);
     }
 
     private void CancelGesture(PointerEventArgs args)
     {
+        if (universalNavigating) return; // The document-level router owns cancellation during takeover.
         if (gesturePointer != args.PointerId && pinchPointer != args.PointerId) return;
         fitTaps.Reset();
-        if (assistedWire) pendingSource = null;
+        if (drawingWire) pendingSource = null;
         EndGesture();
+    }
+
+    private void CancelPointerExit(PointerEventArgs args)
+    {
+        // Normal pointer-up releases browser capture before the async final
+        // geometry validation returns. An actual pointercancel still cancels.
+        if (!wirePanStopped || !drawingWire) CancelGesture(args);
     }
 
     private void EndGesture()
@@ -688,6 +715,7 @@ public partial class GraphCanvas : IAsyncDisposable
         ClearTouchWire();
         if (watcher is not null) await DisposeTouchWireWatcherAsync(watcher);
         touchWireReference?.Dispose();
+        await DisposeContextAsync();
         if (module is not null)
         {
             if (draftWarningActive) await module.InvokeVoidAsync("setAnnotationDraftWarning", false);

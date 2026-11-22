@@ -17,6 +17,8 @@ public interface IPatchSession : IDisposable
     /// <summary>An optional gesture identity groups consecutive edits to the same parameter in history only.</summary>
     GraphCommandResult Execute(IGraphCommand command, Guid? historyGestureId = null);
     void CompleteHistoryGesture(Guid? gestureId = null);
+    /// <summary>Restore the original parameter value only for the matching still-pending gesture.</summary>
+    GraphCommandResult CancelParameterGesture(Guid gestureId);
     bool CanUndo { get; }
     bool CanRedo { get; }
     GraphCommandResult Undo();

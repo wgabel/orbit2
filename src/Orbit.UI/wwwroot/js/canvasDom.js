@@ -79,7 +79,8 @@ export function findInputPortAt(viewport, clientX, clientY) {
     return frame && marker ? { nodeId: frame.dataset.nodeId, portId: marker.dataset.portId } : null;
 }
 
-// Exclude clipped or covered markers. Visible bounds are client-space;
+// Measure at drag start, after edge-pan renders and browser reflow, excluding
+// clipped or covered markers. Visible bounds are client-space;
 // the absolute overlay and transformed world share the *scrolled* origin.
 // The C# gesture owns compatibility, snapping, the draft path and release.
 export function measureTouchWire(viewport) {
@@ -109,7 +110,7 @@ export function measureTouchWire(viewport) {
         top: bounds.top - (viewport.scrollTop ?? 0), visible, ports };
 }
 
-// Observe geometry only for the lifetime of a touch wire. Coalesce browser
+// Observe geometry only for the lifetime of a wire drag. Coalesce browser
 // layout notifications, rather than measuring every port on every pointer move.
 export function watchTouchWireGeometry(viewport, receiver, generation) {
     let disposed = false, frame = null, previous = "";

@@ -20,6 +20,8 @@ Phase 6.11 puts `PatchHistory` inside `PatchSession`, retaining up to 100 succes
 
 Continuous parameter editing groups history separately from graph transactions. The shared parameter slider gives pointer drags and range keyboard gestures unique identities; `PatchSession.Execute` accepts an optional history gesture identity. `PatchHistory` retains the initial and latest immutable snapshots for consecutive parameter changes with the same identity, graph and parameter address, while every accepted value still commits and notifies the normal DSP, canvas and autosave subscribers. Release, cancellation, blur, navigation, undo/redo or an intervening successful edit finalizes the pending gesture. A stale completion cannot finalize a newer gesture. If the final value equals the initial value, no entry is added and redo is preserved. Numeric edits and discrete choices retain their ordinary command behavior. No UI component manages history snapshots directly.
 
+Pinch takeover is an explicit exception ([PR #71](https://github.com/wgabel/orbit2/pull/71)): `CancelParameterGesture` restores the initial value of the matching pending slider gesture through a normal parameter command with that identity, then completes the net-zero gesture. It publishes the restored parameter to live subscribers without consuming redo or undoing unrelated edits. Stale or already-finalized gestures are ignored.
+
 ~~~mermaid
 sequenceDiagram
     participant U as Shared slider

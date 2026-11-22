@@ -488,10 +488,23 @@ public partial class GraphWorkspace : IAsyncDisposable
             Execute(new ConnectNodesCommand(graphId, request.Source, request.Destination));
     }
 
+    private (Guid GraphId, Guid GestureId)? canvasParameterGesture;
+
     private void EditParameter(Guid graphId, ParameterEditRequest request)
     {
         if (graphId == Canvas.Snapshot.GraphId)
+        {
+            canvasParameterGesture = request.GestureId is Guid id ? (graphId, id) : null;
             Execute(new SetParameterValueCommand(graphId, request.Address, request.Value), request.GestureId);
+        }
+    }
+
+    private void CancelCanvasParameterGesture(Guid graphId)
+    {
+        if (switchingWorkspace || graphId != Canvas.Snapshot.GraphId || canvasParameterGesture is not { } gesture || gesture.GraphId != graphId) return;
+        canvasParameterGesture = null;
+        try { session.CancelParameterGesture(gesture.GestureId); }
+        catch (Exception exception) { Error = exception.Message; }
     }
 
     private void EditPerformanceParameter(Guid graphId, Guid nodeId, ParameterEditRequest request)
@@ -534,6 +547,7 @@ public partial class GraphWorkspace : IAsyncDisposable
 
     private void CompleteParameterGesture(Guid graphId, Guid gestureId)
     {
+        if (canvasParameterGesture == (graphId, gestureId)) canvasParameterGesture = null;
         if (!switchingWorkspace && graphId == Canvas.Snapshot.GraphId)
             session.CompleteHistoryGesture(gestureId);
     }
