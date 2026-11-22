@@ -3,6 +3,7 @@
 .graph-workspace { display: flex; flex-direction: column; height: 100%; gap: var(--semantic-space-tight); }
 .workspace-header { display: flex; align-items: center; flex-wrap: wrap; gap: var(--semantic-space-compact); }
 .workspace-header h1 { margin: 0; font-size: var(--semantic-typography-section); }
+.workspace-build { font-size: var(--semantic-typography-caption); color: var(--semantic-color-muted); font-weight: normal; white-space: nowrap; }
 .workspace-header > button, .workspace-header > .workspace-toolbar > button, .canvas-breadcrumbs > button {
     padding: var(--component-workspace-toolbar-button-block) var(--component-workspace-toolbar-button-inline);
     font-size: var(--semantic-typography-label);

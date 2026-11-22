@@ -66,7 +66,7 @@ public partial class PerformanceMonitor : IAsyncDisposable
                 try
                 {
                     // The editor observer belongs to this workspace, not audio playback.
-                    editorModule ??= await JavaScript.InvokeAsync<IJSObjectReference>("import", "./js/editorPerformance.js");
+                    editorModule ??= await JavaScript.InvokeAsync<IJSObjectReference>("import", BrowserBuild.ModulePath("editorPerformance.js"));
                     if (disposed || token.IsCancellationRequested) return;
                     editorMonitor ??= await editorModule.InvokeAsync<IJSObjectReference>("createEditorPerformanceMonitor");
                     if (disposed || token.IsCancellationRequested) return;

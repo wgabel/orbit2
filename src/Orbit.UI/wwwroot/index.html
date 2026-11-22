@@ -7,6 +7,8 @@
     <!-- Relative resource URLs use this base; CI rewrites it for GitHub Pages. -->
     <base href="/" />
     <title>Orbit 2</title>
+    <meta name="orbit-build" content="local" />
+    <meta name="orbit-build-number" content="local" />
     <!-- The .NET build fills this import map with fingerprinted runtime asset paths. -->
     <script type="importmap"></script>
     <!-- Generated tokens first, then the reusable styles that consume them. -->
@@ -19,6 +21,41 @@
     <div id="app">Loading Orbit…</div>
 
     <!-- Framework-provided script loads .NET WASM and invokes the C# entry point. -->
-    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+    <script src="_framework/blazor.webassembly#[.{fingerprint}].js" autostart="false"></script>
+    <script id="orbit-startup">
+        // Revalidate only before an editor session starts. Never interrupt playback or edit state.
+        (async () => {
+            const current = document.querySelector('meta[name="orbit-build"]').content;
+            if (current !== "local") {
+                const manifest = new URL("build-manifest.json", document.baseURI);
+                manifest.searchParams.set("check", Date.now().toString());
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 2500);
+                try {
+                    const response = await fetch(manifest, { cache: "no-store", signal: controller.signal });
+                    if (response.ok) {
+                        const { commit } = await response.json();
+                        if (/^[0-9a-f]{40}$/.test(commit) && commit !== current) {
+                            const next = new URL(location.href);
+                            if (next.searchParams.get("orbit-build") === commit) {
+                                document.getElementById("app").textContent =
+                                    "A newer Orbit build is being deployed. Reload this page in a moment.";
+                            } else {
+                                next.searchParams.set("orbit-build", commit);
+                                next.searchParams.set("orbit-refresh", Date.now().toString());
+                                location.replace(next.href);
+                            }
+                            return;
+                        }
+                    }
+                } catch {
+                    // A failed freshness check does not prevent normal offline/cached startup.
+                } finally {
+                    clearTimeout(timeout);
+                }
+            }
+            await Blazor.start();
+        })();
+    </script>
 </body>
 </html>
