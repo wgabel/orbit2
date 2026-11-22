@@ -32,6 +32,12 @@ public sealed class FaustNodeContext
     public bool RequiresTransportReset { get; private set; }
     public bool? ManualRhythmicInput { get; private set; }
     public bool ManualPitchInput { get; private set; }
+    public bool ManualNoteInput { get; private set; }
+    public string PerformanceNoteInput()
+    {
+        ManualNoteInput = true;
+        return $"action_{Node.Id:N}";
+    }
     public string? PitchMeterName { get; private set; }
     public string PitchMeter() => PitchMeterName = $"pitch_{Node.Id:N}";
     public string PerformancePitchInput()

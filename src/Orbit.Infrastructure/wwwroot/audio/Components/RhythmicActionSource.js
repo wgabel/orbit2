@@ -1,5 +1,6 @@
 import { MAX_ACTIONS, MAX_RHYTHMIC_INPUTS, validAction } from './RhythmicActionQueue.js';
 import { validPitchPattern } from './PitchPatternScheduler.js';
+import { isNoteRelease, NOTE_RESET } from './MonophonicNoteState.js';
 
 // One bounded, generation-owned source per actual Faust voice, not per UI node.
 const modules = new WeakMap();
@@ -43,8 +44,14 @@ export class RhythmicActionSource {
 
     send(index, action) {
         const input = this.inputs[index];
-        if (!this.active || !Number.isInteger(index) || !validAction(input, action) || this.pending[index] >= MAX_ACTIONS)
+        if (!this.active || !Number.isInteger(index) || !validAction(input, action))
             return false;
+        if (this.pending[index] >= MAX_ACTIONS) {
+            if (!input.isNote || !isNoteRelease(action)) return false;
+            // At most one extra panic word while acknowledgements are outstanding.
+            if (this.pending[index] > MAX_ACTIONS) return true;
+            action = NOTE_RESET;
+        }
         this.pending[index]++;
         this.node.port.postMessage({ index, action });
         return true;

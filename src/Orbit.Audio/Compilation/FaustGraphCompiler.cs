@@ -71,9 +71,9 @@ public sealed class FaustGraphCompiler
 
             if (!emitters.TryGetValue(node.TypeKey, out var emitter))
                 throw new FaustCompilationException($"Unsupported connected node type: {node.TypeKey}.");
-            if (node.Outputs.Count != 1 || node.Outputs[0].ChannelCount != 1 ||
-                node.Inputs.Any(port => port.ChannelCount != 1))
-                throw new FaustCompilationException("Only mono, single-output nodes are supported.");
+            if (node.Outputs.Count == 0 || node.Outputs.Any(port => port.ChannelCount != 1) ||
+                node.Inputs.Any(port => port.ChannelCount != 1) || (node.Outputs.Count != 1 && emitter is not IFaustMultiOutputEmitter))
+                throw new FaustCompilationException("Only mono ports and explicitly supported multi-output emitters are supported.");
 
             var name = $"n_{node.Id:N}";
             var expression = emitter.Emit(context);
@@ -87,24 +87,31 @@ public sealed class FaustGraphCompiler
                 var origin = flattened.Origins[node.Id];
                 pitchMeters.Add(new(origin.GraphId, origin.NodeId, pitchMeter));
             }
-            if (node.SupportsMute || node.BypassInputKey is not null)
-                expression = audition.Apply(node, flattened.Origins[node.Id], context, expression);
             requiresTransportBeat |= context.RequiresTransportBeat;
             requiresTransportTempo |= context.RequiresTransportTempo;
             requiresTransportReset |= context.RequiresTransportReset;
-            if (context.ManualRhythmicInput.HasValue || context.ManualPitchInput)
+            if (context.ManualRhythmicInput.HasValue || context.ManualPitchInput || context.ManualNoteInput)
             {
                 var origin = flattened.Origins[node.Id];
                 actionInputs.Add(($"action_{node.Id:N}", new(origin.GraphId, origin.NodeId, context.ManualRhythmicInput ?? false, context.ManualPitchInput,
-                    Pattern: context.ManualPitchInput ? PitchPattern.FromNode(node) : null)));
+                    Pattern: context.ManualPitchInput ? PitchPattern.FromNode(node) : null, IsNote: context.ManualNoteInput)));
                 if (actionInputs.Count > 30) throw new FaustCompilationException("A patch supports at most 30 reachable manual action sources.");
             }
-            definitions.Add($"{name} = {expression};");
-            signals.Add(new PortAddress(node.Id, node.Outputs[0].Id), name);
-            if (auxiliaryChannels > 0)
-                tapIdentities.Add(new(node.Id, node.Outputs[0].Id),
-                    node.TypeKey == BoundaryFaustEmitter.NodeType && !node.SupportsMute
-                        ? tapIdentities[new(node.Id, node.Inputs.Single().Id)] : name);
+            if (node.Outputs.Count > 1) definitions.Add($"{name}_tuple = {expression};");
+            for (var index = 0; index < node.Outputs.Count; index++)
+            {
+                var port = node.Outputs[index];
+                var outputName = node.Outputs.Count == 1 ? name : $"{name}_{index}";
+                var output = node.Outputs.Count == 1 ? expression :
+                    $"({name}_tuple : {string.Join(",", Enumerable.Range(0, node.Outputs.Count).Select(i => i == index ? "_" : "!"))})";
+                if (node.SupportsMute || node.BypassInputKey is not null)
+                    output = audition.Apply(node, flattened.Origins[node.Id], context, output, port.SignalType);
+                definitions.Add($"{outputName} = {output};");
+                signals.Add(new(node.Id, port.Id), outputName);
+                if (auxiliaryChannels > 0)
+                    tapIdentities.Add(new(node.Id, port.Id), node.TypeKey == BoundaryFaustEmitter.NodeType && !node.SupportsMute
+                        ? tapIdentities[new(node.Id, node.Inputs.Single().Id)] : outputName);
+            }
         }
 
         var tapChannels = new Dictionary<SignalObservationAddress, int>();

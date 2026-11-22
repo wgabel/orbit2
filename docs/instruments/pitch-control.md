@@ -26,3 +26,22 @@ flowchart TD
 ~~~
 
 Runtime note actions are generation-qualified and scheduled on the shared sample timeline, following Phase 7.1 event delivery. Do not rebuild or recompile the graph for notes, change persisted base settings, or record note-on/off in graph undo history. Pitch/velocity update coherently with gate/trigger on the intended sample; stop, navigation/runtime replacement, losing input focus or disconnection must not leave a stuck gate. Reject stale events and bound queues. Keep a held note's sound stable across ordinary parameter edits; failed structural replacements retain the last-good runtime. Test note-to-Hz mapping, exact octaves, harmonic ratios under vibrato, monotonic pitch modulation, conditional connections and accurate range estimation. Full polyphonic note allocation is deferred until monophonic performance is reliable.
+
+### Phase 7.2.3 — Note Source (in review)
+
+Implementation: [PR #41](https://github.com/wgabel/orbit2/pull/41).
+
+Add **Note Source** from Add node. This is a control source, not an audio generator. Select it, play the connected patch, and choose **Arm keyboard**. Use A–K / W E T Y U or hold the on-screen piano keys; Z/X change octave. The reference note maps to zero semitones (A4 by default; choose A3 for a 220 Hz bank). Keyboard velocity is a fixed editable 0–1 value, default .8, captured at note-on and quantized to 127 steps. The five presets provide useful reference notes and soft/full strikes. No hardware MIDI is required.
+
+| Output | Signal type | Meaning |
+|---|---|---|
+| Pitch | Modulation | Held semitone offset from reference, bounded ±60; starts at zero |
+| Gate | Gate | 1 while a key is held, 0 after final release |
+| Trigger | Trigger | One sample of 1 on each new note-on; no pulse on fallback |
+| Velocity | Modulation | Last active note's strike strength 0–1; retained after release for tails |
+
+**Try a modal handpan:** connect Note Source Pitch to Modal — Handpan Pitch (st), Trigger to Trigger, and Handpan Audio to Master output. Select A3 reference and play. For direct velocity, open the composite and set the internal Gain connected to Strength offset to base 0 instead of .75; connect Velocity to Strength offset at unity. A new note can retune an existing resonant tail because this is monophonic. For a sustained oscillator voice, set free pitch tracking to Semitones, wire Pitch to Pitch, Gate to an ADSR Envelope's Gate, and Envelope to oscillator amplitude (base zero). Use a separate Gain stage (base zero) modulated by Velocity if velocity-sensitive loudness is desired. See [physical modelling](physical-modelling.md) and [envelopes](../audio/envelopes.md).
+
+Last pressed note wins. Pressing another key updates pitch/velocity and emits a trigger without dropping Gate, so a gated ADSR continues legato; choose Trigger-driven AD for independent attacks. Releasing a nonactive key does nothing; releasing the active key restores the most recent held key and its previous velocity without a trigger. Final release closes Gate but holds Pitch/Velocity, allowing tails and releases. Repeated note-on retriggers; browser key-repeat is ignored. Release all notes, disarming, losing window focus/visibility and leaving the selected node release the gate. Stop/replacement discards held state (no reseeding of gated notes, unlike continuous Note Sequencer), so re-press a note after topology replacement. Ordinary parameter edits do not recompile or reset held keys. Accessibility click activation sends a short strike; pointer press/release supports held notes.
+
+The existing generation-qualified performance contract now carries velocity and distinguishes a note action lane from a continuous-pitch lane. A bounded AudioWorklet queue resolves last-note priority using fixed-size storage; admission is bounded, and overload prioritizes release/reset over stale note-ons. One packed word represents a pitch/velocity/trigger update at a sample, while the compiled Faust tuple provides distinct output addresses with shared state and one action input per source. Mute shares one control across outputs; gate/trigger are binary, continuous outputs slew. Per-port range estimation and signal taps work through nested rack routes. Events do not modify graph history or persistence. Tests cover host action routing, note priority, saturation, and exact compiled output samples at 44.1/48 kHz. Browser latency, MIDI, note-pattern articulation and polyphony remain follow-ups.

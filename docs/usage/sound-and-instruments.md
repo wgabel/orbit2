@@ -21,6 +21,12 @@ To transpose a fixed chord/voice without playing keys, use **Pitch Control** ins
 
 For exact serialized keys, Hold code, ramp behavior and the combined 30 reachable source-lane limit, see the [Note Sequencer implementation](../instruments/note-sequencer.md). Note Sequencer Pitch may also be used as a bounded level score with appropriate scaling (e.g. MIDI note minus reference 0…12 into Gain amount 1/12, base zero); use a separate explicit rest/level lane and keep musical pitch independent. See [T3 Rhythm grid](../examples/genres/orbit-techniques.md#t3--rhythm-grid-patterns-and-rests).
 
+### Play held notes with Note Source
+
+For live keyboard articulation (7.2.3 in review, [PR #41](https://github.com/wgabel/orbit2/pull/41)), add **Note Source** rather than Note Sequencer. Set Reference note to A3 for a 220 Hz oscillator or handpan, and Keyboard velocity (default 0.8). Connect Pitch at amount 1 and Trigger to Modal — Handpan; connect Handpan Audio to Master output. Play patch, select Note Source and Arm keyboard, then hold keys or on-screen piano keys. For velocity, open Handpan and set the shared excitation Gain receiving Strength offset to base zero, then connect Note Source Velocity to Strength offset at unity.
+
+For sustained voices, wire Gate to an ADSR Envelope and its output to zero-base oscillator amplitude; use a separate zero-base Gain controlled by Velocity if desired. Last pressed key wins; releasing it falls back to the previous held key without triggering a new strike. Final release closes Gate while Pitch and Velocity remain held for release tails. This is monophonic; Note-mode patterns and polyphony remain future work. See the [Note Source contract](../instruments/pitch-control.md#phase-723--note-source-in-review).
+
 ## 2. Create distinct attacks and releases
 
 | Envelope mode | How it starts / stops | Typical application |
@@ -42,7 +48,7 @@ Add Clock, Envelope (AD), Oscillator, Note Sequencer, Gain and Master. Set BPM 1
 | Oscillator signal | Gain audio (base gain 0.5) | 1 |
 | Gain audio | Master output | 1 |
 
-Each clock boundary articulates the current pitch and the envelope returns to silence before the next step. Use a short glide and check timing. Add a quieter upper partial and filter, delay or reverb to taste. For actual rests, control a separate level/velocity Gain with a rhythm mask; a pitch Hold alone still gets triggered by the Clock. A Manual Trigger can replace Clock for individually fired notes (select the pitch separately). This is a workable approximation, **not every physical keyboard key retriggering the envelope automatically**. That requires the future articulated Note source (7.2.3/7.2.8d).
+Each clock boundary articulates the current pitch and the envelope returns to silence before the next step. Use a short glide and check timing. Add a quieter upper partial and filter, delay or reverb to taste. For actual rests, control a separate level/velocity Gain with a rhythm mask; a pitch Hold alone still gets triggered by the Clock. A Manual Trigger can replace Clock for individually fired notes (select the pitch separately). To retrigger directly from physical keyboard presses instead of the clock, use [Note Source](#play-held-notes-with-note-source) and connect its Trigger to the envelope. Automated Note-mode articulation remains 7.2.8d.
 
 ### A gated sustained voice
 
@@ -99,7 +105,7 @@ Several resonators with different frequencies and decay times create a more comp
 
 Exposed controls are **Trigger** (accepts typed Clock), **Pitch (st)** (continuous transposition of every mode), **Strength offset** (additive around 0.75 on internal shared excitation Gain, −0.375 halves the default, −0.75 prevents new excitation without immediately stopping existing tails), and **Excitation** (optional external mono audio, internally attenuated ×0.03 before the shared excitation gain). Continuous pitch changes retune ringing modes as well as future strikes; this is not latched note velocity or independent polyphonic notes. External excitation gives other textures, e.g. a quiet oscillator or shaped audio burst, but keep headroom. Do not connect raw event pulses to the audio excitation socket.
 
-Open the composite to alter the short AD burst, each mode's frequency (stored as Hz), T60, output gain and shared mixer. Moving one mode slightly changes timbre; moving all with Pitch keeps the ratios. Connect Audio to external reverb or chorus for space. To tame the total volume while preserving internal modal interactions, attenuate the output rather than altering all the individual modes. See [modal contract and exact preset ratios](../instruments/physical-modelling.md#phase-725--modal-instrument-composites-implemented). The compact modal bank/response editor and full keyboard-powered note/gate/velocity delivery remain planned.
+Open the composite to alter the short AD burst, each mode's frequency (stored as Hz), T60, output gain and shared mixer. Moving one mode slightly changes timbre; moving all with Pitch keeps the ratios. Connect Audio to external reverb or chorus for space. To tame the total volume while preserving internal modal interactions, attenuate the output rather than altering all the individual modes. See [modal contract and exact preset ratios](../instruments/physical-modelling.md#phase-725--modal-instrument-composites-implemented). For keyboard-powered pitch, trigger and velocity, use [Note Source](#play-held-notes-with-note-source); the compact modal bank/response editor remains a follow-up.
 
 ## 4. Make a full piece
 

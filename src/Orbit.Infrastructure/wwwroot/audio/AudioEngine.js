@@ -1,5 +1,6 @@
 import { SignalCapture } from "./Components/SignalCapture.js";
 import { RhythmicActionSource } from "./Components/RhythmicActionSource.js";
+import { isNoteRelease } from "./Components/MonophonicNoteState.js";
 
 // Coordinates logical playback lifetimes. A playback may have two voices
 // during a crossfade; DSP factories, voices and envelopes own their mechanics.
@@ -133,8 +134,11 @@ export class AudioEngine {
 
     sendRhythmicAction(soundId, generation, index, action) {
         const playback = this.#active.get(soundId), current = playback?.current;
-        if (!current || playback.cancelled || playback.replacing || current.generation !== generation || playback.context?.state !== 'running') return false;
-        return this.#actions.get(current.node)?.send(index, action) ?? false;
+        if (!current || playback.cancelled || playback.replacing || current.generation !== generation) return false;
+        const source = this.#actions.get(current.node);
+        // A suspended context must still queue note release/panic for its first resumed block.
+        if (playback.context?.state !== 'running' && !(source?.inputs?.[index]?.isNote && isNoteRelease(action))) return false;
+        return source?.send(index, action) ?? false;
     }
 
     // Only values of existing controls may change; this never recreates a node.

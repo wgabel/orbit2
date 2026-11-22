@@ -17,6 +17,7 @@ public static class BuiltInNodes
         registry.Register(OscillatorGenerator.NodeType, id => new OscillatorGenerator(id), "Oscillator");
         registry.Register(PitchControlGenerator.NodeType, id => new PitchControlGenerator(id), "Pitch Control");
         registry.Register(NoteSequencerGenerator.NodeType, id => new NoteSequencerGenerator(id), "Note Sequencer");
+        registry.Register(NoteSourceGenerator.NodeType, id => new NoteSourceGenerator(id), "Note Source");
         registry.Register(EnvelopeGenerator.NodeType, id => new EnvelopeGenerator(id), "Envelope");
         registry.Register(SignalToTriggerGenerator.NodeType, id => new SignalToTriggerGenerator(id), "Signal to Trigger");
         registry.Register(SignalToGateGenerator.NodeType, id => new SignalToGateGenerator(id), "Signal to Gate");

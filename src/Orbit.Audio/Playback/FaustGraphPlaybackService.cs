@@ -103,7 +103,7 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
         for (var index = 0; index < inputs.Count; index++)
         {
             var input = inputs[index];
-            if (!input.IsPitch && input.GraphId == graphId && input.NodeId == nodeId && (action == RhythmicAction.Fire || input.AllowClose))
+            if (!input.IsPitch && !input.IsNote && input.GraphId == graphId && input.NodeId == nodeId && (action == RhythmicAction.Fire || input.AllowClose))
                 return sink.SendRhythmicActionAsync(SoundId(patchId), generation, index, action);
         }
         return Task.FromResult(false);
@@ -111,19 +111,27 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
 
     public async Task<bool> SendAsync(Guid patchId, Guid graphId, Guid nodeId, PerformanceNoteAction action)
     {
-        if (!action.IsValid || engine is not IPerformanceNoteSink sink || !active.TryGetValue(patchId, out var playback) ||
-            !await playback.UpdateLock.WaitAsync(0)) return false;
+        if (!action.IsValid || engine is not IPerformanceNoteSink sink || !active.TryGetValue(patchId, out var playback)) return false;
+        // Releases must not be dropped merely because a live parameter update is in flight.
+        if (action.Kind == PerformanceNoteKind.NoteOn)
+        { if (!await playback.UpdateLock.WaitAsync(0)) return false; }
+        else await playback.UpdateLock.WaitAsync();
         try
         {
-            if (playback.Stopping || playback.RequestedRevision != playback.Result.AppliedRevision ||
+            if (playback.Stopping || (action.Kind == PerformanceNoteKind.NoteOn && playback.RequestedRevision != playback.Result.AppliedRevision) ||
                 !active.TryGetValue(patchId, out var current) || !ReferenceEquals(current, playback)) return false;
             var inputs = playback.Program.RhythmicInputs;
             for (var index = 0; index < inputs.Count; index++)
             {
                 var input = inputs[index];
-                if (!input.IsPitch || input.GraphId != graphId || input.NodeId != nodeId) continue;
+                if ((!input.IsPitch && !input.IsNote) || input.GraphId != graphId || input.NodeId != nodeId) continue;
                 var reference = (int)playback.Topology.GetGraph(graphId).GetNode(nodeId).Parameters
                     .Single(parameter => parameter.Definition.Key == NoteSequencerGenerator.ReferenceKey).BaseValue;
+                if (input.IsNote)
+                {
+                    if (action.Kind == PerformanceNoteKind.NoteOn && !NoteSequencerGenerator.IsPlayable(action.Note, reference)) return false;
+                    return await sink.SendPerformanceNoteAsync(SoundId(patchId), playback.Generation, index, action.NoteCode);
+                }
                 if (action.Kind == PerformanceNoteKind.NoteOff) return true; // Continuous mode never releases pitch.
                 if (action.Kind == PerformanceNoteKind.NoteOn && !NoteSequencerGenerator.IsPlayable(action.Note, reference)) return false;
                 if (!await sink.SendPerformanceNoteAsync(SoundId(patchId), playback.Generation, index, action.Code)) return false;

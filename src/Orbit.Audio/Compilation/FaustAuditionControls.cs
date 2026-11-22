@@ -12,7 +12,7 @@ internal sealed class FaustAuditionControls(List<string> definitions)
 
     public IReadOnlyList<FaustAuditionControl> Manifest => Array.AsReadOnly(controls.Values.ToArray());
 
-    public string Apply(GraphNodeSnapshot node, GraphFlattener.NodeOrigin origin, FaustNodeContext context, string wet)
+    public string Apply(GraphNodeSnapshot node, GraphFlattener.NodeOrigin origin, FaustNodeContext context, string wet, SignalType outputType)
     {
         var expression = wet;
         if (node.BypassInputKey is { } key)
@@ -25,7 +25,7 @@ internal sealed class FaustAuditionControls(List<string> definitions)
         {
             var mute = GetControl(NodeAuditionKind.Mute, node, origin);
             // A mixed-output composite shares one raw control but only continuous routes slew.
-            expression = node.Outputs.Single().SignalType.IsEvent()
+            expression = outputType.IsEvent()
                 ? $"({expression}) * ({mute} >= 0.5)"
                 : $"({expression}) * orbit_audition_ramp({mute})";
         }
