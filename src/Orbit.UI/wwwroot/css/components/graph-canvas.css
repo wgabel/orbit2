@@ -21,7 +21,7 @@
 }
 .canvas-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--component-canvas-toolbar-gap); }
 .canvas-zoom { min-width: var(--component-canvas-zoom-width); text-align: center; font-variant-numeric: tabular-nums; }
-.canvas-hint, .canvas-count {
+.canvas-hint, .canvas-count, .canvas-patch-count {
     position: absolute;
     inset-inline-end: var(--semantic-space-compact);
     color: var(--semantic-color-muted);
@@ -31,7 +31,9 @@
     border-radius: var(--semantic-radius-input);
     pointer-events: none;
 }
+.canvas-count, .canvas-patch-count { text-align: end; font-variant-numeric: tabular-nums; }
 .canvas-count { inset-block-start: var(--semantic-space-compact); }
+.canvas-patch-count { inset-block-start: calc(var(--semantic-space-compact) + 2 * var(--semantic-space-tight) + 1lh); }
 .canvas-hint { inset-block-end: var(--semantic-space-compact); }
 .annotation-display-control {
     position: absolute;

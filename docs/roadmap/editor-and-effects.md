@@ -8,6 +8,7 @@ Related: [audition](../editor/audition.md) · [node presets](../editor/node-pres
 
 - Deferred: deployment-version detection and safe workspace-save/reload prompt for long-lived tabs whose versioned lazy modules have been removed by a later Pages deployment.
 - Partial: independent composite and individual preset reuse implemented; general graph/subgraph copies and linked/versioned template reuse remain planned.
+- In review: [recursive canvas counts](../editor/canvas.md#the-canvases) preserve local counts while showing all root and nested nodes/connections across the entire patch, updated on committed graph changes and history. Implementation: [PR #36](https://github.com/wgabel/orbit2/pull/36).
 
 #### Phase 6.16 — Node audition actions (implemented)
 

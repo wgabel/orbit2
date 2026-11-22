@@ -253,7 +253,8 @@ try {
         assert.equal(await page.getByRole("button", { name: "Undo", exact: true }).isEnabled(), undoEnabled);
         assert.equal(await status.innerText(), `Playing revision ${revision}`);
     };
-    await viewport.getByText("4 nodes · 3 connections", { exact: true }).waitFor();
+    await viewport.locator(".canvas-count").filter({ hasText: /^4 nodes · 3 connections$/ }).waitFor();
+    await viewport.locator(".canvas-patch-value").filter({ hasText: /^4 nodes · 3 connections$/ }).waitFor();
     const canvasBounds = await viewport.boundingBox();
     assert.ok(canvasBounds.height >= page.viewportSize().height * 0.75, "Canvas must fill most of the viewport");
     const countBounds = await viewport.locator(".canvas-count").boundingBox();
@@ -824,6 +825,8 @@ try {
     await play.click();
     await status.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
     let droneRevision = Number((await status.innerText()).match(/Playing revision (\d+)/)[1]);
+    const wholePatchCount = `${await articles.count() + 4} nodes · ${await viewport.locator(".connection-hit").count() + 4} connections`;
+    assert.equal(await viewport.locator(".canvas-patch-value").innerText(), wholePatchCount);
     await drone.getByRole("button", { name: "Open Drone" }).click();
     const breadcrumbs = page.getByRole("navigation", { name: "Canvas path" });
     await breadcrumbs.getByText("Drone", { exact: true }).waitFor();
@@ -834,6 +837,8 @@ try {
     assert.ok(Number(await beat.innerText()) >= Number(frozenBeat));
     assert.equal(await page.locator("#node-type option[value='output.master']").count(), 0);
     assert.equal(await articles.count(), 4);
+    assert.equal(await viewport.locator(".canvas-count").innerText(), "4 nodes · 4 connections");
+    assert.equal(await viewport.locator(".canvas-patch-value").innerText(), wholePatchCount);
     await exerciseNote(droneRevision, "Child modulation");
     await exerciseAlias(articles.nth(1), droneRevision);
     await exerciseGroup(articles.nth(1), droneRevision);
@@ -1035,7 +1040,7 @@ try {
     await manager.getByRole("button", { name: "New patch" }).click();
     await manager.getByText("New workspace created.", { exact: true }).waitFor();
     await manager.getByRole("region", { name: "Current patch overview" }).getByText("Untitled patch", { exact: true }).waitFor();
-    await page.getByText("1 nodes · 0 connections", { exact: true }).waitFor();
+    await page.locator(".canvas-count").filter({ hasText: /^1 nodes · 0 connections$/ }).waitFor();
     await manager.getByLabel("Patch name").fill("Empty study");
     await manager.getByRole("button", { name: "Save as" }).click();
     await manager.getByText("Saved Empty study.", { exact: true }).waitFor();
@@ -1119,7 +1124,7 @@ try {
     };
     const newDrone = await addInPannedView("composite.graph", -3200);
     await newDrone.getByRole("button", { name: "Open Drone" }).click();
-    await viewport.getByText("4 nodes · 4 connections", { exact: true }).waitFor();
+    await viewport.locator(".canvas-count").filter({ hasText: /^4 nodes · 4 connections$/ }).waitFor();
     await addInPannedView("generator.noise", 3200);
     // A custom exposed port can have a much longer label than built-in signals.
     await page.getByRole("button", { name: "Fit", exact: true }).click();

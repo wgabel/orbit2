@@ -18,6 +18,7 @@ public partial class GraphCanvas : IAsyncDisposable
 {
     [Inject] private IJSRuntime JavaScript { get; set; } = default!;
     [Parameter, EditorRequired] public ICanvasStateService State { get; set; } = default!;
+    [Parameter, EditorRequired] public GraphElementCounts PatchCounts { get; set; }
     [Parameter, EditorRequired] public Func<SetConnectionAmountCommand, string?> DispatchConnectionAmount { get; set; } = default!;
     [Parameter] public Guid PatchId { get; set; }
     [Parameter] public EventCallback<PortConnectionRequest> OnConnect { get; set; }
