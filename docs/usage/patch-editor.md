@@ -17,6 +17,8 @@ With [PR #61](https://github.com/wgabel/orbit2/pull/61), close a tool via its Cl
 
 ### Gesture-only canvas navigation (6.21.4)
 
+In review: [PR #69](https://github.com/wgabel/orbit2/pull/69).
+
 - On touchscreens, drag empty space to pan. Put two fingers on the canvas and spread/pinch to zoom around their midpoint; move both together to pan. Lift one finger to continue panning without a jump.
 - On desktop, drag the background to pan and use the mouse wheel to zoom around the pointer.
 - To fit the current graph, quickly tap or click the same empty canvas area three times. Fit eases to the new viewport (instant with reduced motion). On desktop, focus the canvas and press `F` to fit, `+`/`-` to zoom, or `0` to reset to 100%.
@@ -48,7 +50,7 @@ For individual node settings, use the Preset selector and its adjacent **…** m
 
 ### Assisted touch cable dragging
 
-In review ([PR #65](https://github.com/wgabel/orbit2/pull/65)). On a touchscreen, touch and hold an output port, then drag. Aim with the small cursor above your finger, not the fingertip itself. Compatible input sockets show rings even when zoomed out; invalid or already connected destinations dim. Move until the larger ring and floating label name the intended parameter, for example **Oscillator → Amplitude**. Release to connect. Move away from all highlighted ports (or cancel the gesture) to abandon it without adding a cable. Closely spaced sockets switch as you aim directly at the next one; near the lower edge the offset reduces. The cursor and magnetic radius are screen-sized at every zoom. No extra picker or node expansion is necessary. Touch vibration is optional, and mouse/keyboard operation is unchanged. If a port is covered or off-screen, pan/zoom to expose it first. Undo removes a successful connection as usual.
+Implemented ([PR #65](https://github.com/wgabel/orbit2/pull/65)). On a touchscreen, touch and hold an output port, then drag. Aim with the small cursor above your finger, not the fingertip itself. Compatible input sockets show rings even when zoomed out; invalid or already connected destinations dim. Move until the larger ring and floating label name the intended parameter, for example **Oscillator → Amplitude**. Release to connect. Move away from all highlighted ports (or cancel the gesture) to abandon it without adding a cable. Closely spaced sockets switch as you aim directly at the next one; near the lower edge the offset reduces. The cursor and magnetic radius are screen-sized at every zoom. No extra picker or node expansion is necessary. Touch vibration is optional, and mouse/keyboard operation is unchanged. If a port is covered or off-screen, pan/zoom to expose it first. Undo removes a successful connection as usual.
 
 ## 2. Interpret and edit connections
 
