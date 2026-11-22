@@ -6,6 +6,8 @@ Related: [pitch control](../instruments/pitch-control.md) · [envelopes](../audi
 
 These recipes address individual sounds. For combining voices into a structured musical piece, see [generative ambient composition](generative-ambient-composition.md).
 
+For the principles behind tuning, harmonic content, articulation, level balancing and perceived sound quality, see [music theory and sound design](music-theory-and-sound-design.md).
+
 <a id="musical-instrument-synthesis-and-physical-modelling-planned-phase-72"></a>
 
 #### Musical instrument synthesis and physical modelling (Phase 7.2 — partial)

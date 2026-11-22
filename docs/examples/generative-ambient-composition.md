@@ -2,6 +2,8 @@
 
 [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Instrument recipes](instrument-recipes.md) · [Worked drone](drone.md)
 
+Companion guide: [Music theory and sound design](music-theory-and-sound-design.md) explains how to choose compatible pitches, harmonic progressions, voicing, perceived loudness, spectral balance and spatial depth for the layers and arrangements in this document.
+
 Guide introduced in [PR #22](https://github.com/wgabel/orbit2/pull/22) (documentation only; existing node implementation references are in the linked technical modules).
 
 ## 1. The structure of a musical piece
