@@ -2,6 +2,8 @@
 
 [Architecture](../../ORBIT2-ARCHITECTURE.md) · [Theory and sound design](music-theory-and-sound-design.md) · [Instrument recipes](instrument-recipes.md) · [Genre techniques](genres/orbit-techniques.md) · [Mixing, mastering and analysis](mixing-mastering-and-analysis.md)
 
+Documentation provenance: [PR #29](https://github.com/wgabel/orbit2/pull/29) (guidance and candidate recipes, not shipped preset implementations).
+
 This is a practical companion for **finished musical voices**, rather than a catalog of new node types. A graph can be valid and its harmony and arrangement good while its instruments sound thin, hollow, synthetic in an unintended way, or tiring. Work on the instrument before trying to fix its identity on the master. A sound with few nodes can be excellent; complexity, extra oscillators and maximum wet effects do not automatically improve it.
 
 ## 1. Musical quality targets and feedback

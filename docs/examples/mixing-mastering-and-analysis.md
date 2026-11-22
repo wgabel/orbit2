@@ -2,6 +2,8 @@
 
 [Architecture](../../ORBIT2-ARCHITECTURE.md) · [Musical theory and psychoacoustics](music-theory-and-sound-design.md) · [Voice design](sound-quality-and-voice-design.md) · [Genre reference](electronic-music-genres.md)
 
+Documentation provenance: [PR #29](https://github.com/wgabel/orbit2/pull/29) (production guidance and measured case study, not new mastering DSP or native rendering implementation).
+
 **Purpose:** make Orbit 2 music sound intentional and polished, rather than merely technically correct. Apply the appropriate depth for a single voice, short loop or long composition. Current Orbit nodes support considerable mixing and tone shaping, but a complete professional mastering suite or standardized loudness meter is not implied. Sound quality benefits most from decisions at the right stage.
 
 ## 1. Separate the four production tasks
