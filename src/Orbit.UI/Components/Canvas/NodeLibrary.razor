@@ -33,7 +33,7 @@
                             <NodeAppearanceIcon Appearance="@entry.Appearance" />
                             <span><span class="node-library-name">@entry.Name</span><small>@entry.Appearance.Description</small></span>
                         </button>
-                        <button type="button" class="secondary node-library-favorite" aria-label="@($"Favorite {entry.Name}")" aria-pressed="@preferences.Favorites.Contains(entry.Key)"
+                        <button type="button" class="secondary node-library-favorite" aria-label="@($"Favorite {entry.Name}")" aria-pressed="@(preferences.Favorites.Contains(entry.Key) ? "true" : "false")"
                                 title="Toggle favorite" disabled="@(!loaded)" @onclick="() => ToggleAsync(entry.Key)">@(preferences.Favorites.Contains(entry.Key) ? "★" : "☆")</button>
                     </div>
                 }

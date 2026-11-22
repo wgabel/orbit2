@@ -130,7 +130,8 @@ try {
     await libraryRow(page, "generator.oscillator").waitFor({ state: "hidden" });
     assert.equal(await library.locator("[data-node-key]").count(), 1);
     await libraryRow(page, "processor.delay").locator(".node-library-favorite").click();
-    await libraryRow(page, "processor.delay").locator('.node-library-favorite[aria-pressed="true"]').waitFor();
+    await libraryRow(page, "processor.delay").locator('.node-library-favorite[aria-pressed="true"]').filter({ hasText: "★" }).waitFor();
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem("orbit2.node-library.v1") || "null")?.favorites?.includes("processor.delay"));
     await library.getByLabel("Search nodes").fill("");
     await library.locator(".node-library-results h3").first().filter({ hasText: "Favorites" }).waitFor();
     await library.getByLabel("Category", { exact: true }).selectOption("Audio");
