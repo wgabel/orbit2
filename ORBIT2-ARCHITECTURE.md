@@ -125,6 +125,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 - [compositional development](docs/examples/compositional-development.md) — development of musical material and form beyond changes to instrumentation; listener feedback case
 - [music theory and electronic sound design](docs/examples/music-theory-and-sound-design.md) — interval/scale/chord recipes, voice leading, articulation, psychoacoustics, mix/depth and quality checks
 - [electronic music genres](docs/examples/electronic-music-genres.md) — modular genre vocabulary, composition approaches and reusable Orbit 2 techniques
+- [classic synthesizer patch recipes](docs/examples/synthesizer-patch-recipes.md) — eight user-supplied reference voice designs; palette selection, translation and verification guidance
 - [sound quality and voice design](docs/examples/sound-quality-and-voice-design.md) — transform noise, develop richer tonal voices and audition candidate preset recipes
 - [music creation index](docs/examples/README.md) — task routing and end-to-end workflow for music
 - [sound-design foundations](docs/examples/foundations/README.md) — reusable, evidence-labeled reference graphs and maintenance; first entry: [breathing harmonic drone](docs/examples/foundations/breathing-harmonic-drone.md)
