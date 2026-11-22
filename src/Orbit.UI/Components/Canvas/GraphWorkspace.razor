@@ -93,6 +93,7 @@ else
                  MobileSelectionOpen="@(mobilePanel == "selection")" OnMobileToolCompleted="CompleteMobileCanvasTool" OnCloseMobileTools="DismissMobilePanelAsync"
                  OnConnect="@(request => Connect(graphId, request))" OnParameterEdit="@(request => EditParameter(graphId, request))"
                  OnParameterGestureEnded="@(id => CompleteParameterGesture(graphId, id))"
+                 OnCancelParameterGesture="@(() => CancelCanvasParameterGesture(graphId))"
                  OnAudition="@(request => SetNodeAudition(graphId, request))"
                  OnPresetApply="@(request => ApplyNodePreset(graphId, request))"
                  OnManagePresets="@(nodeId => OpenPresetManagerAsync(graphId, nodeId))" PresetCatalogRevision="@PresetCatalog.Revision"
@@ -100,6 +101,9 @@ else
                  OnGroupNodes="GroupNodes"
                  OnUngroupComposite="UngroupComposite"
                  OnEditRack="@(nodeId => OpenRackEditor(graphId, nodeId))"
+                 OnContextAddNode="OpenContextLibrary" OnContextSelection="OpenContextSelection"
+                 OnContextDelete="DeleteSelection" OnContextUndo="Undo" OnContextRedo="Redo"
+                 ContextCanUndo="@session.CanUndo" ContextCanRedo="@session.CanRedo"
                  ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" EnvelopePlayheads="@EnvelopePlayheads" BeatsPerMinute="@tempo" SampleRate="@responseSampleRate" />
     @if (performanceAddress is { } address && PerformanceTarget is { } target)
     {

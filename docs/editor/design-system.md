@@ -20,6 +20,8 @@ Non-signal note cards, group frames, authored labels and planned responsive visi
 
 #### Visual vocabulary
 
+Contextual actions are a shared canvas dialog ([PR #71](https://github.com/wgabel/orbit2/pull/71)): a cursor-positioned popup for desktop and a touch-sized bottom sheet for long press. Use semantic surface, border, spacing, radius and error tokens, existing button variants, and an unscaled viewport overlay rather than node/world-relative controls. Show only applicable actions; explicit Close, Escape and backdrop dismissal are available. See [canvas context contract](canvas.md#contextual-canvas-actions).
+
 All nodes have a filled background and a category-specific accent from shared semantic theme tokens. [PR #62](https://github.com/wgabel/orbit2/pull/62) (6.21.3, in review) introduces the presentation-owned `NodeAppearanceCatalog` and shared `NodeAppearanceIcon`. The library, node frames, outline, preset selector and composite breadcrumbs reuse this catalog. Category colors have their own theme keys; the existing role colors and signal/port semantics are unchanged.
 
 | Node category | Accent |

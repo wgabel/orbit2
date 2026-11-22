@@ -17,7 +17,7 @@ With [PR #61](https://github.com/wgabel/orbit2/pull/61), close a tool via its Cl
 
 ### Gesture-only canvas navigation (6.21.4)
 
-In review: [PR #69](https://github.com/wgabel/orbit2/pull/69).
+Implemented: [PR #69](https://github.com/wgabel/orbit2/pull/69).
 
 - On touchscreens, drag empty space to pan. Put two fingers on the canvas and spread/pinch to zoom around their midpoint; move both together to pan. Lift one finger to continue panning without a jump.
 - On desktop, drag the background to pan and use the mouse wheel to zoom around the pointer.
@@ -25,7 +25,27 @@ In review: [PR #69](https://github.com/wgabel/orbit2/pull/69).
 - Header drags still move nodes, and parameter controls keep their own interactions. Adding a second finger to a canvas drag takes over for navigation and cancels any unfinished cable or node movement. Zoom stays within 25–400%; the viewport remains independent of audio and saved per graph.
 - The former zoom toolbar, percentage, reset and Fit buttons are removed on both layouts. Annotation-specific Fit signals and Outline locate actions remain available.
 
+### Contextual canvas actions
+
+Implemented: [PR #71](https://github.com/wgabel/orbit2/pull/71).
+
+If a node fills the entire screen, put two fingers directly on the node—even on a slider, button, port or plot—and pinch inward to zoom out, or move them together to pan. There is no need to find empty canvas. Adding the second finger cancels a still-active local drag/edit; a single finger still edits or moves as before. Lift one finger to continue panning with the remaining finger. Tool sheets and open editors retain their own controls.
+
+On Android or another touchscreen, touch and hold for about half a second. On desktop, right-click (or focus the canvas and press Shift+F10). A menu appears next to the mouse pointer or as a bottom sheet for touch. Tap/click outside, press Escape, or choose Close to dismiss it. Moving your finger or adding a second finger before the hold finishes cancels the menu, so drag and pinch continue normally.
+
+| Hold or right-click | Available actions (when applicable) |
+| --- | --- |
+| Empty canvas | Add node/note, create visual group, marquee select, select all module nodes, undo/redo and annotation history |
+| Node header or noninteractive surface | Mute/bypass, show/hide plot, scope, presets, describe/rename, focus, open/ungroup composite, rack ports, grouping and delete |
+| Selected nodes | Create composite or visual group, delete selection, clear selection |
+| Cable or amount badge | Edit amount, describe, focus either endpoint, delete connection |
+| Note or visual group header/marker | Edit, delete; notes also allow collapse/expand, duplicate and visual grouping |
+
+Regular buttons, port sockets, parameter inputs, plots and note body text keep their current interactions. The menu supplements the existing controls for now; composite creation still uses its name and boundary-preview workflow. Add node opens the Node Library and uses its existing placement behavior.
+
 ### Delete a connection on mobile
+
+Alternatively, hold a cable or its badge and choose **Delete connection** directly. To restore it, use Undo in the empty-canvas menu or Edit.
 
 1. Tap the cable or its numeric amount badge. The selected cable is highlighted and, for a single connection, its amount editor opens. Do not press Cancel or Close in that editor; doing so clears the selection.
 2. Tap **Edit** on the bottom toolbar, check that the summary shows 0 nodes and 1 connection selected, then tap **Delete selected**. Only the selected connection is removed.

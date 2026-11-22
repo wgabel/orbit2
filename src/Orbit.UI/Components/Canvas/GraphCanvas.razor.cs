@@ -206,6 +206,7 @@ public partial class GraphCanvas : IAsyncDisposable
         finderOpen = false;
         finderTarget = "";
         selectionPanelOpen = marqueeMode = false;
+        contextMenu = positionedContext = null;
         selectionCandidate = "";
         previousSecondaryDetail = Snapshot.ShowSecondaryAnnotations;
         previousSelectedNodes = Snapshot.SelectedNodeIds;
@@ -214,6 +215,8 @@ public partial class GraphCanvas : IAsyncDisposable
         EndGesture();
         subscription = State.Subscribe(change =>
         {
+            if (contextMenu is { } openContext && !ReferenceEquals(openContext.Snapshot, change.Snapshot))
+                contextMenu = positionedContext = null;
             if (change.Kind is CanvasChangeKind.VisualizationChanged or CanvasChangeKind.DescriptionsChanged) visualizationGeometryGeneration++;
             if (previousSecondaryDetail != change.Snapshot.ShowSecondaryAnnotations ||
                 (!change.Snapshot.ShowSecondaryAnnotations && !previousSelectedNodes.SequenceEqual(change.Snapshot.SelectedNodeIds)))
@@ -256,6 +259,7 @@ public partial class GraphCanvas : IAsyncDisposable
             if (!disposed) StateHasChanged();
         }
         await ApplyOutlineFocusAsync();
+        await RenderContextAsync();
         await RefreshPannedWireAfterRenderAsync();
     }
 
@@ -358,7 +362,7 @@ public partial class GraphCanvas : IAsyncDisposable
     private async Task BeginNode(Guid nodeId, PointerEventArgs args)
     {
         if (await TakeOverNavigationAsync(args) || args.Button is not (0 or 1)) return;
-        if (args.Button == 0)
+        if (args.Button == 0 && (args.PointerType != "touch" || !Snapshot.SelectedNodeIds.Contains(nodeId)))
             State.SelectNode(nodeId, args.ShiftKey || args.CtrlKey || args.MetaKey);
         pendingSource = null;
         await BeginGesture(args, args.Button == 0 ? nodeId : null, wire: false);
@@ -502,6 +506,7 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private void CancelGesture(PointerEventArgs args)
     {
+        if (universalNavigating) return; // The document-level router owns cancellation during takeover.
         if (gesturePointer != args.PointerId && pinchPointer != args.PointerId) return;
         fitTaps.Reset();
         if (drawingWire) pendingSource = null;
@@ -695,6 +700,7 @@ public partial class GraphCanvas : IAsyncDisposable
     {
         disposed = true;
         subscription?.Dispose();
+        await DisposeContextAsync();
         if (module is not null)
         {
             if (draftWarningActive) await module.InvokeVoidAsync("setAnnotationDraftWarning", false);

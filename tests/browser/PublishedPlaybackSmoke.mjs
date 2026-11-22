@@ -8,6 +8,7 @@ import { pathToFileURL } from "node:url";
 import { verifyTouchWire } from "./TouchWireSmoke.mjs";
 import { verifyWireEdgePan } from "./WireEdgePanSmoke.mjs";
 import { fitCanvas, resetCanvas, zoomStep, tripleTapFit, verifyCanvasNavigation } from "./CanvasNavigationSmoke.mjs";
+import { verifyCanvasContext } from "./CanvasContextSmoke.mjs";
 
 const { chromium } = await import(pathToFileURL(resolve(process.env.ORBIT_PLAYWRIGHT_DIR, "index.mjs")));
 const root = resolve("publish/wwwroot");
@@ -78,7 +79,7 @@ try {
     assert.equal(await build.getAttribute("data-build-number"), process.env.GITHUB_RUN_NUMBER);
     assert.equal(await build.innerText(), "b" + process.env.GITHUB_RUN_NUMBER);
     assert.equal(await page.locator('meta[name="orbit-build-number"]').getAttribute("content"), process.env.GITHUB_RUN_NUMBER);
-    for (const file of ["tokens.css", "base.css", "components.css", "components/graph-workspace.css", "components/mobile-workspace.css"])
+    for (const file of ["tokens.css", "base.css", "components.css", "components/graph-workspace.css", "components/mobile-workspace.css", "components/canvas-context.css"])
         assert.ok(requests.has(`/css-${version}/${file}`), "Missing versioned stylesheet: " + file);
     assert.ok(requests.has("/build-manifest.json"), "Boot must check the deployed build");
     // Probe the real readout CSS with deliberately wide values without altering
@@ -2088,7 +2089,8 @@ try {
     await verifyTouchWire(browser, "http://127.0.0.1:" + server.address().port);
     await verifyWireEdgePan(browser, "http://127.0.0.1:" + server.address().port);
     await verifyCanvasNavigation(browser, "http://127.0.0.1:" + server.address().port);
-    for (const file of ["canvasDom.js", "workspacePanels.js", "nodeLibraryStorage.js", "performanceKeyboard.js",
+    await verifyCanvasContext(browser, "http://127.0.0.1:" + server.address().port);
+    for (const file of ["canvasDom.js", "canvasContext.js", "workspacePanels.js", "nodeLibraryStorage.js", "performanceKeyboard.js",
         "scopeView.js", "scopeAnalysis.js", "signalPlot.js", "spectrumAnalysis.js", "spectrumPlot.js"])
         assert.ok(requests.has(`/js-${version}/${file}`), "Missing versioned editor module: " + file);
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");

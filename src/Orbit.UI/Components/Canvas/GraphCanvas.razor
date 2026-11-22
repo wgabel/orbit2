@@ -7,7 +7,7 @@
 @{ var wires = Wires; }
 <div class="graph-canvas">
     <div class="canvas-viewport" @ref="viewportElement" tabindex="0" aria-label="Graph canvas"
-         aria-keyshortcuts="F 0" data-fit-sequence="@fitSequence" data-pinching="@(pinchOrigin is not null ? "true" : "false")"
+         aria-keyshortcuts="F 0 Shift+F10" data-fit-sequence="@fitSequence" data-pinching="@(pinchOrigin is not null ? "true" : "false")"
          @onpointerdown="BeginBackground" @onpointerdown:preventDefault="true"
          @onpointermove="PointerMoved" @onpointerup="PointerReleasedAsync"
          @onpointercancel="CancelGesture" @onpointerleave="CancelPointerExit" @onlostpointercapture="CancelPointerExit"
@@ -216,6 +216,25 @@
             && !Snapshot.VisualGroups.Any(group => Snapshot.GroupDetail(group.Id) != AnnotationDetail.Hidden))
         {
             <div class="canvas-empty">Add a node to start building your graph.</div>
+        }
+        @if (contextMenu is { } menu)
+        {
+            <div class="canvas-context-overlay" @onpointerdown:stopPropagation="true" @onpointerup:stopPropagation="true"
+                 @onpointermove:stopPropagation="true" @onwheel:stopPropagation="true"
+                 @onkeydown="ContextKeyDown" @onkeydown:stopPropagation="true">
+                <div class="canvas-context-backdrop" @onclick="CloseContextAsync" aria-hidden="true"></div>
+                <section class="canvas-context-menu @(menu.Request.Touch ? "canvas-context-sheet" : "")" role="dialog" aria-label="@($"{menu.Title} actions")">
+                    <header class="canvas-context-heading">
+                        <strong>@menu.Title</strong>
+                        <button type="button" class="secondary" aria-label="Close contextual actions" @onclick="CloseContextAsync">Close</button>
+                    </header>
+                    @foreach (var action in menu.Actions)
+                    {
+                        <button type="button" class="secondary @(action.Destructive ? "canvas-context-destructive" : "")"
+                                @onclick="() => RunContextAsync(action)">@action.Label</button>
+                    }
+                </section>
+            </div>
         }
     </div>
 </div>
