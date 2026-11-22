@@ -6,7 +6,7 @@ export function mountPerformanceKeyboard(root, receiver, codes) {
     const active = () => !disposed && root.isConnected && root.dataset.armed === 'true' && !document.hidden;
     const excluded = target => target instanceof Element && target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="slider"]') ||
         document.querySelector('[aria-modal="true"], [role="dialog"], .workspace-library-panel, .rack-editor, .connection-amount-editor') ||
-        root.closest('.graph-workspace')?.dataset.mobileActivePanel && matchMedia('(max-width: 768px), (max-height: 480px) and (pointer: coarse)').matches;
+        root.closest('.graph-workspace')?.dataset.mobileActivePanel;
     const send = (method, ...args) => {
         if (pending >= 64) { release(); return; }
         pending++;

@@ -95,8 +95,6 @@
                     <option value="@mode">@mode</option>
                 }
             </select>
-            <button type="button" class="secondary desktop-selection-trigger" aria-expanded="@selectionPanelOpen" aria-label="Selection actions"
-                    @onclick="() => selectionPanelOpen = !selectionPanelOpen">@(marqueeMode ? "Selecting" : "Selection")</button>
             @if (selectionPanelOpen || MobileSelectionOpen)
             {
                 <section class="canvas-selection-panel" data-mobile-sheet="selection" aria-label="Node selection" role="region" @onwheel:stopPropagation="true">
@@ -181,6 +179,10 @@
                 </div>
             }
         </div>
+        @if (Snapshot.Graph.Nodes.FirstOrDefault(node => node.TypeKey == OutputRack.NodeType) is { } outputRack)
+        {
+            <button type="button" class="secondary workspace-locate-output" @onclick="@(async () => { await FocusNodeAsync(outputRack.Id); await OnMobileToolCompleted.InvokeAsync(); })">Locate output rack</button>
+        }
         @if (CanShowScope)
         {
             <button type="button" class="secondary canvas-scope-action" @onpointerdown:stopPropagation="true"

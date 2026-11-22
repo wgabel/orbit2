@@ -61,8 +61,7 @@ public partial class GraphCanvas
         string title;
         async Task SelectionActions()
         {
-            if (request.Mobile) await OnContextSelection.InvokeAsync(true);
-            else selectionPanelOpen = true;
+            if (OnContextSelection.HasDelegate) await OnContextSelection.InvokeAsync(request.Mobile);
         }
         void AddSelectionActions()
         {

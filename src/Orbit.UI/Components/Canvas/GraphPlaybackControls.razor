@@ -4,8 +4,8 @@
 @* Reusable controls for a graph snapshot. Audio execution belongs to the service. *@
 <div class="workspace-toolbar toolbar-group playback-toolbar">
     <button type="button" class="workspace-mobile-tempo secondary" data-mobile-trigger="transport" aria-expanded="@MobileTransportOpen" disabled="@MobileToolsLocked" @onclick="OnMobileTempo">@($"{TransportState.BeatsPerMinute:0.#} BPM")</button>
-    <button type="button" aria-label="Play patch" @onclick="PlayAsync" disabled="@(!IsReady || IsActive || Disabled)"><span class="desktop-playback-label">Play patch</span><span class="mobile-playback-label" aria-hidden="true">▶</span></button>
-    <button type="button" class="secondary" aria-label="Stop" @onclick="StopAsync" disabled="@(!IsActive || IsStopping)"><span class="desktop-playback-label">Stop</span><span class="mobile-playback-label" aria-hidden="true">■</span></button>
+    <button type="button" aria-label="Play patch" title="Play patch" @onclick="PlayAsync" disabled="@(!IsReady || IsActive || Disabled)"><span class="mobile-playback-label" aria-hidden="true">▶</span></button>
+    <button type="button" class="secondary" aria-label="Stop" title="Stop patch" @onclick="StopAsync" disabled="@(!IsActive || IsStopping)"><span class="mobile-playback-label" aria-hidden="true">■</span></button>
     <span class="workspace-notice" role="status">@Status</span>
 </div>
 <div class="workspace-transport-tools" data-mobile-sheet="transport" role="region" aria-label="Transport tools">

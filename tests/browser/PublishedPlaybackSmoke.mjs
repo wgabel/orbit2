@@ -38,12 +38,37 @@ const server = createServer(async (request, response) => {
 });
 await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
 const libraryRow = (page, key) => page.locator(`.node-library-panel [data-node-key="${key}"]`);
+const activePanel = page => page.locator(".graph-workspace").getAttribute("data-mobile-active-panel");
+async function openWorkspacePanel(page, panel) {
+    const trigger = page.locator(`[data-mobile-trigger="${panel}"]`);
+    if (await activePanel(page) === panel) return;
+    if (panel === "edit" && await activePanel(page) === "selection") await closeWorkspacePanel(page, "selection");
+    await trigger.click();
+    await page.locator(`.graph-workspace[data-mobile-active-panel="${panel}"]`).waitFor();
+}
+async function closeWorkspacePanel(page, panel) {
+    if (await activePanel(page) !== panel) return;
+    await page.locator(`[data-mobile-trigger="${panel === "selection" ? "edit" : panel}"]`).click();
+    await page.locator(`.graph-workspace[data-mobile-active-panel="${panel}"]`).waitFor({ state: "detached" });
+}
+async function clickWorkspaceTool(page, panel, name, close = true) {
+    await openWorkspacePanel(page, panel);
+    await page.getByRole("button", { name, exact: true }).click();
+    if (close) await closeWorkspacePanel(page, panel);
+}
+const editButton = (page, name) => ({
+    click: () => clickWorkspaceTool(page, "edit", name),
+    isEnabled: () => page.locator(".workspace-edit-tools button").filter({ hasText: new RegExp(`^${name}$`) }).isEnabled()
+});
+async function selectView(page, control, value) {
+    await openWorkspacePanel(page, "view");
+    await control.selectOption(value);
+    await closeWorkspacePanel(page, "view");
+}
 async function openNodeLibrary(page) {
     const library = page.getByRole("region", { name: "Node library", exact: true });
     if (!await library.isVisible()) {
-        const mobile = page.getByRole("button", { name: "+ Nodes", exact: true });
-        if (await mobile.isVisible()) await mobile.click();
-        else await page.getByRole("button", { name: "Add node", exact: true }).click();
+        await openWorkspacePanel(page, "nodes");
     }
     await library.waitFor();
     return library;
@@ -132,7 +157,16 @@ try {
     // remaining screen height rather than using a fixed viewport fraction.
     const toolbar = page.locator(".canvas-caption");
     assert.equal(await toolbar.locator(".canvas-toolbar, .canvas-zoom").count(), 0);
-    await toolbar.getByRole("button", { name: "Add node", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Nodes", exact: true }).waitFor();
+    const closedCanvas = await page.locator(".canvas-viewport").boundingBox();
+    const navBounds = await page.locator(".mobile-workspace-bar").boundingBox();
+    const transportBounds = await page.locator(".playback-toolbar").boundingBox();
+    assert.ok(navBounds.y === transportBounds.y && navBounds.y + navBounds.height <= closedCanvas.y, "Desktop navigation and transport occupy the same top row");
+    for (const panel of ["nodes", "outline", "edit", "view", "more", "transport"]) {
+        await openWorkspacePanel(page, panel);
+        assert.deepEqual(await page.locator(".canvas-viewport").boundingBox(), closedCanvas, `${panel} must not resize the canvas`);
+        await closeWorkspacePanel(page, panel);
+    }
     await openNodeLibrary(page);
     await toolbar.getByRole("button", { name: "Play patch" }).waitFor();
     assert.equal(await libraryRow(page, "processor.resonator").locator(".node-library-name").textContent(), "Resonator");
@@ -174,7 +208,7 @@ try {
     };
     const exerciseNote = async (revision, title) => {
         const nodeCount = await articles.count();
-        const undoEnabled = await page.getByRole("button", { name: "Undo", exact: true }).isEnabled();
+        const undoEnabled = await editButton(page, "Undo").isEnabled();
         await addNode(page, "canvas.note");
         const note = page.locator(".note-card");
         await note.waitFor();
@@ -189,11 +223,11 @@ try {
         await dragNote(note.locator(".note-header"), 5, 5);
         const movedBounds = await note.getAttribute("style");
         assert.notEqual(movedBounds, originalBounds);
-        await page.getByRole("button", { name: "Undo annotation", exact: true }).click();
+        await clickWorkspaceTool(page, "edit", "Undo annotation");
         assert.equal(await note.getAttribute("style"), originalBounds);
         await dragNote(note.getByRole("button", { name: "Resize note" }), 5, 5);
         assert.notEqual(await note.getAttribute("style"), originalBounds);
-        await page.getByRole("button", { name: "Undo annotation", exact: true }).click();
+        await clickWorkspaceTool(page, "edit", "Undo annotation");
         assert.equal(await note.getAttribute("style"), originalBounds);
         await note.getByRole("button", { name: "Edit", exact: true }).click();
         const editor = page.getByRole("region", { name: "Edit canvas note" });
@@ -210,12 +244,12 @@ try {
         await editor.getByLabel("Title").fill("Uncommitted");
         await editor.getByLabel("Title").press("Escape");
         assert.equal(await note.locator(".note-title").innerText(), title);
-        await page.getByRole("button", { name: "Undo annotation", exact: true }).click();
+        await clickWorkspaceTool(page, "edit", "Undo annotation");
         assert.equal(await note.locator(".note-title").innerText(), "Note");
-        await page.getByRole("button", { name: "Redo annotation", exact: true }).click();
+        await clickWorkspaceTool(page, "edit", "Redo annotation");
         assert.equal(await note.locator(".note-title").innerText(), title);
         const badgeCount = await viewport.locator(".connection-amount-badge").count();
-        await visibility.selectOption("TitlesOnly");
+        await selectView(page, visibility, "TitlesOnly");
         await note.getByRole("button", { name: `Reveal note: ${title}`, exact: true }).waitFor();
         assert.equal(await note.locator(".note-body").count(), 0);
         const compactNote = note.getByRole("button", { name: `Reveal note: ${title}`, exact: true });
@@ -225,13 +259,13 @@ try {
         await note.and(page.locator(".note-selected")).waitFor();
         await note.locator(".note-body").waitFor();
         assert.equal(await note.locator(".note-body").textContent(), "A minor\nOpen fifth");
-        await visibility.selectOption("Hide");
+        await selectView(page, visibility, "Hide");
         await note.waitFor({ state: "detached" });
         assert.equal(await viewport.locator(".connection-amount-badge").count(), badgeCount);
-        await viewport.getByRole("button", { name: "Find annotation", exact: true }).click();
+        await clickWorkspaceTool(page, "view", "Find annotation", false);
         await viewport.getByRole("region", { name: "Find annotation" }).getByRole("option", { name: `Note: ${title}`, exact: true }).waitFor({ state: "attached" });
-        await viewport.getByRole("button", { name: "Find annotation", exact: true }).click();
-        await visibility.selectOption("Show");
+        await clickWorkspaceTool(page, "view", "Find annotation", false);
+        await selectView(page, visibility, "Show");
         await note.waitFor();
         if (await note.locator(".annotation-marker").count())
             await note.locator(".annotation-marker").press("Enter");
@@ -241,19 +275,19 @@ try {
         await note.getByTitle("Expand note").click();
         await note.getByRole("button", { name: "Duplicate", exact: true }).click();
         assert.equal(await note.count(), 2);
-        await page.getByRole("button", { name: "Undo annotation", exact: true }).click();
+        await clickWorkspaceTool(page, "edit", "Undo annotation");
         assert.equal(await note.count(), 1);
         if (await note.locator(".annotation-marker").count())
             await note.locator(".annotation-marker").press("Enter");
         await note.getByRole("button", { name: "Delete", exact: true }).click();
         assert.equal(await note.count(), 0);
-        assert.equal(await page.getByRole("button", { name: "Undo", exact: true }).isEnabled(), undoEnabled);
+        assert.equal(await editButton(page, "Undo").isEnabled(), undoEnabled);
         assert.equal(await status.innerText(), `Playing revision ${revision}`);
     };
     const exerciseAlias = async (node, revision) => {
         const canonical = await node.locator(".node-alias").innerText();
         await node.locator(".node-display-name").click();
-        await page.getByRole("button", { name: "Describe selected", exact: true }).click();
+        await clickWorkspaceTool(page, "edit", "Describe selected");
         const editor = page.getByRole("region", { name: "Edit canvas description" });
         await editor.getByLabel("Alias").fill("Harmonic layer");
         await editor.getByLabel("Description").fill("A minor\nOpen fifth");
@@ -265,18 +299,18 @@ try {
         await editor.getByLabel("Alias").fill("Discard me");
         await editor.getByLabel("Alias").press("Escape");
         assert.equal(await node.locator(".node-alias").innerText(), "Harmonic layer");
-        await page.getByRole("button", { name: "Undo annotation", exact: true }).click();
+        await clickWorkspaceTool(page, "edit", "Undo annotation");
         assert.equal(await node.locator(".node-alias").innerText(), canonical);
-        await page.getByRole("button", { name: "Redo annotation", exact: true }).click();
+        await clickWorkspaceTool(page, "edit", "Redo annotation");
         assert.equal(await node.locator(".node-alias").innerText(), "Harmonic layer");
-        await page.getByRole("button", { name: "Undo annotation", exact: true }).click();
+        await clickWorkspaceTool(page, "edit", "Undo annotation");
         assert.equal(await status.innerText(), `Playing revision ${revision}`);
     };
     const exerciseGroup = async (node, revision) => {
         const nodeCount = await articles.count();
-        const undoEnabled = await page.getByRole("button", { name: "Undo", exact: true }).isEnabled();
+        const undoEnabled = await editButton(page, "Undo").isEnabled();
         await node.locator(".node-display-name").click();
-        await page.getByRole("button", { name: "Create visual group", exact: true }).click();
+        await clickWorkspaceTool(page, "edit", "Create visual group");
         const group = page.locator(".visual-group");
         await group.waitFor();
         assert.equal(await group.locator(".visual-group-count").innerText(), "1 member");
@@ -291,13 +325,13 @@ try {
         await drag(group.locator(".visual-group-header"));
         assert.notEqual(await group.getAttribute("style"), frame);
         assert.notEqual(await node.getAttribute("style"), position);
-        await page.getByRole("button", { name: "Undo annotation", exact: true }).click();
+        await clickWorkspaceTool(page, "edit", "Undo annotation");
         assert.equal(await group.getAttribute("style"), frame);
         assert.equal(await node.getAttribute("style"), position);
         await drag(group.getByRole("button", { name: "Resize visual group" }));
         assert.notEqual(await group.getAttribute("style"), frame);
         assert.equal(await node.getAttribute("style"), position);
-        await page.getByRole("button", { name: "Undo annotation", exact: true }).click();
+        await clickWorkspaceTool(page, "edit", "Undo annotation");
         await group.getByRole("button", { name: "Edit visual group" }).press("Enter");
         const editor = page.getByRole("region", { name: "Edit visual group" });
         await editor.getByLabel("Title").fill("Harmonic voices");
@@ -308,7 +342,7 @@ try {
         await group.getByRole("button", { name: "Delete visual group" }).press("Enter");
         assert.equal(await group.count(), 0);
         assert.equal(await articles.count(), nodeCount);
-        assert.equal(await page.getByRole("button", { name: "Undo", exact: true }).isEnabled(), undoEnabled);
+        assert.equal(await editButton(page, "Undo").isEnabled(), undoEnabled);
         assert.equal(await status.innerText(), `Playing revision ${revision}`);
     };
     await viewport.locator(".canvas-count").filter({ hasText: /^4 nodes · 3 connections$/ }).waitFor();
@@ -321,9 +355,9 @@ try {
     assert.equal(await marker.count(), 0);
     // Bulk selection does not move the canvas or enter graph history. Keyboard
     // users can toggle a particular eligible node from the shared selection panel.
-    const selectionToggle = viewport.getByRole("button", { name: "Selection actions" });
+    const selectionToggle = { click: () => clickWorkspaceTool(page, "edit", "Selection actions", false) };
     const originalSelectionViewport = await viewport.locator(".canvas-world").getAttribute("style");
-    const selectionUndo = await page.getByRole("button", { name: "Undo", exact: true }).isEnabled();
+    const selectionUndo = await editButton(page, "Undo").isEnabled();
     await selectionToggle.click();
     const selectionPanel = viewport.getByRole("region", { name: "Node selection" });
     await selectionPanel.getByRole("button", { name: "Select all module nodes" }).press("Enter");
@@ -345,7 +379,7 @@ try {
     await viewport.dispatchEvent("pointerup", { ...pointer, buttons: 0, clientX: region.left, clientY: region.top });
     await viewport.locator(`.node-selected[data-node-id="${await articles.nth(1).getAttribute("data-node-id")}"]`).waitFor();
     assert.equal(await viewport.locator(".canvas-world").getAttribute("style"), originalSelectionViewport);
-    assert.equal(await page.getByRole("button", { name: "Undo", exact: true }).isEnabled(), selectionUndo);
+    assert.equal(await editButton(page, "Undo").isEnabled(), selectionUndo);
     await viewport.press("Escape"); // leave marquee mode; selection remains until explicitly cleared
     await viewport.press("Escape");
     assert.equal(await viewport.locator(".node-selected").count(), 0);
@@ -367,8 +401,8 @@ try {
     assert.ok(Number(await range.getAttribute("data-gesture-inputs")) > 2, "Drag must produce multiple live values");
     const changedAmplitude = await amplitudeInput.inputValue();
     assert.notEqual(changedAmplitude, originalAmplitude);
-    const undoButton = page.getByRole("button", { name: "Undo", exact: true });
-    const redoButton = page.getByRole("button", { name: "Redo", exact: true });
+    const undoButton = editButton(page, "Undo");
+    const redoButton = editButton(page, "Redo");
     await undoButton.click();
     assert.equal(await amplitudeInput.inputValue(), originalAmplitude);
     await redoButton.click();
@@ -547,21 +581,24 @@ try {
     assert.equal(await bypassGain.getAttribute("aria-pressed"), "false");
     assert.equal(await articles.nth(0).getByRole("button", { name: /^Bypass / }).count(), 0);
     assert.equal(await articles.last().getByRole("button", { name: /^Bypass / }).count(), 0);
-    const transport = page.getByRole("region", { name: "Musical transport" });
-    const tempo = transport.getByRole("spinbutton", { name: "Tempo (BPM)" });
+    const transport = page.locator(".transport-controls");
+    const tempo = transport.getByLabel("Tempo (BPM)");
     const beat = transport.getByTestId("transport-beat");
     const transportState = transport.getByTestId("transport-state");
     const applyTempo = transport.getByRole("button", { name: "Apply tempo" });
     assert.equal(await tempo.inputValue(), "120");
+    await openWorkspacePanel(page, "transport");
     await tempo.fill("0");
     await applyTempo.click();
     await transport.getByText("Enter a tempo from 20 to 300 BPM.").waitFor();
+    await openWorkspacePanel(page, "transport");
     await tempo.fill("60");
     await applyTempo.click();
     await transport.getByText("Synchronized rates: 1/4 note = 1 Hz · 1 bar (4/4) = 0.25 Hz").waitFor();
     assert.equal(await beat.innerText(), "0");
     assert.equal(await transport.getByTestId("transport-sample-rate").count(), 0);
     const performanceToggle = page.getByRole("button", { name: /^Performance ·/ });
+    await openWorkspacePanel(page, "more");
     assert.equal(await performanceToggle.innerText(), "Performance · Off");
     await performanceToggle.click();
     const performancePanel = page.getByRole("region", { name: "Audio performance diagnostics" });
@@ -572,9 +609,11 @@ try {
     assert.match(await performanceToggle.innerText(), /UI [0-9]+ FPS/);
     await performancePanel.getByRole("button", { name: "Close" }).click();
     assert.equal(await performanceToggle.innerText(), "Performance · Off");
+    await closeWorkspacePanel(page, "more");
     await play.click({ timeout: 30000 });
     await status.filter({ hasText: /Playing revision/ }).waitFor({ timeout: 30000 });
     let initialRevision = Number((await status.innerText()).match(/Playing revision (\d+)/)[1]);
+    await openWorkspacePanel(page, "more");
     await performanceToggle.click();
     await performancePanel.locator("[data-performance-session]").filter({ hasText: "active" }).waitFor({ timeout: 10000 });
     assert.match(await performancePanel.innerText(), /\d+ Hz/);
@@ -586,13 +625,14 @@ try {
     await page.waitForFunction(() => !document.querySelector("#audio-performance-details button:last-child")?.disabled);
     assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
     await performancePanel.getByRole("button", { name: "Close" }).click();
+    await closeWorkspacePanel(page, "more");
     await exerciseNote(initialRevision, "Root harmony");
     await exerciseAlias(articles.nth(1), initialRevision);
     await exerciseGroup(articles.nth(1), initialRevision);
     // Patch-wide metadata is a committed presentation edit, even during playback.
-    await page.getByRole("button", { name: "Patches", exact: true }).click();
+    await clickWorkspaceTool(page, "more", "Patches", false);
     const liveManager = page.getByRole("region", { name: "Patch manager" });
-    const undoBeforeOverview = await page.getByRole("button", { name: "Undo", exact: true }).isEnabled();
+    const undoBeforeOverview = await editButton(page, "Undo").isEnabled();
     await liveManager.getByRole("button", { name: "Edit patch overview" }).click();
     const overviewEditor = liveManager.getByRole("region", { name: "Edit patch overview" });
     await overviewEditor.getByLabel("Title", { exact: true }).fill("Distant horizon");
@@ -606,15 +646,18 @@ try {
     await overviewEditor.getByLabel("Title", { exact: true }).press("Escape");
     await liveManager.getByRole("region", { name: "Current patch overview" }).getByText("Distant horizon", { exact: true }).waitFor();
     await liveManager.getByRole("button", { name: "Close", exact: true }).click();
+    await closeWorkspacePanel(page, "more");
     assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
-    assert.equal(await page.getByRole("button", { name: "Undo", exact: true }).isEnabled(), undoBeforeOverview);
-    await transportState.filter({ hasText: "Running" }).waitFor();
-    await transport.getByTestId("transport-sample-rate").waitFor();
+    assert.equal(await editButton(page, "Undo").isEnabled(), undoBeforeOverview);
+    await transportState.filter({ hasText: "Running" }).waitFor({ state: "attached" });
+    await transport.getByTestId("transport-sample-rate").waitFor({ state: "attached" });
     const firstBeat = Number(await beat.innerText());
     await page.waitForFunction(previous => Number(document.querySelector('[data-testid="transport-beat"]').textContent) > previous, firstBeat);
+    await openWorkspacePanel(page, "transport");
     await tempo.fill("90");
     await applyTempo.click();
     await transport.getByText("Synchronized rates: 1/4 note = 1.5 Hz · 1 bar (4/4) = 0.375 Hz").waitFor();
+    await closeWorkspacePanel(page, "transport");
     assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
     assert.ok(Number(await beat.innerText()) >= firstBeat);
     await marker.waitFor({ timeout: 10000 });
@@ -739,7 +782,7 @@ try {
     // Select the existing modulation wire via its keyboard-accessible badge,
     // even if a node covers it, then edit depth and retain its identity.
     const wire = page.locator(".connection-modulation .connection-hit");
-    const labelMode = page.getByRole("combobox", { name: "Connection labels" });
+    const labelMode = page.locator("#connection-label-mode");
     const badges = page.locator(".connection-amount-badge");
     assert.equal(await labelMode.inputValue(), "All");
     await badges.filter({ hasText: /^\+100 Hz$/ }).press("Enter");
@@ -775,14 +818,14 @@ try {
     const labeledBadge = badges.filter({ hasText: /^\+100 Hz$/ });
     await labeledBadge.and(page.locator('[title*="Brightness sweep"]')).waitFor();
     const annotationDisplay = viewport.getByLabel("Annotations", { exact: true });
-    await annotationDisplay.selectOption("TitlesOnly");
+    await selectView(page, annotationDisplay, "TitlesOnly");
     await labeledBadge.and(page.locator(':not([title*="Brightness sweep"])')).waitFor();
     assert.equal(await amount.inputValue(), "75");
     assert.equal(await amountEditor.getByText("Brightness sweep", { exact: true }).count(), 1);
-    await annotationDisplay.selectOption("Show");
+    await selectView(page, annotationDisplay, "Show");
     await labeledBadge.and(page.locator('[title*="Brightness sweep"]')).waitFor();
     await fitCanvas(page);
-    await page.getByRole("button", { name: "Undo annotation", exact: true }).click();
+    await clickWorkspaceTool(page, "edit", "Undo annotation");
     assert.equal(await amountEditor.getByText("Brightness sweep", { exact: true }).count(), 0);
     assert.equal(await amount.inputValue(), "75");
     assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
@@ -810,12 +853,12 @@ try {
     await predictedFrequency.filter({ hasText: "415–465 Hz" }).waitFor();
     await badges.filter({ hasText: /^\+25 Hz$/ }).waitFor({ state: "attached" });
     // History is a fresh committed revision even while the worklet is running.
-    await page.getByRole("button", { name: "Undo", exact: true }).click();
+    await editButton(page, "Undo").click();
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
     await predictedFrequency.filter({ hasText: "340–540 Hz" }).waitFor();
     await badges.filter({ hasText: /^\+100 Hz$/ }).waitFor({ state: "attached" });
-    await page.getByRole("button", { name: "Redo", exact: true }).click();
+    await editButton(page, "Redo").click();
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
     await predictedFrequency.filter({ hasText: "415–465 Hz" }).waitFor();
@@ -852,13 +895,16 @@ try {
     assert.equal(await articles.nth(1).getByLabel("Musical division").inputValue(), "2");
     const synchronizedFrequency = articles.nth(1).locator("output[aria-label='Synchronized frequency']");
     await synchronizedFrequency.filter({ hasText: /^1\.5 Hz$/ }).waitFor();
+    await openWorkspacePanel(page, "transport");
     await tempo.fill("120");
     await applyTempo.click();
     await synchronizedFrequency.filter({ hasText: /^2 Hz$/ }).waitFor();
     assert.equal(await status.innerText(), `Playing revision ${initialRevision + 1}`);
+    await openWorkspacePanel(page, "transport");
     await tempo.fill("90");
     await applyTempo.click();
     await synchronizedFrequency.filter({ hasText: /^1\.5 Hz$/ }).waitFor();
+    await closeWorkspacePanel(page, "transport");
     await timing.selectOption("0");
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 1}$`) }).waitFor({ timeout: 15000 });
@@ -872,7 +918,7 @@ try {
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 2}$`) }).waitFor({ timeout: 10000 });
     // With badges hidden, the cable itself must still be selectable. A badge
     // may otherwise cover the only exposed part of a short wire.
-    await labelMode.selectOption("Off");
+    await selectView(page, labelMode, "Off");
     await badges.first().waitFor({ state: "detached" });
     assert.equal(await status.innerText(), `Playing revision ${initialRevision + 2}`);
     // Wires run underneath node frames; viewport-aware placement may put a
@@ -901,7 +947,7 @@ try {
     // Remove the original LFO-to-frequency connection, then connect to amplitude.
     await selectVisibleWire(wire);
     await assertEditorFits();
-    await page.getByRole("button", { name: "Delete selected" }).click();
+    await clickWorkspaceTool(page, "edit", "Delete selected");
     await amountEditor.waitFor({ state: "detached" });
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 3}$`) }).waitFor({ timeout: 15000 });
     assert.equal(await marker.count(), 0);
@@ -913,7 +959,7 @@ try {
     await amplitude.locator(".parameter-effective-marker").waitFor({ timeout: 10000 });
     await page.getByRole("button", { name: "Stop", exact: true }).click();
     await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 10000 });
-    await transportState.filter({ hasText: "Stopped" }).waitFor();
+    await transportState.filter({ hasText: "Stopped" }).waitFor({ state: "attached" });
     const frozenBeat = await beat.innerText();
     await page.waitForTimeout(300);
     assert.equal(await beat.innerText(), frozenBeat);
@@ -928,7 +974,7 @@ try {
     await fitCanvas(page);
     const masterWire = page.locator(".connection-audio .connection-hit").nth(1);
     await selectVisibleWire(masterWire);
-    await page.getByRole("button", { name: "Delete selected" }).click();
+    await clickWorkspaceTool(page, "edit", "Delete selected");
     await articles.nth(0).getByRole("button", { name: "Output: Signal (Audio)" }).press("Enter");
     await drone.getByRole("button", { name: "Input: Pitch (Modulation)" }).press("Enter");
     await drone.getByRole("button", { name: "Output: Audio (Audio)" }).press("Enter");
@@ -953,9 +999,9 @@ try {
     const breadcrumbs = page.getByRole("navigation", { name: "Canvas path" });
     await breadcrumbs.getByText("Drone", { exact: true }).waitFor();
     assert.equal(await labelMode.inputValue(), "All", "New nested canvas has its own label preference");
-    await labelMode.selectOption("Modified");
+    await selectView(page, labelMode, "Modified");
     assert.equal(await tempo.inputValue(), "90");
-    await transportState.filter({ hasText: "Running" }).waitFor();
+    await transportState.filter({ hasText: "Running" }).waitFor({ state: "attached" });
     assert.ok(Number(await beat.innerText()) >= Number(frozenBeat));
     await openNodeLibrary(page);
     assert.equal(await libraryRow(page, "output.master").count(), 0);
@@ -969,7 +1015,7 @@ try {
     const outputRack = articles.filter({ has: page.locator(".node-header > span", { hasText: /^Output Rack$/ }) });
     await outputRack.getByText("To parent graph · exposed outputs").waitFor();
     await outputRack.getByRole("button", { name: "Input: Audio (Audio)" }).waitFor();
-    await page.getByRole("button", { name: "Locate output rack" }).click();
+    await clickWorkspaceTool(page, "view", "Locate output rack");
     await outputRack.and(page.locator(".node-selected")).waitFor();
     assert.match(await outputRack.getAttribute("class"), /node-selected/);
     await fitCanvas(page);
@@ -1040,8 +1086,8 @@ try {
     assert.equal(await page.getByRole("alert").count(), 0);
     await page.getByRole("button", { name: "Stop", exact: true }).click();
     await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 10000 });
-    await transport.getByRole("button", { name: "Reset transport" }).click();
-    await beat.filter({ hasText: /^0$/ }).waitFor();
+    await clickWorkspaceTool(page, "transport", "Reset transport");
+    await beat.filter({ hasText: /^0$/ }).waitFor({ state: "attached" });
     assert.equal(await tempo.inputValue(), "90");
     // Any oscillator can be a synchronized modulation source.
     const newNodeIndex = await articles.count();
@@ -1060,7 +1106,7 @@ try {
     await drone.getByRole("button", { name: "Input: Gain (Modulation)" }).press("Enter");
     await play.click();
     await status.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
-    await transportState.filter({ hasText: "Running" }).waitFor();
+    await transportState.filter({ hasText: "Running" }).waitFor({ state: "attached" });
     await division.selectOption("4");
     assert.equal(await division.inputValue(), "4");
     await tempoLfoFrequency.filter({ hasText: /^0\.375 Hz$/ }).waitFor();
@@ -1111,8 +1157,8 @@ try {
     assert.ok(savedWorkspace.rootGraph.nodes.some(node => node.composite?.graph.id === expectedGraph));
     await page.reload();
     await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
-    assert.equal(await page.getByRole("button", { name: "Undo", exact: true }).isEnabled(), false);
-    assert.equal(await page.getByRole("button", { name: "Redo", exact: true }).isEnabled(), false);
+    assert.equal(await editButton(page, "Undo").isEnabled(), false);
+    assert.equal(await editButton(page, "Redo").isEnabled(), false);
     assert.equal(await page.getByRole("alert").count(), 0, await page.getByRole("alert").allTextContents());
     assert.equal(await page.locator(".graph-workspace").getAttribute("data-active-graph"), expectedGraph);
     await breadcrumbs.getByText("Drone", { exact: true }).waitFor();
@@ -1141,7 +1187,7 @@ try {
     assert.equal(await division.inputValue(), "4");
     await tempoLfoFrequency.filter({ hasText: /^0\.375 Hz$/ }).waitFor();
     // Named saves are independent of recovery and imported/exported documents.
-    await page.getByRole("button", { name: "Patches", exact: true }).click();
+    await clickWorkspaceTool(page, "more", "Patches", false);
     const manager = page.locator(".patch-manager");
     // The overview region also contains "Saved patch" in its accessible name.
     const savedPatchPicker = manager.getByRole("combobox", { name: "Saved patch", exact: true });
@@ -1196,6 +1242,7 @@ try {
     assert.equal(await savedPatchPicker.locator("option[value='Empty study']").count(), 0);
     // Opening and importing other patches does not remove the independent custom library.
     await manager.getByRole("button", { name: "Close" }).click();
+    await closeWorkspacePanel(page, "more");
     await rootPreset.locator(`optgroup[label='Custom'] option[value='${customId}']`).waitFor({ state: "attached" });
     await rootPreset.selectOption(customId);
     await manageRootPresets.click();
@@ -1270,11 +1317,12 @@ try {
     await responsePage.goto("http://127.0.0.1:" + server.address().port);
     const responseStatus = responsePage.locator(".playback-toolbar").getByRole("status");
     await responseStatus.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
-    await responsePage.getByRole("button", { name: "Patches", exact: true }).click();
+    await clickWorkspaceTool(responsePage, "more", "Patches", false);
     const responseManager = responsePage.getByRole("region", { name: "Patch manager" });
     await responseManager.getByRole("button", { name: "New patch" }).click();
     await responseManager.getByText("New workspace created.", { exact: true }).waitFor();
     await responseManager.getByRole("button", { name: "Close", exact: true }).click();
+    await closeWorkspacePanel(responsePage, "more");
     const responseNodes = responsePage.locator("article");
     const master = responseNodes.first();
     const addResponseNode = async type => {
@@ -1368,10 +1416,11 @@ try {
 
     // Manual pitch control: shared semitones transpose a whole oscillator bank
     // without changing the base Hz fields or recompiling on live control edits.
-    await responsePage.getByRole("button", { name: "Patches", exact: true }).click();
+    await clickWorkspaceTool(responsePage, "more", "Patches", false);
     await responseManager.getByRole("button", { name: "New patch" }).click();
     await responseManager.getByText("New workspace created.", { exact: true }).waitFor();
     await responseManager.getByRole("button", { name: "Close", exact: true }).click();
+    await closeWorkspacePanel(responsePage, "more");
     await responsePage.locator(".canvas-count").filter({ hasText: "1 nodes · 0 connections" }).waitFor();
     const pitchControl = await addResponseNode("generator.pitch-control");
     const pitchA = await addResponseNode("generator.oscillator");
@@ -1484,7 +1533,7 @@ try {
     await pattern.getByRole("combobox", { name: "Step note" }).selectOption("70");
     await pattern.getByRole("combobox", { name: "Pattern mode" }).selectOption("1");
     await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
-    await responsePage.getByRole("button", { name: "Reset transport", exact: true }).click();
+    await clickWorkspaceTool(responsePage, "transport", "Reset transport");
     await pattern.locator('[data-sequence-playhead="1"]').waitFor();
     await performance.locator('[data-live-pitch-offset="12"]').waitFor();
     await pattern.locator('[data-sequence-playhead="2"]').waitFor();
@@ -1504,10 +1553,10 @@ try {
     await recording.getByRole("button", { name: "Commit take" }).click();
     await recording.getByText("Take committed.", { exact: true }).waitFor();
     await responseStatus.filter({ hasText: /^Playing revision \d+$/, hasNotText: takeRevision }).waitFor();
-    await responsePage.getByRole("button", { name: "Undo", exact: true }).click();
+    await editButton(responsePage, "Undo").click();
     await pattern.getByRole("button", { name: "Step 1: A5", exact: true }).waitFor();
     await pattern.getByRole("button", { name: "Step 2: A4", exact: true }).waitFor();
-    await responsePage.getByRole("button", { name: "Redo", exact: true }).click();
+    await editButton(responsePage, "Redo").click();
     await pattern.getByRole("button", { name: "Step 1: C5", exact: true }).waitFor();
     await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor();
     const cancelRevision = await responseStatus.innerText();
@@ -1526,10 +1575,11 @@ try {
 
     // The held-note keyboard can play the real modal composite. Overlapping keys
     // follow last-note priority; fallback and release do not edit the graph.
-    await responsePage.getByRole("button", { name: "Patches", exact: true }).click();
+    await clickWorkspaceTool(responsePage, "more", "Patches", false);
     await responseManager.getByRole("button", { name: "New patch" }).click();
     await responseManager.getByText("New workspace created.", { exact: true }).waitFor();
     await responseManager.getByRole("button", { name: "Close", exact: true }).click();
+    await closeWorkspacePanel(responsePage, "more");
     await responsePage.locator(".canvas-count").filter({ hasText: "1 nodes · 0 connections" }).waitFor();
     const noteSource = await addResponseNode("generator.note-source");
     await openNodeLibrary(responsePage);
@@ -1654,10 +1704,11 @@ try {
     await responsePage.waitForFunction(id => document.querySelector(".performance-keyboard")?.dataset.targetNode === id, await otherNoteSource.getAttribute("data-node-id"));
 
     // The AD generator uses the normal canvas, preset, range and live-control paths.
-    await responsePage.getByRole("button", { name: "Patches", exact: true }).click();
+    await clickWorkspaceTool(responsePage, "more", "Patches", false);
     await responseManager.getByRole("button", { name: "New patch" }).click();
     await responseManager.getByText("New workspace created.", { exact: true }).waitFor();
     await responseManager.getByRole("button", { name: "Close", exact: true }).click();
+    await closeWorkspacePanel(responsePage, "more");
     await responsePage.locator(".canvas-count").filter({ hasText: "1 nodes · 0 connections" }).waitFor();
     const trigger = await addResponseNode("generator.oscillator");
     const envelope = await addResponseNode("generator.envelope");
@@ -1844,10 +1895,10 @@ try {
     assert.equal(await draftOutline.getByRole("button", { name: "Locate note: Note", exact: true }).isDisabled(), true);
     await draftOutline.getByRole("button", { name: "Close outline", exact: true }).click();
     await outlineDraft.getByRole("button", { name: "Cancel", exact: true }).click();
-    await annotationPage.getByRole("button", { name: "Create visual group", exact: true }).click();
+    await clickWorkspaceTool(annotationPage, "edit", "Create visual group");
     await annotationPage.locator(".visual-group").waitFor();
     const annotationMode = annotationViewport.getByLabel("Annotations", { exact: true });
-    await annotationMode.selectOption("TitlesOnly");
+    await selectView(annotationPage, annotationMode, "TitlesOnly");
     await annotationViewport.getByRole("button", { name: "Reveal note: Note", exact: true }).waitFor();
     await annotationViewport.getByRole("button", { name: "Reveal group: Visual group", exact: true }).waitFor();
     assert.equal(await annotationViewport.locator(".annotation-marker").count(), 2);
@@ -1855,17 +1906,17 @@ try {
     await annotationViewport.locator(".visual-group-selected .visual-group-header").waitFor();
     await annotationViewport.press("Escape");
     await annotationViewport.getByRole("button", { name: "Reveal group: Visual group", exact: true }).waitFor();
-    await annotationMode.selectOption("Show");
+    await selectView(annotationPage, annotationMode, "Show");
     for (let i = 1; i <= 6; i++) {
         await zoomStep(annotationPage, -1);
     }
     const markerButton = annotationViewport.getByRole("button", { name: "Reveal note: Note", exact: true });
     await markerButton.waitFor();
     assert.ok(Math.abs((await markerButton.boundingBox()).height - 30) < 2, "Compact marker should remain screen readable");
-    await annotationMode.selectOption("Hide");
+    await selectView(annotationPage, annotationMode, "Hide");
     await annotationViewport.locator(".note-card, .visual-group").first().waitFor({ state: "detached" });
     assert.equal(await annotationViewport.locator(".note-card, .visual-group").count(), 0);
-    await annotationViewport.getByRole("button", { name: "Find annotation", exact: true }).click();
+    await clickWorkspaceTool(annotationPage, "view", "Find annotation", false);
     const finder = annotationViewport.getByRole("region", { name: "Find annotation" });
     await finder.getByLabel("Note or group").selectOption({ label: "Group: Visual group" });
     await finder.getByRole("button", { name: "Reveal and fit" }).click();
@@ -1882,7 +1933,7 @@ try {
     assert.equal(await annotationMode.inputValue(), "Hide");
     await annotationViewport.press("Escape");
     await annotationViewport.locator(".note-card").waitFor({ state: "detached" });
-    await annotationViewport.getByRole("button", { name: "Fit signals", exact: true }).click();
+    await clickWorkspaceTool(annotationPage, "view", "Fit signals", false);
     assert.equal(await annotationMode.inputValue(), "Hide");
     await annotationPage.close();
     // Group the default demo's eligible nodes, inspect the child, undo while
@@ -1890,7 +1941,7 @@ try {
     const groupPage = await browser.newPage();
     await groupPage.goto("http://127.0.0.1:" + server.address().port);
     const groupViewport = groupPage.locator(".canvas-viewport");
-    await groupViewport.getByRole("button", { name: "Selection actions" }).click();
+    await clickWorkspaceTool(groupPage, "edit", "Selection actions", false);
     const groupPanel = groupViewport.getByRole("region", { name: "Node selection" });
     await groupPanel.getByRole("button", { name: "Select all module nodes" }).click();
     await groupPanel.getByRole("status").filter({ hasText: "3 nodes selected · 3 eligible" }).waitFor();
@@ -1902,10 +1953,10 @@ try {
     await openGroup.click();
     await groupViewport.getByRole("button", { name: "Edit ports" }).first().waitFor();
     assert.equal(await groupViewport.locator("article[data-node-id]").count(), 5);
-    await groupPage.getByRole("button", { name: "Undo", exact: true }).click();
+    await editButton(groupPage, "Undo").click();
     await groupViewport.locator("article[data-node-id]").nth(3).waitFor();
     assert.equal(await groupViewport.locator("article[data-node-id]").count(), 4);
-    await groupPage.getByRole("button", { name: "Redo", exact: true }).click();
+    await editButton(groupPage, "Redo").click();
     await openGroup.waitFor();
     await openGroup.click();
     await groupViewport.getByRole("button", { name: "Edit ports" }).first().waitFor();
@@ -1913,7 +1964,7 @@ try {
     // Expand from the parent selection rather than undoing the original grouping.
     await groupPage.getByRole("navigation", { name: "Canvas path" }).getByRole("button", { name: "Patch", exact: true }).click();
     await openGroup.waitFor();
-    await groupViewport.getByRole("button", { name: "Selection actions" }).click();
+    await clickWorkspaceTool(groupPage, "edit", "Selection actions", false);
     await groupPanel.getByRole("button", { name: "Clear selection" }).click();
     await groupPanel.getByLabel("Individual module node").selectOption({ index: 1 });
     await groupPanel.getByRole("button", { name: "Toggle node selection" }).click();
@@ -1922,9 +1973,9 @@ try {
     await groupViewport.locator("article[data-node-id]").nth(3).waitFor();
     assert.equal(await groupViewport.locator("article[data-node-id]").count(), 4);
     assert.equal(await groupViewport.locator(".node-selected").count(), 3);
-    await groupPage.getByRole("button", { name: "Undo", exact: true }).click();
+    await editButton(groupPage, "Undo").click();
     await openGroup.waitFor();
-    await groupPage.getByRole("button", { name: "Redo", exact: true }).click();
+    await editButton(groupPage, "Redo").click();
     await openGroup.waitFor({ state: "detached" });
     assert.equal(await groupViewport.locator("article[data-node-id]").count(), 4);
     await groupPage.close();
@@ -1935,7 +1986,7 @@ try {
     await mobilePage.goto("http://127.0.0.1:" + server.address().port + "/?test-stale=1", { waitUntil: "domcontentloaded" });
     await mobilePage.waitForURL(url => url.searchParams.get("orbit-build") === version);
     const mobileCanvas = mobilePage.locator(".canvas-viewport");
-    const mobileBar = mobilePage.getByRole("navigation", { name: "Mobile workspace tools" });
+    const mobileBar = mobilePage.getByRole("navigation", { name: "Workspace tools" });
     await mobilePage.getByRole("button", { name: "Play patch" }).waitFor();
     assert.equal(await mobilePage.locator(".workspace-build").innerText(), "b" + process.env.GITHUB_RUN_NUMBER);
     await mobileCanvas.locator("article[data-node-id]").first().waitFor();
@@ -1958,7 +2009,7 @@ try {
         assert.ok(metrics.buildFits, "Build identifier must fit the compact mobile header");
     }
     await mobilePage.setViewportSize({ width: 390, height: 844 });
-    await mobileBar.getByRole("button", { name: "+ Nodes", exact: true }).click();
+    await mobileBar.getByRole("button", { name: "Nodes", exact: true }).click();
     const previousMobileCount = await mobileCanvas.locator("article[data-node-id]").count();
     await addNode(mobilePage, "generator.oscillator");
     await mobileCanvas.locator("article[data-node-id]").nth(previousMobileCount).waitFor();
@@ -2088,7 +2139,8 @@ try {
     await mobilePage.waitForFunction(() => document.querySelector(".playback-toolbar [role=status]")?.textContent.startsWith("Playing revision"), null, { timeout: 30000 });
     const playingRevision = await mobileStatus.textContent();
     await mobilePage.setViewportSize({ width: 1000, height: 800 });
-    await mobileBar.waitFor({ state: "hidden" });
+    await mobileBar.waitFor();
+    assert.ok((await mobileBar.boundingBox()).y < (await mobileCanvas.boundingBox()).y);
     await mobilePage.setViewportSize({ width: 390, height: 844 });
     await mobileBar.waitFor();
     assert.equal(await mobileStatus.textContent(), playingRevision, "Responsive reflow must not restart playback");

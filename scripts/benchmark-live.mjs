@@ -59,14 +59,27 @@ try {
             await page.goto("http://127.0.0.1:" + server.address().port);
             const status = page.locator(".playback-toolbar").getByRole("status");
             const play = page.getByRole("button", { name: "Play patch" });
+            const more = page.getByRole("navigation", { name: "Workspace tools" }).getByRole("button", { name: "More", exact: true });
+            const moreTools = page.getByRole("region", { name: "More tools" });
+            async function openMore() {
+                await more.click();
+                await moreTools.waitFor({ state: "visible" });
+            }
+            async function closeMore() {
+                await more.click();
+                await moreTools.waitFor({ state: "hidden" });
+            }
             await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
-            await page.getByRole("button", { name: "Patches", exact: true }).click();
+            await openMore();
+            await moreTools.getByRole("button", { name: "Patches", exact: true }).click();
             const manager = page.getByRole("region", { name: "Patch manager" });
             await manager.getByLabel("Import JSON").setInputFiles(resolve(directory, profile.patch));
             await manager.getByText("Imported patch.", { exact: true }).waitFor();
             await manager.getByRole("button", { name: "Close" }).click();
+            await closeMore();
             await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
             const panel = page.getByRole("region", { name: "Audio performance diagnostics" });
+            const toggle = moreTools.getByRole("button", { name: "Performance · Off", exact: true });
             async function readMonitor(state, voices, expectedRevision = null) {
                 await panel.locator("[data-performance-session]").filter({ hasText: new RegExp("^" + state + "$") }).waitFor({ timeout: 10000 });
                 if (voices) await panel.locator("[data-performance-worklets]").filter({ hasText: voices }).waitFor({ timeout: 10000 });
@@ -78,12 +91,14 @@ try {
                     lists.flatMap(list => [...list.querySelectorAll("dt")].map(dt => [dt.textContent, dt.nextElementSibling.textContent]))));
             }
             async function openMonitor(state, voices, expectedRevision = null) {
-                await page.getByRole("button", { name: "Performance · Off", exact: true }).click();
+                await openMore();
+                await toggle.click();
                 return readMonitor(state, voices, expectedRevision);
             }
             async function closeMonitor() {
                 await panel.getByRole("button", { name: "Close" }).click();
-                await page.getByRole("button", { name: "Performance · Off", exact: true }).waitFor();
+                await toggle.waitFor();
+                await closeMore();
             }
             // Operation diagnostics must be enabled before the operation, not
             // opened afterward. Read the idle snapshot to ensure collection started.

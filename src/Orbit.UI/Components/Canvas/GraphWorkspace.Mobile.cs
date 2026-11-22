@@ -7,25 +7,21 @@ public partial class GraphWorkspace
 {
     [Inject] private IJSRuntime MobileJavaScript { get; set; } = default!;
     private string? mobilePanel;
-    private bool desktopLibraryOpen;
-    private bool NodeLibraryOpen => desktopLibraryOpen || mobilePanel == "nodes";
-    private void ToggleNodeLibrary() => desktopLibraryOpen = !desktopLibraryOpen;
+    private bool NodeLibraryOpen => mobilePanel == "nodes";
     private void OpenContextLibrary(bool mobile)
     {
         if (!CanLeaveMobilePanel() || annotationDraft || addingNode) return;
         outlineOpen = false;
-        desktopLibraryOpen = !mobile;
-        mobilePanel = mobile ? "nodes" : null;
+        mobilePanel = "nodes";
     }
 
     private void OpenContextSelection(bool mobile)
     {
         if (!CanLeaveMobilePanel() || annotationDraft) return;
         outlineOpen = false;
-        desktopLibraryOpen = false;
-        mobilePanel = mobile ? "selection" : null;
+        mobilePanel = "selection";
     }
-    private void CloseNodeLibrary() { desktopLibraryOpen = false; if (mobilePanel == "nodes") mobilePanel = null; }
+    private void CloseNodeLibrary() { if (mobilePanel == "nodes") mobilePanel = null; }
     private string? ActiveMobilePanel => outlineOpen ? "outline" : mobilePanel;
     private ElementReference workspaceElement;
     private PatchManager? patchManager;
@@ -53,7 +49,6 @@ public partial class GraphWorkspace
     {
         if (!CanLeaveMobilePanel()) return;
         outlineOpen = false;
-        desktopLibraryOpen = false;
         mobilePanel = mobilePanel == panel || (panel == "edit" && mobilePanel == "selection") ? null : panel;
     }
 
@@ -61,7 +56,6 @@ public partial class GraphWorkspace
     {
         if (!CanLeaveMobilePanel()) return;
         mobilePanel = null;
-        desktopLibraryOpen = false;
         outlineOpen = !outlineOpen;
     }
 

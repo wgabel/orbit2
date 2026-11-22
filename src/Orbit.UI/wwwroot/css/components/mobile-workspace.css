@@ -1,7 +1,156 @@
 
-/* Desktop retains the original shared toolbars and controls. */
-.workspace-more-tools, .workspace-transport-tools, .canvas-view-tools { display: contents; }
-.mobile-workspace-bar, .workspace-mobile-tempo, .mobile-playback-label, .workspace-mobile-only, .mobile-sheet-heading { display: none; }
+/* One command surface: desktop top row, mobile split rows. Panels stay mounted. */
+.graph-workspace {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-rows: var(--component-workspace-mobile-toolbar-height) minmax(0, 1fr) auto;
+    gap: 0;
+    min-width: 0;
+    min-height: 0;
+}
+.workspace-header {
+    grid-area: 1 / 1;
+    min-width: 0;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+    padding-inline: var(--semantic-space-compact);
+    background: var(--semantic-color-surface);
+}
+.workspace-header h1 { font-size: var(--semantic-typography-label); }
+.canvas-breadcrumbs { flex-wrap: nowrap; min-width: 0; max-width: 100%; font-size: var(--semantic-typography-caption); }
+.canvas-breadcrumbs > * { white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.canvas-breadcrumbs > button { padding: 0; background: transparent; font-size: inherit; }
+.canvas-caption { display: contents; }
+.mobile-workspace-bar {
+    grid-area: 1 / 2;
+    display: flex;
+    align-items: stretch;
+    gap: var(--semantic-space-tight);
+    background: var(--semantic-color-surface);
+}
+.mobile-workspace-bar button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--semantic-space-tight);
+    min-width: 0;
+    padding: var(--semantic-space-tight);
+    font-size: var(--semantic-typography-caption);
+    white-space: nowrap;
+}
+.workspace-tool-icon { width: var(--component-node-library-icon-size); height: var(--component-node-library-icon-size); flex-shrink: 0; }
+.mobile-workspace-bar button[aria-expanded="true"], .workspace-mobile-tempo[aria-expanded="true"] {
+    background: var(--semantic-color-action);
+    color: var(--semantic-color-action-text);
+}
+.playback-toolbar {
+    grid-area: 1 / 3;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: var(--semantic-space-tight);
+    padding-inline: var(--semantic-space-tight);
+    border: 0;
+    background: var(--semantic-color-surface);
+}
+.playback-toolbar button { white-space: nowrap; padding: var(--semantic-space-tight); }
+.workspace-mobile-tempo, .mobile-playback-label { display: inline; }
+.mobile-playback-label { font-size: var(--semantic-typography-section); }
+.desktop-playback-label, .workspace-mobile-only { display: none; }
+.playback-toolbar .workspace-notice {
+    position: absolute;
+    width: var(--semantic-border-width);
+    height: var(--semantic-border-width);
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+.graph-canvas { grid-area: 2 / 1 / 3 / -1; min-height: 0; min-width: 0; }
+.graph-canvas .canvas-viewport { min-height: 0; }
+.performance-keyboard { grid-area: 3 / 1 / 4 / -1; }
+.workspace-edit-tools, .workspace-nodes-tools, .workspace-more-tools, .workspace-transport-tools, .canvas-view-tools { display: none; }
+.mobile-sheet-heading {
+    display: flex;
+    flex: 0 0 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--semantic-space-compact);
+    width: 100%;
+    border-block-end: var(--semantic-border-width) solid var(--semantic-color-border);
+    padding-block-end: var(--semantic-space-tight);
+}
+.workspace-selection-summary { flex-basis: 100%; }
+.workspace-edit-tools .contextual-action:disabled { display: none; }
+
+@media (min-width: 769px) and (min-height: 481px), (min-width: 769px) and (pointer: fine) {
+    .graph-workspace[data-mobile-panel="edit"] .workspace-edit-tools,
+    .graph-workspace[data-mobile-panel="nodes"] .workspace-nodes-tools,
+    .graph-workspace[data-mobile-panel="more"] .workspace-more-tools,
+    .graph-workspace[data-mobile-panel="transport"] .workspace-transport-tools,
+    .graph-workspace .patch-outline-panel,
+    .graph-workspace:is([data-mobile-panel="view"], [data-mobile-panel="selection"]) .canvas-view-tools {
+        position: absolute;
+        z-index: var(--component-workspace-overlay-layer);
+        inset-inline-start: clamp(0%, var(--workspace-panel-left, 0%), calc(100% - min(100%, var(--component-workspace-patch-panel-width))));
+        inset-inline-end: auto;
+        inset-block-start: var(--component-workspace-mobile-toolbar-height);
+        inset-block-end: auto;
+        width: min(100%, var(--component-workspace-patch-panel-width));
+        max-width: 100%;
+        max-height: calc(100% - var(--component-workspace-mobile-toolbar-height));
+        overflow: auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--semantic-space-compact);
+        padding: var(--semantic-space-normal);
+        background: var(--semantic-color-surface);
+        border: var(--semantic-border-width) solid var(--semantic-color-border);
+        border-radius: var(--semantic-radius-surface);
+    }
+    .graph-workspace .patch-outline-panel { display: grid; }
+    .graph-workspace:is([data-mobile-panel="view"], [data-mobile-panel="selection"]) .canvas-view-tools {
+        inset-block-start: 0;
+        max-height: 100%;
+        display: grid;
+        cursor: default;
+    }
+    .workspace-nodes-tools .node-library-panel, .workspace-more-tools .workspace-library-panel {
+        position: static;
+        width: 100%;
+        max-width: 100%;
+        max-height: none;
+        overflow: visible;
+        padding: 0;
+        border: 0;
+    }
+    .workspace-more-tools .audio-performance-monitor { border: 0; padding: 0; }
+    .workspace-more-tools .workspace-library-panel { flex-basis: 100%; }
+    .workspace-transport-tools .workspace-mobile-only { display: initial; }
+    .canvas-view-tools .connection-label-control, .canvas-view-tools .annotation-display-control,
+    .canvas-view-tools .canvas-scope-action, .canvas-view-tools .canvas-selection-panel, .canvas-view-tools .annotation-finder {
+        position: static;
+        width: auto;
+        min-width: 0;
+        max-width: 100%;
+        flex-wrap: wrap;
+    }
+    .graph-workspace[data-mobile-panel="view"] .canvas-selection-panel { display: none; }
+    .graph-workspace[data-mobile-panel="selection"] .canvas-view-tools > :not(.connection-label-control),
+    .graph-workspace[data-mobile-panel="selection"] .connection-label-control > :not(.canvas-selection-panel) { display: none; }
+    .graph-workspace > .rack-editor, .graph-workspace .workspace-error {
+        position: absolute;
+        z-index: var(--component-workspace-overlay-layer);
+        inset-inline: var(--semantic-space-compact);
+        inset-block-start: var(--component-workspace-mobile-toolbar-height);
+        max-height: 65%;
+        overflow: auto;
+        background: var(--semantic-color-surface);
+    }
+}
 
 /* A viewport breakpoint is a layout condition, not a reusable visual dimension. */
 @media (max-width: 768px), (max-height: 480px) and (pointer: coarse) {
@@ -46,7 +195,6 @@
     .canvas-breadcrumbs > button { padding: 0; background: transparent; font-size: inherit; }
     .canvas-breadcrumbs > button:not(:last-of-type),
     .canvas-breadcrumbs > span:not(:last-child):not(:nth-last-child(2)) { display: none; }
-    .workspace-header > .desktop-outline { display: none; }
     .canvas-caption { display: contents; }
     .playback-toolbar {
         grid-area: 1 / 2;
@@ -95,6 +243,7 @@
         background: var(--semantic-color-surface);
     }
     .mobile-workspace-bar button { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .mobile-workspace-bar button { flex-direction: column; gap: 0; }
     .mobile-workspace-bar button[aria-expanded="true"], .workspace-mobile-tempo[aria-expanded="true"] {
         background: var(--semantic-color-action);
         color: var(--semantic-color-action-text);
@@ -186,7 +335,6 @@
         flex-wrap: wrap;
     }
     .canvas-view-tools .canvas-selection-panel { flex-basis: 100%; }
-    .canvas-view-tools .desktop-selection-trigger { display: none; }
     .graph-workspace[data-mobile-panel="view"] .canvas-selection-panel { display: none; }
     .graph-workspace[data-mobile-panel="selection"] .canvas-view-tools > :not(.connection-label-control),
     .graph-workspace[data-mobile-panel="selection"] .connection-label-control > :not(.canvas-selection-panel) { display: none; }
