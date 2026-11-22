@@ -57,6 +57,8 @@ Use the [production iteration](mixing-mastering-and-analysis.md#5-agent-workflow
 3. Diagnose at the right level. For a well-mixed but monotonous track, first compare a new phrase, groove, harmonic change or larger form against the baseline. Preserve successful voices, hooks, layer interaction and transitions unless changing them serves the brief. If the issue is a hollow voice or poor balance instead, refine at that level.
 4. Revalidate routing, note timing, section phase, headroom and role balance following changes. Re-render and compare the corresponding passages (or map revised section boundaries explicitly); seek listening feedback on the revised contrast. Peak, LUFS, layer count, long loop period or spectral change alone cannot establish engaging development. Do not use a fixed minimum number of changes, distinct motifs or sections as a universal pass criterion.
 
+For a more detailed research-informed explanation of why purposeful repetition, unexpected departures, familiar returns and cultural context can matter, and how to compare versions, see [musical quality and expectation](musical-quality-and-expectation.md#6-apply-these-criteria-in-the-existing-production-iteration). This helps distinguish monotonous material from successful hypnotic repetition without prescribing a universal surprise or complexity target.
+
 For delivery, summarize the form and why major passages differ, the refinement performed, and what remains unevaluated. Scale the detail to the brief; an intentionally static work should be judged against its intent, not a pop-song template.
 
 ## 5. Listener feedback case — Pixel Kraków — Black Cartridge
