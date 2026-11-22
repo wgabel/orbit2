@@ -40,6 +40,8 @@ Offline WASM regression tests compare the impulse to its analytic damped cosine 
 
 ### Phase 7.2.5 — Modal instrument composites (in review)
 
+Implementation: [PR #37](https://github.com/wgabel/orbit2/pull/37).
+
 **Modal synthesis** models a vibrating object as several independently tuned decaying modes. Add a **Modal — …** composite from the node catalog, connect its Audio output to Master output (or a mixer), start playback, and connect Manual Trigger or Clock to Trigger. Fire Manual Trigger to strike the body; the resonators ring and decay after the internal noise excitation stops. Optional Pitch Control or Note Sequencer connected to Pitch (st) at amount 1 transposes all modes together, without changing their decay. There is no sound without a strike or external excitation.
 
 | Preset | Base frequency | Mode ratios | T60 in seconds |

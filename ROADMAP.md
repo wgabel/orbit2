@@ -21,7 +21,7 @@
 | Shared semitone tracking and Pitch Control | Implemented · 7.2.2 | [Pitch control](docs/instruments/pitch-control.md); [PR #6](https://github.com/wgabel/orbit2/pull/6) |
 | Five sustained instrument composites | Implemented · 7.2.1 | [Instrument recipes](docs/examples/instrument-recipes.md); [PR #31](https://github.com/wgabel/orbit2/pull/31) |
 | Single damped-mode Resonator | Implemented · 7.2.4 | [Physical modelling](docs/instruments/physical-modelling.md); [PR #34](https://github.com/wgabel/orbit2/pull/34) |
-| Four editable modal instrument composites | In review · 7.2.5 first stage | [Physical modelling](docs/instruments/physical-modelling.md#phase-725--modal-instrument-composites-in-review) |
+| Four editable modal instrument composites | In review · 7.2.5 first stage | [Physical modelling](docs/instruments/physical-modelling.md#phase-725--modal-instrument-composites-in-review); [PR #37](https://github.com/wgabel/orbit2/pull/37) |
 | AD envelope and typed Trigger/Gate/Clock ports/adapters | Implemented · 7.1.1–7.1.2 | [Envelopes](docs/audio/envelopes.md); [PR #7](https://github.com/wgabel/orbit2/pull/7), [#8](https://github.com/wgabel/orbit2/pull/8) |
 | Manual Trigger, timed Gate and Clock sources | Implemented · 7.1.3 | [Envelopes](docs/audio/envelopes.md); [PR #10](https://github.com/wgabel/orbit2/pull/10) |
 | AR/ADSR/Loop envelope modes | Implemented · 7.1.4 | [Envelopes](docs/audio/envelopes.md); [PR #12](https://github.com/wgabel/orbit2/pull/12) |
@@ -50,7 +50,7 @@ Keep identifiers stable even when independent milestones ship out of numerical o
 | Patch organization | 6.19.1 note cards ([PR #27](https://github.com/wgabel/orbit2/pull/27)); 6.19.2 descriptions ([PR #28](https://github.com/wgabel/orbit2/pull/28)); 6.19.3 visual groups ([PR #30](https://github.com/wgabel/orbit2/pull/30)); 6.19.5 core; 6.19.6 boundary visibility | Review 6.19.4 overview/discovery ([PR #32](https://github.com/wgabel/orbit2/pull/32)); 6.19.7 annotation visibility/zoom detail, 6.19.8 patch outline; optional badge refinements |
 | Rhythmic articulation | 7.1.1–7.1.5 | 7.1.6–7.1.7 |
 | Keyboard and sequencing | 7.2.2 shared pitch; 7.2.8a–c live pitch, loops and recording ([PR #19](https://github.com/wgabel/orbit2/pull/19)) | 7.2.3 and 7.2.8d for event/gated articulation |
-| Instruments | 7.2.1 five sustained instrument templates ([PR #31](https://github.com/wgabel/orbit2/pull/31)); 7.2.4 resonator ([PR #34](https://github.com/wgabel/orbit2/pull/34)); 7.2.5 four modal composites in review | 7.2.3 note source, 7.2.5 optional compact bank/response, 7.2.6 playable templates/polyphony, 7.2.7 physical models |
+| Instruments | 7.2.1 five sustained instrument templates ([PR #31](https://github.com/wgabel/orbit2/pull/31)); 7.2.4 resonator ([PR #34](https://github.com/wgabel/orbit2/pull/34)); 7.2.5 four modal composites in review ([PR #37](https://github.com/wgabel/orbit2/pull/37)) | 7.2.3 note source, 7.2.5 optional compact bank/response, 7.2.6 playable templates/polyphony, 7.2.7 physical models |
 | Standalone audio transposition | Design only | 6.20.1–6.20.2; independent of keyboard tracking |
 | Performance and diagnostics | Existing clock, playback lifecycle and signal observation foundations | 7.3.1–7.3.4 passive monitor, compilation/UI metrics and profiling; 7.3.5 musical timing; 7.3.6 reports and regressions ([specification](performance.md)) |
 | Audio assets | Design only | Phase 8 |
