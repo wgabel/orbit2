@@ -16,7 +16,8 @@
 | Mute/bypass and individual presets | Implemented · 6.16–6.17 | [Audition](docs/editor/audition.md), [presets](docs/editor/node-presets.md) |
 | Scope, spectrum, level and filter/EQ response | Implemented · 6.18.1–6.18.5; dedicated analyzer and advanced history planned | [Visualizations](docs/editor/visualizations.md), [observation](docs/audio/signal-observation.md); [PR #4](https://github.com/wgabel/orbit2/pull/4) |
 | Demand-driven signal tap allocation | In review · 6.18.8 | [Observation](docs/audio/signal-observation.md); [PR #15](https://github.com/wgabel/orbit2/pull/15) (design), [PR #20](https://github.com/wgabel/orbit2/pull/20) (implementation) |
-| Cable badges, per-canvas preferences, anchored editing | Implemented core · 6.19.5; annotations and optional refinements planned | [Annotations and connections](docs/editor/annotations-and-connections.md); [PR #1](https://github.com/wgabel/orbit2/pull/1), [#2](https://github.com/wgabel/orbit2/pull/2), [#3](https://github.com/wgabel/orbit2/pull/3) |
+| Cable badges, per-canvas preferences, anchored editing | Implemented core · 6.19.5; optional refinements planned | [Connection visualization](docs/editor/annotations-and-connections.md); [PR #1](https://github.com/wgabel/orbit2/pull/1), [#2](https://github.com/wgabel/orbit2/pull/2), [#3](https://github.com/wgabel/orbit2/pull/3) |
+| Patch documentation: notes, aliases, cable descriptions, visual groups, overview, annotation visibility and outline | Planned · 6.19.1–6.19.4, 6.19.7–6.19.8 | [Patch annotations](docs/editor/patch-annotations.md) |
 | Shared semitone tracking and Pitch Control | Implemented · 7.2.2 | [Pitch control](docs/instruments/pitch-control.md); [PR #6](https://github.com/wgabel/orbit2/pull/6) |
 | AD envelope and typed Trigger/Gate/Clock ports/adapters | Implemented · 7.1.1–7.1.2 | [Envelopes](docs/audio/envelopes.md); [PR #7](https://github.com/wgabel/orbit2/pull/7), [#8](https://github.com/wgabel/orbit2/pull/8) |
 | Manual Trigger, timed Gate and Clock sources | Implemented · 7.1.3 | [Envelopes](docs/audio/envelopes.md); [PR #10](https://github.com/wgabel/orbit2/pull/10) |
@@ -41,7 +42,7 @@ Keep identifiers stable even when independent milestones ship out of numerical o
 |---|---|---|
 | Foundation and editor | 1–5; 6.1–6.17 | Deferred version-aware reload / additional graph reuse |
 | Visualization | 6.18.1–6.18.5 | 6.18.8 dynamic signal taps in review ([PR #20](https://github.com/wgabel/orbit2/pull/20)); then 6.18.6 analyzer sink, 6.18.7 advanced comparisons and profiling |
-| Patch organization | 6.19.5 core; 6.19.6 boundary visibility | 6.19.1–6.19.4 notes, descriptions, groups, discovery; optional badge refinements |
+| Patch organization | 6.19.5 core; 6.19.6 boundary visibility | 6.19.1–6.19.4 notes, descriptions, groups, discovery; 6.19.7 annotation visibility/zoom detail, 6.19.8 patch outline; optional badge refinements |
 | Rhythmic articulation | 7.1.1–7.1.5 | 7.1.6–7.1.7 |
 | Keyboard and sequencing | 7.2.2 shared pitch; 7.2.8a–c live pitch, loops and recording ([PR #19](https://github.com/wgabel/orbit2/pull/19)) | 7.2.3 and 7.2.8d for event/gated articulation |
 | Instruments | Existing oscillator/effect capabilities and AD impact preset | 7.2.1 recipes/templates, 7.2.4 resonator, 7.2.5 modal synthesis, 7.2.6 polyphony, 7.2.7 physical models |

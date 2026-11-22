@@ -50,6 +50,8 @@ flowchart TD
 
 Make changes at the correct level: oscillator/envelope/filter edits change the voice; root mixer levels and the entrance/exit of voices change the arrangement. A flat graph also works for experimentation. Composite boundaries are organizational and do not create independent transports.
 
+As the [patch annotation features](../editor/patch-annotations.md) become available, use a patch overview for musical intent and these kinds of performance instructions, named groups/aliases for voice roles, and a few note cards to explain non-obvious tuning or modulation. Keep technical identifiers valid and do not export hypothetical annotation fields before the schema supports them.
+
 ## 3. Worked piece: The Sleeping Mountains
 
 An original, slowly evolving ambient sketch for a roughly one-hour performance using only synthesis. The recipe uses nodes available on main at the time of writing (through [PR #21](https://github.com/wgabel/orbit2/pull/21)). It is a construction guide, not an exported patch or an assertion of a listening-tested preset. Parameters are starting values; audition each layer and adjust by ear.

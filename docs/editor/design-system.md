@@ -8,6 +8,8 @@ Related: [canvas](canvas.md) · [parameters and modulation](../core/parameters-a
 
 Every root canvas and nested canvas uses the same editor and viewport behavior. A canvas is a view over a signal graph, not a separate audio engine.
 
+Planned non-signal note cards, group frames, authored labels and responsive visibility follow the same semantic theme tokens and geometry; see [patch annotations](patch-annotations.md) for their distinct interaction contract.
+
 - Pan freely along both axes using a background drag (middle mouse or space + drag also works over nodes). Panning must not move graph nodes.
 - Zoom with the wheel or toolbar controls, anchored at the pointer when zooming on the canvas. Show the current percentage at all times, with zoom in/out, reset to 100%, and fit-to-content controls. Use a configurable bounded zoom range (initially 25–400%).
 - Keep the top controls compact: one workspace toolbar composes zoom, node catalog and root-owned playback/transport. The workspace delegates viewport actions to its active canvas reference while retaining the keyed canvas lifecycle. The canvas expands to fill remaining viewport height; counts and gesture hints sit in fixed, non-interactive viewport overlays outside the transformed graph world.

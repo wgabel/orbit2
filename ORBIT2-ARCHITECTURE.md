@@ -59,6 +59,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 | Keyboard, sequencing and instruments | [Note Sequencer](docs/instruments/note-sequencer.md), [pitch control](docs/instruments/pitch-control.md), [envelopes](docs/audio/envelopes.md), [transport](docs/audio/transport-and-timing.md) |
 | Generative music, ambient patches and whole-piece arrangement | [Generative ambient composition](docs/examples/generative-ambient-composition.md); for individual sounds also see [instrument recipes](docs/examples/instrument-recipes.md) and [effects](docs/audio/effects.md) |
 | Save/load, undo/redo, presets | [Persistence](docs/editor/persistence-and-history.md), [commands](docs/core/commands-and-events.md), [node presets](docs/editor/node-presets.md) |
+| Notes, aliases, visual groups, patch overview, documentation visibility or outline | [Patch annotations](docs/editor/patch-annotations.md), [canvas](docs/editor/canvas.md), [persistence](docs/editor/persistence-and-history.md) |
 | Roadmap or feature priority | [Roadmap](ROADMAP.md); open only the relevant milestone register if needed |
 
 <a id="contents"></a>
@@ -95,7 +96,8 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 - [node presets](docs/editor/node-presets.md)
 - <a id="workspace-persistence-and-history-phases-68611"></a>[persistence and history](docs/editor/persistence-and-history.md)
 - <a id="node-mute-and-processor-bypass-phase-616"></a>[audition](docs/editor/audition.md)
-- <a id="connection-amount-badges-and-inline-editing-planned-phase-6195"></a><a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>[annotations and connections](docs/editor/annotations-and-connections.md)
+- <a id="connection-amount-badges-and-inline-editing-planned-phase-6195"></a>[connection visualization](docs/editor/annotations-and-connections.md)
+- <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>[patch annotations](docs/editor/patch-annotations.md) — note cards, descriptions, visual groups, patch metadata, visibility and nested outline (planned Phase 6.19)
 
 **Instruments and examples**
 

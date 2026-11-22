@@ -663,7 +663,7 @@ Eligible nodes now have **Show plot** at the bottom of the shared node frame. Op
 
 ### Patch documentation and canvas annotations (planned Phase 6.19)
 
-Add **Note** to place a titled, editable, resizable and collapsible text card in the current root or nested canvas. Notes use named theme accents and are saved and exported with their owning layout. They have no signal ports or DSP and can be edited while playing without changing the audible patch. Subsequent steps add node aliases and attached descriptions, wire labels, named visual groups (not composites), and a patch overview with instructions and searchable tags. These features are planned, not yet available in the application. See the [architecture and phased plan](docs/editor/annotations-and-connections.md#patch-documentation-and-canvas-annotations-planned-phase-619).
+Add **Note** to place a titled, editable, resizable and collapsible text card in the current root or nested canvas. Notes use named theme accents and are saved and exported with their owning layout. They have no signal ports or DSP and can be edited while playing without changing the audible patch. Subsequent steps add node aliases and attached descriptions, wire labels, named visual groups (not composites), a patch overview with instructions and searchable tags, a clean annotation visibility mode with zoom-dependent detail, and a searchable patch outline for large nested canvases. These features are planned, not yet available in the application. See the [architecture and phased plan](docs/editor/patch-annotations.md).
 
 ### Envelopes and rhythmic triggering (planned Phase 7.1)
 
