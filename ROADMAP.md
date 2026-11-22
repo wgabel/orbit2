@@ -86,5 +86,5 @@ The most direct drone-performance path is 7.2.2 and 7.2.8a–b (delivered) → 7
 - [Phases 1–6.15: foundations, timing, sound generation, workspace and effects](docs/roadmap/foundation.md)
 - [Phases 6.16–6.21: audition, presets, plots, organization, pitch shifting and canvas-first editor](docs/roadmap/editor-and-effects.md)
   - Phase 6.21.4: [assisted touch cable dragging](docs/editor/canvas.md#assisted-touch-cable-dragging) implemented ([PR #65](https://github.com/wgabel/orbit2/pull/65)); [gesture-only navigation](docs/editor/canvas.md#gesture-only-canvas-navigation) implemented ([PR #69](https://github.com/wgabel/orbit2/pull/69)); remaining touch gestures planned. Fullscreen deferred. The Pages deployment ordering guard is implemented ([PR #67](https://github.com/wgabel/orbit2/pull/67)).
-  - Phase 6.21.4: snap-highlight geometry correction in review ([PR #74](https://github.com/wgabel/orbit2/pull/74)); [canvas contract](docs/editor/canvas.md#assisted-touch-cable-dragging).
+  - Phase 6.21.4: snap-highlight geometry correction and desktop snapping in review ([PR #74](https://github.com/wgabel/orbit2/pull/74)); [canvas contract](docs/editor/canvas.md#assisted-touch-cable-dragging).
 - [Phases 7–8: envelopes, musical control, instruments, performance, reusable modules, stereo/unison, instrument audition and samples](docs/roadmap/advanced.md)

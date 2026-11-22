@@ -369,7 +369,8 @@ public partial class GraphCanvas : IAsyncDisposable
         ClearTouchWire();
         pendingSource = start.Address;
         draftEnd = PortPoint(start.Address);
-        assistedWire = start.Pointer.PointerType == "touch";
+        assistedWire = start.Pointer.PointerType is "touch" or "mouse" or "pen";
+        offsetWireForTouch = start.Pointer.PointerType == "touch";
         touchWireStart = new CanvasPoint(start.Pointer.ClientX, start.Pointer.ClientY);
         touchWireRevision = Snapshot.GraphRevision;
         touchWireLayoutRevision = Snapshot.LayoutRevision;
@@ -414,7 +415,7 @@ public partial class GraphCanvas : IAsyncDisposable
         {
             if (assistedWire)
             {
-                if (UpdateTouchWire(current) && module is not null)
+                if (UpdateTouchWire(current) && offsetWireForTouch && module is not null)
                     await module.InvokeVoidAsync("touchWireFeedback");
             }
             else
@@ -451,10 +452,23 @@ public partial class GraphCanvas : IAsyncDisposable
             // Layout may have changed since the last observer notification.
             if (!await RefreshTouchWireForReleaseAsync(new CanvasPoint(args.ClientX, args.ClientY))) return;
             var snappedTarget = TouchWireStale ? null : wireAim?.Target;
+            // A precise mouse/pen drop on the wider input button remains valid
+            // even when its marker is farther than the magnetic radius.
+            PortAddress? directTarget = null;
+            if (snappedTarget is null && touchWireMoved && !offsetWireForTouch && module is not null)
+            {
+                var generation = touchWireGeneration;
+                var hit = await module.InvokeAsync<PortAddress?>("findInputPortAt", viewportElement, args.ClientX, args.ClientY);
+                if (!IsCurrentTouchWire(generation)) return;
+                if (hit is PortAddress address && wireTargetAddresses?.Contains(address) == true)
+                    directTarget = address;
+            }
             var moved = touchWireMoved;
             EndGesture();
             if (snappedTarget is not null)
                 await ActivatePortAsync(snappedTarget.Address);
+            else if (directTarget is PortAddress direct)
+                await ActivatePortAsync(direct);
             else if (moved)
                 pendingSource = null;
             return;

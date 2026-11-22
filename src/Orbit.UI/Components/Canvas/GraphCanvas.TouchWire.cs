@@ -9,6 +9,7 @@ namespace Orbit.UI.Components.Canvas;
 public partial class GraphCanvas
 {
     private bool assistedWire;
+    private bool offsetWireForTouch;
     private bool touchWireMoved;
     private CanvasPoint touchWireStart;
     private TouchWireGeometry? touchWireGeometry;
@@ -113,7 +114,7 @@ public partial class GraphCanvas
         var previousAddress = wireAim?.Target?.Address;
         // The same address may have moved since the previous measurement.
         var previous = wireTargets.FirstOrDefault(target => target.Address == previousAddress);
-        wireAim = TouchWireAssist.Resolve(finger, geometry.Visible, wireTargets, previous);
+        wireAim = TouchWireAssist.Resolve(finger, geometry.Visible, wireTargets, previous, offsetWireForTouch);
         var point = wireAim.Point.Subtract(new CanvasPoint(geometry.Left, geometry.Top));
         draftEnd = Snapshot.Viewport.ScreenToWorld(point);
         return wireAim.Target is not null && wireAim.Target.Address != previousAddress;
@@ -138,7 +139,7 @@ public partial class GraphCanvas
     {
         touchWireGeneration++;
         touchWireReleasePending = false;
-        assistedWire = touchWireMoved = false;
+        assistedWire = touchWireMoved = offsetWireForTouch = false;
         wireAim = null;
         wireTargets = [];
         wireCompatibility.Clear();

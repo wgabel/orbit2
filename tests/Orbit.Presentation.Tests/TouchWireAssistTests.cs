@@ -39,6 +39,19 @@ public sealed class TouchWireAssistTests
     }
 
     [Fact]
+    public void MouseAndPenAimDirectlyWithTheSameScreenPixelSnapAndReleaseRadii()
+    {
+        var target = Target(200, 200);
+        Assert.Equal(target, TouchWireAssist.Resolve(new CanvasPoint(223, 200), Bounds, [target], null, offsetForTouch: false).Target);
+        var free = TouchWireAssist.Resolve(new CanvasPoint(225, 200), Bounds, [target], null, offsetForTouch: false);
+        Assert.Null(free.Target);
+        Assert.Equal(new CanvasPoint(225, 200), free.Point);
+        Assert.Equal(target, TouchWireAssist.Resolve(new CanvasPoint(230, 200), Bounds, [target], target, offsetForTouch: false).Target);
+        Assert.Null(TouchWireAssist.Resolve(new CanvasPoint(237, 200), Bounds, [target], target, offsetForTouch: false).Target);
+        Assert.Null(TouchWireAssist.Resolve(new CanvasPoint(200, 260), Bounds, [target], null, offsetForTouch: false).Target);
+    }
+
+    [Fact]
     public void ReachesBottomEdgeAndDisallowsReleaseOutsideCanvas()
     {
         var target = Target(200, 580);
