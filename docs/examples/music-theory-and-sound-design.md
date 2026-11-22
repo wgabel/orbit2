@@ -1,5 +1,7 @@
 # Music theory, psychoacoustics and electronic sound design
 
+For applying these principles to a particular style, see the [electronic music genre reference](electronic-music-genres.md) and its linked [Orbit 2 techniques](genres/orbit-techniques.md).
+
 [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Generative ambient composition](generative-ambient-composition.md) · [Instrument recipes](instrument-recipes.md) · [Roadmap](../../ROADMAP.md)
 
 **Purpose:** A practical musical reference for people and agents creating Orbit 2 patches, instruments, effects and complete pieces. It explains why particular choices may work, how to implement them with the available nodes, and how to evaluate the result. This is not a rulebook for what music must sound like or an implementation specification for new DSP features. All numerical recipes are starting points, not claims of measured or listening-tested sound quality.

@@ -60,6 +60,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 | Keyboard, sequencing and instruments | [Note Sequencer](docs/instruments/note-sequencer.md), [pitch control](docs/instruments/pitch-control.md), [envelopes](docs/audio/envelopes.md), [transport](docs/audio/transport-and-timing.md) |
 | Generative music, ambient patches and whole-piece arrangement | [Generative ambient composition](docs/examples/generative-ambient-composition.md); for individual sounds also see [instrument recipes](docs/examples/instrument-recipes.md) and [effects](docs/audio/effects.md) |
 | Harmony, tuning, timbre, musical quality, perceived loudness and spatial depth | [Music theory and sound design](docs/examples/music-theory-and-sound-design.md); use with the relevant instrument/effect or composition guide |
+| Genre-specific music, electronic style, rhythm, sound palette and construction | [Electronic music genres](docs/examples/electronic-music-genres.md) routes to focused ambient, bass/breaks, dance and experimental families; [musical techniques](docs/examples/genres/orbit-techniques.md) connects style to current nodes |
 | Save/load, undo/redo, presets | [Persistence](docs/editor/persistence-and-history.md), [commands](docs/core/commands-and-events.md), [node presets](docs/editor/node-presets.md) |
 | Notes, aliases, visual groups, patch overview, documentation visibility or outline | [Patch annotations](docs/editor/patch-annotations.md), [canvas](docs/editor/canvas.md), [persistence](docs/editor/persistence-and-history.md) |
 | Roadmap or feature priority | [Roadmap](ROADMAP.md); open only the relevant milestone register if needed |
@@ -113,6 +114,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 - <a id="12-worked-patch-example"></a>[drone](docs/examples/drone.md)
 - [generative ambient composition](docs/examples/generative-ambient-composition.md) — musical layers, long-form arrangement and a worked multi-voice patch
 - [music theory and electronic sound design](docs/examples/music-theory-and-sound-design.md) — interval/scale/chord recipes, voice leading, articulation, psychoacoustics, mix/depth and quality checks
+- [electronic music genres](docs/examples/electronic-music-genres.md) — modular genre vocabulary, composition approaches and reusable Orbit 2 techniques
 
 **Quality and delivery**
 
