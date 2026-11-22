@@ -899,6 +899,8 @@ Open https://wgabel.github.io/orbit2/ after deployment. A successful build is no
 
 ### Browser release identity and cache invalidation
 
+Implementation in review ([PR #72](https://github.com/wgabel/orbit2/pull/72)).
+
 Every CI publish embeds the full Git commit and GitHub Actions workflow run number into the editor assembly, and stamps the same identity into the published HTML and `build-manifest.json`. The editor title shows a compact `b123` build number (the complete commit is in its tooltip/accessibility label). Build numbers increase with new workflow runs and can have gaps; they are deployment identities, not patch schema versions. Local development shows `dev`. The number is read from running C# code, not from the latest manifest.
 
 The publisher copies the complete CSS and editor JavaScript trees to `css-<commit>/` and `js-<commit>/`; relative stylesheet imports and sibling modules stay within those trees. The compiled editor resolves every interop module from its own commit, like the existing audio and persistence module trees. The .NET runtime retains its built-in fingerprinting. Before starting Blazor, the release HTML checks the manifest via an uncached request with a bounded timeout. If it discovers a different deployed commit, it requests the entry page with a fresh version-specific URL, preserving its existing query/hash; if the new entry is not yet available, it shows a reload message instead of looping. If the manifest is unreachable, startup proceeds normally. No background forced reload, audio interruption, IndexedDB clearing or schema change. Existing tabs continue on their current revision until reopened/reloaded; pre-feature cached entry documents cannot retroactively perform this check.
