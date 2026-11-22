@@ -1574,6 +1574,13 @@ try {
     await instrumentOutline.getByRole("button", { name: "Locate node: Output Rack", exact: true }).press("Enter");
     await instrumentOutline.waitFor({ state: "detached" });
     await instrumentPage.locator(".node-selected").filter({ hasText: "Output Rack" }).waitFor();
+    await instrumentPage.waitForFunction(() => {
+        const rack = document.querySelector(".node-selected");
+        const viewport = document.querySelector(".canvas-viewport");
+        if (!rack || !viewport) return false;
+        const rect = rack.getBoundingClientRect(), canvas = viewport.getBoundingClientRect();
+        return rect.left >= canvas.left && rect.right <= canvas.right && rect.top >= canvas.top && rect.bottom <= canvas.bottom;
+    });
     await instrumentPage.getByRole("button", { name: "Output: Pitch (st) (Modulation)" }).waitFor();
     assert.equal(await instrumentPage.getByRole("combobox", { name: "Pitch tracking (free)" }).count(), 3);
     await instrumentPage.close();
@@ -1586,6 +1593,15 @@ try {
     await annotationPage.locator("#node-type").selectOption("canvas.note");
     await annotationPage.getByRole("button", { name: "Add", exact: true }).click();
     await annotationPage.locator(".note-card").waitFor();
+    await annotationPage.locator(".note-card").getByRole("button", { name: "Edit", exact: true }).click();
+    const outlineDraft = annotationPage.getByRole("region", { name: "Edit canvas note" });
+    await outlineDraft.waitFor();
+    await annotationPage.getByRole("button", { name: "Outline", exact: true }).click();
+    const draftOutline = annotationPage.getByRole("region", { name: "Patch outline" });
+    await draftOutline.getByLabel("Filter outline").selectOption("Note");
+    assert.equal(await draftOutline.getByRole("button", { name: "Locate note: Note", exact: true }).isDisabled(), true);
+    await draftOutline.getByRole("button", { name: "Close outline", exact: true }).click();
+    await outlineDraft.getByRole("button", { name: "Cancel", exact: true }).click();
     await annotationPage.getByRole("button", { name: "Create visual group", exact: true }).click();
     await annotationPage.locator(".visual-group").waitFor();
     const annotationMode = annotationViewport.getByLabel("Annotations", { exact: true });
