@@ -2,6 +2,8 @@
 
 [Music creation index](README.md) · [Sound quality and voice design](sound-quality-and-voice-design.md) · [Instrument examples](instrument-recipes.md) · [Orbit 2 musical techniques](genres/orbit-techniques.md) · [Foundation catalogue](foundations/README.md)
 
+Documentation provenance: [PR #50](https://github.com/wgabel/orbit2/pull/50) (documentation only).
+
 This is the user-supplied collection of classic synthesizer recipes. Consult it when planning the sound palette for new music and when designing or refining individual voices. The recipes are cross-synthesizer design references, not a claim that the original named instruments have been recreated, that these exact settings have been tested in Orbit 2, or that every feature mentioned is implemented. The full original text is preserved below, including its terminology and suggested settings.
 
 ## Recipe selection
