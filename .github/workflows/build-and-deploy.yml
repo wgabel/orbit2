@@ -62,6 +62,16 @@ jobs:
           dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj --configuration Release -- "$ORBIT_GRAPH_PROBE_DIR"
           npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts "$ORBIT_GRAPH_PROBE_DIR/program.dsp" "$ORBIT_GRAPH_PROBE_DIR/compiled"
           node --test tests/compiler/*.test.mjs
+      # Timings are informational; deterministic output and graph contracts are the gates.
+      - name: Benchmark offline DSP baseline
+        timeout-minutes: 5
+        env:
+          ORBIT_FAUST_DIR: ${{ runner.temp }}/orbit-faust/node_modules/@grame/faustwasm
+          ORBIT_BENCH_SECONDS: '1'
+        run: |
+          node --test tests/benchmarks/*.test.mjs
+          dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj --configuration Release -- --benchmark "$RUNNER_TEMP/orbit-benchmark"
+          node scripts/benchmark-dsp.mjs "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/offline-report.json"
       # Check the bundled worker and actual browser AudioWorklet together.
       - name: Browser graph playback smoke test
         timeout-minutes: 5
@@ -117,6 +127,20 @@ jobs:
         run: |
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
           node tests/browser/PublishedPlaybackSmoke.mjs
+      - name: Benchmark published editor (external renderer)
+        timeout-minutes: 5
+        env:
+          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
+          ORBIT_BENCH_LIVE_SECONDS: '5'
+        run: |
+          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
+          node scripts/benchmark-live.mjs "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/live-report.json"
+      - name: Upload DSP benchmark baseline
+        uses: actions/upload-artifact@v4
+        with:
+          name: orbit-dsp-benchmark-${{ github.sha }}
+          path: ${{ runner.temp }}/orbit-benchmark/
+          retention-days: 30
       # The browser entry document must resolve runtime files under /orbit2/.
       - name: Set GitHub Pages base path
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'

@@ -1,0 +1,156 @@
+// Opt-in external Chromium measurement of the published Orbit app. No production profiling hooks.
+import assert from "node:assert/strict";
+import { createServer } from "node:http";
+import { readFile, writeFile } from "node:fs/promises";
+import { extname, join, resolve, sep } from "node:path";
+import { pathToFileURL } from "node:url";
+import { setTimeout as delay } from "node:timers/promises";
+import { platform, release, arch, cpus } from "node:os";
+import { summarize } from "./benchmark-metrics.mjs";
+
+const [directory, outputFile, ...requested] = process.argv.slice(2);
+assert.ok(directory && outputFile && process.env.ORBIT_PLAYWRIGHT_DIR && process.env.ORBIT_CHROME,
+    "Usage: ORBIT_PLAYWRIGHT_DIR=... ORBIT_CHROME=... node scripts/benchmark-live.mjs <fixtures> <report.json> [profile IDs]");
+const seconds = Number(process.env.ORBIT_BENCH_LIVE_SECONDS ?? 10);
+assert.ok(Number.isInteger(seconds) && seconds >= 5 && seconds <= 120);
+const fixture = JSON.parse(await readFile(join(directory, "fixtures.json"), "utf8"));
+assert.equal(fixture.fixtureVersion, 1);
+const ids = requested.length ? requested : ["sine-bank-1", "sine-bank-10"];
+assert.ok(ids.length <= 8 && new Set(ids).size === ids.length);
+const profiles = ids.map(id => {
+    const profile = fixture.fixtures.find(f => f.id === id && !f.pairedMono);
+    assert.ok(profile, "Unknown/auxiliary-only profile: " + id);
+    return profile;
+});
+const { chromium } = await import(pathToFileURL(resolve(process.env.ORBIT_PLAYWRIGHT_DIR, "index.mjs")));
+const root = resolve(process.env.ORBIT_BENCH_PUBLISH_DIR ?? "publish/wwwroot");
+const types = { ".js": "text/javascript", ".mjs": "text/javascript", ".html": "text/html", ".css": "text/css", ".json": "application/json", ".wasm": "application/wasm", ".svg": "image/svg+xml" };
+const server = createServer(async (request, response) => {
+    try {
+        const path = new URL(request.url, "http://localhost").pathname;
+        const file = resolve(root, "." + (path === "/" ? "/index.html" : path));
+        if (!file.startsWith(root + sep)) throw new Error("Outside published assets");
+        const bytes = await readFile(file);
+        response.writeHead(200, { "Content-Type": types[extname(file)] ?? "application/octet-stream" });
+        response.end(bytes);
+    } catch { response.writeHead(404); response.end(); }
+});
+await new Promise(done => server.listen(0, "127.0.0.1", done));
+let browser;
+try {
+    const headless = process.env.ORBIT_BENCH_HEADFUL !== "1";
+    browser = await chromium.launch({ executablePath: process.env.ORBIT_CHROME, headless, args: ["--mute-audio"] });
+    const rows = [];
+    for (const profile of profiles) {
+        const context = await browser.newContext();
+        try {
+            const page = await context.newPage();
+            const cdp = await context.newCDPSession(page);
+            const realtime = new Map();
+            let cdpError = null;
+            const remember = ({ context }) => {
+                if (context.contextType === "realtime") realtime.set(context.contextId, context);
+            };
+            cdp.on("WebAudio.contextCreated", remember);
+            cdp.on("WebAudio.contextChanged", remember);
+            cdp.on("WebAudio.contextWillBeDestroyed", ({ contextId }) => realtime.delete(contextId));
+            try { await cdp.send("WebAudio.enable"); }
+            catch (error) { cdpError = String(error); }
+            await page.goto("http://127.0.0.1:" + server.address().port);
+            const status = page.locator(".playback-toolbar").getByRole("status");
+            const play = page.getByRole("button", { name: "Play patch" });
+            await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
+            await page.getByRole("button", { name: "Patches", exact: true }).click();
+            const manager = page.getByRole("region", { name: "Patch manager" });
+            await manager.getByLabel("Import JSON").setInputFiles(resolve(directory, profile.patch));
+            await manager.getByText("Imported patch.", { exact: true }).waitFor();
+            await manager.getByRole("button", { name: "Close" }).click();
+            await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
+            const toggle = page.getByRole("button", { name: /^Performance ·/ });
+            const panel = page.getByRole("region", { name: "Audio performance diagnostics" });
+            async function monitor(state, voices, expectedRevision = null) {
+                await toggle.click();
+                await panel.locator("[data-performance-session]").filter({ hasText: new RegExp("^" + state + "$") }).waitFor({ timeout: 10000 });
+                if (voices) await panel.locator("[data-performance-worklets]").filter({ hasText: voices }).waitFor({ timeout: 10000 });
+                if (expectedRevision !== null) await page.waitForFunction(revision =>
+                    [...document.querySelectorAll("#audio-performance-details dt")].some(dt =>
+                        dt.textContent === "Requested / applied revision" &&
+                        dt.nextElementSibling.textContent.trim() === revision + " / " + revision), expectedRevision);
+                const result = await panel.locator("dl").evaluateAll(lists => Object.fromEntries(
+                    lists.flatMap(list => [...list.querySelectorAll("dt")].map(dt => [dt.textContent, dt.nextElementSibling.textContent]))));
+                await panel.getByRole("button", { name: "Close" }).click();
+                return result;
+            }
+            const before = performance.now();
+            await play.click();
+            await status.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 60000 });
+            const initialPlayWallMs = performance.now() - before;
+            let revision = Number((await status.innerText()).match(/\d+$/)[0]);
+            const initial = await monitor("active", "1 / 0", revision);
+            assert.equal(initial["Faust source builds"], "1");
+            await delay(1000);
+            const observations = [];
+            const samplingStart = performance.now();
+            for (let i = 0; i < seconds; i++) {
+                await delay(1000);
+                if (cdpError) continue;
+                const audio = [...realtime.values()].find(c => c.contextState === "running");
+                if (!audio) continue;
+                try {
+                    const { realtimeData: data } = await cdp.send("WebAudio.getRealtimeData", { contextId: audio.contextId });
+                    if (Number.isFinite(data.currentTime) && Number.isFinite(data.renderCapacity) && data.renderCapacity >= 0)
+                        observations.push({ elapsedMs: performance.now() - samplingStart,
+                            contextTimeSeconds: data.currentTime, renderCapacityPercent: data.renderCapacity });
+                } catch (error) { cdpError = String(error); }
+            }
+            const audio = [...realtime.values()].find(c => c.contextState === "running");
+            const measured = observations.length >= 2 && observations.at(-1).contextTimeSeconds > observations[0].contextTimeSeconds;
+            const steady = await monitor("active", "1 / 0");
+            let edits = null;
+            if (profile.id === "sine-bank-1") {
+                const frequency = page.getByRole("spinbutton", { name: "Frequency (Hz)" });
+                const waveform = page.getByLabel("Waveform", { exact: true });
+                let started = performance.now();
+                await frequency.fill("220");
+                await status.filter({ hasText: new RegExp(`^Playing revision ${++revision}$`) }).waitFor({ timeout: 15000 });
+                const liveControlWallMs = performance.now() - started;
+                const control = await monitor("active", "1 / 0", revision);
+                assert.equal(control["Faust source builds"], "1");
+                started = performance.now();
+                await waveform.selectOption("2");
+                await status.filter({ hasText: new RegExp(`^Playing revision ${++revision}$`) }).waitFor({ timeout: 30000 });
+                const replacementWallMs = performance.now() - started;
+                const replacement = await monitor("active", "1 / 0", revision);
+                assert.equal(replacement["Faust source builds"], "2");
+                assert.equal(replacement["Accepted replacements"], "1");
+                edits = { liveControlWallMs, replacementWallMs, control, replacement };
+            }
+            await page.getByRole("button", { name: "Stop", exact: true }).click();
+            await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
+            const stopped = await monitor("(stopped|idle)", "0 / 0");
+            const secondPlayStart = performance.now();
+            await play.click();
+            await status.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 60000 });
+            const replayWallMs = performance.now() - secondPlayStart;
+            await page.getByRole("button", { name: "Stop", exact: true }).click();
+            await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
+            await monitor("(stopped|idle)", "0 / 0");
+            rows.push({ id: profile.id, initialPlayWallMs, replayWallMs,
+                sampleRateHz: audio?.sampleRate ?? null, callbackBufferFrames: audio?.callbackBufferSize ?? null,
+                renderQuantumFrames: audio?.renderQuantumSize ?? null, maxOutputChannels: audio?.maxOutputChannelCount ?? null,
+                renderCapacityPercent: measured ? summarize(observations.map(o => o.renderCapacityPercent)) : null,
+                observations, availability: measured ? "observed" : cdpError ?? "No advancing real-time context samples",
+                initial, steady, edits, stopped });
+            console.log(`${profile.id}: ${measured ? rows.at(-1).renderCapacityPercent.median.toFixed(2) + "% median renderer capacity" : "renderer capacity unavailable"} (external Chromium, muted ${headless ? "headless" : "headed"})`);
+        } finally { await context.close(); }
+    }
+    await writeFile(outputFile, JSON.stringify({ schemaVersion: 1, fixtureVersion: fixture.fixtureVersion,
+        kind: "external-live-renderer-benchmark", scope: "Chrome DevTools Protocol WebAudio renderer capacity, not Faust-only load",
+        revision: process.env.ORBIT_REVISION ?? process.env.GITHUB_SHA ?? null, timestampUtc: new Date().toISOString(),
+        environment: { chrome: browser.version(), node: process.version, headless, muted: true,
+            platform: platform(), release: release(), arch: arch(), cpuModel: cpus()[0]?.model ?? null, logicalCpuCount: cpus().length },
+        settings: { seconds, sampleCadenceMs: 1000, plotViews: 0 }, rows }, null, 2) + "\n");
+} finally {
+    await browser?.close();
+    await new Promise(done => server.close(done));
+}
