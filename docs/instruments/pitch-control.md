@@ -29,6 +29,8 @@ Runtime note actions are generation-qualified and scheduled on the shared sample
 
 ### Phase 7.2.3 — Note Source (in review)
 
+Implementation: [PR #41](https://github.com/wgabel/orbit2/pull/41).
+
 Add **Note Source** from Add node. This is a control source, not an audio generator. Select it, play the connected patch, and choose **Arm keyboard**. Use A–K / W E T Y U or hold the on-screen piano keys; Z/X change octave. The reference note maps to zero semitones (A4 by default; choose A3 for a 220 Hz bank). Keyboard velocity is a fixed editable 0–1 value, default .8, captured at note-on and quantized to 127 steps. The five presets provide useful reference notes and soft/full strikes. No hardware MIDI is required.
 
 | Output | Signal type | Meaning |
