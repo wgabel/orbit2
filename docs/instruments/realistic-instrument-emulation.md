@@ -4,6 +4,8 @@
 
 **Status:** Research and planned design (Phase 7.2.7). Recipes below are candidate experiments with existing nodes, not new shipped presets or listening-validated acoustic replicas. User feedback (2026-11-22): the existing implemented instruments are all lacking in realism. The preferred next approach is to reuse the Faust Physical Modeling Toolkit where suitable and legally distributable, rather than recreate every acoustic model from primitive oscillators. Retain existing preset identities, saved graphs and useful synthetic sounds.
 
+Design provenance: [PR #78](https://github.com/wgabel/orbit2/pull/78) (documentation only; no implementation or license clearance).
+
 ## 1. Choose the synthesis method for the instrument
 
 The existing sustained organ uses five fixed sine ratios (1:2:3:4:5), amplitudes .30/.15/.10/.05/.025, chorus and reverb; the playable version adds an ADSR (8/80 ms, .92 sustain, 120 ms release) and velocity gain. Flute uses sine/triangle partials and filtered noise; brass combines saw/triangle and a fixed low-pass; strings use detuned saws; didgeridoo uses saw/triangle, fixed formants and filtered noise. The modal instruments use a common AD noise strike with three to six fixed resonances. These make editable synthetic approximations (see [actual registered templates](../../src/Orbit.Application/Graphs/InstrumentTemplates.cs) and [modal templates](../../src/Orbit.Application/Graphs/ModalInstrumentTemplates.cs)), not measured models of particular instruments. Existing compiler tests establish finite output, gate/release, pitch and headroom, not acoustic realism.
