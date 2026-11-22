@@ -63,6 +63,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 | Plots and tap capacity | [Visualizations](docs/editor/visualizations.md), [signal observation](docs/audio/signal-observation.md) |
 | Keyboard, sequencing and instruments | [Note Sequencer](docs/instruments/note-sequencer.md), [pitch control](docs/instruments/pitch-control.md), [envelopes](docs/audio/envelopes.md), [transport](docs/audio/transport-and-timing.md) |
 | Generative music, ambient patches and whole-piece arrangement | [Generative ambient composition](docs/examples/generative-ambient-composition.md); for individual sounds also see [instrument recipes](docs/examples/instrument-recipes.md) and [effects](docs/audio/effects.md) |
+| Musical monotony, melody/groove changes, distinct choruses/drops and section development | [Compositional development](docs/examples/compositional-development.md) — micro/meso/macro, score-level contrast, evaluation and listener feedback |
 | Harmony, tuning, timbre, musical quality, perceived loudness and spatial depth | [Music theory and sound design](docs/examples/music-theory-and-sound-design.md); use with the relevant instrument/effect or composition guide |
 | Genre-specific music, electronic style, rhythm, sound palette and construction | [Electronic music genres](docs/examples/electronic-music-genres.md) routes to focused ambient, bass/breaks, dance and experimental families; [musical techniques](docs/examples/genres/orbit-techniques.md) connects style to current nodes |
 | Hollow/basic timbres, prominent raw noise, finished instruments and reusable sound palette | [Sound quality and voice design](docs/examples/sound-quality-and-voice-design.md); use with instrument recipes and the relevant node contracts |
@@ -121,6 +122,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 - <a id="musical-instrument-synthesis-and-physical-modelling-planned-phase-72"></a>[instrument recipes](docs/examples/instrument-recipes.md)
 - <a id="12-worked-patch-example"></a>[drone](docs/examples/drone.md)
 - [generative ambient composition](docs/examples/generative-ambient-composition.md) — musical layers, long-form arrangement and a worked multi-voice patch
+- [compositional development](docs/examples/compositional-development.md) — development of musical material and form beyond changes to instrumentation; listener feedback case
 - [music theory and electronic sound design](docs/examples/music-theory-and-sound-design.md) — interval/scale/chord recipes, voice leading, articulation, psychoacoustics, mix/depth and quality checks
 - [electronic music genres](docs/examples/electronic-music-genres.md) — modular genre vocabulary, composition approaches and reusable Orbit 2 techniques
 - [sound quality and voice design](docs/examples/sound-quality-and-voice-design.md) — transform noise, develop richer tonal voices and audition candidate preset recipes
