@@ -4,7 +4,7 @@ For applying these principles to a particular style, see the [electronic music g
 
 For quality-focused production, see [sound quality and voice design](sound-quality-and-voice-design.md) for rich voices, quiet/shaped noise and candidate presets, and [mixing, mastering and analysis](mixing-mastering-and-analysis.md) for true peak/LUFS, balance and iterative rendering.
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Generative ambient composition](generative-ambient-composition.md) · [Instrument recipes](instrument-recipes.md) · [Roadmap](../../ROADMAP.md)
+[Music creation index](README.md) · [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Generative ambient composition](generative-ambient-composition.md) · [Instrument recipes](instrument-recipes.md) · [Roadmap](../../ROADMAP.md)
 
 **Purpose:** A practical musical reference for people and agents creating Orbit 2 patches, instruments, effects and complete pieces. It explains why particular choices may work, how to implement them with the available nodes, and how to evaluate the result. This is not a rulebook for what music must sound like or an implementation specification for new DSP features. All numerical recipes are starting points, not claims of measured or listening-tested sound quality.
 

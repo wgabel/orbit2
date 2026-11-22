@@ -2,7 +2,7 @@
 
 For specific ambient subgenres, rhythmic hybrids and genre-dependent sound palettes, see the [genre reference](electronic-music-genres.md) and [ambient family](genres/ambient.md). Its musical techniques supplement the layering and arrangement approach below.
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Instrument recipes](instrument-recipes.md) · [Worked drone](drone.md)
+[Music creation index](README.md) · [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Instrument recipes](instrument-recipes.md) · [Worked drone](drone.md)
 
 Companion guide: [Music theory and sound design](music-theory-and-sound-design.md) explains how to choose compatible pitches, harmonic progressions, voicing, perceived loudness, spectral balance and spatial depth for the layers and arrangements in this document.
 
