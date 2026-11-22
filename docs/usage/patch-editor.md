@@ -17,7 +17,7 @@ With [PR #61](https://github.com/wgabel/orbit2/pull/61), close a tool via its Cl
 
 ### Gesture-only canvas navigation (6.21.4)
 
-In review: [PR #69](https://github.com/wgabel/orbit2/pull/69).
+Implemented: [PR #69](https://github.com/wgabel/orbit2/pull/69).
 
 - On touchscreens, drag empty space to pan. Put two fingers on the canvas and spread/pinch to zoom around their midpoint; move both together to pan. Lift one finger to continue panning without a jump.
 - On desktop, drag the background to pan and use the mouse wheel to zoom around the pointer.
@@ -26,6 +26,8 @@ In review: [PR #69](https://github.com/wgabel/orbit2/pull/69).
 - The former zoom toolbar, percentage, reset and Fit buttons are removed on both layouts. Annotation-specific Fit signals and Outline locate actions remain available.
 
 ### Contextual canvas actions
+
+In review: [PR #71](https://github.com/wgabel/orbit2/pull/71).
 
 On Android or another touchscreen, touch and hold for about half a second. On desktop, right-click (or focus the canvas and press Shift+F10). A menu appears next to the mouse pointer or as a bottom sheet for touch. Tap/click outside, press Escape, or choose Close to dismiss it. Moving your finger or adding a second finger before the hold finishes cancels the menu, so drag and pinch continue normally.
 

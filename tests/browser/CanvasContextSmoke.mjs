@@ -24,11 +24,14 @@ export async function verifyCanvasContext(browser, url) {
         const point = await emptyPoint(desktop);
         await desktop.mouse.click(point.x, point.y, { button: 'right' });
         await menu(desktop).getByRole('button', { name: 'Add note', exact: true }).click();
-        await desktop.locator('.note-card').first().waitFor();
-        await desktop.locator('.note-card .note-title').first().click({ button: 'right' });
+        const note = desktop.locator('.note-card.note-selected');
+        await note.waitFor();
+        const noteId = await note.getAttribute('data-note-id');
+        await note.locator('.note-title').click({ button: 'right' });
         await menu(desktop).getByRole('button', { name: 'Duplicate note' }).waitFor();
         await menu(desktop).getByRole('button', { name: 'Delete note', exact: true }).click();
         await menu(desktop).waitFor({ state: 'hidden' });
+        await desktop.locator(`[data-note-id="${noteId}"]`).waitFor({ state: 'detached' });
     } finally { await desktop.close(); }
 
     const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });

@@ -4,6 +4,7 @@ using Microsoft.JSInterop;
 using Orbit.Application.Presets;
 using Orbit.Domain.Nodes;
 using Orbit.Domain.Nodes.Composites;
+using Orbit.Domain.Ports;
 using Orbit.Presentation.Canvas;
 
 namespace Orbit.UI.Components.Canvas;
@@ -27,16 +28,19 @@ public partial class GraphCanvas
     private IJSObjectReference? contextModule;
     private IJSObjectReference? contextController;
     private DotNetObjectReference<GraphCanvas>? contextReceiver;
+    private bool contextInitStarted;
 
     private async Task RenderContextAsync()
     {
-        if (contextModule is null)
+        if (contextModule is null && !contextInitStarted)
         {
+            contextInitStarted = true;
             contextModule = await JavaScript.InvokeAsync<IJSObjectReference>("import", "./js/canvasContext.js");
+            if (disposed) { await contextModule.DisposeAsync(); return; }
             contextReceiver = DotNetObjectReference.Create(this);
             contextController = await contextModule.InvokeAsync<IJSObjectReference>("mountContextInput", viewportElement, contextReceiver);
         }
-        if (contextMenu is { } menu && !ReferenceEquals(menu, positionedContext))
+        if (contextModule is not null && contextMenu is { } menu && !ReferenceEquals(menu, positionedContext))
         {
             positionedContext = menu;
             await contextModule.InvokeVoidAsync("positionContextMenu", viewportElement, menu.Request.X, menu.Request.Y);
@@ -112,7 +116,8 @@ public partial class GraphCanvas
             case "connection" when Snapshot.Graph.Connections.FirstOrDefault(c => c.Id == request.Id) is { } edge:
                 title = "Connection";
                 State.SelectConnection(edge.Id);
-                Add("Edit amount", () => Task.CompletedTask); // Closing reveals the existing selected-connection editor.
+                var input = Snapshot.Graph.GetNode(edge.Destination.NodeId).Inputs.Single(port => port.Id == edge.Destination.PortId);
+                Add(input.SignalType.IsEvent() ? "Inspect connection" : "Edit amount", () => Task.CompletedTask); // Closing reveals the existing selected-connection editor.
                 Add("Describe…", EditSelectedDescriptionAsync);
                 Add("Focus source", () => FocusNodeAsync(edge.Source.NodeId));
                 Add("Focus destination", () => FocusNodeAsync(edge.Destination.NodeId));
@@ -143,6 +148,14 @@ public partial class GraphCanvas
     {
         contextMenu = positionedContext = null;
         await viewportElement.FocusAsync(preventScroll: true);
+    }
+
+    [JSInvokable]
+    public async Task DismissContextAsync()
+    {
+        if (disposed || contextMenu is null) return;
+        contextMenu = positionedContext = null;
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task RunContextAsync(ContextAction action)

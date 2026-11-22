@@ -37,6 +37,8 @@ export function mountContextInput(viewport, receiver) {
     };
     const down = event => {
         suppressClick = false;
+        if (viewport.querySelector('.canvas-context-overlay') && !viewport.contains(event.target))
+            receiver.invokeMethodAsync('DismissContextAsync').catch(() => {});
         if (event.pointerType !== 'touch') { cancel(); return; }
         active.add(event.pointerId);
         cancel();
@@ -74,6 +76,7 @@ export function mountContextInput(viewport, receiver) {
         event.stopImmediatePropagation();
     };
     const menu = event => {
+        if (viewport.querySelector('.canvas-context-overlay')) { event.preventDefault(); return; }
         const target = contextTarget(viewport, event.target);
         if (!target) return;
         event.preventDefault();
