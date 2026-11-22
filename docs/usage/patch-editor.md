@@ -2,7 +2,7 @@
 
 [Usage index](README.md) · [Canvas architecture](../editor/canvas.md) · [Persistence](../editor/persistence-and-history.md)
 
-## Mobile workspace (6.21.1–6.21.2 implemented; 6.21.3 in review)
+## Mobile workspace (6.21.1–6.21.3 implemented)
 
 [PR #60](https://github.com/wgabel/orbit2/pull/60) introduces a canvas-first layout on phones and short touch landscape screens. Use the top BPM button to edit tempo or reset the transport; Play and Stop remain immediately available. The bottom toolbar opens existing controls without reducing the canvas rectangle:
 
@@ -13,7 +13,15 @@
 - **More:** Patches and Performance diagnostics. Toggle the bottom tool again to close it; apply/cancel an active overview draft before switching tools.
 - The floating zoom control provides minus, plus, percentage, 100% and Fit. In a nested graph, use its parent breadcrumb to return.
 
-With [PR #61](https://github.com/wgabel/orbit2/pull/61), close a tool via its Close button, the active bottom tab, Escape or browser/Android Back; changing tools dismisses the previous one. Apply/cancel a protected overview draft before leaving it. The color-coded Node Library ([PR #62](https://github.com/wgabel/orbit2/pull/62), in review) replaces the old dropdown. Automatic node expansion/pinning, new pinch gestures and fullscreen are planned in subsequent milestones. Resizing the browser retains the same active graph and playback controller. 
+With [PR #61](https://github.com/wgabel/orbit2/pull/61), close a tool via its Close button, the active bottom tab, Escape or browser/Android Back; changing tools dismisses the previous one. Apply/cancel a protected overview draft before leaving it. The color-coded Node Library ([PR #62](https://github.com/wgabel/orbit2/pull/62), implemented) replaces the old dropdown. Automatic node expansion/pinning, new pinch gestures and fullscreen are planned in subsequent milestones. Resizing the browser retains the same active graph and playback controller. 
+
+### Delete a connection on mobile
+
+1. Tap the cable or its numeric amount badge. The selected cable is highlighted and, for a single connection, its amount editor opens. Do not press Cancel or Close in that editor; doing so clears the selection.
+2. Tap **Edit** on the bottom toolbar, check that the summary shows 0 nodes and 1 connection selected, then tap **Delete selected**. Only the selected connection is removed.
+3. To restore it, tap **Undo** in Edit.
+
+If badges obscure a cable, open **View → Connection labels → Off**, close View and tap the exposed cable. Use **Fit** or zoom/pan to make it easier to reach. Setting a connection amount to zero does not delete it. See [PR #63](https://github.com/wgabel/orbit2/pull/63) for the mobile touch regression coverage.
 
 ### Node Library
 

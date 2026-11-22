@@ -7,6 +7,9 @@
     {
         <title>Inactive in current mode; connection retained</title>
     }
-    <path class="connection-hit" d="@Wire.Path" @onpointerdown="Select" @onpointerdown:stopPropagation="true" />
+    <path class="connection-hit" d="@Wire.Path" role="button" tabindex="0"
+          aria-label="@($"Select connection: {Wire.Description}")" aria-pressed="@(Wire.Selected ? "true" : "false")"
+          @onpointerdown="Select" @onpointerdown:stopPropagation="true"
+          @onclick="SelectClick" @onclick:stopPropagation="true" @onkeydown="SelectKey" />
     <path class="connection-line" d="@Wire.Path" />
 </g>

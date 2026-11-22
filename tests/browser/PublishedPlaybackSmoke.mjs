@@ -857,18 +857,23 @@ try {
     assert.equal(await status.innerText(), `Playing revision ${initialRevision + 2}`);
     // Wires run underneath node frames; viewport-aware placement may put a
     // frame over the midpoint without hiding other parts of the cable.
+    // Use actual hit testing, not the bounding-box center of a curved path.
+    // Round to pixel coordinates because touchscreen.tap uses integer points.
+    const exposedWirePoint = target => target.evaluate(path => {
+        const length = path.getTotalLength();
+        const matrix = path.getScreenCTM();
+        if (!matrix) return null;
+        for (let i = 0; i <= 100; i++) {
+            const fraction = 0.5 + (i % 2 ? -1 : 1) * Math.ceil(i / 2) / 100;
+            const point = path.getPointAtLength(length * fraction).matrixTransform(matrix);
+            const x = Math.round(point.x), y = Math.round(point.y);
+            if (document.elementFromPoint(x, y) === path) return { x, y };
+        }
+        return null;
+    });
     const selectVisibleWire = async target => {
         await target.scrollIntoViewIfNeeded();
-        const point = await target.evaluate(path => {
-            const length = path.getTotalLength();
-            const matrix = path.getScreenCTM();
-            for (let i = 0; i <= 100; i++) {
-                const fraction = 0.5 + (i % 2 ? -1 : 1) * Math.ceil(i / 2) / 100;
-                const point = path.getPointAtLength(length * fraction).matrixTransform(matrix);
-                if (document.elementFromPoint(point.x, point.y) === path) return { x: point.x, y: point.y };
-            }
-            return null;
-        });
+        const point = await exposedWirePoint(target);
         assert.ok(point, "Expected an exposed part of the cable to select");
         await page.mouse.click(point.x, point.y);
         await target.locator("xpath=..").and(page.locator(".connection-selected")).waitFor({ state: "attached", timeout: 4000 });
@@ -1872,6 +1877,72 @@ try {
     await mobilePage.getByLabel("Connection labels", { exact: true }).waitFor({ state: "hidden" });
     await mobilePage.waitForFunction(() => !history.state?.orbitMobilePanel);
     assert.equal(await mobileBar.getByRole("button", { name: "View", exact: true }).evaluate(button => document.activeElement === button), true);
+    // A touch user must be able to remove an individual connection without a
+    // keyboard, mouse, or amount badge. Hide labels (above), fit the patch,
+    // then tap a real exposed point on the LFO-to-frequency cable.
+    // Fit is asynchronous; force a different transform and await the actual
+    // DOM updates before calculating a tap coordinate.
+    const mobileWorld = mobileCanvas.locator(".canvas-world");
+    const beforeZoom = await mobileWorld.getAttribute("style");
+    await mobilePage.getByRole("button", { name: "Zoom in", exact: true }).tap();
+    await mobilePage.waitForFunction(old => document.querySelector(".canvas-world")?.getAttribute("style") !== old, beforeZoom);
+    const zoomed = await mobileWorld.getAttribute("style");
+    await mobilePage.getByRole("button", { name: "Fit", exact: true }).tap();
+    await mobilePage.waitForFunction(old => document.querySelector(".canvas-world")?.getAttribute("style") !== old, zoomed);
+    const mobileWire = mobileCanvas.locator(".connection-modulation .connection-hit");
+    const mobileWires = mobileCanvas.locator(".connection-path");
+    const mobileNodes = mobileCanvas.locator("article[data-node-id]");
+    const originalNodeIds = await mobileNodes.evaluateAll(nodes => nodes.map(node => node.dataset.nodeId).sort());
+    const originalWireCount = await mobileWires.count();
+    const originalAudioWireCount = await mobileCanvas.locator(".connection-audio").count();
+    assert.equal(await mobileCanvas.locator(".connection-amount-badge").count(), 0);
+    assert.equal(await mobileWire.count(), 1);
+    assert.equal(originalWireCount, 3);
+    let touchPoint = await exposedWirePoint(mobileWire);
+    // Fit measures DOM geometry asynchronously. Wait for the new transform
+    // to expose a real path rather than guessing its coordinates.
+    for (let attempt = 0; !touchPoint && attempt < 30; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+        touchPoint = await exposedWirePoint(mobileWire);
+    }
+    assert.ok(touchPoint, "Expected an exposed cable point on the fitted phone canvas");
+    // Log actual touch dispatch on failure, including browser target adjustment.
+    await mobilePage.evaluate(() => {
+        window.orbitConnectionTapEvents = [];
+        for (const type of ["pointerdown", "pointerup", "click"])
+            document.addEventListener(type, event => window.orbitConnectionTapEvents.push({
+                type, target: event.target?.outerHTML?.slice(0, 240),
+                x: event.clientX, y: event.clientY, button: event.button, pointerType: event.pointerType
+            }), { capture: true, once: true });
+    });
+    await mobilePage.touchscreen.tap(touchPoint.x, touchPoint.y);
+    try {
+        await mobileCanvas.locator(".connection-modulation.connection-selected").waitFor({ state: "attached", timeout: 5000 });
+    } catch (error) {
+        console.error("Mobile connection tap", touchPoint, await mobilePage.evaluate(() => window.orbitConnectionTapEvents));
+        throw error;
+    }
+    const mobileAmountEditor = mobilePage.getByRole("region", { name: "Connection amount editor" });
+    await mobileAmountEditor.waitFor();
+    await mobileBar.getByRole("button", { name: "Edit", exact: true }).tap();
+    const mobileEdit = mobilePage.getByRole("region", { name: "Editing tools", exact: true });
+    await mobileEdit.getByRole("status").filter({ hasText: "0 nodes · 1 connections selected" }).waitFor();
+    await mobileEdit.getByRole("button", { name: "Delete selected", exact: true }).tap();
+    await mobileWire.waitFor({ state: "detached" });
+    await mobileAmountEditor.waitFor({ state: "detached" });
+    await mobileCanvas.locator(".canvas-count").filter({ hasText: /^4 nodes · 2 connections$/ }).waitFor();
+    assert.equal(await mobileWires.count(), originalWireCount - 1);
+    assert.equal(await mobileCanvas.locator(".connection-audio").count(), originalAudioWireCount);
+    assert.deepEqual(await mobileNodes.evaluateAll(nodes => nodes.map(node => node.dataset.nodeId).sort()), originalNodeIds);
+    await mobileEdit.getByRole("status").filter({ hasText: "No selection" }).waitFor();
+    await mobileEdit.getByRole("button", { name: "Undo", exact: true }).tap();
+    await mobileWire.waitFor({ state: "attached" });
+    await mobileCanvas.locator(".canvas-count").filter({ hasText: /^4 nodes · 3 connections$/ }).waitFor();
+    assert.equal(await mobileWires.count(), originalWireCount);
+    assert.deepEqual(await mobileNodes.evaluateAll(nodes => nodes.map(node => node.dataset.nodeId).sort()), originalNodeIds);
+    await mobileBar.getByRole("button", { name: "Edit", exact: true }).tap();
+    await mobileEdit.waitFor({ state: "hidden" });
+    await mobilePage.waitForFunction(() => !history.state?.orbitMobilePanel);
     await mobileBar.getByRole("button", { name: "Outline", exact: true }).click();
     await mobilePage.getByRole("region", { name: "Patch outline" }).waitFor();
     await mobilePage.waitForFunction(() => !!history.state?.orbitMobilePanel);

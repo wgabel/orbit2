@@ -10,6 +10,10 @@ public partial class ConnectionPath
     [Parameter] public EventCallback<Guid> OnSelect { get; set; }
 
     private string WireClass => $"connection-path connection-{Wire.Kind.ToString().ToLowerInvariant()}{(Wire.Selected ? " connection-selected" : "")}{(Wire.Dormant ? " connection-dormant" : "") + (Wire.Zero ? " connection-zero" : "")}";
-    private Task Select(PointerEventArgs args) => args.Button == 0
+    private Task Select(PointerEventArgs args) => (args.Button == 0 || (args.PointerType == "touch" && args.IsPrimary))
+        ? OnSelect.InvokeAsync(Wire.Id) : Task.CompletedTask;
+    private Task SelectClick(MouseEventArgs args) => args.Button == 0
+        ? OnSelect.InvokeAsync(Wire.Id) : Task.CompletedTask;
+    private Task SelectKey(KeyboardEventArgs args) => args.Key is "Enter" or " "
         ? OnSelect.InvokeAsync(Wire.Id) : Task.CompletedTask;
 }
