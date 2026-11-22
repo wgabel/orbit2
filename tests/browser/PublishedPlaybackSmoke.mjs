@@ -831,7 +831,8 @@ try {
     const playingOutline = page.getByRole("region", { name: "Patch outline" });
     await playingOutline.getByLabel("Search patch").fill("Drone");
     await playingOutline.getByLabel("Filter outline").selectOption("Composite");
-    await playingOutline.getByRole("button", { name: "Open canvas: Drone", exact: true }).press("Enter");
+    await playingOutline.getByRole("button", { name: "Open canvas: Drone", exact: true }).click();
+    assert.equal(await page.getByRole("alert").count(), 0, await page.getByRole("alert").allTextContents());
     await playingOutline.waitFor({ state: "detached" });
     const breadcrumbs = page.getByRole("navigation", { name: "Canvas path" });
     await breadcrumbs.getByText("Drone", { exact: true }).waitFor();
@@ -1571,7 +1572,7 @@ try {
     const instrumentOutline = instrumentPage.getByRole("region", { name: "Patch outline" });
     await instrumentOutline.getByLabel("Search patch").fill("Flute Output Rack");
     await instrumentOutline.getByLabel("Filter outline").selectOption("Node");
-    await instrumentOutline.getByRole("button", { name: "Locate node: Output Rack", exact: true }).press("Enter");
+    await instrumentOutline.getByRole("button", { name: "Locate node: Output Rack", exact: true }).click();
     await instrumentOutline.waitFor({ state: "detached" });
     await instrumentPage.locator(".node-selected").filter({ hasText: "Output Rack" }).waitFor();
     await instrumentPage.waitForFunction(() => {
@@ -1635,7 +1636,7 @@ try {
     await annotationPage.getByRole("button", { name: "Outline", exact: true }).click();
     const annotationOutline = annotationPage.getByRole("region", { name: "Patch outline" });
     await annotationOutline.getByLabel("Filter outline").selectOption("Note");
-    await annotationOutline.getByRole("button", { name: "Locate note: Note", exact: true }).press("Enter");
+    await annotationOutline.getByRole("button", { name: "Locate note: Note", exact: true }).click();
     await annotationOutline.waitFor({ state: "detached" });
     await annotationViewport.locator(".note-selected .note-body").waitFor();
     assert.equal(await annotationMode.inputValue(), "Hide");
