@@ -87,6 +87,8 @@
 .audio-performance-metrics dt { color: var(--semantic-color-muted); }
 .audio-performance-metrics dd { margin: 0; text-align: end; font-variant-numeric: tabular-nums; }
 .performance-keyboard { padding: var(--semantic-space-compact); border: var(--semantic-border-width) solid var(--semantic-color-border); border-radius: var(--semantic-radius-control); }
+/* The live meter must not change the wrap decision or move playable keys. */
+.performance-live-pitch { flex: 0 0 24ch; max-width: 100%; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .performance-piano { display: flex; flex-wrap: wrap; gap: var(--semantic-space-tight); }
 .performance-piano button { display: grid; gap: var(--semantic-space-tight); text-align: center; padding: var(--semantic-space-compact); }
 .performance-piano .performance-white-key { background: var(--semantic-color-text); color: var(--semantic-color-canvas); }

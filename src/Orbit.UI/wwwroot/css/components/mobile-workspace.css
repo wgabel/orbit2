@@ -216,6 +216,8 @@
         overflow: auto;
         background: var(--semantic-color-surface);
     }
+    /* Keep the live meter on its own row even as offset digits/sign change. */
+    .performance-keyboard > .performance-live-pitch { flex-basis: 100%; }
     .graph-workspace .workspace-error {
         position: absolute;
         z-index: var(--component-workspace-overlay-layer);

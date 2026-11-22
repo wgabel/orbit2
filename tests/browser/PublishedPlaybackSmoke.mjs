@@ -1545,6 +1545,41 @@ try {
     await performance.locator('[data-live-pitch-offset="-9"]').waitFor();
     await responsePage.keyboard.up("a");
     assert.equal(await responseStatus.innerText(), noteRevision);
+
+    // The mobile live offset used to wrap at +10 st and move every key
+    // under the finger. Compare every key's bounds across real note actions.
+    await responsePage.keyboard.press("x");
+    await performance.getByText("Octave 5 · reference A4", { exact: true }).waitFor();
+    const desktopKeyboardViewport = responsePage.viewportSize();
+    const readPianoBounds = () => performance.locator("[data-midi-note]").evaluateAll(keys =>
+        keys.map(key => {
+            const { x, y, width, height } = key.getBoundingClientRect();
+            return { note: key.dataset.midiNote, x, y, width, height };
+        }));
+    try {
+        for (const width of [360, 390, 430]) {
+            await responsePage.setViewportSize({ width, height: 844 });
+            await responsePage.locator(".mobile-workspace-bar").waitFor();
+            let baseline;
+            for (const [note, offset] of [[72, 3], [79, 10], [72, 3], [81, 12]]) {
+                const key = performance.locator(`[data-midi-note="${note}"]`);
+                const pointer = { pointerId: 1, pointerType: "touch", isPrimary: true, button: 0, bubbles: true };
+                await key.dispatchEvent("pointerdown", { ...pointer, buttons: 1 });
+                await performance.locator(`[data-live-pitch-offset="${offset}"]`).waitFor();
+                const bounds = await readPianoBounds();
+                assert.equal(bounds.length, 13);
+                if (baseline) assert.deepEqual(bounds, baseline, `Piano shifted at ${width}px, pitch +${offset} st`);
+                else baseline = bounds;
+                const live = await performance.locator("[data-live-pitch-offset]").boundingBox();
+                const keyboard = await performance.boundingBox();
+                assert.ok(live.width >= keyboard.width * 0.9, "Mobile pitch meter must reserve its own row");
+                await key.dispatchEvent("pointerup", { ...pointer, buttons: 0 });
+            }
+        }
+    } finally {
+        await responsePage.setViewportSize(desktopKeyboardViewport);
+    }
+    assert.equal(await responseStatus.innerText(), noteRevision);
     await performance.getByRole("button", { name: "Release all notes" }).click();
     await responsePage.getByRole("button", { name: "Stop", exact: true }).click();
     await responseStatus.filter({ hasText: /Ready/ }).waitFor();

@@ -25,6 +25,8 @@ For exact serialized keys, Hold code, ramp behavior and the combined 30 reachabl
 
 For live keyboard articulation (7.2.3, [PR #41](https://github.com/wgabel/orbit2/pull/41)), add **Note Source** rather than Note Sequencer. Set Reference note to A3 for a 220 Hz oscillator or handpan, and Keyboard velocity (default 0.8). For the original Modal — Handpan connect Pitch at amount 1 and Trigger, then Audio to Master. For direct velocity with no internal edits, choose [Playable modal percussion](#playable-modal-percussion) instead. Play patch, select Note Source and Arm keyboard, then press keys or on-screen piano keys.
 
+On a phone the live pitch offset has a dedicated row, so the on-screen keys stay stationary as notes change. If playing still feels delayed, compare a fast-attack playable voice with a minimal gated oscillator, use wired/built-in audio rather than Bluetooth, and inspect Performance for estimated audio pipeline latency. The live pitch display is sampled and may lag the actual audio; it is not an end-to-end input measurement.
+
 For sustained voices, wire Gate to an ADSR Envelope and its output to zero-base oscillator amplitude; use a separate zero-base Gain controlled by Velocity if desired. Last pressed key wins; releasing it falls back to the previous held key without triggering a new strike. Final release closes Gate while Pitch and Velocity remain held for release tails. This is monophonic; Note-mode patterns and polyphony remain future work. See the [Note Source contract](../instruments/pitch-control.md#phase-723--note-source-in-review).
 
 ## 2. Create distinct attacks and releases

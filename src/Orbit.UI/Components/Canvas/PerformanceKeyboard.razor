@@ -18,7 +18,7 @@
 <section class="performance-keyboard workspace-toolbar toolbar-group" aria-label="Performance keyboard" data-armed="@armed.ToString().ToLowerInvariant()" data-step-entry="@((stepEntry && showPattern).ToString().ToLowerInvariant())" data-keyboard-ready="@((adapter is not null).ToString().ToLowerInvariant())" tabindex="0" @ref="root">
     <button type="button" class="secondary" aria-pressed="@armed.ToString().ToLowerInvariant()" @onclick="ToggleAsync">@(armed ? "Disarm keyboard" : "Arm keyboard")</button>
     <span class="workspace-notice">@Node.Name · @(IsNoteSource ? "Monophonic notes" : "Continuous pitch")</span>
-    <output class="workspace-notice" data-live-pitch-offset="@(Offset?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "unavailable")">
+    <output class="workspace-notice performance-live-pitch" data-live-pitch-offset="@(Offset?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "unavailable")">
         @(Offset is double offset ? $"Live: {offset:+0.##;-0.##;0} st" : "Play connected patch")
     </output>
     @if (!IsNoteSource)
