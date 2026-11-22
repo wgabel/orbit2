@@ -427,6 +427,47 @@ try {
                         const fraction = samples.filter(sample => sample > 0).length / samples.length;
                         results.push({ waveform: wave.waveform, rate, positiveFraction: fraction });
                     }
+                    if (wave.waveform === "Triangle") {
+                        // Use ONE running DSP, changing only its live frequency control.
+                        // Include the sample at every block boundary in the discontinuity check.
+                        const processor = await new FaustMonoDspGenerator().createOfflineProcessor(
+                            rate, 128, { ...compiled, soundfiles: {} });
+                        const path = name => processor.getParams().find(candidate => candidate.endsWith("/" + name));
+                        for (const [name, value] of Object.entries({ ...wave.values, [wave.rateControl]: 220 }))
+                            processor.setParamValue(path(name), value);
+                        const frames = Math.ceil(rate * 0.08 / 128) * 128;
+                        const warmup = processor.render([], frames)[0];
+                        let previous = warmup.at(-1), maxStep = 0, maxError = 0, minPeak = 1;
+                        const inspect = samples => {
+                            for (const sample of samples) {
+                                if (!Number.isFinite(sample)) throw new Error("Non-finite live oscillator sample");
+                                maxStep = Math.max(maxStep, Math.abs(sample - previous));
+                                previous = sample;
+                            }
+                        };
+                        for (const target of [880, 330, 1760, 220, 880]) {
+                            processor.setParamValue(path(wave.rateControl), target);
+                            const samples = processor.render([], frames)[0];
+                            inspect(samples);
+                            // Check the pitch shortly AFTER the 5 ms settling window.
+                            // Interpolated zero crossings avoid sample-count quantization.
+                            const crossings = [];
+                            for (let i = Math.ceil(rate * 0.008); i < rate * 0.025; i++) {
+                                if (samples[i - 1] <= 0 && samples[i] > 0)
+                                    crossings.push(i - 1 - samples[i - 1] / (samples[i] - samples[i - 1]));
+                            }
+                            if (crossings.length < 2) throw new Error("Too few crossings after retune");
+                            const measured = (crossings.length - 1) * rate / (crossings.at(-1) - crossings[0]);
+                            maxError = Math.max(maxError, Math.abs(measured - target) / target);
+                            minPeak = Math.min(minPeak, Math.max(...samples.subarray(Math.ceil(rate * 0.008))));
+                        }
+                        // Stress overlapping edits before the previous transition has settled.
+                        for (let edit = 0; edit < 40; edit++) {
+                            processor.setParamValue(path(wave.rateControl), edit % 2 ? 220 : 1760);
+                            inspect(processor.render([], 128)[0]);
+                        }
+                        results.push({ waveform: wave.waveform, rate, maxStep, maxError, minPeak });
+                    }
                 }
             }
             return results;
@@ -434,7 +475,13 @@ try {
     }, waveforms);
     for (const result of renderedWaveforms) {
         console.log("Oscillator waveform", result);
-        if ("positiveFraction" in result) {
+        if ("maxStep" in result) {
+            // A full-scale triangle's slope is 4*f/SR. Allow a small margin
+            // for the frequency-dependent PolyBLAMP corner correction.
+            assert.ok(result.maxStep < 4 * 1760 / result.rate + 0.02, "Live retune introduced a sample discontinuity");
+            assert.ok(result.maxError < 0.035, "Live frequency did not settle promptly");
+            assert.ok(result.minPeak > 0.85, "Live frequency edit caused an unexpected level drop");
+        } else if ("positiveFraction" in result) {
             assert.ok(Math.abs(result.positiveFraction - 0.2) < 0.01, "Incorrect pulse width");
         } else if ("phaseError" in result) {
             // At 44.1k, a quarter period is not an integer sample. Permit the

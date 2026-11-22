@@ -87,7 +87,7 @@ public sealed class FaustNodeContext
         return InputSignal(port.Id);
     }
 
-    public string Parameter(string key, string? signalMaximum = null, string? baseMultiplier = null, bool initializeAtTarget = false, bool unsmoothed = false)
+    public string Parameter(string key, string? signalMaximum = null, string? baseMultiplier = null, bool initializeAtTarget = false, bool unsmoothed = false, double? settlingMilliseconds = null)
     {
         var parameter = Node.Parameters.SingleOrDefault(parameter => parameter.Definition.Key == key)
             ?? throw new FaustCompilationException($"Node {Node.TypeKey} has no parameter '{key}'.");
@@ -114,11 +114,12 @@ public sealed class FaustNodeContext
             controls.Add(new FaustParameterControl(new ParameterAddress(Node.Id, parameter.Id), name, parameter.BaseValue, meter));
             var step = definition.Choices is null ? "0.001" : "1.0";
             var slider = $"hslider(\"{name}\", {initial}, {minimum}, {maximum}, {step})";
-            // Start a time-sensitive control at the actual initialized target,
-            // not a zero-valued smoother. Subsequent edits use the same si.smoo.
+            // Smooth the base slider only; audio-rate modulation is added below.
+            // Time-sensitive controls may start at their initialized target.
+            var smoothing = FaustControlSmoothing.Filter(settlingMilliseconds);
             var expression = definition.Choices is not null || unsmoothed ? slider : initializeAtTarget
-                ? $"first + ((value - first) : si.smoo) with {{ value = {slider}; first = ((select2(1 - (1 : mem), _, value)) ~ _); }}"
-                : slider + " : si.smoo";
+                ? $"first + ((value - first) : {smoothing}) with {{ value = {slider}; first = ((select2(1 - (1 : mem), _, value)) ~ _); }}"
+                : slider + " : " + smoothing;
             definitions.Add($"{name} = {expression};");
         }
 
