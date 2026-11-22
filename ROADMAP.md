@@ -11,6 +11,7 @@
 | Capability | Current status | Design / evidence |
 |---|---|---|
 | Graph, validated commands, nested racks, dynamic Faust compilation, live parameter updates | Implemented · Phases 1–5 | [Foundation register](docs/roadmap/foundation.md) |
+| Parameter-specific base-control smoothing | In review · faster live retune | [Parameters and modulation](docs/core/parameters-and-modulation.md#base-control-smoothing); [PR #75](https://github.com/wgabel/orbit2/pull/75) |
 | Browser release identity and cache invalidation | Implemented · deployment reliability | [Release identity and cache invalidation](README.md#browser-release-identity-and-cache-invalidation); [PR #72](https://github.com/wgabel/orbit2/pull/72) |
 | Recursive entire-patch node and connection counts | Implemented · editor improvement | [Canvas](docs/editor/canvas.md#the-canvases); [PR #36](https://github.com/wgabel/orbit2/pull/36) |
 | Shared BPM, oscillators, noise, mixer, filter, EQ, delay, reverb, chorus | Implemented · 6.1–6.7, 6.12–6.15 | [Timing](docs/audio/transport-and-timing.md), [generators](docs/audio/oscillators-and-noise.md), [effects](docs/audio/effects.md) |

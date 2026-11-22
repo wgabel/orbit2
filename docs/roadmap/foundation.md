@@ -52,7 +52,7 @@ Deliverable: a graph edit reaches independent subscribers once, with valid model
 - Implemented: dependency ordering and extensible C# graph-to-Faust source compiler with stable parameter controls (sine, gain, master output), plus offline WASM probe tests.
 - Implemented: on-demand graph playback from the editor, with a lazy Faust compiler worker, revision status and safe start/stop. The original fixed UI is retired.
 - Implemented: live base-value updates on the running worklet, including startup queuing, revision ordering, smoothed controls and structural-change detection.
-- In review (follow-up): [parameter-specific base-control smoothing](../core/parameters-and-modulation.md#base-control-smoothing) shortens manual oscillator frequency transitions while retaining continuous phase, modulation bandwidth and anti-click protection; rapid retune regression and device listening check.
+- In review (follow-up, [PR #75](https://github.com/wgabel/orbit2/pull/75)): [parameter-specific base-control smoothing](../core/parameters-and-modulation.md#base-control-smoothing) shortens manual oscillator frequency transitions while retaining continuous phase, modulation bandwidth and anti-click protection; rapid retune regression and device listening check.
 - Implemented: automatic structural replacement, stale-revision invalidation, same-source reuse, 50 ms audio-clock crossfade and last-good-graph recovery.
 - Implemented: effective parameter telemetry and animated modulation indicators; conservative ranges are estimated from the graph and live values come directly from Faust passive meters.
 - Historical next step — delivered: composite nodes and nested canvases (Phase 5).

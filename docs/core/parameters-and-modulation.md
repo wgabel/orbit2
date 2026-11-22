@@ -131,7 +131,7 @@ The DSP can optimize eligible control-rate or constant signals. Manual changes t
 
 ### Base-control smoothing
 
-**Parameter-specific smoothing (in review):** The previous default `si.smoo` gives a roughly 68 ms 95% settling time, which can make large manual frequency jumps sound like brief pitch slides. `FaustControlSmoothing` provides sample-rate-independent policies for frequently edited controls; emitters explicitly select the semantic policy through `FaustNodeContext.Parameter`.
+**Parameter-specific smoothing (in review, [PR #75](https://github.com/wgabel/orbit2/pull/75)):** The previous default `si.smoo` gives a roughly 68 ms 95% settling time, which can make large manual frequency jumps sound like brief pitch slides. `FaustControlSmoothing` provides sample-rate-independent policies for frequently edited controls; emitters explicitly select the semantic policy through `FaustNodeContext.Parameter`.
 
 | Base control | Approx. 95% settling time |
 |---|---:|
