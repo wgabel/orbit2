@@ -51,6 +51,7 @@ public sealed class CanvasNavigationService : IDisposable
             snapshot.NodePositions.Select(pair => new SavedNodePosition(pair.Key, pair.Value.X, pair.Value.Y)).ToArray())
         {
             ConnectionLabels = snapshot.ConnectionLabels,
+            AnnotationVisibility = snapshot.AnnotationVisibility,
             Visualizations = snapshot.Visualizations.Select(pair => new SavedNodeVisualization(pair.Key, pair.Value)).ToArray(),
             ExpandedVisualizationNodeId = snapshot.ExpandedVisualizationNodeId,
             Notes = snapshot.Notes.ToArray(),

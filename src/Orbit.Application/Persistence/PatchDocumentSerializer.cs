@@ -61,6 +61,8 @@ public sealed class PatchDocumentSerializer
         var canvasIds = new HashSet<Guid>();
         foreach (var canvas in document.CanvasLayouts)
         {
+            if (!Enum.IsDefined(canvas.AnnotationVisibility))
+                throw new ArgumentException("Invalid annotation visibility preference.");
             SavedNote.Validate(canvas.Notes);
             if (!canvasIds.Add(canvas.GraphId) ||
                 (canvas.Notes.Length > 0 && !graphs.ContainsKey(canvas.GraphId)))

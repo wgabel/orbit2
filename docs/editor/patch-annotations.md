@@ -4,7 +4,7 @@
 
 Related: [canvas](canvas.md) · [design system](design-system.md) · [persistence and history](persistence-and-history.md) · [commands and events](../core/commands-and-events.md) · [connection visualization](annotations-and-connections.md) · [composite nodes](composite-nodes.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
 
-**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) implemented ([PR #28](https://github.com/wgabel/orbit2/pull/28)); visual groups (6.19.3) implemented ([PR #30](https://github.com/wgabel/orbit2/pull/30)); overview and discovery (6.19.4) in review ([PR #32](https://github.com/wgabel/orbit2/pull/32)); visibility and outline (6.19.7–6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
+**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) implemented ([PR #28](https://github.com/wgabel/orbit2/pull/28)); visual groups (6.19.3) implemented ([PR #30](https://github.com/wgabel/orbit2/pull/30)); overview and discovery (6.19.4) implemented ([PR #32](https://github.com/wgabel/orbit2/pull/32)); annotation visibility and zoom detail (6.19.7) in review ([PR #35](https://github.com/wgabel/orbit2/pull/35)); outline (6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
 
 <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>
 
@@ -189,7 +189,7 @@ Prefer the real project transport value when showing current BPM; distinguish a 
 
 Example for agents: use overview text to give duration, musical concept, manual actions and assumptions; visual groups identify arrangement lanes; node aliases mark voices and control functions; a few note cards explain a tricky harmonic choice or modulation scheme. For an individual effect preset, a short note describing what it does may suffice. Use meaningful descriptions, not a repetition of every parameter value; separate unverified musical intent from actually auditioned/verified behavior. Once implemented, include these fields in generated patch JSON according to the current schema, not hypothetical keys.
 
-#### Patch overview and discovery — implementation (6.19.4, in review)
+#### Patch overview and discovery — implementation (6.19.4, implemented)
 
 Implementation: [PR #32](https://github.com/wgabel/orbit2/pull/32).
 
@@ -212,7 +212,7 @@ The library save name remains independent of the musical title. The saved-patch 
 
 **Annotated examples** in Patches exports a fresh ordinary portable JSON patch without changing the active workspace or named library. **Modulation study** explains the existing oscillator modulation demo; **Impact — AD percussion** includes the existing impact composite routed to a master output, root and nested notes, aliases, and overview instructions. Import the exported file to inspect or edit it. Both examples use existing graph factories and validated persistence; their annotations are learning aids, not claims of musical mastering or listening verification.
 
-## 2. Annotation visibility and zoom-dependent detail (6.19.7 — planned)
+## 2. Annotation visibility and zoom-dependent detail (6.19.7 — in review)
 
 Provide a compact shared canvas toolbar control for documentation visibility, ideally a labelled toggle/menu with at least Show and Hide (optional Titles only). Keep numeric cable-amount visibility and audio visualization settings in their own controls: hiding author-written notes must not hide necessary port labels or change graph configuration. A performance-friendly clean view can hide notes, group backgrounds/titles and optional authored wire descriptions, while retaining clearly readable node aliases as primary identifiers. Allow access to descriptions through the selection inspector or outline even if canvas decorations are hidden. Do not change the owning graph, note text, manual collapse state or membership.
 
@@ -228,6 +228,28 @@ Zoom detail is a derived visual projection, separate from authored collapse and 
 Use shared configurable screen-space thresholds/hysteresis and theme tokens; tune after checking actual measured readability at the existing zoom range. Do not persist auto-collapsed state or resize/reposition authored world bounds whenever zoom changes. Editing/selected items must remain accessible: finish or explicitly retain an active text draft before hiding its editor, avoid abrupt focus loss at a threshold, and allow a temporary full-size editor/inspector. Fit-to-content should include visible annotation bounds and support an explicit signal-only fit or reveal-target action; hidden documentation must not unexpectedly force distant empty extents. A hidden or auto-summarized item remains saved and discoverable.
 
 Persist per-canvas annotation display preference in the existing optional `SavedCanvas` layout settings, with visible annotations as a backward-compatible default. If a workspace-wide toggle is offered, document whether it is a temporary override (recommended for clean performance mode) rather than rewriting every child preference. Visibility and zoom are presentation changes, not annotation content/history edits. Navigation preserves an active canvas's preference. No graph revision or audio/capture lifecycle changes beyond existing independent view visibility decisions.
+
+### Implementation (6.19.7, in review)
+
+Implementation: [PR #35](https://github.com/wgabel/orbit2/pull/35).
+
+Use **Annotations** at the lower left of the canvas:
+
+| Mode | Behavior |
+| --- | --- |
+| Show | Normal authored note cards and group frames; automatic compact detail when zooming out. |
+| Titles only | Compact title markers even at normal zoom, with group boundaries retained. |
+| Hide | Removes unselected notes and group decorations from the DOM, hit testing and fit calculations. |
+
+Node aliases and canonical names, port labels, numeric amount badge preferences and signal plots remain independent. Secondary node descriptions and cable label tooltips are suppressed in compact/hidden views; selecting a node or cable still allows reading and changing its description through **Describe selected** or the connection editor.
+
+The shared `AnnotationDetailPolicy` enters title detail at 65% zoom and returns to full detail at 75%; it enters the smaller marker band at 35% and leaves it at 45%. Separate enter/exit thresholds provide hysteresis, preventing repeated changes around a zoom boundary. Compact markers are screen-scaled (30px height, maximum 170px width, reduced to 100px in the smallest band and limited by the authored width); full titles remain accessible as labels/tooltips. Compact notes show only the projected marker, groups retain their authored background and boundary. Selected/focused notes and groups retain their ordinary controls and manual collapse state even when zoomed out. Activating a marker selects it; deselecting returns it to current display detail. None of these projections writes back dimensions, title, body, group membership, collapse state or annotation history.
+
+Changing the display mode clears note/group selection, but preserves node/cable selection; the control and reveal actions are disabled while an annotation or overview draft is open. **Find annotation** lists the current canvas's notes and groups by title, including hidden items; choose one and **Reveal and fit** selects and fits it without changing the stored mode. Selection of a hidden item temporarily reveals it until selection changes. Use **Fit signals** to fit measured node bounds only. Normal Fit excludes hidden items; Show uses authored visible bounds so a note revealed by the resulting zoom can still fit, Titles only uses a compact header extent for unselected notes and the frame for groups. The full searchable nested outline is still Phase 6.19.8.
+
+Compact note and group markers handle Enter and Space explicitly, as well as pointer activation, because their activating element is replaced by the full card/frame. Compact-marker focus does not invoke the ancestor's full-card focus handler; Tab remains available for navigation. The published editor regression exercises both keyboard paths.
+
+Schema-1 layouts add optional `annotationVisibility`: `0` (Show, also the default when absent), `1` (Titles only), or `2` (Hide). Invalid enum values are rejected on restore. Root and child canvases save independent preferences in recovery and portable files; selection, finder state and zoom-detail hysteresis are transient. Visibility and viewport edits do not enter graph or annotation history and do not create graph/audio events.
 
 ## 3. Patch outline and navigation (6.19.8 — planned)
 
@@ -267,4 +289,4 @@ Keep the original state/persistence/history contracts above authoritative. When 
 | Audio isolation | During continuous playback perform every annotation and navigation action and verify unchanged root graph revision, DSP source/runtime generation and no graph-history entry. |
 | Agents / examples | Annotated example patch explains roles and actual settings, overview provides musical purpose and manual instructions, optional metadata remains data-only and valid. |
 
-These are separate deliverable increments in the [Phase 6.19 register](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-planned). With 6.19.1–6.19.3 implemented and 6.19.4 in review, implement 6.19.7 annotation visibility and zoom-dependent detail next, followed by 6.19.8 outline and navigation. Record actual implementation PR links here and in the roadmap as features ship.
+These are separate deliverable increments in the [Phase 6.19 register](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-planned). With 6.19.1–6.19.4 implemented and 6.19.7 in review, implement 6.19.8 outline and navigation next. Record actual implementation PR links here and in the roadmap as features ship.

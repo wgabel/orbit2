@@ -19,9 +19,10 @@ public partial class NodeFrame
     [Parameter] public SavedNodeDescription? Documentation { get; set; }
     [Parameter] public EventCallback OnEditDescription { get; set; }
     [Parameter] public bool DocumentationEditDisabled { get; set; }
+    [Parameter] public bool ShowSecondaryDocumentation { get; set; } = true;
     private string DisplayName => Documentation is { } metadata && !string.IsNullOrWhiteSpace(metadata.Alias) ? metadata.Alias : Node.Name;
     private string DocumentationTooltip => Documentation is null ? Node.Name :
-        $"{DisplayName} ({Node.Name})\n{Documentation.Description}";
+        ShowSecondaryDocumentation ? $"{DisplayName} ({Node.Name})\n{Documentation.Description}" : $"{DisplayName} ({Node.Name})";
     [Parameter] public NodeVisualizationSettings Visualization { get; set; } = NodeVisualizationSettings.Default;
     [Parameter] public bool VisualizationExpanded { get; set; }
     [Parameter] public EventCallback<NodeVisualizationSettings> OnVisualizationChange { get; set; }

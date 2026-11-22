@@ -1,9 +1,17 @@
 @namespace Orbit.UI.Components.Canvas
 @using Orbit.Application.Persistence
 @using Microsoft.AspNetCore.Components.Web
+@using Orbit.Presentation.Canvas
 
 <div class="visual-group note-@Group.Accent.ToString().ToLowerInvariant() @(Selected ? "visual-group-selected" : "")"
-     data-group-id="@Group.Id" style="@Style" aria-label="@($"Visual group: {Group.Title}")">
+     data-group-id="@Group.Id" style="@Style" aria-label="@($"Visual group: {Group.Title}")" @onfocusin="FocusFrame">
+    @if (Detail is AnnotationDetail.Titles or AnnotationDetail.Marker)
+    {
+        <AnnotationMarker Title="@Group.Title" Kind="group" Accent="@Group.Accent" Zoom="@Zoom" WorldWidth="@Group.Width"
+                          Detail="@Detail" Locked="@Locked" OnReveal="@OnReveal" />
+    }
+    else
+    {
     <header class="visual-group-header" @onpointerdown="OnMove" @onpointerdown:stopPropagation="true"
             @onpointerdown:preventDefault="@(!Locked)">
         <span class="visual-group-title" title="@($"{Group.Title}\n{Group.Description}")">@Group.Title</span>
@@ -16,6 +24,7 @@
     <button class="visual-group-resize" type="button" disabled="@Locked" aria-label="Resize visual group"
             title="Drag to resize; arrow keys to resize" @onpointerdown="OnResize" @onpointerdown:stopPropagation="true"
             @onpointerdown:preventDefault="true" @onkeydown="ResizeKey" @onkeydown:stopPropagation="true">↘</button>
+    }
 </div>
 
 @code {
@@ -23,6 +32,11 @@
     [Parameter, EditorRequired] public SavedVisualGroup Group { get; set; } = default!;
     [Parameter] public bool Selected { get; set; }
     [Parameter] public bool Locked { get; set; }
+    [Parameter] public AnnotationDetail Detail { get; set; } = AnnotationDetail.Full;
+    [Parameter] public double Zoom { get; set; } = 1;
+    [Parameter] public EventCallback OnReveal { get; set; }
+    [Parameter] public EventCallback OnSelect { get; set; }
+    private Task FocusFrame() => Detail != AnnotationDetail.Full || Locked ? Task.CompletedTask : OnSelect.InvokeAsync();
     [Parameter] public EventCallback<PointerEventArgs> OnMove { get; set; }
     [Parameter] public EventCallback<PointerEventArgs> OnResize { get; set; }
     [Parameter] public EventCallback OnEdit { get; set; }

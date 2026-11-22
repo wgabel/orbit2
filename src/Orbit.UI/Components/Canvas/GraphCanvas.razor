@@ -12,10 +12,12 @@
          @onpointercancel="CancelGesture" @onpointerleave="CancelGesture"
          @onwheel="OnWheelAsync" @onwheel:preventDefault="true" @onkeydown="KeyDown">
         <div class="canvas-world" style="@WorldStyle">
-            @foreach (var group in Snapshot.VisualGroups)
+            @foreach (var group in Snapshot.VisualGroups.Where(group => Snapshot.GroupDetail(group.Id) != AnnotationDetail.Hidden))
             {
                 <VisualGroupFrame @key="group.Id" Group="@(groupPreview?.Id == group.Id ? groupPreview : group)"
                                   Selected="@(Snapshot.SelectedGroupId == group.Id)" Locked="@(HasAnnotationDraft || AnnotationActionsDisabled)"
+                                  Detail="@Snapshot.GroupDetail(group.Id)" Zoom="@Snapshot.Viewport.Zoom" OnReveal="@(() => SelectAnnotationAsync(group.Id, true))"
+                                  OnSelect="@(() => { State.SelectGroup(group.Id); })"
                                   OnMove="@(args => BeginGroupAsync(group, args, false))" OnResize="@(args => BeginGroupAsync(group, args, true))"
                                   OnEdit="@(() => BeginGroupEditAsync(group))" OnDelete="@(() => NoteAction(() => State.DeleteGroup(group.Id)))"
                                   OnUpdate="@(updated => NoteAction(() => State.UpdateGroup(updated)))" />
@@ -23,12 +25,14 @@
             <ConnectionLayer Wires="@wires" DraftPath="@DraftPath" OnSelect="SelectConnection" />
             @foreach (var wire in wires.Where(ShowBadge))
             {
-                <ConnectionAmountBadge @key="wire.Id" Wire="@wire" Zoom="@Snapshot.Viewport.Zoom" OnSelect="SelectConnection" />
+                <ConnectionAmountBadge @key="wire.Id" Wire="@wire" Zoom="@Snapshot.Viewport.Zoom" OnSelect="SelectConnection"
+                                       ShowAuthoredLabel="@Snapshot.ShowSecondaryAnnotations" />
             }
-            @foreach (var note in Snapshot.Notes)
+            @foreach (var note in Snapshot.Notes.Where(note => Snapshot.NoteDetail(note.Id) != AnnotationDetail.Hidden))
             {
                 <NoteCard @key="note.Id" Note="@DisplayNote(note)" Selected="@(Snapshot.SelectedNoteId == note.Id)"
                           Locked="@(HasAnnotationDraft || AnnotationActionsDisabled)"
+                          Detail="@Snapshot.NoteDetail(note.Id)" Zoom="@Snapshot.Viewport.Zoom" OnReveal="@(() => SelectAnnotationAsync(note.Id, false))"
                           OnMove="@(args => BeginNoteAsync(note, args, false))" OnResize="@(args => BeginNoteAsync(note, args, true))"
                           OnSelect="@(() => { State.SelectNote(note.Id); })" OnEdit="@(() => BeginNoteEditAsync(note.Id))"
                           OnUpdate="UpdateNote" OnDuplicate="@(() => NoteAction(() => State.DuplicateNote(note.Id)))"
@@ -38,6 +42,7 @@
             {
                 <NodeFrame @key="node.Id" Node="@node" Position="@DisplayNodePosition(node.Id)" PatchId="@PatchId" GraphId="@Snapshot.GraphId"
                            Documentation="@Snapshot.NodeDescriptions.GetValueOrDefault(node.Id)"
+                           ShowSecondaryDocumentation="@(Snapshot.ShowSecondaryAnnotations || Snapshot.SelectedNodeIds.Contains(node.Id))"
                            OnEditDescription="@(() => EditNodeDescriptionAsync(node.Id))" DocumentationEditDisabled="@(HasAnnotationDraft || AnnotationActionsDisabled)"
                            Visualization="@Snapshot.VisualizationFor(node.Id)" VisualizationExpanded="@(Snapshot.ExpandedVisualizationNodeId == node.Id)"
                            OnVisualizationChange="@(settings => { State.SetVisualization(node.Id, settings); })"
@@ -66,6 +71,38 @@
                 }
             </select>
         </div>
+        <div class="annotation-display-control" @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true" @onwheel:stopPropagation="true">
+            <label for="annotation-visibility">Annotations</label>
+            <select id="annotation-visibility" @bind="VisibilityMode" disabled="@AnnotationControlsLocked">
+                <option value="@Orbit.Application.Persistence.AnnotationVisibility.Show">Show</option>
+                <option value="@Orbit.Application.Persistence.AnnotationVisibility.TitlesOnly">Titles only</option>
+                <option value="@Orbit.Application.Persistence.AnnotationVisibility.Hide">Hide</option>
+            </select>
+            @if (HasAnnotations)
+            {
+                <button type="button" class="secondary" disabled="@AnnotationControlsLocked" aria-expanded="@finderOpen"
+                        @onclick="ToggleFinder">Find annotation</button>
+                <button type="button" class="secondary" disabled="@AnnotationControlsLocked" @onclick="FitSignalsAsync">Fit signals</button>
+            }
+            @if (finderOpen && HasAnnotations)
+            {
+                <div class="annotation-finder" role="region" aria-label="Find annotation">
+                    <label for="annotation-target">Note or group</label>
+                    <select id="annotation-target" @bind="finderTarget" disabled="@AnnotationControlsLocked">
+                        <option value="">Select an annotation</option>
+                        @foreach (var note in Snapshot.Notes.OrderBy(note => note.Title, StringComparer.OrdinalIgnoreCase))
+                        {
+                            <option value="@($"note:{note.Id}")">Note: @note.Title</option>
+                        }
+                        @foreach (var group in Snapshot.VisualGroups.OrderBy(group => group.Title, StringComparer.OrdinalIgnoreCase))
+                        {
+                            <option value="@($"group:{group.Id}")">Group: @group.Title</option>
+                        }
+                    </select>
+                    <button type="button" disabled="@(!FinderTargetExists || AnnotationControlsLocked)" @onclick="RevealAnnotationAsync">Reveal and fit</button>
+                </div>
+            }
+        </div>
         <span class="canvas-count">@($"{Snapshot.Graph.Nodes.Count} nodes · {Snapshot.Graph.Connections.Count} connections{(Snapshot.Notes.Count > 0 ? $" · {Snapshot.Notes.Count} notes" : "")}")</span>
         @if (CanShowScope)
         {
@@ -93,7 +130,8 @@
             <VisualGroupEditor @key="groupEdit.Id" Group="@groupEdit" Options="@GroupMemberOptions(groupEdit.Id)"
                                OnApply="FinishGroupEditAsync" OnCancel="@(() => FinishGroupEditAsync(null))" />
         }
-        @if (Snapshot.Graph.Nodes.Count == 0 && Snapshot.Notes.Count == 0 && Snapshot.VisualGroups.Count == 0)
+        @if (Snapshot.Graph.Nodes.Count == 0 && !Snapshot.Notes.Any(note => Snapshot.NoteDetail(note.Id) != AnnotationDetail.Hidden)
+            && !Snapshot.VisualGroups.Any(group => Snapshot.GroupDetail(group.Id) != AnnotationDetail.Hidden))
         {
             <div class="canvas-empty">Add a node to start building your graph.</div>
         }

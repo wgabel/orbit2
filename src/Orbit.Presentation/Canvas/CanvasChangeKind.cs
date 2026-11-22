@@ -12,5 +12,6 @@ public enum CanvasChangeKind
     VisualizationChanged,
     NotesChanged,
     DescriptionsChanged,
-    GroupsChanged
+    GroupsChanged,
+    AnnotationVisibilityChanged
 }
