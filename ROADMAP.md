@@ -30,7 +30,7 @@
 | Manual Trigger, timed Gate and Clock sources | Implemented · 7.1.3 | [Envelopes](docs/audio/envelopes.md); [PR #10](https://github.com/wgabel/orbit2/pull/10) |
 | AR/ADSR/Loop envelope modes | Implemented · 7.1.4 | [Envelopes](docs/audio/envelopes.md); [PR #12](https://github.com/wgabel/orbit2/pull/12) |
 | Envelope curve, measured output and live stage | Implemented · 7.1.5 | [Envelopes](docs/audio/envelopes.md); [PR #14](https://github.com/wgabel/orbit2/pull/14) |
-| Persistent piano dock | In review · shared 7.2.3 / 7.2.8 | [Keyboard contract](docs/instruments/pitch-control.md#phase-723--note-source-in-review); pending pull request link |
+| Persistent piano dock | In review · shared 7.2.3 / 7.2.8 | [Keyboard contract](docs/instruments/pitch-control.md#phase-723--note-source-in-review); [PR #70](https://github.com/wgabel/orbit2/pull/70) |
 | Live keyboard and pitch pattern sequencer | Implemented · 7.2.8a–c | [Note Sequencer](docs/instruments/note-sequencer.md); [PR #16](https://github.com/wgabel/orbit2/pull/16), [PR #17](https://github.com/wgabel/orbit2/pull/17), [PR #19](https://github.com/wgabel/orbit2/pull/19) |
 | Composite boundary visibility | Implemented · 6.19.6 | [Composite nodes](docs/editor/composite-nodes.md); [PR #18](https://github.com/wgabel/orbit2/pull/18) |
 | Reusable custom composite modules, grouping, patch-to-module conversion, macros | 7.4.1 selection and 7.4.2a grouping implemented; 7.4.2b ungrouping in review; 7.4.3–7.4.7 planned | [Reusable modules](docs/editor/reusable-modules.md); [PR #45](https://github.com/wgabel/orbit2/pull/45), [PR #47](https://github.com/wgabel/orbit2/pull/47), [PR #48](https://github.com/wgabel/orbit2/pull/48) |

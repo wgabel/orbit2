@@ -43,7 +43,7 @@ A sine used as an LFO remains the same generator implementation: its displayed c
 
 Map these presentation shapes to the existing domain port kinds; introduce future kinds only when their domain semantics exist. Audio channel count is a label, not a separate signal kind.
 
-The [piano dock](../instruments/pitch-control.md#phase-723--note-source-in-review) is a shared presentation component (pending pull request link, in review). Tokenized compact and tall key heights, fixed-width pitch meter, compact target/control row, piano-specific color tokens and responsive one-/two-octave geometry preserve stationary key targets. The mobile dock reserves a row above the bottom navigation instead of covering the canvas.
+The [piano dock](../instruments/pitch-control.md#phase-723--note-source-in-review) is a shared presentation component ([PR #70](https://github.com/wgabel/orbit2/pull/70), in review). Tokenized compact and tall key heights, fixed-width pitch meter, compact target/control row, piano-specific color tokens and responsive one-/two-octave geometry preserve stationary key targets. The mobile dock reserves a row above the bottom navigation instead of covering the canvas.
 
 #### Design token and theme system
 
