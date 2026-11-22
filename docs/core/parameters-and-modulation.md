@@ -134,7 +134,7 @@ The DSP can optimize eligible control-rate or constant signals. Manual changes t
 
 **History:** [PR #75](https://github.com/wgabel/orbit2/pull/75) introduced faster oscillator controls but left policy selection in individual emitters. Pitch Control and other emitters silently used the previous roughly 68 ms settling time. This made the same retune sound different depending on the control path.
 
-**Centralized policy (in review):** Every `ParameterDefinition` requires a `ParameterSmoothing` semantic category. `FaustNodeContext.Parameter` automatically applies it; emitters cannot supply a duration or opt out. `FaustControlSmoothing` is the sole mapping of categories to durations. Unknown/unspecified policy fails validation/compilation; discrete and structural definitions must declare `None`. The registry test covers even dormant parameters, host controls and composite preset internals.
+**Centralized policy (in review, [PR #80](https://github.com/wgabel/orbit2/pull/80)):** Every `ParameterDefinition` requires a `ParameterSmoothing` semantic category. `FaustNodeContext.Parameter` automatically applies it; emitters cannot supply a duration or opt out. `FaustControlSmoothing` is the sole mapping of categories to durations. Unknown/unspecified policy fails validation/compilation; discrete and structural definitions must declare `None`. The registry test covers even dormant parameters, host controls and composite preset internals.
 
 | Base control | Approx. 95% settling time |
 |---|---:|
