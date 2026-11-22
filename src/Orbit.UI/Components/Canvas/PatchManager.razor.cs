@@ -31,6 +31,13 @@ public partial class PatchManager
     private string? Message { get; set; }
     private string? Error { get; set; }
 
+    internal bool TryCloseMobilePanel()
+    {
+        if (Busy || EditingOverview) return false;
+        if (IsOpen) { IsOpen = false; StateHasChanged(); }
+        return true;
+    }
+
     private async Task ToggleAsync()
     {
         if (EditingOverview || Busy) return;

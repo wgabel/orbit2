@@ -35,6 +35,7 @@ public partial class GraphCanvas
         pendingSource = null;
         selectionPanelOpen = false;
         await OnUngroupComposite.InvokeAsync(new UngroupCompositeCommand(Snapshot.GraphId, composite.Id, Snapshot.GraphRevision));
+        if (MobileSelectionOpen) await OnMobileToolCompleted.InvokeAsync();
     }
 
     private async Task CreateCompositeAsync()
@@ -45,18 +46,26 @@ public partial class GraphCanvas
         selectionPanelOpen = false;
         await OnGroupNodes.InvokeAsync(new GroupNodesCommand(Snapshot.GraphId, Snapshot.SelectedNodeIds.ToArray(),
             compositeName, Snapshot.GraphRevision));
+        if (MobileSelectionOpen) await OnMobileToolCompleted.InvokeAsync();
     }
     private string SelectionSummary => $"{Snapshot.SelectedNodeIds.Count} nodes selected · {SelectedEligible} eligible" +
         (SelectedProtected > 0 ? $" · {SelectedProtected} protected" : "") +
         (Snapshot.SelectedConnectionIds.Count > 0 ? $" · {Snapshot.SelectedConnectionIds.Count} cables selected" : "");
 
-    private void ToggleMarqueeMode()
+    private async Task ToggleMarqueeMode()
     {
         if (AnnotationControlsLocked) return;
         EndGesture();
         pendingSource = null;
         marqueeMode = !marqueeMode;
         selectionPanelOpen = false;
+        if (MobileSelectionOpen) await OnMobileToolCompleted.InvokeAsync();
+    }
+
+    private async Task CloseSelectionAsync()
+    {
+        selectionPanelOpen = false;
+        if (MobileSelectionOpen) await OnCloseMobileTools.InvokeAsync();
     }
 
     private void SelectAllModuleNodes()

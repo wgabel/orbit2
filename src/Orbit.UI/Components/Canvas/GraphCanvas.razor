@@ -66,7 +66,8 @@
         {
             <NoteEditor @key="editing.Id" Note="@editing" OnApply="FinishNoteEditAsync" OnCancel="@(() => FinishNoteEditAsync(null))" />
         }
-        <div class="canvas-view-tools" @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true" @onwheel:stopPropagation="true">
+        <div class="canvas-view-tools" data-mobile-sheet="view" @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true" @onwheel:stopPropagation="true">
+        <MobileSheetHeader Title="View" OnClose="OnCloseMobileTools" />
         <div class="connection-label-control" @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true">
             <label for="connection-label-mode">Connection labels</label>
             <select id="connection-label-mode" @bind="LabelMode" aria-label="Connection labels">
@@ -75,11 +76,12 @@
                     <option value="@mode">@mode</option>
                 }
             </select>
-            <button type="button" class="secondary" aria-expanded="@selectionPanelOpen" aria-label="Selection actions"
+            <button type="button" class="secondary desktop-selection-trigger" aria-expanded="@selectionPanelOpen" aria-label="Selection actions"
                     @onclick="() => selectionPanelOpen = !selectionPanelOpen">@(marqueeMode ? "Selecting" : "Selection")</button>
-            @if (selectionPanelOpen)
+            @if (selectionPanelOpen || MobileSelectionOpen)
             {
-                <section class="canvas-selection-panel" aria-label="Node selection" role="region" @onwheel:stopPropagation="true">
+                <section class="canvas-selection-panel" data-mobile-sheet="selection" aria-label="Node selection" role="region" @onwheel:stopPropagation="true">
+                    <MobileSheetHeader Title="Selection" OnClose="CloseSelectionAsync" />
                     <strong role="status">@SelectionSummary</strong>
                     <p class="workspace-notice">Rack and master nodes stay outside reusable modules. Boundary routing will be checked when grouping.</p>
                     <button type="button" class="secondary" aria-pressed="@marqueeMode" disabled="@AnnotationControlsLocked"
@@ -119,9 +121,14 @@
                         <p class="workspace-notice">Expand @selectedComposite.Name one level using its current routing. Nested composites stay intact.</p>
                         <button type="button" class="secondary" disabled="@AnnotationControlsLocked" @onclick="UngroupCompositeAsync">Ungroup composite</button>
                     }
-                    <button type="button" class="secondary" @onclick="() => selectionPanelOpen = false">Close selection actions</button>
+                    <button type="button" class="secondary" @onclick="CloseSelectionAsync">Close selection actions</button>
                 </section>
             }
+        </div>
+        <div class="workspace-mobile-only workspace-view-summary">
+            <p class="workspace-notice">Canvas: @Snapshot.Graph.Nodes.Count nodes · @Snapshot.Graph.Connections.Count connections</p>
+            <p class="workspace-notice">Entire patch: @PatchCounts.Nodes nodes · @PatchCounts.Connections connections</p>
+            <p class="workspace-notice">Drag the background to pan; use the floating zoom controls. Edit → Selection actions enables marquee selection.</p>
         </div>
         <div class="annotation-display-control" @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true" @onwheel:stopPropagation="true">
             <label for="annotation-visibility">Annotations</label>

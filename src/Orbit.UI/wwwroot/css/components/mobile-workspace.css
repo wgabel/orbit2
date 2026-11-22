@@ -1,7 +1,7 @@
 
 /* Desktop retains the original shared toolbars and controls. */
 .workspace-more-tools, .workspace-transport-tools, .canvas-view-tools { display: contents; }
-.mobile-workspace-bar, .workspace-mobile-tempo, .mobile-playback-label { display: none; }
+.mobile-workspace-bar, .workspace-mobile-tempo, .mobile-playback-label, .workspace-mobile-only, .mobile-sheet-heading { display: none; }
 
 /* A viewport breakpoint is a layout condition, not a reusable visual dimension. */
 @media (max-width: 768px), (max-height: 480px) and (pointer: coarse) {
@@ -136,6 +136,24 @@
         border: var(--semantic-border-width) solid var(--semantic-color-border);
         border-radius: var(--semantic-radius-surface) var(--semantic-radius-surface) 0 0;
     }
+    .workspace-mobile-only { display: initial; }
+    .mobile-sheet-heading {
+        display: flex;
+        flex: 0 0 100%;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--semantic-space-compact);
+        width: 100%;
+        border-block-end: var(--semantic-border-width) solid var(--semantic-color-border);
+        padding-block-end: var(--semantic-space-tight);
+    }
+    .mobile-sheet-heading button, .workspace-edit-tools button, .workspace-nodes-tools button,
+    .workspace-more-tools button, .workspace-transport-tools button, .canvas-view-tools button {
+        min-height: var(--component-workspace-mobile-toolbar-height);
+    }
+    .workspace-selection-summary { flex-basis: 100%; }
+    .workspace-edit-tools .contextual-action:disabled { display: none; }
+    .workspace-more-tools:has(> .workspace-library-panel) > :not(.workspace-library-panel) { display: none; }
     .workspace-nodes-tools select { min-width: 0; flex: 1 1 auto; max-width: 100%; }
     .workspace-more-tools .audio-performance-monitor { padding: 0; border: 0; }
     .workspace-library-panel, .signal-scope-panel {
@@ -156,8 +174,8 @@
     }
     .canvas-hint { display: none; }
     /* When the view sheet is open, allow its native vertical touch scrolling. */
-    .graph-workspace[data-mobile-panel="view"] .canvas-viewport { touch-action: pan-y; }
-    .graph-workspace[data-mobile-panel="view"] .canvas-view-tools {
+    .graph-workspace:is([data-mobile-panel="view"], [data-mobile-panel="selection"]) .canvas-viewport { touch-action: pan-y; }
+    .graph-workspace:is([data-mobile-panel="view"], [data-mobile-panel="selection"]) .canvas-view-tools {
         position: absolute;
         z-index: 3;
         inset-inline-start: 0;
@@ -184,6 +202,11 @@
         flex-wrap: wrap;
     }
     .canvas-view-tools .canvas-selection-panel { flex-basis: 100%; }
+    .canvas-view-tools .desktop-selection-trigger { display: none; }
+    .graph-workspace[data-mobile-panel="view"] .canvas-selection-panel { display: none; }
+    .graph-workspace[data-mobile-panel="selection"] .canvas-view-tools > :not(.connection-label-control),
+    .graph-workspace[data-mobile-panel="selection"] .connection-label-control > :not(.canvas-selection-panel) { display: none; }
+    .workspace-view-summary { display: grid; gap: var(--semantic-space-tight); }
     .performance-keyboard, .graph-workspace > .rack-editor {
         position: absolute;
         z-index: var(--component-workspace-overlay-layer);

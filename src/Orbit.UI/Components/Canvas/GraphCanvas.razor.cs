@@ -36,6 +36,9 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter] public bool AutoFitOnFirstRender { get; set; } = true;
     [Parameter] public bool CanShowScope { get; set; }
     [Parameter] public bool ScopeOpen { get; set; }
+    [Parameter] public bool MobileSelectionOpen { get; set; }
+    [Parameter] public EventCallback OnMobileToolCompleted { get; set; }
+    [Parameter] public EventCallback OnCloseMobileTools { get; set; }
     [Parameter] public EventCallback OnToggleScope { get; set; }
     [Parameter] public EventCallback<bool> OnAnnotationDraftChanged { get; set; }
     [Parameter] public EventCallback<string> OnAnnotationError { get; set; }
