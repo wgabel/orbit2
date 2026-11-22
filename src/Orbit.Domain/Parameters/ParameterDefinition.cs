@@ -12,7 +12,8 @@ public sealed record ParameterDefinition(
     double Maximum,
     ParameterUnit Unit,
     ParameterScale Scale,
-    bool CanModulate)
+    bool CanModulate,
+    ParameterSmoothing Smoothing)
 {
     /// <summary>Optional logarithmic display rail; null preserves linear editing.
     /// Independent of the DSP modulation scale and physical base-value bounds.</summary>

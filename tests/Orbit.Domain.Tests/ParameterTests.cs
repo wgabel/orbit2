@@ -112,12 +112,23 @@ public sealed class ParameterTests
     public void ParameterDefinitionRejectsInvalidDefaultAndMissingModulationPort()
     {
         var definition = new ParameterDefinition("test", "Test", 2, 0, 1,
-            ParameterUnit.Normalized, ParameterScale.Linear, true);
+            ParameterUnit.Normalized, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Amplitude);
 
         Assert.Throws<ArgumentException>(() =>
             new Parameter(Guid.NewGuid(), definition, Guid.NewGuid()));
         Assert.Throws<ArgumentException>(() =>
             new Parameter(Guid.NewGuid(), definition with { DefaultValue = 0.5 }));
+    }
+
+    [Fact]
+    public void RejectsUnspecifiedOrIncompatibleSmoothing()
+    {
+        var definition = new ParameterDefinition("test", "Test", 0, 0, 1,
+            ParameterUnit.Normalized, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.Amplitude);
+        Assert.Throws<ArgumentException>(() => new Parameter(Guid.NewGuid(), definition with { Smoothing = ParameterSmoothing.Unspecified }));
+        Assert.Throws<ArgumentException>(() => new Parameter(Guid.NewGuid(), definition with { Smoothing = (ParameterSmoothing)12345 }));
+        Assert.Throws<ArgumentException>(() => new Parameter(Guid.NewGuid(), definition with { Choices = [new(0, "Off"), new(1, "On")] }));
+        Assert.Throws<ArgumentException>(() => new Parameter(Guid.NewGuid(), definition with { RequiresRecompile = true }));
     }
 
     private static (SignalGraph Graph, OscillatorGenerator Node, Parameter Frequency) CreateSine()

@@ -8,6 +8,8 @@ using Orbit.Application.Models;
 using Orbit.Audio.Compilation;
 using Orbit.Audio.Analysis;
 using Orbit.Domain.Graphs;
+using Orbit.Domain.Nodes;
+using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Nodes.Processors;
@@ -261,11 +263,55 @@ public sealed class FaustGraphCompilerTests
         Check(oscillator, "phase", Smooth("10.0"));
         Check(gain, "gain", Smooth("10.0"));
         Check(filter, "cutoff", Smooth("15.0"));
-        Check(filter, "resonance", "si.smoo");
+        Check(filter, "resonance", Smooth("15.0"));
 
         var frequency = oscillator.Parameters.Single(p => p.Definition.Key == "frequency");
         session.Execute(new SetParameterValueCommand(session.GraphId, new ParameterAddress(oscillator.Id, frequency.Id), 880));
         Assert.Equal(program.Source, compiler.Compile(session.Snapshot).Source);
+    }
+
+    [Fact]
+    public void PitchControlAndOscillatorShareThePitchPolicy()
+    {
+        using var session = new PatchSession(BuiltInNodes.CreateRegistry());
+        var pitch = Add(session, PitchControlGenerator.NodeType);
+        var oscillator = Add(session, OscillatorGenerator.NodeType);
+        var master = Add(session, MasterOutput.NodeType);
+        session.Execute(new SetParameterValueCommand(session.GraphId,
+            new ParameterAddress(oscillator.Id, oscillator.Parameters.Single(p => p.Definition.Key == OscillatorGenerator.PitchTrackingKey).Id), 1));
+        Connect(session, pitch, oscillator, oscillator.Inputs.Single(p => p.Key == OscillatorGenerator.PitchPortKey).Id, 1);
+        Connect(session, oscillator, master, master.Inputs.Single().Id, 1);
+        var program = compiler.Compile(session.Snapshot);
+        foreach (var (node, key) in new[] { (pitch, PitchControlGenerator.SemitonesKey), (pitch, PitchControlGenerator.CentsKey),
+                     (oscillator, "frequency"), (oscillator, OscillatorGenerator.PitchKey) })
+        {
+            var control = Control(program, node, key);
+            var line = program.Source.Split('\n').Single(line => line.TrimStart().StartsWith(control.Name + " = "));
+            Assert.EndsWith(" : si.smooth(exp(-3000.0 / (ma.SR * 5.0)));", line.Trim());
+        }
+    }
+
+    [Fact]
+    public void EveryRegisteredParameterHasAnExplicitCompatibleSmoothingPolicy()
+    {
+        var registry = BuiltInNodes.CreateEditorRegistry();
+        foreach (var type in registry.RegisteredTypes)
+            CheckNode(registry.Create(type));
+
+        static void CheckNode(ISignalNode node)
+        {
+            foreach (var parameter in node.Parameters)
+            {
+                var definition = parameter.Definition;
+                Assert.True(Enum.IsDefined(definition.Smoothing) && definition.Smoothing != ParameterSmoothing.Unspecified,
+                    $"{node.TypeKey}/{definition.Key} has no valid smoothing policy.");
+                if (definition.Choices is not null || definition.RequiresRecompile)
+                    Assert.Equal(ParameterSmoothing.None, definition.Smoothing);
+            }
+            if (node is ICompositeNode composite)
+                foreach (var child in composite.InternalGraph.Nodes)
+                    CheckNode(child);
+        }
     }
 
     [Fact]

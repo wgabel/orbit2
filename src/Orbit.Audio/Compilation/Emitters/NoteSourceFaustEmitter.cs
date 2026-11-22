@@ -13,7 +13,7 @@ public sealed class NoteSourceFaustEmitter : IFaustMultiOutputEmitter
     public string Emit(FaustNodeContext context)
     {
         var action = context.PerformanceNoteInput();
-        var reference = context.Parameter(NoteSequencerGenerator.ReferenceKey, unsmoothed: true);
+        var reference = context.Parameter(NoteSequencerGenerator.ReferenceKey);
         var meter = context.PitchMeter();
         // The action worklet resolves the held-key stack. One tuple shares the decoded
         // action, note latch and gate state; fallback retunes without a strike.

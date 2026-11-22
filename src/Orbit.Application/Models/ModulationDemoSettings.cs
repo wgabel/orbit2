@@ -18,13 +18,13 @@ public sealed record ModulationDemoSettings(
     // These definitions drive both validation and reusable presentation controls.
     public static ParameterDefinition BaseFrequencyDefinition { get; } =
         new("baseFrequency", "Base frequency", 440, MinimumBaseFrequency, MaximumBaseFrequency,
-            ParameterUnit.Hertz, ParameterScale.Linear, true);
+            ParameterUnit.Hertz, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Pitch);
     public static ParameterDefinition LfoFrequencyDefinition { get; } =
         new("lfoRate", "LFO frequency", 0.5, MinimumLfoFrequency, MaximumLfoFrequency,
-            ParameterUnit.Hertz, ParameterScale.Linear, true);
+            ParameterUnit.Hertz, ParameterScale.Linear, true, Smoothing: ParameterSmoothing.Pitch);
     public static ParameterDefinition DepthDefinition { get; } =
         new("depthHz", "Modulation depth", 100, 0, MaximumDepth,
-            ParameterUnit.Hertz, ParameterScale.Linear, false);
+            ParameterUnit.Hertz, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.Shape);
 
     // The fixed sine LFO spans [-1, 1]; the DSP enforces a 20 Hz floor.
     public ParameterRange FrequencyModulationRange => new(

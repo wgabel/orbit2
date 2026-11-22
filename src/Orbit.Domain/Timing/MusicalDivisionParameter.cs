@@ -7,7 +7,7 @@ public static class MusicalDivisionParameter
 {
     public static ParameterDefinition Create(string timingKey, int synchronizedValue) => new(
         "division", "Musical division", (int)MusicalDivision.QuarterNote, 0, 6,
-        ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: false)
+        ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: false, Smoothing: ParameterSmoothing.None)
     {
         ActiveWhen = new(timingKey, synchronizedValue),
         Choices = Array.AsReadOnly(new ParameterChoice[]

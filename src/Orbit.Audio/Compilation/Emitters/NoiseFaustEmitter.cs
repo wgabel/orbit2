@@ -14,7 +14,7 @@ public sealed class NoiseFaustEmitter : IFaustNodeEmitter
     public string Emit(FaustNodeContext context)
     {
         var color = (NoiseColor)context.ConstantParameter("color");
-        var amplitude = context.Parameter("amplitude", settlingMilliseconds: FaustControlSmoothing.Amplitude);
+        var amplitude = context.Parameter("amplitude");
         return $"({FaustNoiseSpectra.Emit(color, context.Node.Id)}) * {amplitude}";
     }
 }

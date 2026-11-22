@@ -9,14 +9,14 @@ public sealed class DelayProcessor : AudioEffectProcessor
 {
     public const string NodeType = "processor.delay";
     private static readonly ParameterDefinition TimeDefinition = new(
-        "time", "Delay time", 0.3, 0.01, 2, ParameterUnit.Seconds, ParameterScale.Linear, CanModulate: true)
+        "time", "Delay time", 0.3, 0.01, 2, ParameterUnit.Seconds, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.DelayTime)
         { ActiveWhen = new("timing", (int)DelayTimingMode.Free) };
     private static readonly ParameterDefinition FeedbackDefinition = new(
-        "feedback", "Feedback", 0.35, 0, 0.9, ParameterUnit.Normalized, ParameterScale.Linear, CanModulate: true);
+        "feedback", "Feedback", 0.35, 0, 0.9, ParameterUnit.Normalized, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.Feedback);
     private static readonly ParameterDefinition MixDefinition = new(
-        "mix", "Wet mix", 0.35, 0, 1, ParameterUnit.Normalized, ParameterScale.Linear, CanModulate: true);
+        "mix", "Wet mix", 0.35, 0, 1, ParameterUnit.Normalized, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.EffectMix);
     private static readonly ParameterDefinition TimingDefinition = new(
-        "timing", "Timing mode", (int)DelayTimingMode.Free, 0, 1, ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: false)
+        "timing", "Timing mode", (int)DelayTimingMode.Free, 0, 1, ParameterUnit.Ratio, ParameterScale.Linear, CanModulate: false, Smoothing: ParameterSmoothing.None)
         {
             RequiresRecompile = true,
             Choices = Array.AsReadOnly(new ParameterChoice[] { new(0, "Free (seconds)"), new(1, "Synchronized (BPM)") })

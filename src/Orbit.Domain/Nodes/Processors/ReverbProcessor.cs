@@ -8,11 +8,11 @@ public sealed class ReverbProcessor : AudioEffectProcessor
 {
     public const string NodeType = "processor.reverb";
     private static readonly ParameterDefinition DecayDefinition = new(
-        "decay", "Decay (RT60)", 2.5, 0.1, 12, ParameterUnit.Seconds, ParameterScale.Linear, CanModulate: true);
+        "decay", "Decay (RT60)", 2.5, 0.1, 12, ParameterUnit.Seconds, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.Decay);
     private static readonly ParameterDefinition DampingDefinition = new(
-        "damping", "Damping", 0.4, 0, 1, ParameterUnit.Normalized, ParameterScale.Linear, CanModulate: true);
+        "damping", "Damping", 0.4, 0, 1, ParameterUnit.Normalized, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.Filter);
     private static readonly ParameterDefinition MixDefinition = new(
-        "mix", "Wet mix", 0.35, 0, 1, ParameterUnit.Normalized, ParameterScale.Linear, CanModulate: true);
+        "mix", "Wet mix", 0.35, 0, 1, ParameterUnit.Normalized, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.EffectMix);
 
     public ReverbProcessor(Guid id) : this(id, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()) { }
 

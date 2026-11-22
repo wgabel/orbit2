@@ -23,7 +23,7 @@ public sealed class NoteSequencerGenerator : SignalNode, IGenerator
     public static bool IsPatternParameter(string key) => key.StartsWith("pattern-", StringComparison.Ordinal);
 
     private static ParameterDefinition Choice(string key, string name, int value, IReadOnlyList<ParameterChoice> choices) =>
-        new(key, name, value, choices.Min(c => c.Value), choices.Max(c => c.Value), ParameterUnit.Ratio, ParameterScale.Linear, false) { Choices = choices };
+        new(key, name, value, choices.Min(c => c.Value), choices.Max(c => c.Value), ParameterUnit.Ratio, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None) { Choices = choices };
     private static IReadOnlyList<ParameterChoice> Integers(int first, int count) => Array.AsReadOnly(Enumerable.Range(first, count).Select(n => new ParameterChoice(n, n.ToString(System.Globalization.CultureInfo.InvariantCulture))).ToArray());
     private static IReadOnlyList<ParameterChoice> Notes { get; } = Array.AsReadOnly(new[] { new ParameterChoice(0, "Hold") }.Concat(Enumerable.Range(0, 128).Select(n => new ParameterChoice(n + 1, MusicalPitch.NoteName(n)))).ToArray());
     public static IReadOnlyList<ParameterDefinition> PatternDefinitions { get; } = Array.AsReadOnly(new[] {
@@ -32,16 +32,16 @@ public sealed class NoteSequencerGenerator : SignalNode, IGenerator
         Choice(TimingKey, "Timing", 0, [new(0, "Synchronized"), new(1, "Free seconds")]),
         Choice(DivisionKey, "Step division", 1, [new(1, "1/16"), new(2, "1/8"), new(4, "1 beat"), new(8, "2 beats"), new(16, "1 bar")]),
         Choice(MultiplierKey, "Step multiplier", 1, Integers(1, 64)),
-        new ParameterDefinition(SecondsKey, "Step seconds", 1, 0.01, 600, ParameterUnit.Seconds, ParameterScale.Linear, false),
-        new ParameterDefinition(GlideKey, "Glide seconds", 0, 0, 600, ParameterUnit.Seconds, ParameterScale.Linear, false)
+        new ParameterDefinition(SecondsKey, "Step seconds", 1, 0.01, 600, ParameterUnit.Seconds, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None),
+        new ParameterDefinition(GlideKey, "Glide seconds", 0, 0, 600, ParameterUnit.Seconds, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None)
     }.Concat(Enumerable.Range(0, Capacity).Select(i => Choice(StepKey(i), $"Step {i + 1}", 0, Notes))).ToArray());
 
     public NoteSequencerGenerator(Guid id) : base(id, NodeType, "Note Sequencer",
         new[] { new Parameter(Guid.NewGuid(), new ParameterDefinition(ReferenceKey, "Reference note", MusicalPitch.ReferenceMidiNote, 0, 127,
-             ParameterUnit.Ratio, ParameterScale.Linear, false)
+             ParameterUnit.Ratio, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None)
              { Choices = Array.AsReadOnly(Enumerable.Range(0, 128).Select(n => new ParameterChoice(n, MusicalPitch.NoteName(n))).ToArray()) }),
          new Parameter(Guid.NewGuid(), new ParameterDefinition(InitialPitchKey, "Initial pitch", 0, -MaximumOffset, MaximumOffset,
-             ParameterUnit.Semitones, ParameterScale.Linear, false)) }.Concat(PatternDefinitions.Select(d => new Parameter(Guid.NewGuid(), d))),
+             ParameterUnit.Semitones, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.Pitch)) }.Concat(PatternDefinitions.Select(d => new Parameter(Guid.NewGuid(), d))),
         [], [new PortDefinition(Guid.NewGuid(), "pitch-out", "Pitch", PortDirection.Output, SignalType.Modulation)]) { }
 
     public static bool IsPlayable(int note, int reference) => note is >= 0 and <= 127 && Math.Abs(note - reference) <= MaximumOffset;

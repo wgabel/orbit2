@@ -16,8 +16,8 @@ public sealed class OscillatorFaustEmitter : IFaustNodeEmitter
     public string Emit(FaustNodeContext context)
     {
         var timing = FaustOscillatorTiming.Resolve(context);
-        var amplitude = context.Parameter("amplitude", settlingMilliseconds: FaustControlSmoothing.Amplitude);
-        var phase = context.Parameter("phase", settlingMilliseconds: FaustControlSmoothing.Phase);
+        var amplitude = context.Parameter("amplitude");
+        var phase = context.Parameter("phase");
         var waveform = (OscillatorWaveform)context.ConstantParameter("waveform");
         var pulseWidth = waveform == OscillatorWaveform.Square ? context.Parameter(OscillatorGenerator.PulseWidthKey) : "0.5";
         return $"({FaustOscillatorWaveforms.Emit(waveform, timing, phase, pulseWidth)}) * {amplitude}";

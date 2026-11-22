@@ -10,7 +10,7 @@ public sealed class DelayFaustEmitter : IFaustNodeEmitter
     {
         var synchronized = (DelayTimingMode)context.ConstantParameter("timing") == DelayTimingMode.Synchronized;
         var time = synchronized
-            ? $"(60.0 * ({FaustMusicalDivision.Beats(context.Parameter("division"))}) / {context.TransportTempo} : si.smoo)"
+            ? context.SmoothDerivedControl("time", $"(60.0 * ({FaustMusicalDivision.Beats(context.Parameter("division"))}) / {context.TransportTempo})")
             : context.Parameter("time");
         // The longest synchronized division is four beats at 20 BPM (12 s).
         // Size for Faust's maximum supported sample rate, with a single delay line.

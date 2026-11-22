@@ -8,13 +8,13 @@ public sealed class ChorusProcessor : AudioEffectProcessor
 {
     public const string NodeType = "processor.chorus";
     private static readonly ParameterDefinition RateDefinition = new(
-        "rate", "Rate", 0.6, 0.05, 5, ParameterUnit.Hertz, ParameterScale.Linear, CanModulate: true);
+        "rate", "Rate", 0.6, 0.05, 5, ParameterUnit.Hertz, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.Rate);
     private static readonly ParameterDefinition DepthDefinition = new(
-        "depth", "Depth", 3, 0, 10, ParameterUnit.Milliseconds, ParameterScale.Linear, CanModulate: true);
+        "depth", "Depth", 3, 0, 10, ParameterUnit.Milliseconds, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.DelayTime);
     private static readonly ParameterDefinition DelayDefinition = new(
-        "delay", "Base delay", 15, 5, 40, ParameterUnit.Milliseconds, ParameterScale.Linear, CanModulate: true);
+        "delay", "Base delay", 15, 5, 40, ParameterUnit.Milliseconds, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.DelayTime);
     private static readonly ParameterDefinition MixDefinition = new(
-        "mix", "Wet mix", 0.5, 0, 1, ParameterUnit.Normalized, ParameterScale.Linear, CanModulate: true);
+        "mix", "Wet mix", 0.5, 0, 1, ParameterUnit.Normalized, ParameterScale.Linear, CanModulate: true, Smoothing: ParameterSmoothing.EffectMix);
 
     public ChorusProcessor(Guid id) : this(id, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()) { }
 

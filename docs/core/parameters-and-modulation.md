@@ -30,7 +30,8 @@ public record ParameterDefinition(
     double Maximum,
     ParameterUnit Unit,
     ParameterScale Scale,
-    bool CanModulate
+    bool CanModulate,
+    ParameterSmoothing Smoothing
 );
 
 public sealed class Parameter
@@ -131,18 +132,26 @@ The DSP can optimize eligible control-rate or constant signals. Manual changes t
 
 ### Base-control smoothing
 
-**Parameter-specific smoothing (in review, [PR #75](https://github.com/wgabel/orbit2/pull/75)):** The previous default `si.smoo` gives a roughly 68 ms 95% settling time, which can make large manual frequency jumps sound like brief pitch slides. `FaustControlSmoothing` provides sample-rate-independent policies for frequently edited controls; emitters explicitly select the semantic policy through `FaustNodeContext.Parameter`.
+**History:** [PR #75](https://github.com/wgabel/orbit2/pull/75) introduced faster oscillator controls but left policy selection in individual emitters. Pitch Control and other emitters silently used the previous roughly 68 ms settling time. This made the same retune sound different depending on the control path.
+
+**Centralized policy (in review):** Every `ParameterDefinition` requires a `ParameterSmoothing` semantic category. `FaustNodeContext.Parameter` automatically applies it; emitters cannot supply a duration or opt out. `FaustControlSmoothing` is the sole mapping of categories to durations. Unknown/unspecified policy fails validation/compilation; discrete and structural definitions must declare `None`. The registry test covers even dormant parameters, host controls and composite preset internals.
 
 | Base control | Approx. 95% settling time |
 |---|---:|
-| Free oscillator frequency and manual semitone offset | 5 ms |
-| Oscillator/noise amplitude, Gain gain and EQ gain | 10 ms |
-| Oscillator phase offset | 10 ms |
-| Filter cutoff and EQ centre frequency | 15 ms |
-| Other continuous controls | Existing `si.smoo` |
+| Pitch — oscillator and resonator Hz/offset, Pitch Control transpose/fine tune, sequencer initial pitch | 5 ms |
+| Amplitude — oscillator/noise amplitude, gains, envelope sustain | 10 ms |
+| Phase — oscillator phase offset | 10 ms |
+| Filter — cutoff, resonance, EQ frequency/Q, reverb damping | 15 ms |
+| EffectMix — wet/dry mix | 15 ms |
+| Rate — clock and chorus rate | 15 ms |
+| Shape — pulse width and envelope curves | 15 ms |
+| DelayTime, Feedback, Decay, Timing — delay/chorus time/depth, feedback, resonator/reverb decay, envelope/gate durations | 68 ms (explicit conservative policy) |
+| None — discrete/structural choices, host-managed keyboard velocity and sequencer pattern timing/glide | No smoothing |
+
+Choose by semantics, not by unit or parameter name: oscillator Hz is Pitch while EQ Hz is Filter and clock Hz is Rate. Tempo-derived delay time uses its free-mode parameter's policy via `SmoothDerivedControl`; no additional hardcoded duration is permitted. The retired fixed Phase 2 DSP fixture is retained for historical build tests only; noise spectral filters, musical envelope shapes and playback crossfades are not base-parameter smoothing.
 
 The one-pole coefficient is `exp(-3 / (sampleRate * durationSeconds))`; approximately 5% of the step remains after the named duration. This is not a linear ramp, an ADSR attack or total UI-to-sound latency. The control keeps its current smoothed state when a new target arrives (even before the previous transition settles).
 
 Only the base slider is smoothed. Modulation is added at audio rate afterward, with existing range and Nyquist constraints. The free oscillator integrates frequency continuously; changing a base value does not recompile, reset phase, or schedule a voice gain envelope. Discrete choices, explicit unsmoothed controls, structural crossfades, and intentional note-sequencer glide keep their existing behavior. No new patch field or UI slider is introduced.
 
-Validation: the compiler checks the selected policies and stable source across edits. The browser Faust smoke test measures the pitch of a single continuously running triangle after several large up/down retunes and checks adjacent-sample changes, including block boundaries during rapid overlapping edits, at 44.1 and 48 kHz. This detects discontinuities and excessively slow settling; it is not a guarantee of perceived clicklessness for every waveform/frequency combination. Audition large jumps on the actual device before refining these defaults.
+Validation: the compiler checks the selected policies and stable source across edits. The browser Faust smoke test measures the pitch of a single continuously running triangle after several large up/down retunes, and a shared Pitch Control driving three oscillators, including isolated fine tuning, early frequency telemetry and sample continuity during overlapping retargets at 44.1 and 48 kHz. These tests detect discontinuities and excessively slow settling; they are not guarantees of perceived clicklessness for every waveform/frequency combination. Audition large jumps on the actual device before refining these defaults. Policy is definition metadata, reconstructed from registered factories; patch and preset formats remain unchanged.
