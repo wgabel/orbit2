@@ -44,6 +44,8 @@ The quiet filtered noise layers serve breath and bow textures rather than presen
 
 ### Phase 7.2.6a — Playable sustained instruments (in review)
 
+Implementation: [PR #44](https://github.com/wgabel/orbit2/pull/44).
+
 Five additional **Playable — …** entries reuse the sustained voices' timbre and pitch routing, without replacing or migrating the original presets. Each exposes Pitch (st), Gate (typed, single source) and Velocity (0–1, modulation amount 1), plus Audio output. Connect Note Source outputs of the same name; use a reference matching the instrument's native tuning to make keyboard labels match actual fundamental pitches. An unconnected Gate or Velocity produces silence; a fixed velocity can also be supplied by an ordinary modulation source or set by editing the internal velocity Gain base to 1.
 
 | Voice | Reference | Attack (ms) | Decay (ms) | Sustain | Release (ms) |

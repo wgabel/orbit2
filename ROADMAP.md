@@ -24,7 +24,7 @@
 | Single damped-mode Resonator | Implemented · 7.2.4 | [Physical modelling](docs/instruments/physical-modelling.md); [PR #34](https://github.com/wgabel/orbit2/pull/34) |
 | Four editable modal instrument composites | Implemented · 7.2.5 first stage | [Physical modelling](docs/instruments/physical-modelling.md#phase-725--modal-instrument-composites-implemented); [PR #37](https://github.com/wgabel/orbit2/pull/37) |
 | Monophonic keyboard Note Source (pitch, gate, trigger, velocity) | Implemented · 7.2.3 | [Pitch control](docs/instruments/pitch-control.md#phase-723--note-source-in-review); [PR #41](https://github.com/wgabel/orbit2/pull/41) |
-| Five playable sustained instruments | In review · 7.2.6a | [Instrument recipes](docs/examples/instrument-recipes.md#phase-726a--playable-sustained-instruments-in-review) |
+| Five playable sustained instruments | In review · 7.2.6a | [Instrument recipes](docs/examples/instrument-recipes.md#phase-726a--playable-sustained-instruments-in-review); [PR #44](https://github.com/wgabel/orbit2/pull/44) |
 | AD envelope and typed Trigger/Gate/Clock ports/adapters | Implemented · 7.1.1–7.1.2 | [Envelopes](docs/audio/envelopes.md); [PR #7](https://github.com/wgabel/orbit2/pull/7), [#8](https://github.com/wgabel/orbit2/pull/8) |
 | Manual Trigger, timed Gate and Clock sources | Implemented · 7.1.3 | [Envelopes](docs/audio/envelopes.md); [PR #10](https://github.com/wgabel/orbit2/pull/10) |
 | AR/ADSR/Loop envelope modes | Implemented · 7.1.4 | [Envelopes](docs/audio/envelopes.md); [PR #12](https://github.com/wgabel/orbit2/pull/12) |

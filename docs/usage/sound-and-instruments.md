@@ -74,7 +74,7 @@ Use Note Sequencer reference matching the native tuning and connect it to **Pitc
 
 ### Playable sustained instruments
 
-For held notes rather than drones, choose **Playable — Organ**, **Playable — Flute**, **Playable — Brass**, **Playable — Bowed strings** or **Playable — Didgeridoo** (7.2.6a, in review).
+For held notes rather than drones, choose **Playable — Organ**, **Playable — Flute**, **Playable — Brass**, **Playable — Bowed strings** or **Playable — Didgeridoo** (7.2.6a, in review, [PR #44](https://github.com/wgabel/orbit2/pull/44)).
 
 1. Add Note Source and Playable — Flute. Set Reference note to A3 (A2 for organ, brass and strings; A1 for didgeridoo).
 2. Connect Note Source Pitch → Pitch (st) at amount 1, Gate → Gate, and Velocity → Velocity at amount 1. Connect Audio → Master output.
