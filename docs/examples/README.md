@@ -2,6 +2,8 @@
 
 [Architecture](../../ORBIT2-ARCHITECTURE.md) · [App usage](../usage/README.md) · [Sound-design foundations](foundations/README.md)
 
+Index and maintenance guidance introduced in [PR #42](https://github.com/wgabel/orbit2/pull/42); the linked guides retain their original provenance.
+
 This is the entry point for users and agents creating, analyzing or improving music in Orbit 2. It routes to existing detailed guides rather than duplicating them. Read this short page first for a musical task, then select the relevant sections. A new style, technique or unusual brief is not a reason to stop: investigate the available nodes, experiment and extend the knowledge when useful.
 
 ## Find your task

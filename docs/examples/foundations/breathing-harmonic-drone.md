@@ -4,6 +4,8 @@
 
 Documentation provenance: [PR #33](https://github.com/wgabel/orbit2/pull/33) (listener-validated reference and analysis, not a shipped preset or new DSP implementation).
 
+Original reference asset and serializer regression: [PR #42](https://github.com/wgabel/orbit2/pull/42).
+
 ## Reference asset and evidence
 
 [Download original patch JSON](breathing-harmonic-drone/reference.orbit2.json) (GitHub raw/download). This is the exact user-supplied `orbit2-patch-harmonics.json`, schema 1, 120 BPM, 14 root nodes and 16 connections, preserved byte-for-byte (SHA-256 `3ae679119e198a9fedab9a74daf272941aa175ab9a25d9038501c36df13db7e7`). Import on a stopped transport using **Patches → Import JSON**. **Do not audition at normal output level:** the original lacks final attenuation and the independent analysis estimates overload and substantial subsonic content. Read [measurements and safety](#4-measurements-and-safety); start with very low monitoring level, add final Gain on a separate working copy before playback, then measure. The original is intentionally not mastered or silently modified.

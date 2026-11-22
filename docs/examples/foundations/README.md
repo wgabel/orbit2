@@ -2,6 +2,8 @@
 
 [Music creation](../README.md) · [Voice design](../sound-quality-and-voice-design.md) · [Production iteration](../mixing-mastering-and-analysis.md#5-agent-workflow-render--analyze--refine--re-render)
 
+Catalogue, evidence labels and reference asset maintenance introduced in [PR #42](https://github.com/wgabel/orbit2/pull/42).
+
 A foundation is a reusable musical or sound-design relationship demonstrated by a concrete graph, with its sonic identity, evidence, limitations and transferable experiments. It is not necessarily a finished preset, an entire composition, or a required technique. Build a diverse palette; do not force a successful drone into every track or assume complexity is quality.
 
 ## Catalogue
