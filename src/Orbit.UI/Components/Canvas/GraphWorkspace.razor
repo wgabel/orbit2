@@ -14,7 +14,8 @@ else
 <section class="graph-workspace" data-active-graph="@graphId" data-mobile-panel="@mobilePanel" data-mobile-active-panel="@ActiveMobilePanel"
          data-mobile-panel-locked="@(overviewDraft || annotationDraft || switchingWorkspace ? "true" : "false")" @ref="workspaceElement">
     <header class="workspace-header">
-        <h1>Orbit 2</h1>
+        <h1>Orbit 2 <span class="workspace-build" title="@BrowserBuild.Description" aria-label="@BrowserBuild.Description"
+                         data-build-commit="@BrowserBuild.Commit" data-build-number="@BrowserBuild.Number">@BrowserBuild.Label</span></h1>
         <CanvasBreadcrumbs Path="@Navigation.Path" OnNavigate="NavigateTo" />
         <button type="button" class="secondary desktop-outline" aria-expanded="@outlineOpen" @onclick="() => outlineOpen = !outlineOpen">Outline</button>
         <PatchOutlinePanel @key="workspaceGeneration" Open="@outlineOpen" Locked="@(annotationDraft || switchingWorkspace)"

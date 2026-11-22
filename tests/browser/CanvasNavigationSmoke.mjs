@@ -88,13 +88,14 @@ async function verifyCoveredNodePinch(page) {
             const left = Math.max(bounds.left, viewport.left) + 16, right = Math.min(bounds.right, viewport.right) - 16;
             const y = Math.round(Math.max(bounds.top, viewport.top) + Math.min(bounds.bottom, viewport.bottom) / 2 - Math.max(bounds.top, viewport.top) / 2);
             const a = { x: Math.round(left + 12), y }, b = { x: Math.round(right - 12), y };
-            if (b.x - a.x >= 100 && [a, b].every(p => document.elementFromPoint(p.x, p.y) === slider))
-                return { a, b, label: slider.getAttribute('aria-label'), value: slider.closest('.parameter-slider').querySelector('input[type="number"]').value };
+            if (b.x - a.x >= 100 && [a, b].every(p => document.elementFromPoint(p.x, p.y) === slider)) {
+                const number = slider.closest('.parameter-slider').querySelector('.parameter-heading > input[type="number"]');
+                if (number) return { a, b, numberId: number.id, value: number.value };
+            }
         }
         throw Error('No two visible contact points on a slider in the covered node');
     });
-    const slider = node.getByRole('slider', { name: target.label, exact: true });
-    const number = slider.locator('xpath=ancestor::div[contains(@class,"parameter-slider")]').locator('input[type="number"]');
+    const number = node.locator(`input[id="${target.numberId}"]`);
     const cdp = await page.context().newCDPSession(page);
     const send = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points.map((p, i) => ({ ...p, id: i + 1 })) });
     try {

@@ -16,14 +16,21 @@ assert.ok(version && process.env.ORBIT_CHROME);
 const requests = new Set();
 const types = { ".js": "text/javascript", ".mjs": "text/javascript", ".html": "text/html", ".css": "text/css", ".json": "application/json", ".wasm": "application/wasm", ".svg": "image/svg+xml" };
 const server = createServer(async (request, response) => {
-    const path = new URL(request.url, "http://localhost").pathname;
+    const url = new URL(request.url, "http://localhost");
+    const path = url.pathname;
     requests.add(path);
     try {
         if (["audio", "persistence"].some(directory => path.startsWith(`/_content/Orbit.Infrastructure/${directory}/`)))
             throw new Error("Unversioned browser assets are stale");
+        if (path.startsWith("/css/") || path.startsWith("/js/"))
+            throw new Error("Unversioned editor assets are stale");
         const file = resolve(root, "." + (path === "/" ? "/index.html" : path));
         if (!file.startsWith(root + sep)) throw new Error("Outside static assets");
-        const bytes = await readFile(file);
+        let bytes = await readFile(file);
+        // Model a cached entry from the previous release, while the manifest is fresh.
+        if (path === "/" && url.searchParams.has("test-stale") && !url.searchParams.has("orbit-build"))
+            bytes = Buffer.from(bytes.toString("utf8").replace(`name="orbit-build" content="${version}"`,
+                'name="orbit-build" content="' + "0".repeat(40) + '"'));
         response.writeHead(200, { "Content-Type": types[extname(file)] ?? "application/octet-stream" });
         response.end(bytes);
     } catch (error) { response.writeHead(404); response.end(String(error)); }
@@ -66,6 +73,14 @@ try {
     const marker = frequency.locator(".parameter-effective-marker");
     const predictedFrequency = frequency.getByLabel("Predicted modulation range");
     await predictedFrequency.filter({ hasText: "340–540 Hz" }).waitFor({ timeout: 30000 });
+    const build = page.locator(".workspace-build");
+    assert.equal(await build.getAttribute("data-build-commit"), version);
+    assert.equal(await build.getAttribute("data-build-number"), process.env.GITHUB_RUN_NUMBER);
+    assert.equal(await build.innerText(), "b" + process.env.GITHUB_RUN_NUMBER);
+    assert.equal(await page.locator('meta[name="orbit-build-number"]').getAttribute("content"), process.env.GITHUB_RUN_NUMBER);
+    for (const file of ["tokens.css", "base.css", "components.css", "components/graph-workspace.css", "components/mobile-workspace.css", "components/canvas-context.css"])
+        assert.ok(requests.has(`/css-${version}/${file}`), "Missing versioned stylesheet: " + file);
+    assert.ok(requests.has("/build-manifest.json"), "Boot must check the deployed build");
     // Probe the real readout CSS with deliberately wide values without altering
     // the live Blazor DOM or graph. The clone shares the node's fixed width.
     const readoutSizes = await frequency.evaluate(slider => {
@@ -1914,10 +1929,12 @@ try {
     // Exercise the same published workspace at phone dimensions, including
     // responsive reflow without recreating the graph or playback controller.
     const mobilePage = await browser.newPage({ viewport: { width: 360, height: 640 }, isMobile: true, hasTouch: true });
-    await mobilePage.goto("http://127.0.0.1:" + server.address().port);
+    await mobilePage.goto("http://127.0.0.1:" + server.address().port + "/?test-stale=1", { waitUntil: "domcontentloaded" });
+    await mobilePage.waitForURL(url => url.searchParams.get("orbit-build") === version);
     const mobileCanvas = mobilePage.locator(".canvas-viewport");
     const mobileBar = mobilePage.getByRole("navigation", { name: "Mobile workspace tools" });
     await mobilePage.getByRole("button", { name: "Play patch" }).waitFor();
+    assert.equal(await mobilePage.locator(".workspace-build").innerText(), "b" + process.env.GITHUB_RUN_NUMBER);
     await mobileCanvas.locator("article[data-node-id]").first().waitFor();
     for (const [width, height] of [[360, 640], [390, 844], [800, 390]]) {
         await mobilePage.setViewportSize({ width, height });
@@ -1926,12 +1943,16 @@ try {
             const workspace = document.querySelector(".graph-workspace").getBoundingClientRect();
             const canvas = document.querySelector(".canvas-viewport").getBoundingClientRect();
             const bar = document.querySelector(".mobile-workspace-bar").getBoundingClientRect();
+            const header = document.querySelector(".workspace-header").getBoundingClientRect();
+            const build = document.querySelector(".workspace-build").getBoundingClientRect();
             return { ratio: canvas.height / workspace.height, canvasBottom: canvas.bottom, barTop: bar.top,
-                width: document.documentElement.scrollWidth, viewport: innerWidth };
+                width: document.documentElement.scrollWidth, viewport: innerWidth,
+                buildFits: build.right <= header.right + 1 && build.bottom <= header.bottom + 1 };
         });
         assert.ok(metrics.ratio >= (height > width ? .84 : .75), JSON.stringify(metrics));
         assert.ok(metrics.canvasBottom <= metrics.barTop + 1);
         assert.ok(metrics.width <= metrics.viewport);
+        assert.ok(metrics.buildFits, "Build identifier must fit the compact mobile header");
     }
     await mobilePage.setViewportSize({ width: 390, height: 844 });
     await mobileBar.getByRole("button", { name: "+ Nodes", exact: true }).click();
@@ -2067,6 +2088,9 @@ try {
     await verifyTouchWire(browser, "http://127.0.0.1:" + server.address().port);
     await verifyCanvasNavigation(browser, "http://127.0.0.1:" + server.address().port);
     await verifyCanvasContext(browser, "http://127.0.0.1:" + server.address().port);
+    for (const file of ["canvasDom.js", "canvasContext.js", "workspacePanels.js", "nodeLibraryStorage.js", "performanceKeyboard.js",
+        "scopeView.js", "scopeAnalysis.js", "signalPlot.js", "spectrumAnalysis.js", "spectrumPlot.js"])
+        assert.ok(requests.has(`/js-${version}/${file}`), "Missing versioned editor module: " + file);
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {
     await browser?.close();

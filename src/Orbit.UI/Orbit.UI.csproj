@@ -7,6 +7,10 @@
     <!-- Fingerprint the Blazor bootstrap and boot resources to prevent mixed deployments. -->
     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
   </PropertyGroup>
+  <ItemGroup Condition="'$(OrbitBrowserAssetVersion)' != ''">
+    <AssemblyMetadata Include="OrbitBrowserAssetVersion" Value="$(OrbitBrowserAssetVersion)" />
+    <AssemblyMetadata Include="OrbitBuildNumber" Value="$(OrbitBuildNumber)" />
+  </ItemGroup>
   <ItemGroup>
     <!-- Browser runtime and local development server; neither is application logic. -->
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.15" />

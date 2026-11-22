@@ -35,7 +35,7 @@ public partial class GraphCanvas
         if (contextModule is null && !contextInitStarted)
         {
             contextInitStarted = true;
-            contextModule = await JavaScript.InvokeAsync<IJSObjectReference>("import", "./js/canvasContext.js");
+            contextModule = await JavaScript.InvokeAsync<IJSObjectReference>("import", BrowserBuild.ModulePath("canvasContext.js"));
             if (disposed) { await contextModule.DisposeAsync(); return; }
             contextReceiver = DotNetObjectReference.Create(this);
             contextController = await contextModule.InvokeAsync<IJSObjectReference>("mountContextInput", viewportElement, contextReceiver);

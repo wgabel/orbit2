@@ -4,6 +4,8 @@
 
 **Audited:** main at [`f66fe0a`](https://github.com/wgabel/orbit2/commit/f66fe0a), through [PR #38](https://github.com/wgabel/orbit2/pull/38). Audit and guide introduced by [PR #40](https://github.com/wgabel/orbit2/pull/40). This guide is about features available in that source revision. A previously deployed browser build may be older. Examples are starting points, not required musical recipes; technical contracts remain in the linked modules. No new nodes or engine functionality are introduced by this guide.
 
+The small `b123` label next to **Orbit 2** identifies the running build (not a patch version). Reload or reopen to obtain a newer release; after the startup check ships, stale release entries are automatically refreshed before editing. Do not clear site data to update — that could remove locally saved patches. See [release troubleshooting](../../README.md#browser-release-identity-and-cache-invalidation).
+
 ## Choose what you want to do
 
 | Goal | Read this first |

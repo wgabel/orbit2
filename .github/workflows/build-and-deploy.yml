@@ -85,7 +85,7 @@ jobs:
           node tests/browser/GraphPlaybackSmoke.mjs
       # Compiles the referenced projects and produces the static site in publish/wwwroot.
       - name: Build and publish
-        run: dotnet publish src/Orbit.UI/Orbit.UI.csproj --configuration Release --output publish -p:OrbitBrowserAssetVersion="$GITHUB_SHA"
+        run: dotnet publish src/Orbit.UI/Orbit.UI.csproj --configuration Release --output publish -p:OrbitBrowserAssetVersion="$GITHUB_SHA" -p:OrbitBuildNumber="$GITHUB_RUN_NUMBER"
       # Ensure the generated token CSS and every imported stylesheet are published.
       - name: Verify published design system
         run: |
@@ -113,6 +113,7 @@ jobs:
       # so new .NET code can never import JavaScript cached from an older commit.
       - name: Version published browser module trees
         run: |
+          node scripts/version-published-editor.mjs publish/wwwroot "$GITHUB_SHA" "$GITHUB_RUN_NUMBER"
           cd publish/wwwroot/_content/Orbit.Infrastructure
           cp -a audio "audio-$GITHUB_SHA"
           cp -a persistence "persistence-$GITHUB_SHA"
