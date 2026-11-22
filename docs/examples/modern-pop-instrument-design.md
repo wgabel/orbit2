@@ -4,6 +4,8 @@
 
 **Status:** design and listener-feedback case, with an editable instrument-audition reference patch using existing nodes. The proposed modern-pop instrument library, built-in fixture registration and future engine capabilities are separate planned work. This is not a catalogue of approved presets.
 
+Documentation and reference asset: [PR #54](https://github.com/wgabel/orbit2/pull/54) (no new runtime capabilities).
+
 ## 1. Evidence: Prism Rush and the unintended chiptune character
 
 In *Prism Rush* (three minutes, 128 BPM, D major/B minor), the listener strongly approved the composition and intricate melodies, but described the individual tones as childish, 16-bit/chiptune, and unlike recent pop production. This is a sound-design problem to investigate while retaining the successful score, not a reason to simplify its counterpoint, remove its breaks or rewrite its harmony.
