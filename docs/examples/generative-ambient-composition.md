@@ -8,6 +8,8 @@ Companion guide: [Music theory and sound design](music-theory-and-sound-design.m
 
 For polished ambience, use the [voice quality guide](sound-quality-and-voice-design.md) to avoid exposed raw noise or hollow foreground tones; use [mixing, mastering and analysis](mixing-mastering-and-analysis.md) for iterative rendering and final balance without losing the piece's form.
 
+An important way to create internally evolving layers is to design node relationships that generate emergent harmonic shifts and coordinated breathing. See the listener-validated [breathing harmonic drone foundation](foundations/breathing-harmonic-drone.md) for a detailed example and its measured limitations. Use such relationships when they support the piece; do not force every voice to breathe in the same way, use the drone in every track, or substitute internal timbral movement for musical form.
+
 Guide introduced in [PR #22](https://github.com/wgabel/orbit2/pull/22) (documentation only; existing node implementation references are in the linked technical modules).
 
 ## 1. The structure of a musical piece

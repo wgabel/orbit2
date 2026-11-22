@@ -62,6 +62,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 | Harmony, tuning, timbre, musical quality, perceived loudness and spatial depth | [Music theory and sound design](docs/examples/music-theory-and-sound-design.md); use with the relevant instrument/effect or composition guide |
 | Genre-specific music, electronic style, rhythm, sound palette and construction | [Electronic music genres](docs/examples/electronic-music-genres.md) routes to focused ambient, bass/breaks, dance and experimental families; [musical techniques](docs/examples/genres/orbit-techniques.md) connects style to current nodes |
 | Hollow/basic timbres, prominent raw noise, finished instruments and reusable sound palette | [Sound quality and voice design](docs/examples/sound-quality-and-voice-design.md); use with instrument recipes and the relevant node contracts |
+| Evolving sounds, emergent harmonics, interacting modulation and breathing voices | [Sound-design foundation 01: breathing harmonic drone](docs/examples/foundations/breathing-harmonic-drone.md) — listener-validated reference, exact graph, analysis and transferable design principle |
 | Mix balance, mastering, loudness measurements, audio render analysis and iteration | [Mixing, mastering and analysis](docs/examples/mixing-mastering-and-analysis.md); [signal observation](docs/audio/signal-observation.md) for native measurement contracts |
 | Save/load, undo/redo, presets | [Persistence](docs/editor/persistence-and-history.md), [commands](docs/core/commands-and-events.md), [node presets](docs/editor/node-presets.md) |
 | Notes, aliases, visual groups, patch overview, documentation visibility or outline | [Patch annotations](docs/editor/patch-annotations.md), [canvas](docs/editor/canvas.md), [persistence](docs/editor/persistence-and-history.md) |
@@ -118,6 +119,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 - [music theory and electronic sound design](docs/examples/music-theory-and-sound-design.md) — interval/scale/chord recipes, voice leading, articulation, psychoacoustics, mix/depth and quality checks
 - [electronic music genres](docs/examples/electronic-music-genres.md) — modular genre vocabulary, composition approaches and reusable Orbit 2 techniques
 - [sound quality and voice design](docs/examples/sound-quality-and-voice-design.md) — transform noise, develop richer tonal voices and audition candidate preset recipes
+- [breathing harmonic drone](docs/examples/foundations/breathing-harmonic-drone.md) — first sound-design foundation; coordinated modulation, nonlinear harmonic interaction, measured risks and creative alternatives
 - [mixing, mastering and analysis](docs/examples/mixing-mastering-and-analysis.md) — role balance, peak/LUFS/LRA interpretation, mastering limits, render–measure–refine and a worked feedback example
 
 **Quality and delivery**
