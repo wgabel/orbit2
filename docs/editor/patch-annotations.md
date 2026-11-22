@@ -4,7 +4,7 @@
 
 Related: [canvas](canvas.md) · [design system](design-system.md) · [persistence and history](persistence-and-history.md) · [commands and events](../core/commands-and-events.md) · [connection visualization](annotations-and-connections.md) · [composite nodes](composite-nodes.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
 
-**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) implemented ([PR #28](https://github.com/wgabel/orbit2/pull/28)); visual groups (6.19.3) in review; overview, visibility and outline (6.19.4, 6.19.7–6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
+**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) implemented ([PR #28](https://github.com/wgabel/orbit2/pull/28)); visual groups (6.19.3) in review ([PR #30](https://github.com/wgabel/orbit2/pull/30)); overview, visibility and outline (6.19.4, 6.19.7–6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
 
 <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>
 
@@ -148,6 +148,8 @@ Initially support ordinary nodes (including whole composites as members) and not
 A visual group can later become an actual composite via an explicit validated structural operation under Phase 7 graph grouping. That operation belongs to the composite implementation, not annotation history; preview the boundary and reject non-equivalent or invalid conversions. Never implicitly convert a group because it was renamed, moved or collapsed.
 
 #### Visual groups — implementation (6.19.3, in review)
+
+Implementation: [PR #30](https://github.com/wgabel/orbit2/pull/30).
 
 Choose **Create visual group** in the workspace toolbar after selecting nodes (or a note), or clear the selection to create an empty frame. The frame is initially fitted around measured selected items, with header space. Use **Edit** on the frame to set its title, description, semantic accent, and explicit member checkboxes. Each node or note can belong to at most one group in its graph; items already assigned to other groups are excluded from the editor. Empty groups are valid. Membership never changes automatically when objects overlap, move independently, or the frame is resized.
 
