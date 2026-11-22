@@ -24,7 +24,9 @@ In the browser, `RuntimeDiagnostics` starts an attempt on Play or a replacement 
 
 Current/retiring worklets are managed voice instances, excluding not-yet-connected preparations and auxiliary transport/action worklets. Output channels are allocated channels across those instances (including signal observation channels), occupied auxiliary slots and capture leases come from the existing capture objects. No new capture or profiling path. Browser operation counts are page-lifetime/context-level, not per patch; Reset session counters only resets the 7.3.1 underrun baseline. The latest accepted and attempted operations carry generation and revision, scoped independent of C# source-build totals. A 1 Hz shared monitor observes these metrics using the same existing passive interop call plus synchronous application snapshot. Worker internal queue/init/compile timing, vendor cache hit, exact DSP load/headroom, broad operation history/export remain explicitly separate follow-ups. Editor responsiveness is addressed in 7.3.3.
 
-## Phase 7.3.3 — Editor responsiveness (in review)
+<a id="phase-733--editor-responsiveness-in-review"></a>
+
+## Phase 7.3.3 — Editor responsiveness (implemented)
 
 [PR #57](https://github.com/wgabel/orbit2/pull/57). The shared workspace PerformanceMonitor imports `wwwroot/js/editorPerformance.js` and owns one browser collector for the component lifetime, independent of the audio context, selected nested canvas, panel visibility or playback. All per-frame observations remain in browser JavaScript; the existing sequential one-second UI poll reads an immutable projection and updates only the monitor. Separate exception handling keeps audio diagnostics available if editor measurement fails and vice versa. No changes to the DSP, graph, history/undo, persistence, transport or analysis routes.
 
@@ -33,6 +35,10 @@ Current/retiring worklets are managed voice instances, excluding not-yet-connect
 Feature-detect `PerformanceObserver.supportedEntryTypes` for `longtask` and `long-animation-frame` independently; register non-buffered observers. Count completed entries, summed duration and maximum within the same window (each event counted in full). Long-task time above 50 ms is the sum of each task's duration minus 50 ms, clipped at zero, **not** a page-load Total Blocking Time score. Both entry types may describe overlapping work; do not sum them. Each type has a 512-entry ring. No entries is zero only where supported; unsupported/failed observers yield null. Longest event is unavailable when no events occurred.
 
 Keep the latest 120 valid foreground FPS/p95 summaries at no more than one per second; expose sample count, lowest FPS and worst p95. Window summaries overlap; history is not independent raw samples or a continuous trace. Visibility change cancels rAF, disconnects observers, clears both frame/event rings and history, and starts a fresh epoch on return; old callbacks cannot contaminate it. Component disposal also removes the visibility listener and releases interop references. No autoscaling, quality throttling or device comparison claims.
+
+## Phase 7.3.4 — Profiling baseline (in review)
+
+[PR #58](https://github.com/wgabel/orbit2/pull/58). See [runnable benchmark contract](dsp-profiling.md#phase-734--benchmark-baseline-in-review). The C# probe constructs and restores ordinary graph documents; the pinned Faust compiler and WASM offline renderer measure the actual generated program separately from source generation and factory/instance stages. Chromium CDP measures the browser renderer in a fresh published-app context; unsupported or non-advancing measurements are unavailable. Existing production AudioWorklet creation/parameter timing is host-side, not computation timing. No validated low-overhead wall-clock compute hook has been established in the pinned runtime, so the production monitor still reports DSP load/headroom as Not measured. No production path or security-policy changes.
 
 ## 6. Implementation architecture
 

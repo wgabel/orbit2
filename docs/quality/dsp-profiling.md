@@ -4,6 +4,38 @@
 
 Related: [performance](../../performance.md) · [dsp engine](../audio/dsp-engine.md) · [testing](testing.md).
 
+## Phase 7.3.4 — Benchmark baseline (in review)
+
+[PR #58](https://github.com/wgabel/orbit2/pull/58). These are **developer/test workflows**, not an ordinary audio meter or automatically loaded stress patch.
+
+### Run the baseline
+
+From the repository root with .NET 10 and Node 24:
+
+```sh
+npm install --no-audit --no-fund --ignore-scripts --no-save @grame/faustwasm@0.19.0
+dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj --configuration Release -- --benchmark benchmark-output
+ORBIT_FAUST_DIR="$PWD/node_modules/@grame/faustwasm" node scripts/benchmark-dsp.mjs benchmark-output benchmark-output/offline-report.json
+```
+
+In PowerShell set `$env:ORBIT_FAUST_DIR = "$PWD/node_modules/@grame/faustwasm"` before running the Node command. Optionally set `ORBIT_REVISION` to the exact checked-out commit (CI supplies GITHUB_SHA). For larger 100/200-oscillator graphs, explicitly append `--large` to the .NET probe command, in a separate output directory. Default profiles remain bounded: 1/10/50 sine oscillators, 10 mixed carrier waveforms with 10 modulating LFOs, 10-source filter/EQ/chorus/delay/reverb chain, four nested layered drones, and the same ten-sine graph with no allocated taps, eight allocated idle slots, one active tap and eight active taps. Synthetic profiles use ordinary validated graph commands, safe gain staging, independent frequencies and identities. The exporter verifies restoration via the actual patch serializer; preserve the generated fixtures to repeat identical source identities. Re-created profiles have stable recipe version/parameters but fresh GUIDs; use source hashes to identify an exact build.
+
+The output directory contains `fixtures.json`, importable `*.orbit2.json` files and `offline-report.json`. The report records source-generation samples (three warm C# builds), first unique source's factory compile and compiler initialization, independent instance creation/binding, warm-up and offline rendering distribution. Render settings are 128-frame blocks, one audio second warm-up, 44.1/48 kHz, five repeats and two measured audio seconds per default repeat (rounded up to whole blocks); `ORBIT_BENCH_SECONDS` accepts 1–10 and `ORBIT_BENCH_REPEATS` 3–10. CI uses one measured second and five repeats. The report records actual frames, sample rates, output count, reachable nodes/edges, selected taps, source hash, software/OS/CPU and revision. Timed scope is the vendor offline render call including allocating/copying output buffers; validation/hashing is outside timing. It is **not** Faust-only kernel or audio deadline time. Each render must be finite, non-silent at the master, under the fixture peak bound and have the expected channels; paired tap variants must preserve the exact mono master hashes, selected tap channels must be non-silent and unused slots silent. Compare throughput (higher is faster) and realtime factor (lower is faster) on the same runner/settings, not universal node limits.
+
+### External live renderer and lifecycle
+
+After preparing browser compiler assets and publishing the Release app (see root README and CI workflow), install `playwright-core@1.65.1` for the benchmark tool; set `ORBIT_PLAYWRIGHT_DIR` to its package directory and `ORBIT_CHROME` to a local Chromium/Chrome executable.
+
+```sh
+node scripts/benchmark-live.mjs benchmark-output benchmark-output/live-report.json sine-bank-1 sine-bank-10
+```
+
+The script serves `publish/wwwroot` on loopback (override `ORBIT_BENCH_PUBLISH_DIR`), opens a fresh browser context per profile, imports the fixture through **Patches → Import JSON**, plays it with plots closed, warms up and samples CDP's [WebAudio.getRealtimeData](https://chromedevtools.github.io/devtools-protocol/tot/WebAudio/#method-getRealtimeData) once per second. Chromium reports render capacity in percent (100% is full render budget). The script does not multiply it again. It requires advancing context time; unsupported CDP or non-advancing samples yield unavailable rather than zero. Results retain raw samples, distribution, browser version, actual rate/buffer/quantum when available and Performance Monitor readings. The first profile also times a base-frequency edit without source rebuild and a structural square-wave edit with one accepted replacement, checks cleanup to zero worklets after Stop, and replays/stops the current patch. These UI action-to-status timings include browser automation and graph update, not physical input-to-sound delay or exact crossfade peak. Default sample duration 10 seconds, `ORBIT_BENCH_LIVE_SECONDS` 5–120; CI uses five seconds. Default headless and muted; optional `ORBIT_BENCH_HEADFUL=1` is still muted, for headed rendering comparison. Select other non-tap profile IDs as needed. Offline tap selection is separate from actual browser plot/lease overhead.
+
+### Find the CI results and use them
+
+Open the successful **Build and deploy** run → **Artifacts** → `orbit-dsp-benchmark-<commit>` (30-day retention). Save a known-good mono report and its fixtures locally before changing 7.5. Compare matching profile/rate/settings on the same machine and repeat across runs; shared-host timing is evidence for trends only. In-app DSP load remains Not measured: the production integration offers host-side timing, not a validated real-time compute timer. The external benchmark supplies an honest fallback. Physical-device tests are still necessary for audible glitches, larger sustained sessions, occupied analysis views, and replacement peak capacity; use DevTools WebAudio and the passive monitor while exercising the imported patch for 60 seconds and repeating the same changes. Do not derive live CPU percentage from offline throughput. Repeat 7.3.4 with each unison/stereo increment and add paired voice-count/channel profiles to this versioned harness.
+
 ## 8. DSP profiling and headroom
 
 ### 8.1 Measure before claiming live DSP percentage

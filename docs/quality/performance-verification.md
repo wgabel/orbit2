@@ -46,8 +46,8 @@ Each phase should be a separate reviewable increment. Before implementation read
 |---|---|---|
 | 7.3.1 | Implemented · [PR #53](https://github.com/wgabel/orbit2/pull/53) | Passive context statistics + shared Performance Monitor |
 | 7.3.2 | Implemented · [PR #56](https://github.com/wgabel/orbit2/pull/56) | Compilation, update/replacement, runtime and analysis resource diagnostics |
-| 7.3.3 | In review · [PR #57](https://github.com/wgabel/orbit2/pull/57) | Foreground editor responsiveness and bounded diagnostics history |
-| 7.3.4 | Planned | Validated DSP profiling and reproducible benchmark fixtures |
+| 7.3.3 | Implemented · [PR #57](https://github.com/wgabel/orbit2/pull/57) | Foreground editor responsiveness and bounded diagnostics history |
+| 7.3.4 | Baseline in review · [PR #58](https://github.com/wgabel/orbit2/pull/58) | Validated DSP profiling and reproducible benchmark fixtures |
 | 7.3.5 | Planned | Input-to-engine and musical timing diagnostics, when note/sequencer events exist |
 | 7.3.6 | Planned | Advanced local reports, stress/regression automation and measured improvement cycles |
 
@@ -65,11 +65,13 @@ Instrument existing compiler and playback stages with attempt/accepted IDs, know
 
 ### 7.3.3 — UI performance
 
-**In review:** [PR #57](https://github.com/wgabel/orbit2/pull/57). Eight local deterministic Node tests cover observed cadence, percentile and window calculation, stalls exceeding the window, independently supported/throwing observers, null vs zero, capped history, visibility and stale callbacks, and idempotent disposal. Published-editor smoke coverage waits for FPS and history before Play and retains the existing audio/session/revision checks. Full .NET and published browser verification runs in CI. No physical-device performance benchmark was performed.
+**Implemented:** [PR #57](https://github.com/wgabel/orbit2/pull/57). Eight local deterministic Node tests cover observed cadence, percentile and window calculation, stalls exceeding the window, independently supported/throwing observers, null vs zero, capped history, visibility and stale callbacks, and idempotent disposal. Published-editor smoke coverage waits for FPS and history before Play and retains the existing audio/session/revision checks. Full .NET and published browser verification passed in [CI](https://github.com/wgabel/orbit2/actions/runs/45036811550). No physical-device performance benchmark was performed.
 
 Add feature-detected foreground frame/long-task monitoring, p95 frame gaps, slow publication and bounded history. Implement independent observer lifecycle and test visibility handling; measure normal editor interactions, node plots and nested views. Include no automatic quality changes.
 
 ### 7.3.4 — DSP profiling and benchmark baseline
+
+**Baseline in review:** [PR #58](https://github.com/wgabel/orbit2/pull/58). Local Node tests verify median/p95, explicit throughput ratios, finite/bounded non-silent master and active/idle tap validation. CI generates validated importable graph fixtures, runs native Faust renders at both baseline sample rates, checks exact paired master hashes and publishes repeated timing distributions, then imports two profiles into the published app and checks source reuse/replacement and resource cleanup while optionally sampling CDP renderer capacity. CI timings are recorded, never gated by shared-runner speed. Physical-device endurance, additional voice/stereo workloads and any validated in-app worklet profiling remain separate extensions.
 
 First build the deterministic fixture harness (baseline, increasing oscillator counts, layered/analysis-heavy graphs, edit/lifecycle suites) and record offline throughput plus external DevTools renderer measurements. Evaluate in-app worklet timing feasibility on the pinned library/platform; ship a live DSP-only load/headroom metric only if the timing source and measured overhead meet acceptance. Otherwise preserve "unavailable" and document how to use the external/offline approach. Measure node categories only as relative profile-specific costs. Establish baseline before introducing costly resonator/modal, sample or polyphonic DSP. Phase 7.5 stereo/unison specifically prioritizes 7.3.1, 7.3.2 and this benchmark baseline before implementation; compare mono/stereo and voice-count profiles, including graph-replacement peak load (see [7.5 performance contract](../audio/stereo-panning-and-unison.md#1-performance-first)).
 
