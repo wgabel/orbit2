@@ -203,6 +203,7 @@
     "connection": {
       "width": "2px",
       "hit-width": "12px",
+      "touch-hit-width": "24px",
       "selected-width": "3px",
       "draft-dash": "6px",
       "badge-max-width": "12rem",

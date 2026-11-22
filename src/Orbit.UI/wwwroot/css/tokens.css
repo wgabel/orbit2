@@ -155,6 +155,7 @@
     --component-note-layer: 2;
     --component-connection-width: 2px;
     --component-connection-hit-width: 12px;
+    --component-connection-touch-hit-width: 24px;
     --component-connection-selected-width: 3px;
     --component-connection-draft-dash: 6px;
     --component-connection-badge-max-width: 12rem;

@@ -1880,7 +1880,15 @@ try {
     // A touch user must be able to remove an individual connection without a
     // keyboard, mouse, or amount badge. Hide labels (above), fit the patch,
     // then tap a real exposed point on the LFO-to-frequency cable.
+    // Fit is asynchronous; force a different transform and await the actual
+    // DOM updates before calculating a tap coordinate.
+    const mobileWorld = mobileCanvas.locator(".canvas-world");
+    const beforeZoom = await mobileWorld.getAttribute("style");
+    await mobilePage.getByRole("button", { name: "Zoom in", exact: true }).tap();
+    await mobilePage.waitForFunction(old => document.querySelector(".canvas-world")?.getAttribute("style") !== old, beforeZoom);
+    const zoomed = await mobileWorld.getAttribute("style");
     await mobilePage.getByRole("button", { name: "Fit", exact: true }).tap();
+    await mobilePage.waitForFunction(old => document.querySelector(".canvas-world")?.getAttribute("style") !== old, zoomed);
     const mobileWire = mobileCanvas.locator(".connection-modulation .connection-hit");
     const mobileWires = mobileCanvas.locator(".connection-path");
     const mobileNodes = mobileCanvas.locator("article[data-node-id]");
@@ -1898,8 +1906,22 @@ try {
         touchPoint = await exposedWirePoint(mobileWire);
     }
     assert.ok(touchPoint, "Expected an exposed cable point on the fitted phone canvas");
+    // Log actual touch dispatch on failure, including browser target adjustment.
+    await mobilePage.evaluate(() => {
+        window.orbitConnectionTapEvents = [];
+        for (const type of ["pointerdown", "pointerup", "click"])
+            document.addEventListener(type, event => window.orbitConnectionTapEvents.push({
+                type, target: event.target?.outerHTML?.slice(0, 240),
+                x: event.clientX, y: event.clientY, button: event.button, pointerType: event.pointerType
+            }), { capture: true, once: true });
+    });
     await mobilePage.touchscreen.tap(touchPoint.x, touchPoint.y);
-    await mobileCanvas.locator(".connection-modulation.connection-selected").waitFor({ state: "attached" });
+    try {
+        await mobileCanvas.locator(".connection-modulation.connection-selected").waitFor({ state: "attached", timeout: 5000 });
+    } catch (error) {
+        console.error("Mobile connection tap", touchPoint, await mobilePage.evaluate(() => window.orbitConnectionTapEvents));
+        throw error;
+    }
     const mobileAmountEditor = mobilePage.getByRole("region", { name: "Connection amount editor" });
     await mobileAmountEditor.waitFor();
     await mobileBar.getByRole("button", { name: "Edit", exact: true }).tap();

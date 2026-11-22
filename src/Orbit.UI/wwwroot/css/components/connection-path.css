@@ -1,6 +1,12 @@
 /* SVG wires use actual port anchors. Only transparent hit paths accept pointer input. */
 .connection-layer { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .connection-hit { fill: none; stroke: transparent; stroke-width: var(--component-connection-hit-width); pointer-events: stroke; cursor: pointer; }
+/* Touch targets retain a readable hit area at fitted/low zoom without changing
+   the visible line or covering node frames, which paint above the wires. */
+@media (pointer: coarse) {
+    .connection-hit { stroke-width: var(--component-connection-touch-hit-width); vector-effect: non-scaling-stroke; touch-action: none; }
+}
+.connection-hit:focus-visible { stroke: var(--semantic-color-selected); stroke-opacity: var(--semantic-opacity-disabled); }
 .connection-line { fill: none; stroke: var(--semantic-color-routing); stroke-width: var(--component-connection-width); stroke-linecap: round; vector-effect: non-scaling-stroke; pointer-events: none; }
 .connection-audio .connection-line { stroke: var(--semantic-color-generator); }
 .connection-modulation .connection-line { stroke: var(--semantic-color-modulation); }
