@@ -52,7 +52,7 @@ else
         <button type="button" class="secondary" disabled="@(!HasSelection || annotationDraft)" @onclick="DeleteSelection">Delete selected</button>
         </div>
         <GraphPlaybackControls @key="workspaceGeneration" @ref="playbackControls" Snapshot="@session.Snapshot" TelemetryChanged="OnTelemetryChanged" TempoChanged="OnTempoChanged" SampleRateChanged="OnSampleRateChanged" PlaybackStopped="DisarmPerformance" Disabled="switchingWorkspace" />
-        <PerformanceMonitor />
+        <PerformanceMonitor PatchId="@session.GraphId" EditableCounts="@Navigation.PatchCounts" />
     </div>
     @if (PerformanceTarget is { } target)
     {

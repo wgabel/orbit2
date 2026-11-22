@@ -37,6 +37,57 @@
                 <dt>Missing audio fraction</dt><dd>@Format(snapshot.MissingAudioPercent, "%", "0.####")</dd>
                 <dt>DSP load / headroom</dt><dd>Not measured</dd>
             </dl>
+            @if (snapshot.Runtime is { } runtime)
+            {
+                <strong>Runtime resources (shared context)</strong>
+                <dl class="audio-performance-metrics">
+                    <dt>Current / retiring worklets</dt><dd data-performance-worklets>@runtime.CurrentVoices / @runtime.RetiringVoices</dd>
+                    <dt>Allocated output channels</dt><dd>@runtime.OutputChannels</dd>
+                    <dt>Occupied auxiliary slots</dt><dd>@runtime.OccupiedAuxSlots</dd>
+                    <dt>Capture leases</dt><dd>@runtime.CaptureLeases</dd>
+                    <dt>Voice preparation attempts</dt><dd>@runtime.Attempts</dd>
+                    <dt>Accepted / pending</dt><dd>@runtime.Accepted / @runtime.Pending</dd>
+                    <dt>Failed / superseded / cancelled</dt><dd>@runtime.Failed / @runtime.Superseded / @runtime.Cancelled</dd>
+                    <dt>Worklet processor errors</dt><dd>@runtime.ProcessorErrors</dd>
+                    <dt>Latest attempt</dt><dd>@(runtime.LastAttempt?.Result ?? "None") · rev @(runtime.LastAttempt?.Revision?.ToString() ?? "—")</dd>
+                </dl>
+                @if (runtime.LastAccepted is { } accepted)
+                {
+                    <strong>Last accepted voice · @accepted.Kind (revision @(accepted.Revision?.ToString() ?? "—"))</strong>
+                    <dl class="audio-performance-metrics">
+                        <dt>Compiler worker round trip</dt><dd>@Format(accepted.WorkerRoundTripMs, "ms")</dd>
+                        <dt>Worklet creation</dt><dd>@Format(accepted.WorkletCreateMs, "ms")</dd>
+                        <dt>Initial parameter binding</dt><dd>@Format(accepted.ParameterBindingMs, "ms")</dd>
+                        <dt>Request to acceptance</dt><dd>@Format(accepted.AcceptanceMs, "ms")</dd>
+                        <dt>Scheduled crossfade</dt><dd>@Format(accepted.FadeDurationMs, "ms")</dd>
+                        <dt>Request to completion</dt><dd>@Format(accepted.CompletionMs, "ms")</dd>
+                    </dl>
+                }
+                <p class="workspace-notice">Browser operation counts are page-lifetime totals; runtime voices are DSP worklets, not musical notes. Worker round trip includes queueing and startup; cache hit is unknown.</p>
+            }
+            @if (CurrentGraph is { } graph)
+            {
+                <strong>Current patch · application diagnostics</strong>
+                <dl class="audio-performance-metrics">
+                    <dt>Requested / applied revision</dt><dd>@graph.RequestedRevision / @(graph.AppliedRevision?.ToString() ?? "—")</dd>
+                    <dt>Prepared program revision</dt><dd>@(graph.ProgramRevision?.ToString() ?? "—")</dd>
+                    <dt>Last graph operation</dt><dd>@graph.LastOperation</dd>
+                    <dt>Faust source builds</dt><dd data-performance-source-builds>@graph.SourceBuilds</dd>
+                    <dt>Latest source generation</dt><dd>@Format(graph.SourceGenerationMs, "ms")</dd>
+                    <dt>Reused DSP updates</dt><dd>@graph.ReusedUpdates</dd>
+                    <dt>Live control updates</dt><dd>@graph.ControlUpdates</dd>
+                    <dt>Last control round trip</dt><dd>@Format(graph.ControlUpdateMs, "ms")</dd>
+                    <dt>Accepted replacements</dt><dd>@graph.AcceptedReplacements</dd>
+                    <dt>Failed / not applied operations</dt><dd>@graph.FailedOperations / @graph.SupersededOperations</dd>
+                    <dt>Editable nodes / connections</dt><dd>@EditableCounts.Nodes / @EditableCounts.Connections</dd>
+                    <dt>Reachable DSP leaf nodes</dt><dd>@(graph.ReachableLeafNodes?.ToString() ?? "—")</dd>
+                    <dt>Synthetic boundary routes</dt><dd>@(graph.BoundaryRoutes?.ToString() ?? "—")</dd>
+                    <dt>Reachable flattened edges</dt><dd>@(graph.ReachableEdges?.ToString() ?? "—")</dd>
+                    <dt>Program application controls</dt><dd>@(graph.ProgramControls?.ToString() ?? "—")</dd>
+                    <dt>Program output channels</dt><dd>@(graph.ProgramOutputChannels?.ToString() ?? "—")</dd>
+                </dl>
+                <p class="workspace-notice">Application counts restart on Play and retain the latest prepared/accepted program after Stop. Source generation is not WASM compilation or DSP load.</p>
+            }
             <p class="workspace-notice">Latency is a browser estimate, not keyboard-to-speaker delay. Underruns are context-wide, relative to the accepted playback or reset; unavailable is not zero, and zero does not prove glitch-free audio.</p>
             <button type="button" class="secondary" disabled="@(snapshot.PlaybackState != "active" || resetPending)" @onclick="RequestReset">Reset session counters</button>
         }

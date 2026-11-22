@@ -13,13 +13,15 @@ export class FaustNodeFactory {
         this.#compiler = compiler;
     }
 
-    async create(context, processor, parameters, source = null) {
+    async create(context, processor, parameters, source = null, timings = null) {
         let name;
         let compiled;
         if (source != null) {
             if (!this.#compiler) throw new Error("Dynamic Faust compiler is unavailable.");
             name = processor;
-            compiled = await this.#compiler.compile(source);
+            const started = globalThis.performance.now();
+            try { compiled = await this.#compiler.compile(source); }
+            finally { if (timings) timings.workerRoundTripMs = globalThis.performance.now() - started; }
         } else {
             const specification = this.#processors.get(processor);
             if (!specification) throw new Error("Unknown audio processor: " + processor);
@@ -28,15 +30,19 @@ export class FaustNodeFactory {
         }
 
         const generator = this.#createGenerator();
-        const node = await generator.createNode(
-            context, name, { ...compiled, soundfiles: {} }, false);
+        const started = globalThis.performance.now();
+        let node;
+        try { node = await generator.createNode(context, name, { ...compiled, soundfiles: {} }, false); }
+        finally { if (timings) timings.workletCreateMs = globalThis.performance.now() - started; }
 
         if (!node) {
             throw new Error("Could not create Faust AudioWorklet: " + processor);
         }
 
         try {
-            this.setParameters(node, parameters);
+            const bindingStarted = globalThis.performance.now();
+            try { this.setParameters(node, parameters); }
+            finally { if (timings) timings.parameterBindingMs = globalThis.performance.now() - bindingStarted; }
             return node;
         } catch (error) {
             node.disconnect();

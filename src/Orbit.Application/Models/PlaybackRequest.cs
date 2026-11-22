@@ -17,4 +17,5 @@ public sealed record PlaybackRequest(
     Guid Generation = default,
     int TransportInputChannels = 0,
     IReadOnlyList<RhythmicInput>? RhythmicInputs = null,
-    int TapSelectorCount = 0);
+    int TapSelectorCount = 0,
+    long? GraphRevision = null);

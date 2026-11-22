@@ -86,7 +86,11 @@ test("dynamic factory creates a worklet from a compiler result and applies graph
             assert.equal(scriptProcessor, false);
             return node;
         }}), compiler);
-    assert.equal(await factory.create({}, "OrbitGraph", { p_frequency: 440 }, "process=0;"), node);
+    const timings = {};
+    assert.equal(await factory.create({}, "OrbitGraph", { p_frequency: 440 }, "process=0;", timings), node);
+    assert.ok(timings.workerRoundTripMs >= 0);
+    assert.ok(timings.workletCreateMs >= 0);
+    assert.ok(timings.parameterBindingMs >= 0);
     assert.deepEqual(calls, [["/OrbitGraph/p_frequency", 440]]);
     factory.setParameters(node, { p_frequency: 330 });
     assert.deepEqual(calls.at(-1), ["/OrbitGraph/p_frequency", 330]);

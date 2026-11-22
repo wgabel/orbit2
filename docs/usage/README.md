@@ -25,7 +25,8 @@ Use this as a discovery index, not a substitute for the feature contracts or roa
 
 | Feature | Where to find practical instructions | Evidence |
 | --- | --- | --- |
-| Passive Performance Monitor (in review) | [Open Performance, inspect context/latency and reset local session](../quality/performance-metrics.md#phase-731--passive-performance-monitor-in-review) | [PR #53](https://github.com/wgabel/orbit2/pull/53) |
+| Passive Performance Monitor | [Open Performance, inspect context/latency and reset local session](../quality/performance-metrics.md#phase-731--passive-performance-monitor-in-review) | [PR #53](https://github.com/wgabel/orbit2/pull/53) |
+| Compilation and runtime diagnostics (in review) | [Performance: inspect source, worker, replacement and resource counts](../quality/performance-metrics.md#phase-732--compilation-and-runtime-diagnostics-in-review) | [PR #56](https://github.com/wgabel/orbit2/pull/56) |
 | Playable modal percussion | [Play handpan, bell, gong and wood percussion](sound-and-instruments.md#playable-modal-percussion), [contract](../instruments/physical-modelling.md#phase-726b--playable-modal-instruments-in-review) | [PR #46](https://github.com/wgabel/orbit2/pull/46) — in review |
 | Multi-node selection and marquee | [Select multiple nodes for reuse](patch-editor.md#select-multiple-nodes-for-reuse), [contract](../editor/reusable-modules.md#implementation-multi-node-selection-741-implemented) | [PR #45](https://github.com/wgabel/orbit2/pull/45) — merged |
 | Create editable composite | [Group a selection](patch-editor.md#create-an-editable-composite-742a-implemented), [contract](../editor/reusable-modules.md#implementation-create-composite-742a-implemented) | [PR #47](https://github.com/wgabel/orbit2/pull/47) — merged |

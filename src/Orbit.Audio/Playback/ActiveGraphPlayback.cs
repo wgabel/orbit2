@@ -6,8 +6,9 @@ namespace Orbit.Audio.Playback;
 
 /// <summary>One logical playback lifetime: the last accepted topology, program
 /// and control values. Serializes updates and keeps only the latest requested revision.</summary>
-internal sealed class ActiveGraphPlayback(GraphSnapshot snapshot, FaustGraphProgram program)
+internal sealed class ActiveGraphPlayback(GraphSnapshot snapshot, FaustGraphProgram program, GraphPerformanceTracker diagnostics)
 {
+    public GraphPerformanceTracker Diagnostics { get; } = diagnostics;
     public GraphSnapshot Topology { get; private set; } = snapshot;
     public sealed record AcceptedProgram(FaustGraphProgram Program, Guid Generation);
     public AcceptedProgram Accepted { get; private set; } = new(program, Guid.NewGuid());

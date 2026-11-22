@@ -1,3 +1,4 @@
+import { RuntimeDiagnostics } from "./Components/RuntimeDiagnostics.js";
 import { AudioPerformanceMonitor } from "./Components/AudioPerformanceMonitor.js";
 import { SignalCapture } from "./Components/SignalCapture.js";
 import { RhythmicActionSource } from "./Components/RhythmicActionSource.js";
@@ -16,6 +17,7 @@ export class AudioEngine {
     #active = new Map();
     #disposed = false;
     #performance = new AudioPerformanceMonitor();
+    #runtime = new RuntimeDiagnostics();
 
     constructor(contextManager, nodeFactory, output, createMonitor, transport = null, createActions = RhythmicActionSource.create) {
         this.#contextManager = contextManager;
@@ -44,6 +46,7 @@ export class AudioEngine {
             pendingParameters: Object.create(null), pendingPatterns: new Map()
         };
         this.#active.set(request.soundId, playback);
+        const attempt = this.#runtime.begin("play", request);
 
         try {
             // Resume before any DSP download to preserve user activation.
@@ -51,7 +54,7 @@ export class AudioEngine {
             playback.context = context;
             if (playback.cancelled) return;
 
-            const node = await this.#createNode(context, request);
+            const node = await this.#createNode(context, request, attempt.timings);
 
             if (playback.cancelled) {
                 this.#destroyNode(node);
@@ -71,6 +74,8 @@ export class AudioEngine {
             }
 
             playback.current = this.#startVoice(playback, node, request);
+            this.#runtime.accept(attempt);
+            this.#runtime.finish(attempt, "accepted");
             this.#performance.begin(playback, context);
             signalReady(true);
             // A retiring voice ending is not the end of the logical playback.
@@ -79,7 +84,11 @@ export class AudioEngine {
                 await voice.finished;
                 if (voice === playback.current) break;
             }
+        } catch (error) {
+            this.#runtime.finish(attempt, playback.cancelled ? "cancelled" : "failed");
+            throw error;
         } finally {
+            this.#runtime.finish(attempt, "cancelled");
             playback.cancelled = true;
             signalReady(false);
             for (const instance of playback.voices) instance.voice.stop();
@@ -102,12 +111,13 @@ export class AudioEngine {
         this.markRevision(request.soundId, revision);
         if (playback.replacing) throw new Error("A replacement is already pending.");
         playback.replacing = true;
+        const attempt = this.#runtime.begin("replace", request, revision);
         const isCurrent = () => this.#active.get(request.soundId) === playback &&
             !playback.cancelled && revision === playback.latestRevision;
         try {
             if (!await playback.ready || !isCurrent()) return false;
             let node;
-            try { node = await this.#createNode(playback.context, request); }
+            try { node = await this.#createNode(playback.context, request, attempt.timings); }
             catch (error) { if (!isCurrent()) return false; throw error; }
             if (!isCurrent()) { this.#destroyNode(node); return false; }
 
@@ -122,11 +132,18 @@ export class AudioEngine {
             playback.subscriptions?.clear();
             playback.controlNames = new Set(Object.keys(request.parameters ?? {}));
             old.voice.stop(transition);
+            this.#runtime.accept(attempt, transition.duration * 1000);
             await old.finished;
             // Once scheduled the crossfade is committed. Subsequent revisions
             // must use this voice as their starting point.
             return !playback.cancelled;
-        } finally { playback.replacing = false; }
+        } catch (error) {
+            this.#runtime.finish(attempt, playback.cancelled ? "cancelled" : "failed");
+            throw error;
+        } finally {
+            this.#runtime.finish(attempt, playback.cancelled ? "cancelled" : "superseded");
+            playback.replacing = false;
+        }
     }
 
     getPlaybackState(soundId) {
@@ -175,7 +192,8 @@ export class AudioEngine {
         // Avoid background-tab statistics reads. Lifecycle baselines remain
         // independent of UI visibility, and the next foreground read catches up.
         if (globalThis.document?.visibilityState === "hidden") return null;
-        return this.#performance.snapshot(this.#contextManager.getCurrentContext(), reset);
+        return { ...this.#performance.snapshot(this.#contextManager.getCurrentContext(), reset),
+            runtime: this.#runtime.snapshot(this.#active.values()) };
     }
 
     getSignalDiagnostics(soundId) {
@@ -238,8 +256,8 @@ export class AudioEngine {
         await this.#contextManager.dispose();
     }
 
-    async #createNode(context, request) {
-        const node = await this.#nodeFactory.create(context, request.processor, request.parameters ?? {}, request.source);
+    async #createNode(context, request, timings) {
+        const node = await this.#nodeFactory.create(context, request.processor, request.parameters ?? {}, request.source, timings);
         try {
             if (typeof node.getNumOutputs === "function" && node.getNumOutputs() !== (request.outputChannels ?? 1))
                 throw new Error("Unexpected Faust output channel count.");
@@ -272,6 +290,7 @@ export class AudioEngine {
 
     #startVoice(playback, node, request, transition) {
         let voice, monitor;
+        const onProcessorError = () => this.#runtime.processorError();
         try {
             monitor = this.#createMonitor(node);
             const routing = request.tapSelectorCount > 0 ? {
@@ -280,9 +299,11 @@ export class AudioEngine {
                 ack: slot => monitor.getTapAcknowledgement(slot)
             } : null;
             voice = this.#output.createVoice(playback.context, node, request.outputChannels ?? 1, routing);
-            const instance = { node, voice, monitor, generation: request.generation };
+            const instance = { node, voice, monitor, generation: request.generation, outputChannels: request.outputChannels ?? 1 };
+            node.addEventListener?.("processorerror", onProcessorError);
             const lifetime = voice.play(request, transition);
             instance.finished = Promise.resolve(lifetime).finally(() => {
+                node.removeEventListener?.("processorerror", onProcessorError);
                 playback.voices.delete(instance);
                 this.#transport?.disconnect(node);
                 this.#disposeActions(node);
@@ -293,6 +314,7 @@ export class AudioEngine {
             playback.voices.add(instance);
             return instance;
         } catch (error) {
+            node.removeEventListener?.("processorerror", onProcessorError);
             try { monitor?.dispose(); }
             finally {
                 if (voice) {

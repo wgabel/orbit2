@@ -1,10 +1,10 @@
 # Orbit 2 — Performance monitoring, profiling and diagnostics
 
-**Status:** Phase 7.3.1 in review ([PR #53](https://github.com/wgabel/orbit2/pull/53)); 7.3.2–7.3.6 planned  
+**Status:** 7.3.1 implemented ([PR #53](https://github.com/wgabel/orbit2/pull/53)); 7.3.2 in review ([PR #56](https://github.com/wgabel/orbit2/pull/56)); 7.3.3–7.3.6 planned  
 **Scope:** Browser audio playback, Faust DSP, editing/UI, compilation, memory, musical timing and repeatable performance tests.  
 **Repository:** [wgabel/orbit2](https://github.com/wgabel/orbit2)  
 **Parent architecture:** [ORBIT2-ARCHITECTURE.md](ORBIT2-ARCHITECTURE.md)  
-**Implementation baseline:** Reviewed main on 2026-11-21. Existing audio code is referenced below; the proposed later instrumentation and benchmark harness are not implemented merely because this document exists. See the [7.3.1 implementation record](docs/quality/performance-implementation.md#phase-731--passive-monitor-in-review) for the currently delivered subset.
+**Implementation baseline:** Reviewed main on 2026-11-21. Existing audio code is referenced below; the proposed later instrumentation and benchmark harness are not implemented merely because this document exists. See the [7.3.1 implementation record](docs/quality/performance-implementation.md#phase-731--passive-monitor-in-review) for the passive monitor and [7.3.2](docs/quality/performance-implementation.md#phase-732--compilation-and-runtime-diagnostics-in-review) for compilation and resource instrumentation.
 
 ## 1. Purpose and goals
 
