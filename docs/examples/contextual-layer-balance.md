@@ -2,6 +2,8 @@
 
 [Architecture](../../ORBIT2-ARCHITECTURE.md) · [Production workflow](mixing-mastering-and-analysis.md) · [Psychoacoustics](music-theory-and-sound-design.md#6-perceived-loudness-gain-staging-and-dynamic-range) · [Composition](generative-ambient-composition.md)
 
+Documentation provenance: [PR #38](https://github.com/wgabel/orbit2/pull/38) (research, validation method and measured case study; documentation only, not a new runtime measurement feature).
+
 **Purpose:** help an agent mix individual musical parts so they remain audible and expressive without overpowering the intended scene. This is a focused extension of the production guide, not a new DSP feature, automatic mastering algorithm, required graph template or universal set of volume targets. Read it when relative layer levels or musical clarity matter; use the appropriate depth for the task.
 
 ## 1. Balance is a relationship, not a fader setting
