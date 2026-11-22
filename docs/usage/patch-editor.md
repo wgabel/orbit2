@@ -2,23 +2,27 @@
 
 [Usage index](README.md) · [Canvas architecture](../editor/canvas.md) · [Persistence](../editor/persistence-and-history.md)
 
-## Mobile workspace (6.21.1 implemented; 6.21.2 in review)
+## Mobile workspace (6.21.1–6.21.2 implemented; 6.21.3 in review)
 
 [PR #60](https://github.com/wgabel/orbit2/pull/60) introduces a canvas-first layout on phones and short touch landscape screens. Use the top BPM button to edit tempo or reset the transport; Play and Stop remain immediately available. The bottom toolbar opens existing controls without reducing the canvas rectangle:
 
-- **+ Nodes:** choose the existing node type and Add; the panel closes on success. Locate output rack (inside composites) is also available here.
+- **+ Nodes:** open the visual Node Library; tap a node row to add it. The panel closes on success. Locate output rack (inside composites) is also available here.
 - **Outline:** open/search the existing graph hierarchy; choose a target or open a nested composite.
 - **Edit:** graph and annotation undo/redo, Create visual group, selection actions (marquee/multi-select and grouping/ungrouping) and contextual Describe/Delete selected. Enable Marquee mode to close the sheet and drag a selection; reopen Edit → Selection actions → Return to pan to exit.
 - **View:** connection labels, annotations, local/entire-patch counts, gesture help and scope.
 - **More:** Patches and Performance diagnostics. Toggle the bottom tool again to close it; apply/cancel an active overview draft before switching tools.
 - The floating zoom control provides minus, plus, percentage, 100% and Fit. In a nested graph, use its parent breadcrumb to return.
 
-With [PR #61](https://github.com/wgabel/orbit2/pull/61), close a tool via its Close button, the active bottom tab, Escape or browser/Android Back; changing tools dismisses the previous one. Apply/cancel a protected overview draft before leaving it. The compact color-coded Node Library, automatic node expansion/pinning, new pinch gestures and fullscreen are planned in subsequent milestones. Resizing the browser retains the same active graph and playback controller. 
+With [PR #61](https://github.com/wgabel/orbit2/pull/61), close a tool via its Close button, the active bottom tab, Escape or browser/Android Back; changing tools dismisses the previous one. Apply/cancel a protected overview draft before leaving it. The color-coded Node Library ([PR #62](https://github.com/wgabel/orbit2/pull/62), in review) replaces the old dropdown. Automatic node expansion/pinning, new pinch gestures and fullscreen are planned in subsequent milestones. Resizing the browser retains the same active graph and playback controller. 
+
+### Node Library
+
+On desktop, click **Add node**; on mobile, tap **+ Nodes**. Search by name, keyword or purpose, or choose a category. Each row shows a recognizable icon, category accent, canonical node name and short description. Click/tap the row to add it at the current visible canvas; star a row to favorite it (tap again to remove). Favorites and up to six recently added types appear first when no filter is active, and persist in this browser. The list adapts to the graph (Master output is root-only); composite and instrument templates remain available. Close the library to return to the canvas without adding anything. Node frames and the outline share the category icons/colors; signal colors still indicate signal semantics. See [PR #62](https://github.com/wgabel/orbit2/pull/62).
 
 ## 1. Build and play a patch
 
 1. Open **Patches** and create a new patch (stop playback first). It starts with a Master output. Alternatively, import a portable patch JSON or use the existing workspace.
-2. In **Add node**, select **Oscillator**, then Add. Choose Triangle or Sine, free frequency 110 Hz, amplitude 0.15. Add a **Gain** with gain 0.5. Connect the oscillator's signal output to Gain's audio input, and Gain's audio output to Master output. Use compatible sockets; drag from an output to an input or activate the sockets in order.
+2. Open **Add node** (or **+ Nodes** on mobile), then choose **Oscillator**. Choose Triangle or Sine, free frequency 110 Hz, amplitude 0.15. Add a **Gain** with gain 0.5. Connect the oscillator's signal output to Gain's audio input, and Gain's audio output to Master output. Use compatible sockets; drag from an output to an input or activate the sockets in order.
 3. Click **Play patch**. Begin with comfortable device volume. For a richer sound add a second oscillator at 220 Hz and amplitude 0.04, use a Mixer to combine both, then route through Gain. Add Chorus or Reverb after the Mixer, keeping some headroom. Click Stop to stop playback.
 4. Base parameter edits update the active DSP; routed structural changes may compile a replacement and crossfade. Replacing the whole patch requires stopped playback. If editing effects during playback, tails may be preserved for live scalar edits but not necessarily structural changes.
 
@@ -40,7 +44,7 @@ For a complex piece, create meaningful names (e.g. `01 · Harmonic bed`, `02 · 
 
 | Task | Actual UI workflow / result |
 | --- | --- |
-| Add a note card | Add node → **Note** → Add. Edit title, body and accent; Apply. Drag the header, resize or collapse. Use notes for musical timing, parameter ranges, routing rationale and warnings. [PR #27](https://github.com/wgabel/orbit2/pull/27) |
+| Add a note card | Add node → **Note (annotation)**. Edit title, body and accent; Apply. Drag the header, resize or collapse. Use notes for musical timing, parameter ranges, routing rationale and warnings. [PR #27](https://github.com/wgabel/orbit2/pull/27) |
 | Name or describe an oscillator/processor | Select one node → **Describe selected** → enter alias and description → Apply. Canonical node type and IDs remain unchanged. [PR #28](https://github.com/wgabel/orbit2/pull/28) |
 | Explain a connection | Select one cable → **Describe selected** or **Edit connection label** in the amount editor. A label describes purpose, not a numerical amount. [PR #28](https://github.com/wgabel/orbit2/pull/28) |
 | Organize a synth voice | Select related nodes using additive selection → **Create visual group** → set title/accent and membership. Drag its header to move members; resize the frame or remove it without deleting members. Groups are presentation only, not nested DSP graphs. [PR #30](https://github.com/wgabel/orbit2/pull/30) |
