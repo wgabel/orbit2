@@ -13,5 +13,5 @@ public sealed class GainFaustEmitter : IFaustNodeEmitter
         SignalRangeContext.Multiply(context.Input("audio-in"), context.Parameter("gain"));
 
     public string Emit(FaustNodeContext context) =>
-        $"{context.Input("audio-in")} * {context.Parameter("gain")}";
+        $"{context.Input("audio-in")} * {context.Parameter("gain", settlingMilliseconds: FaustControlSmoothing.Amplitude)}";
 }

@@ -225,7 +225,7 @@ public sealed class FaustGraphCompilerTests
         Assert.Contains($"n_{oscillator.Id:N} * 1.0", program.Source);
         Assert.Contains("os.lf_sawpos(min(0.49 * ma.SR", program.Source);
         Assert.False(program.RequiresTransport);
-        Assert.Contains(" : si.smoo;", program.Source);
+        Assert.Contains(" : si.smooth(exp(-3.0 / (ma.SR * 0.005)));", program.Source);
         Assert.Contains("process = ", program.Source);
         Assert.Equal(0.5, Control(program, lfo, "frequency").InitialValue);
         Assert.Equal(440, Control(program, oscillator, "frequency").InitialValue);
@@ -233,6 +233,39 @@ public sealed class FaustGraphCompilerTests
         Assert.NotNull(meter);
         Assert.Contains($"hbargraph(\"{meter}\"", program.Source);
         Assert.Null(Control(program, lfo, "frequency").MeterName);
+    }
+
+    [Fact]
+    public void LiveControlSmoothingUsesParameterSpecificSettlingTimes()
+    {
+        using var session = new PatchSession(BuiltInNodes.CreateRegistry());
+        var oscillator = Add(session, OscillatorGenerator.NodeType);
+        var gain = Add(session, GainProcessor.NodeType);
+        var filter = Add(session, FilterProcessor.NodeType);
+        var master = Add(session, MasterOutput.NodeType);
+        Connect(session, oscillator, gain, gain.Inputs.Single(p => p.Key == "audio-in").Id, 1);
+        Connect(session, gain, filter, filter.Inputs.Single(p => p.Key == "audio-in").Id, 1);
+        Connect(session, filter, master, master.Inputs.Single().Id, 1);
+        var program = compiler.Compile(session.Snapshot);
+
+        void Check(GraphNodeSnapshot node, string key, string smoothing)
+        {
+            var name = Control(program, node, key).Name;
+            var line = program.Source.Split('\n').Single(line => line.TrimStart().StartsWith(name + " = "));
+            Assert.EndsWith(" : " + smoothing + ";", line.Trim());
+        }
+
+        string Smooth(string seconds) => $"si.smooth(exp(-3.0 / (ma.SR * {seconds})))";
+        Check(oscillator, "frequency", Smooth("0.005"));
+        Check(oscillator, "amplitude", Smooth("0.01"));
+        Check(oscillator, "phase", Smooth("0.01"));
+        Check(gain, "gain", Smooth("0.01"));
+        Check(filter, "cutoff", Smooth("0.015"));
+        Check(filter, "resonance", "si.smoo");
+
+        var frequency = oscillator.Parameters.Single(p => p.Definition.Key == "frequency");
+        session.Execute(new SetParameterValueCommand(session.GraphId, new ParameterAddress(oscillator.Id, frequency.Id), 880));
+        Assert.Equal(program.Source, compiler.Compile(session.Snapshot).Source);
     }
 
     [Fact]
