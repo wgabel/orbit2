@@ -13,4 +13,9 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2" PrivateAssets="all" />
     <ProjectReference Include="../../src/Orbit.Presentation/Orbit.Presentation.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="../../docs/examples/foundations/breathing-harmonic-drone/reference.orbit2.json"
+          Link="Foundations/breathing-harmonic-drone/reference.orbit2.json"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

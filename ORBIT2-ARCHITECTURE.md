@@ -47,6 +47,8 @@ The goal is a modular architecture in which new generators, processors, paramete
 
 For hands-on workflows and concrete examples, start with the [user and agent usage guide](docs/usage/README.md). Each page links the authoritative feature contracts and actual implementation PRs; use it alongside the task routing below, not as a constraint on exploration.
 
+For creating, analyzing or refining music, start with the [music creation index](docs/examples/README.md): routes by task and production stage, including the [sound-design foundations catalogue](docs/examples/foundations/README.md) of reproducible references and evidence.
+
 Start here. Read the relevant module(s), source and tests; follow additional references as needed. This index is a discovery aid, not a limit on exploration. For projects spanning layers, combine the relevant modules. For a novel subsystem, inspect the existing architecture and code, make a reasonable design consistent with the principles above (or propose an explicit change), and create or extend documentation when the topic merits it. No matching document is required to begin work.
 
 Domain owns graph primitives and validation; Application owns commands, immutable snapshots and services; Presentation owns layout and editor projections; Audio owns Faust compilation and DSP; Infrastructure owns browser integrations; UI composes them. See [project structure](docs/core/project-structure.md) for dependency direction. Read [ROADMAP.md](ROADMAP.md) for current status and priority; the detailed modules preserve both implemented contracts and future designs.
@@ -64,7 +66,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 | Harmony, tuning, timbre, musical quality, perceived loudness and spatial depth | [Music theory and sound design](docs/examples/music-theory-and-sound-design.md); use with the relevant instrument/effect or composition guide |
 | Genre-specific music, electronic style, rhythm, sound palette and construction | [Electronic music genres](docs/examples/electronic-music-genres.md) routes to focused ambient, bass/breaks, dance and experimental families; [musical techniques](docs/examples/genres/orbit-techniques.md) connects style to current nodes |
 | Hollow/basic timbres, prominent raw noise, finished instruments and reusable sound palette | [Sound quality and voice design](docs/examples/sound-quality-and-voice-design.md); use with instrument recipes and the relevant node contracts |
-| Evolving sounds, emergent harmonics, interacting modulation and breathing voices | [Sound-design foundation 01: breathing harmonic drone](docs/examples/foundations/breathing-harmonic-drone.md) — listener-validated reference, exact graph, analysis and transferable design principle |
+| Evolving sounds, emergent harmonics, interacting modulation and breathing voices | [Sound-design foundations](docs/examples/foundations/README.md) — reference graphs, analysis, listener feedback, evidence statuses and maintenance |
 | Mix balance, mastering, loudness measurements, audio render analysis and iteration | [Mixing, mastering and analysis](docs/examples/mixing-mastering-and-analysis.md); [signal observation](docs/audio/signal-observation.md) for native measurement contracts |
 | Relative instrument/voice levels, over-loud or masked melodies, volume automation and balance validation | [Contextual layer balance](docs/examples/contextual-layer-balance.md) — research, practical level rides, aligned windowed role analysis and measured case study |
 | Save/load, undo/redo, presets | [Persistence](docs/editor/persistence-and-history.md), [commands](docs/core/commands-and-events.md), [node presets](docs/editor/node-presets.md) |
@@ -122,7 +124,8 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 - [music theory and electronic sound design](docs/examples/music-theory-and-sound-design.md) — interval/scale/chord recipes, voice leading, articulation, psychoacoustics, mix/depth and quality checks
 - [electronic music genres](docs/examples/electronic-music-genres.md) — modular genre vocabulary, composition approaches and reusable Orbit 2 techniques
 - [sound quality and voice design](docs/examples/sound-quality-and-voice-design.md) — transform noise, develop richer tonal voices and audition candidate preset recipes
-- [breathing harmonic drone](docs/examples/foundations/breathing-harmonic-drone.md) — first sound-design foundation; coordinated modulation, nonlinear harmonic interaction, measured risks and creative alternatives
+- [music creation index](docs/examples/README.md) — task routing and end-to-end workflow for music
+- [sound-design foundations](docs/examples/foundations/README.md) — reusable, evidence-labeled reference graphs and maintenance; first entry: [breathing harmonic drone](docs/examples/foundations/breathing-harmonic-drone.md)
 - [mixing, mastering and analysis](docs/examples/mixing-mastering-and-analysis.md) — role balance, peak/LUFS/LRA interpretation, mastering limits, render–measure–refine and a worked feedback example
 - [contextual layer balance](docs/examples/contextual-layer-balance.md) — relative levels, masking, research-backed mixing decisions, paired A/B validation and the Submerged Relay case
 
