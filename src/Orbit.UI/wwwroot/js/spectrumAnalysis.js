@@ -49,14 +49,24 @@ export class SpectrumAnalyzer {
         if (this.#lastTime === time && this.#result) return this.#result;
         const size = this.#size, offset = samples.length - size;
         const real = this.#real, imag = this.#imag;
-        let mean = 0;
-        for (let i = 0; i < size; i++) mean += Number.isFinite(samples[offset + i]) ? samples[offset + i] : 0;
+        // Estimate DC in the same window used for the FFT. Subtracting an
+        // unweighted block mean before a Hann window introduces a spurious
+        // first-bin component when the captured tone is not bin-centered.
+        // Center the weighted sum on the first sample so a constant signal
+        // subtracts exactly to zero, even with floating-point window weights.
+        const reference = Number.isFinite(samples[offset]) ? samples[offset] : 0;
+        let mean = 0, weightedDifference = 0;
+        for (let i = 0; i < size; i++) {
+            const sample = Number.isFinite(samples[offset + i]) ? samples[offset + i] : 0;
+            mean += sample;
+            weightedDifference += (sample - reference) * this.#window[i];
+        }
         mean /= size;
+        const dcOffset = reference + weightedDifference / this.#windowSum;
         for (let i = 0; i < size; i++) {
             const sample = samples[offset + i];
-            // Remove the block's DC offset before windowing: a constant
-            // modulation signal must not masquerade as a low-frequency tone.
-            real[this.#reverse[i]] = ((Number.isFinite(sample) ? sample : 0) - mean) * this.#window[i];
+            // The reported mean remains the actual arithmetic sample mean.
+            real[this.#reverse[i]] = ((Number.isFinite(sample) ? sample : 0) - dcOffset) * this.#window[i];
         }
         imag.fill(0);
         for (let length = 2; length <= size; length *= 2) {

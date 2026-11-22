@@ -112,3 +112,63 @@ test("frequency axis uses logarithmic spacing, including low-frequency bins", ()
     assert.deepEqual(spectrumTicks(5.86, 24000),
         [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]);
 });
+
+test("Hann DC removal does not invent sub-bass for off-bin audio tones", () => {
+    for (const rate of [44100, 48000]) {
+        for (const size of SpectrumAnalyzer.Sizes) {
+            const frequencies = size === 8192 ? [220, 440, 1000] : [70.35 * rate / size];
+            for (const frequency of frequencies) {
+                for (const phase of [0, Math.PI / 3, Math.PI / 2, 3 * Math.PI / 2]) {
+                    const samples = Float32Array.from({ length: size }, (_, i) =>
+                        Math.sin(2 * Math.PI * frequency * i / rate + phase));
+                    const result = new SpectrumAnalyzer(size, "hann").analyze(samples, rate, 1);
+                    const limit = frequency === 440 ? -110 : -90;
+                    assert.ok(result.decibels[1] < limit,
+                        `Unexpected first bin ${result.decibels[1]} dBFS at ${frequency} Hz, ${rate} Hz, size ${size}, phase ${phase}`);
+                    near(result.peakBin * result.binWidth, frequency, result.binWidth / 2);
+                    assert.ok(result.peakDecibels > -1.5 && result.peakDecibels <= 0.01);
+                }
+            }
+        }
+    }
+});
+
+test("DC removal retains genuine positive low-frequency content and rejects constant signals", () => {
+    const size = 8192, rate = 48000;
+    for (const window of ["hann", "rectangular"]) {
+        const analyzer = new SpectrumAnalyzer(size, window);
+        const constant = new Float32Array(size).fill(0.3);
+        const dc = analyzer.analyze(constant, rate, 1);
+        near(dc.mean, constant[0]);
+        assert.equal(dc.peakBin, 0);
+        assert.equal(dc.peakDecibels, -Infinity);
+
+        // A real 11.72 Hz tone is below 20 Hz and must remain measurable.
+        const low = Float32Array.from({ length: size }, (_, i) =>
+            0.5 * Math.sin(2 * Math.PI * 2 * i / size + Math.PI / 3));
+        const lowResult = analyzer.analyze(low, rate, 2);
+        assert.equal(lowResult.peakBin, 2);
+        near(lowResult.peakDecibels, 20 * Math.log10(0.5));
+        const shifted = Float32Array.from(low, sample => sample + 0.3);
+        const shiftedResult = analyzer.analyze(shifted, rate, 3);
+        assert.equal(shiftedResult.peakBin, 2);
+        near(shiftedResult.peakDecibels, 20 * Math.log10(0.5));
+        near(shiftedResult.mean, 0.3);
+
+        // Do not hide the first positive bin: a real tone there must survive.
+        const first = tone(size, 1, 0.5);
+        const firstResult = analyzer.analyze(first, rate, 4);
+        assert.equal(firstResult.peakBin, 1);
+        near(firstResult.peakDecibels, 20 * Math.log10(0.5));
+    }
+});
+
+test("Hann weighted detrending keeps the reported arithmetic sample mean", () => {
+    const size = 8192, rate = 48000;
+    const samples = Float32Array.from({ length: size }, (_, i) =>
+        Math.sin(2 * Math.PI * 440 * i / rate + Math.PI / 2));
+    const arithmeticMean = samples.reduce((sum, sample) => sum + sample, 0) / size;
+    const result = new SpectrumAnalyzer(size, "hann").analyze(samples, rate, 1);
+    near(result.mean, arithmeticMean, 1e-12);
+    assert.ok(Math.abs(result.mean) > 0.001);
+});
