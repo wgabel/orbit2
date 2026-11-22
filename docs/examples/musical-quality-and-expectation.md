@@ -2,6 +2,8 @@
 
 [Music creation index](README.md) · [Music theory and sound design](music-theory-and-sound-design.md) · [Compositional development](compositional-development.md) · [Production analysis](mixing-mastering-and-analysis.md)
 
+Documentation provenance: [PR #49](https://github.com/wgabel/orbit2/pull/49) (research-informed musical guidance and agent routing; documentation only).
+
 **Purpose:** research-informed criteria for people and agents designing and evaluating music in Orbit 2. A valid patch, a pleasant timbre, and a compelling composition are three different achievements. This guide explains how musical structure, listener expectations and cultural/functional context interact. It complements, rather than replaces, the existing theory, genre, composition and production guides. It introduces no DSP features, patches, listening results or universal aesthetic score.
 
 ## 1. Three complementary perspectives
