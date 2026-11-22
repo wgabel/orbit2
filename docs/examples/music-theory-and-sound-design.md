@@ -223,6 +223,8 @@ For a simple bed, begin with bass amplitude 0.10–0.16, pad voices 0.04–0.08 
 
 Preserve contrast. Ambient music can benefit from quieter details and dynamic swells; a constantly maximized signal can fatigue and make the climax smaller in perception. A louder mix is not necessarily a more expressive one.
 
+For more on research-backed relative voice balance, activity-aware level measurements, masking and selective phrase/section automation, use [contextual layer balance](contextual-layer-balance.md). A weighted energy difference can flag excessive prominence but is not a direct measure of perceived audibility inside a mixture.
+
 ## 7. Spectral balance, masking and register
 
 Masking occurs when a stronger sound makes another sound less detectable, often when their spectra overlap. A mix with several audible layers does not require every layer to occupy a non-overlapping band; harmonic overlap can be pleasant. Choose a clear hierarchy and solve unwanted competition mainly through voicing, timbre, arrangement and relative level before extreme corrective EQ.

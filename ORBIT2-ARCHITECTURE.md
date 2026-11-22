@@ -64,6 +64,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 | Hollow/basic timbres, prominent raw noise, finished instruments and reusable sound palette | [Sound quality and voice design](docs/examples/sound-quality-and-voice-design.md); use with instrument recipes and the relevant node contracts |
 | Evolving sounds, emergent harmonics, interacting modulation and breathing voices | [Sound-design foundation 01: breathing harmonic drone](docs/examples/foundations/breathing-harmonic-drone.md) — listener-validated reference, exact graph, analysis and transferable design principle |
 | Mix balance, mastering, loudness measurements, audio render analysis and iteration | [Mixing, mastering and analysis](docs/examples/mixing-mastering-and-analysis.md); [signal observation](docs/audio/signal-observation.md) for native measurement contracts |
+| Relative instrument/voice levels, over-loud or masked melodies, volume automation and balance validation | [Contextual layer balance](docs/examples/contextual-layer-balance.md) — research, practical level rides, aligned windowed role analysis and measured case study |
 | Save/load, undo/redo, presets | [Persistence](docs/editor/persistence-and-history.md), [commands](docs/core/commands-and-events.md), [node presets](docs/editor/node-presets.md) |
 | Notes, aliases, visual groups, patch overview, documentation visibility or outline | [Patch annotations](docs/editor/patch-annotations.md), [canvas](docs/editor/canvas.md), [persistence](docs/editor/persistence-and-history.md) |
 | Roadmap or feature priority | [Roadmap](ROADMAP.md); open only the relevant milestone register if needed |
@@ -121,6 +122,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 - [sound quality and voice design](docs/examples/sound-quality-and-voice-design.md) — transform noise, develop richer tonal voices and audition candidate preset recipes
 - [breathing harmonic drone](docs/examples/foundations/breathing-harmonic-drone.md) — first sound-design foundation; coordinated modulation, nonlinear harmonic interaction, measured risks and creative alternatives
 - [mixing, mastering and analysis](docs/examples/mixing-mastering-and-analysis.md) — role balance, peak/LUFS/LRA interpretation, mastering limits, render–measure–refine and a worked feedback example
+- [contextual layer balance](docs/examples/contextual-layer-balance.md) — relative levels, masking, research-backed mixing decisions, paired A/B validation and the Submerged Relay case
 
 **Quality and delivery**
 
