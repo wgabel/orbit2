@@ -14,14 +14,15 @@ export class FaustNodeFactory {
     }
 
     async create(context, processor, parameters, source = null, timings = null) {
+        const collecting = () => timings && timings.collecting !== false;
         let name;
         let compiled;
         if (source != null) {
             if (!this.#compiler) throw new Error("Dynamic Faust compiler is unavailable.");
             name = processor;
-            const started = globalThis.performance.now();
+            const started = collecting() ? globalThis.performance.now() : null;
             try { compiled = await this.#compiler.compile(source); }
-            finally { if (timings) timings.workerRoundTripMs = globalThis.performance.now() - started; }
+            finally { if (started !== null && collecting()) timings.workerRoundTripMs = globalThis.performance.now() - started; }
         } else {
             const specification = this.#processors.get(processor);
             if (!specification) throw new Error("Unknown audio processor: " + processor);
@@ -30,19 +31,19 @@ export class FaustNodeFactory {
         }
 
         const generator = this.#createGenerator();
-        const started = globalThis.performance.now();
+        const started = collecting() ? globalThis.performance.now() : null;
         let node;
         try { node = await generator.createNode(context, name, { ...compiled, soundfiles: {} }, false); }
-        finally { if (timings) timings.workletCreateMs = globalThis.performance.now() - started; }
+        finally { if (started !== null && collecting()) timings.workletCreateMs = globalThis.performance.now() - started; }
 
         if (!node) {
             throw new Error("Could not create Faust AudioWorklet: " + processor);
         }
 
         try {
-            const bindingStarted = globalThis.performance.now();
+            const bindingStarted = collecting() ? globalThis.performance.now() : null;
             try { this.setParameters(node, parameters); }
-            finally { if (timings) timings.parameterBindingMs = globalThis.performance.now() - bindingStarted; }
+            finally { if (bindingStarted !== null && collecting()) timings.parameterBindingMs = globalThis.performance.now() - bindingStarted; }
             return node;
         } catch (error) {
             node.disconnect();

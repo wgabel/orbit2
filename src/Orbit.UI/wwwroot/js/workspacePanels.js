@@ -83,6 +83,9 @@ export function mountWorkspacePanels(workspace, receiver) {
     }
     function onPointerDown(event) {
         if (mobile.matches || !current() || locked() || event.target.closest?.("[data-mobile-trigger], [data-mobile-sheet]")) return;
+        // An explicitly opened diagnostic session must survive Play, Stop and canvas edits.
+        // Explicit close, Escape and switching tools still end the session.
+        if (current() === "more" && workspace.querySelector("#audio-performance-details")) return;
         outsideDismiss = true;
         void dismiss().finally(() => { outsideDismiss = false; });
     }

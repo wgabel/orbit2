@@ -6,6 +6,7 @@ test("mobile sheet navigation uses one history entry, restores focus and preserv
     const globals = ["matchMedia", "history", "window", "MutationObserver"];
     const saved = Object.fromEntries(globals.map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
     let observer, keyHandler, backHandler, mediaHandler, pointerHandler, focused, disposed = false;
+    let diagnosticsOpen = false;
     const historyStack = [null];
     const media = { matches: true, addEventListener(_, cb) { mediaHandler = cb; }, removeEventListener() { mediaHandler = null; } };
     const history = { get state() { return historyStack.at(-1); },
@@ -14,6 +15,7 @@ test("mobile sheet navigation uses one history entry, restores focus and preserv
     const workspace = {
         dataset: {},
         querySelector(selector) {
+            if (selector === "#audio-performance-details") return diagnosticsOpen ? {} : null;
             const match = selector.match(/data-mobile-(sheet|trigger)="([^"]+)"/);
             if (!match) return null;
             const focus = () => { focused = match[1] + ":" + match[2]; };
@@ -81,6 +83,19 @@ test("mobile sheet navigation uses one history entry, restores focus and preserv
         await flush();
         assert.equal(workspace.dataset.mobileActivePanel, "");
         assert.equal(focused, "sheet:edit", "Outside click must not steal canvas focus");
+        setPanel("more");
+        diagnosticsOpen = true;
+        pointerHandler({ target: { closest: () => null } });
+        await flush();
+        assert.equal(workspace.dataset.mobileActivePanel, "more", "An open diagnostics session survives canvas and playback clicks");
+        keyHandler({ key: "Escape", preventDefault() {}, stopPropagation() {} });
+        await flush();
+        assert.equal(workspace.dataset.mobileActivePanel, "", "Escape still closes diagnostics");
+        diagnosticsOpen = false;
+        setPanel("more");
+        pointerHandler({ target: { closest: () => null } });
+        await flush();
+        assert.equal(workspace.dataset.mobileActivePanel, "", "Closed diagnostics do not prevent normal More dismissal");
         setPanel("view");
         keyHandler({ key: "Escape", preventDefault() {}, stopPropagation() {} });
         await flush();

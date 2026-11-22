@@ -19,18 +19,54 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
     private const double PlaybackVolume = 0.5;
     private readonly ConcurrentDictionary<Guid, ActiveGraphPlayback> active = new();
     private GraphPerformanceTracker? lastDiagnostics;
+    private bool collectDiagnostics;
+
+    public void SetPerformanceCollection(bool enabled)
+    {
+        if (collectDiagnostics == enabled) return;
+        collectDiagnostics = enabled;
+        if (!enabled)
+        {
+            lastDiagnostics?.Stop();
+            lastDiagnostics = null;
+            foreach (var playback in active.Values)
+            {
+                playback.Diagnostics?.Stop();
+                playback.Diagnostics = null;
+            }
+            return;
+        }
+        foreach (var (patchId, playback) in active)
+        {
+            var tracker = new GraphPerformanceTracker(patchId, playback.RequestedRevision);
+            tracker.Prepare(playback.Program);
+            if (playback.HasStarted) tracker.Playing(playback.Result.AppliedRevision);
+            playback.Diagnostics = tracker;
+            lastDiagnostics = tracker;
+        }
+    }
+
     public GraphPerformanceSnapshot? GetGraphPerformanceSnapshot(Guid patchId)
     {
-        if (active.TryGetValue(patchId, out var playback)) return playback.Diagnostics.Snapshot;
+        if (!collectDiagnostics) return null;
+        if (active.TryGetValue(patchId, out var playback) && playback.Diagnostics is { } tracker)
+        {
+            // A replacement started while closed may finish in this session.
+            // Expose its current program without inventing operation timings/counts.
+            tracker.ObserveCurrent(playback.RequestedRevision, playback.Result.AppliedRevision, playback.Program);
+            return tracker.Snapshot;
+        }
         var previous = Volatile.Read(ref lastDiagnostics)?.Snapshot;
         return previous?.PatchId == patchId ? previous : null;
     }
 
-    private FaustGraphProgram CompileMeasured(GraphSnapshot graph, GraphPerformanceTracker diagnostics)
+    private FaustGraphProgram CompileMeasured(GraphSnapshot graph, GraphPerformanceTracker? diagnostics)
     {
+        if (diagnostics?.Collecting != true)
+            return compiler.Compile(graph, TapCapacity, Capture?.SupportsDynamicTaps == true);
         var start = Stopwatch.GetTimestamp();
         try { return compiler.Compile(graph, TapCapacity, Capture?.SupportsDynamicTaps == true); }
-        finally { diagnostics.Build(graph.Revision, Stopwatch.GetElapsedTime(start).TotalMilliseconds); }
+        finally { if (diagnostics.Collecting) diagnostics.Build(graph.Revision, Stopwatch.GetElapsedTime(start).TotalMilliseconds); }
     }
 
     private int TapCapacity => Capture?.SupportsDynamicTaps == true ? SignalTapManifest.MaxAuxiliaryChannels : 0;
@@ -42,12 +78,12 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
     {
         if (active.ContainsKey(graph.Id))
             throw new InvalidOperationException("Graph playback is already active.");
-        var diagnostics = new GraphPerformanceTracker(graph.Id, graph.Revision);
-        Volatile.Write(ref lastDiagnostics, diagnostics);
+        var diagnostics = collectDiagnostics ? new GraphPerformanceTracker(graph.Id, graph.Revision) : null;
+        if (diagnostics is not null) Volatile.Write(ref lastDiagnostics, diagnostics);
         FaustGraphProgram program;
         try { program = CompileMeasured(graph, diagnostics); }
-        catch { diagnostics.Failed(graph.Revision); throw; }
-        diagnostics.Prepare(program);
+        catch { diagnostics?.Failed(graph.Revision); throw; }
+        diagnostics?.Prepare(program);
         var playback = new ActiveGraphPlayback(graph, program, diagnostics);
         if (!active.TryAdd(graph.Id, playback))
             throw new InvalidOperationException("Graph playback is already active.");
@@ -55,7 +91,7 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
         {
             await engine.PlayAsync(CreateRequest(program, playback.Generation));
         }
-        catch { diagnostics.Failed(graph.Revision); throw; }
+        catch { diagnostics?.Failed(graph.Revision); throw; }
         finally { active.TryRemove(graph.Id, out _); }
     }
 
@@ -74,11 +110,11 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
 
         if (!playback.Request(graph.Revision)) return playback.Result;
         var diagnostics = playback.Diagnostics;
-        diagnostics.Request(graph.Revision);
+        diagnostics?.Request(graph.Revision);
         // Announce a newer revision immediately, even while the previous worker
         // request is pending. The browser checks this before starting a new voice.
         try { await engine.MarkRevisionAsync(SoundId(graph.Id), graph.Revision); }
-        catch { diagnostics.Failed(graph.Revision); throw; }
+        catch { diagnostics?.Failed(graph.Revision); throw; }
 
         await playback.UpdateLock.WaitAsync();
         try
@@ -86,12 +122,12 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
             if (playback.Stopping || !active.TryGetValue(graph.Id, out var current) ||
                 !ReferenceEquals(current, playback))
             {
-                diagnostics.Skipped(graph.Revision);
+                diagnostics?.Skipped(graph.Revision);
                 return playback.Result with { IsActive = false };
             }
             if (graph.Revision != playback.RequestedRevision)
             {
-                diagnostics.Skipped(graph.Revision);
+                diagnostics?.Skipped(graph.Revision);
                 return playback.Result;
             }
 
@@ -106,13 +142,13 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
                 var request = CreateRequest(program, generation, values, playback.LatchedPitchActions);
                 if (!await engine.ReplaceAsync(request, graph.Revision))
                 {
-                    diagnostics.Skipped(graph.Revision);
+                    diagnostics?.Skipped(graph.Revision);
                     return playback.Result with { IsActive = !playback.Stopping };
                 }
                 foreach (var target in playback.LatchedPitchActions.Keys.Where(key => !program.RhythmicInputs.Any(input =>
                     input.IsPitch && (input.GraphId, input.NodeId) == key)).ToArray()) playback.LatchedPitchActions.Remove(target);
                 var accepted = playback.Accept(graph, program, values, generation);
-                diagnostics.Applied(graph.Revision, program, "replacement");
+                diagnostics?.Applied(graph.Revision, program, "replacement");
                 return accepted;
             }
 
@@ -127,19 +163,20 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
             double? controlMs = null;
             if (changes.Count > 0 || patterns.Length > 0)
             {
-                var started = Stopwatch.GetTimestamp();
+                var started = diagnostics?.Collecting == true ? Stopwatch.GetTimestamp() : (long?)null;
                 if (!await engine.SetGraphControlsAsync(SoundId(graph.Id), changes, patterns))
                 {
-                    diagnostics.Skipped(graph.Revision);
+                    diagnostics?.Skipped(graph.Revision);
                     return playback.Result with { IsActive = false };
                 }
-                controlMs = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+                if (started is long timestamp && diagnostics?.Collecting == true)
+                    controlMs = Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds;
             }
             var reused = playback.Accept(graph, program, values);
-            diagnostics.Applied(graph.Revision, program, "reused", controlMs);
+            diagnostics?.Applied(graph.Revision, program, "reused", controlMs);
             return reused;
         }
-        catch { diagnostics.Failed(graph.Revision); throw; }
+        catch { diagnostics?.Failed(graph.Revision); throw; }
         finally { playback.UpdateLock.Release(); }
     }
 
@@ -149,7 +186,10 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
         var state = await engine.GetPlaybackStateAsync(SoundId(graphId));
         if (state == PlaybackState.Playing && playback is not null &&
             active.TryGetValue(graphId, out var current) && ReferenceEquals(current, playback))
-            playback.Diagnostics.Playing(playback.Result.AppliedRevision);
+        {
+            playback.HasStarted = true;
+            playback.Diagnostics?.Playing(playback.Result.AppliedRevision);
+        }
         return state;
     }
 

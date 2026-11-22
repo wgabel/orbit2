@@ -572,6 +572,7 @@ public sealed class FaustGraphPlaybackServiceTests
         using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings());
         var engine = new RecordingEngine();
         var service = new FaustGraphPlaybackService(FaustGraphCompiler.CreateBuiltIn(), engine);
+        service.SetPerformanceCollection(true);
         var original = session.Snapshot;
         var playing = service.PlayAsync(original);
         await service.GetStateAsync(session.GraphId);
@@ -615,6 +616,41 @@ public sealed class FaustGraphPlaybackServiceTests
         await service.StopAsync(session.GraphId);
         await playing;
         Assert.Equal(replacement, service.GetGraphPerformanceSnapshot(session.GraphId));
+    }
+
+    [Fact]
+    public async Task DiagnosticsAreOptInAndReopeningDuringPlaybackStartsFresh()
+    {
+        using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings());
+        var engine = new RecordingEngine();
+        var service = new FaustGraphPlaybackService(FaustGraphCompiler.CreateBuiltIn(), engine);
+        var original = session.Snapshot;
+        var playing = service.PlayAsync(original);
+        await service.GetStateAsync(session.GraphId);
+        Assert.Null(service.GetGraphPerformanceSnapshot(session.GraphId));
+        service.SetPerformanceCollection(true);
+        var opened = service.GetGraphPerformanceSnapshot(session.GraphId)!;
+        Assert.Equal(0L, opened.SourceBuilds);
+        Assert.Null(opened.SourceGenerationMs);
+        Assert.Equal(3, opened.ReachableLeafNodes);
+        Assert.Equal(original.Revision, opened.AppliedRevision);
+        var oscillator = original.Nodes[1];
+        var frequency = oscillator.Parameters.Single(p => p.Definition.Key == "frequency");
+        session.Execute(new SetParameterValueCommand(session.GraphId, new(oscillator.Id, frequency.Id), 330));
+        await service.UpdateAsync(session.Snapshot);
+        Assert.Equal(1L, service.GetGraphPerformanceSnapshot(session.GraphId)!.ControlUpdates);
+        service.SetPerformanceCollection(false);
+        session.Execute(new SetParameterValueCommand(session.GraphId, new(oscillator.Id, frequency.Id), 450));
+        await service.UpdateAsync(session.Snapshot);
+        Assert.Null(service.GetGraphPerformanceSnapshot(session.GraphId));
+        service.SetPerformanceCollection(true);
+        var reopened = service.GetGraphPerformanceSnapshot(session.GraphId)!;
+        Assert.Equal(0L, reopened.ControlUpdates);
+        Assert.Null(reopened.ControlUpdateMs);
+        Assert.Equal(session.Snapshot.Revision, reopened.AppliedRevision);
+        Assert.Equal(2, engine.Updates.Count);
+        await service.StopAsync(session.GraphId);
+        await playing;
     }
 
     private class RecordingEngine : IAudioEngine

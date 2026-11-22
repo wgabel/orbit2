@@ -78,30 +78,40 @@ try {
             await manager.getByRole("button", { name: "Close" }).click();
             await closeMore();
             await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
-            const toggle = moreTools.getByRole("button", { name: /^Performance(?: ·|$)/ });
             const panel = page.getByRole("region", { name: "Audio performance diagnostics" });
-            async function monitor(state, voices, expectedRevision = null) {
-                await openMore();
-                await toggle.click();
+            const toggle = moreTools.getByRole("button", { name: "Performance · Off", exact: true });
+            async function readMonitor(state, voices, expectedRevision = null) {
                 await panel.locator("[data-performance-session]").filter({ hasText: new RegExp("^" + state + "$") }).waitFor({ timeout: 10000 });
                 if (voices) await panel.locator("[data-performance-worklets]").filter({ hasText: voices }).waitFor({ timeout: 10000 });
                 if (expectedRevision !== null) await page.waitForFunction(revision =>
                     [...document.querySelectorAll("#audio-performance-details dt")].some(dt =>
                         dt.textContent === "Requested / applied revision" &&
                         dt.nextElementSibling.textContent.trim() === revision + " / " + revision), expectedRevision);
-                const result = await panel.locator("dl").evaluateAll(lists => Object.fromEntries(
+                return await panel.locator("dl").evaluateAll(lists => Object.fromEntries(
                     lists.flatMap(list => [...list.querySelectorAll("dt")].map(dt => [dt.textContent, dt.nextElementSibling.textContent]))));
-                await panel.getByRole("button", { name: "Close" }).click();
-                await closeMore();
-                return result;
             }
+            async function openMonitor(state, voices, expectedRevision = null) {
+                await openMore();
+                await toggle.click();
+                return readMonitor(state, voices, expectedRevision);
+            }
+            async function closeMonitor() {
+                await panel.getByRole("button", { name: "Close" }).click();
+                await toggle.waitFor();
+                await closeMore();
+            }
+            // Operation diagnostics must be enabled before the operation, not
+            // opened afterward. Read the idle snapshot to ensure collection started.
+            await openMonitor("idle", "0 / 0");
             const before = performance.now();
             await play.click();
             await status.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 60000 });
             const initialPlayWallMs = performance.now() - before;
             let revision = Number((await status.innerText()).match(/\d+$/)[0]);
-            const initial = await monitor("active", "1 / 0", revision);
+            const initial = await readMonitor("active", "1 / 0", revision);
             assert.equal(initial["Faust source builds"], "1");
+            // External steady-state capacity should exclude monitor overhead.
+            await closeMonitor();
             await delay(1000);
             const observations = [];
             const samplingStart = performance.now();
@@ -119,7 +129,10 @@ try {
             }
             const audio = [...realtime.values()].find(c => c.contextState === "running");
             const measured = observations.length >= 2 && observations.at(-1).contextTimeSeconds > observations[0].contextTimeSeconds;
-            const steady = await monitor("active", "1 / 0");
+            // A new monitoring session has no history of the earlier Play.
+            const steady = await openMonitor("active", "1 / 0", revision);
+            assert.equal(steady["Faust source builds"], "0");
+            assert.equal(steady["Voice preparation attempts"], "0");
             let edits = null;
             if (profile.id === "sine-bank-1") {
                 const frequency = page.getByRole("spinbutton", { name: "Frequency (Hz)" });
@@ -128,33 +141,37 @@ try {
                 await frequency.fill("220");
                 await status.filter({ hasText: new RegExp(`^Playing revision ${++revision}$`) }).waitFor({ timeout: 15000 });
                 const liveControlWallMs = performance.now() - started;
-                const control = await monitor("active", "1 / 0", revision);
-                assert.equal(control["Faust source builds"], "1");
+                const control = await readMonitor("active", "1 / 0", revision);
+                assert.equal(control["Faust source builds"], "0");
+                assert.equal(control["Live control updates"], "1");
                 started = performance.now();
                 await waveform.selectOption("2");
                 await status.filter({ hasText: new RegExp(`^Playing revision ${++revision}$`) }).waitFor({ timeout: 30000 });
                 const replacementWallMs = performance.now() - started;
-                const replacement = await monitor("active", "1 / 0", revision);
-                assert.equal(replacement["Faust source builds"], "2");
+                const replacement = await readMonitor("active", "1 / 0", revision);
+                assert.equal(replacement["Faust source builds"], "1");
                 assert.equal(replacement["Accepted replacements"], "1");
                 edits = { liveControlWallMs, replacementWallMs, control, replacement };
             }
             await page.getByRole("button", { name: "Stop", exact: true }).click();
             await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
-            const stopped = await monitor("(stopped|idle)", "0 / 0");
+            const stopped = await readMonitor("stopped", "0 / 0");
             const secondPlayStart = performance.now();
             await play.click();
             await status.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 60000 });
             const replayWallMs = performance.now() - secondPlayStart;
+            const replay = await readMonitor("active", "1 / 0", revision);
+            assert.equal(replay["Faust source builds"], "1");
             await page.getByRole("button", { name: "Stop", exact: true }).click();
             await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
-            await monitor("(stopped|idle)", "0 / 0");
+            await readMonitor("stopped", "0 / 0");
+            await closeMonitor();
             rows.push({ id: profile.id, initialPlayWallMs, replayWallMs,
                 sampleRateHz: audio?.sampleRate ?? null, callbackBufferFrames: audio?.callbackBufferSize ?? null,
                 renderQuantumFrames: audio?.renderQuantumSize ?? null, maxOutputChannels: audio?.maxOutputChannelCount ?? null,
                 renderCapacityPercent: measured ? summarize(observations.map(o => o.renderCapacityPercent)) : null,
                 observations, availability: measured ? "observed" : cdpError ?? "No advancing real-time context samples",
-                initial, steady, edits, stopped });
+                initial, steady, edits, stopped, replay });
             console.log(`${profile.id}: ${measured ? rows.at(-1).renderCapacityPercent.median.toFixed(2) + "% median renderer capacity" : "renderer capacity unavailable"} (external Chromium, muted ${headless ? "headless" : "headed"})`);
         } finally { await context.close(); }
     }
@@ -163,7 +180,7 @@ try {
         revision: process.env.ORBIT_REVISION ?? process.env.GITHUB_SHA ?? null, timestampUtc: new Date().toISOString(),
         environment: { chrome: browser.version(), node: process.version, headless, muted: true,
             platform: platform(), release: release(), arch: arch(), cpuModel: cpus()[0]?.model ?? null, logicalCpuCount: cpus().length },
-        settings: { seconds, sampleCadenceMs: 1000, plotViews: 0 }, rows }, null, 2) + "\n");
+        settings: { seconds, sampleCadenceMs: 1000, plotViews: 0, monitorOpenDuringRendererSampling: false }, rows }, null, 2) + "\n");
 } finally {
     await browser?.close();
     await new Promise(done => server.close(done));
