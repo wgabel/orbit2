@@ -15,17 +15,29 @@
 @inject IJSRuntime JavaScript
 @inject Orbit.UI.Components.Analysis.ScopeBrowserAssets BrowserAssets
 
-<section class="performance-keyboard workspace-toolbar toolbar-group" aria-label="Performance keyboard" data-armed="@armed.ToString().ToLowerInvariant()" data-step-entry="@((stepEntry && showPattern).ToString().ToLowerInvariant())" data-keyboard-ready="@((adapter is not null).ToString().ToLowerInvariant())" tabindex="0" @ref="root">
-    <button type="button" class="secondary" aria-pressed="@armed.ToString().ToLowerInvariant()" @onclick="ToggleAsync">@(armed ? "Disarm keyboard" : "Arm keyboard")</button>
-    <span class="workspace-notice">@Node.Name · @(IsNoteSource ? "Monophonic notes" : "Continuous pitch")</span>
-    <output class="workspace-notice" data-live-pitch-offset="@(Offset?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "unavailable")">
-        @(Offset is double offset ? $"Live: {offset:+0.##;-0.##;0} st" : "Play connected patch")
-    </output>
-    @if (!IsNoteSource)
-    {
-        <button type="button" class="secondary" disabled="@RecordingLocked" @onclick="() => showPattern = !showPattern" aria-expanded="@showPattern.ToString().ToLowerInvariant()">@(showPattern ? "Hide pattern" : "Edit pattern")</button>
-    }
-    @if (!IsNoteSource && showPattern)
+<section class="performance-keyboard" aria-label="Performance keyboard" data-target-node="@Node.Id" data-target-graph="@GraphId" data-armed="@armed.ToString().ToLowerInvariant()" data-tall="@tall.ToString().ToLowerInvariant()" data-step-entry="@((stepEntry && showPattern).ToString().ToLowerInvariant())" data-keyboard-ready="@((adapter is not null).ToString().ToLowerInvariant())" tabindex="0" @ref="root">
+    <div class="performance-dock-bar">
+        <div class="performance-target" title="@($"{TargetLabel ?? Node.Name} · {Node.Name}")">
+            <span class="performance-target-name"><span class="performance-target-dot" data-live="@((Offset is not null).ToString().ToLowerInvariant())" aria-hidden="true"></span>@(TargetLabel ?? Node.Name)</span>
+            <small>Octave @octave · reference @MusicalPitch.NoteName(Reference)</small>
+        </div>
+        <output class="performance-live-pitch" data-live-pitch-offset="@(Offset?.ToString(CultureInfo.InvariantCulture) ?? "unavailable")" aria-label="Live pitch offset" title="Measured pitch offset (semitones)">
+            @(Offset is double offset ? $"{offset:+0.##;-0.##;0} st" : "—")
+        </output>
+        @if (armed)
+        {
+            <button type="button" class="secondary performance-tool" aria-label="Octave − (Z)" title="Octave down (Z)" disabled="@(!PerformanceKeyboardLayout.IsAvailable(octave - 1, Reference))" @onclick="() => ChangeOctave(-1)">−</button>
+            <button type="button" class="secondary performance-tool" aria-label="Octave + (X)" title="Octave up (X)" disabled="@(!PerformanceKeyboardLayout.IsAvailable(octave + 1, Reference))" @onclick="() => ChangeOctave(1)">+</button>
+            <button type="button" class="secondary performance-tool" aria-label="@(IsNoteSource ? "Release all notes" : "Reset pitch")" title="@(IsNoteSource ? "Release all notes" : "Reset pitch")" @onclick="ResetAsync">■</button>
+            @if (!IsNoteSource)
+            {
+                <button type="button" class="secondary performance-tool" disabled="@RecordingLocked" @onclick="() => showPattern = !showPattern" aria-label="@(showPattern ? "Hide pattern" : "Edit pattern")" title="Pitch pattern" aria-expanded="@showPattern.ToString().ToLowerInvariant()">▤</button>
+            }
+            <button type="button" class="secondary performance-tool" aria-label="@(tall ? "Compact keyboard" : "Expand keyboard")" title="Change keyboard height" aria-pressed="@tall.ToString().ToLowerInvariant()" @onclick="() => tall = !tall">↕</button>
+        }
+        <button type="button" class="secondary performance-tool" aria-label="@(armed ? "Collapse keyboard" : "Show keyboard")" title="@(armed ? "Collapse keyboard" : "Show keyboard")" aria-expanded="@armed.ToString().ToLowerInvariant()" @onclick="ToggleAsync">@(armed ? "⌄" : "⌃")</button>
+    </div>
+    @if (armed && !IsNoteSource && showPattern)
     {
         <div class="pitch-pattern-editor" role="region" aria-label="Pitch pattern">
             <div class="workspace-toolbar pitch-pattern-settings">
@@ -101,32 +113,27 @@
     }
     @if (armed)
     {
-        <div class="workspace-toolbar">
-            <button type="button" class="secondary" disabled="@(!PerformanceKeyboardLayout.IsAvailable(octave - 1, Reference))" @onclick="() => ChangeOctave(-1)">Octave − (Z)</button>
-            <span>Octave @octave · reference @MusicalPitch.NoteName(Reference)</span>
-            <button type="button" class="secondary" disabled="@(!PerformanceKeyboardLayout.IsAvailable(octave + 1, Reference))" @onclick="() => ChangeOctave(1)">Octave + (X)</button>
-            <button type="button" class="secondary" @onclick="ResetAsync">@(IsNoteSource ? "Release all notes" : "Reset pitch")</button>
-        </div>
         <div class="performance-piano" role="group" aria-label="On-screen piano">
-            @foreach (var pianoKey in PerformanceKeyboardLayout.Keys)
+            @foreach (var pianoKey in PerformanceKeyboardLayout.PianoKeys)
             {
                 var note = PerformanceKeyboardLayout.Note(octave, pianoKey);
-                if (note > 127) continue;
-                <button @key="pianoKey.Code" type="button" class="@(pianoKey.Black ? "performance-black-key" : "performance-white-key")"
-                        data-midi-note="@note" aria-label="@($"Play {MusicalPitch.NoteName(note)} ({pianoKey.Hint})")"
-                        disabled="@(!NoteSequencerGenerator.IsPlayable(note, Reference))" @onclick="e => ClickNoteAsync(note, e)"
-                        @onpointerdown="e => PointerDownAsync(note, e)" @onpointerup="e => PointerUpAsync(e)" @onpointercancel="e => PointerUpAsync(e)" @onpointerleave="e => PointerUpAsync(e)">
-                    <span>@MusicalPitch.NoteName(note)</span><small>@pianoKey.Hint</small>
+                var label = note <= 127 ? MusicalPitch.NoteName(note) : "—";
+                var caption = pianoKey.Hint is { } hint ? $"Play {label} ({hint})" : $"Play {label}";
+                <button @key="pianoKey.Semitone" type="button" class="@($"performance-key {(pianoKey.Black ? "performance-black-key" : "performance-white-key")}{(pianoKey.Extension ? " performance-extension" : "")}")"
+                        style="@($"grid-column: {pianoKey.GridColumn} / span 2")" data-midi-note="@note" aria-label="@caption"
+                        data-held="@((held.ContainsValue(note)).ToString().ToLowerInvariant())"
+                        disabled="@(!NoteSequencerGenerator.IsPlayable(note, Reference))" @onclick="e => ClickNoteAsync(note, e)">
+                    <span>@label</span>@if (pianoKey.Hint is not null) { <small>@pianoKey.Hint</small> }
                 </button>
             }
         </div>
-        <small class="workspace-notice">Keys A–K / W E T Y U · @(IsNoteSource ? "hold to play; release closes gate; last note wins" : "release holds pitch") · select another node to disarm</small>
-        @if (notice is not null) { <span class="workspace-notice" role="status">@notice</span> }
+        @if (notice is not null) { <span class="performance-dock-notice workspace-notice" role="status">@notice</span> }
     }
 </section>
 
 @code {
     [Parameter, EditorRequired] public GraphNodeSnapshot Node { get; set; } = default!;
+    [Parameter] public string? TargetLabel { get; set; }
     [Parameter] public Guid PatchId { get; set; }
     [Parameter] public Guid GraphId { get; set; }
     [Parameter] public double? Offset { get; set; }
@@ -139,7 +146,8 @@
     private IJSObjectReference? module, adapter;
     private DotNetObjectReference<PerformanceKeyboard>? reference;
     private Task? mounting;
-    private bool disposed, armed, focusRequested;
+    private bool disposed, focusRequested;
+    private bool armed = true, tall;
     private bool showPattern, stepEntry, confirmClear;
     private int selectedStep, advance = 1;
     private int octave = 4;
@@ -258,13 +266,17 @@
 
     private async Task ToggleAsync()
     {
-        if (armed && IsNoteSource) await ResetAsync();
         armed = !armed;
-        if (!armed && take is not null) CancelTake();
-        held.Clear();
+        if (!armed)
+        {
+            if (take is not null) CancelTake();
+            showPattern = false;
+            held.Clear();
+            if (adapter is not null) await adapter.InvokeVoidAsync("clear");
+            if (IsNoteSource) await ReleaseAllAsync();
+        }
+        else focusRequested = true;
         notice = null;
-        focusRequested = armed;
-        if (adapter is not null) await adapter.InvokeVoidAsync("clear");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -287,7 +299,7 @@
             adapter = await module.InvokeAsync<IJSObjectReference>("mountPerformanceKeyboard", root, reference, PerformanceKeyboardLayout.Keys.Select(key => key.Code).ToArray());
             if (!disposed) StateHasChanged();
         }
-        catch (JSException) { notice = "Physical keyboard unavailable; use the on-screen keys."; if (!disposed) StateHasChanged(); }
+        catch (JSException) { notice = "Keyboard capture unavailable; click for a short strike."; if (!disposed) StateHasChanged(); }
     }
 
     private void ChangeOctave(int delta)
@@ -301,6 +313,7 @@
         if (!down)
         {
             if (held.Remove(code, out var released) && !held.ContainsValue(released)) await SendAsync(new(PerformanceNoteKind.NoteOff, released));
+            StateHasChanged();
             return;
         }
         if (stepEntry && showPattern && code is "Space" or "ArrowLeft" or "ArrowRight")
@@ -324,34 +337,43 @@
     {
         held.Clear();
         if (IsNoteSource && !disposed) await ReleaseAllAsync();
+        if (!disposed) StateHasChanged();
     });
 
-    private async Task PointerDownAsync(int note, PointerEventArgs e)
+    // The DOM adapter captures the pointer and hit-tests the piano during slides.
+    // Musical identity/held-key priority stays here, not in JavaScript.
+    [JSInvokable] public Task PianoPointer(long pointerId, int? note) => InvokeAsync(async () =>
     {
-        if (!IsNoteSource || e.Button != 0 || !armed) return;
-        var code = $"pointer-{e.PointerId}";
-        if (held.ContainsKey(code)) return;
-        var alreadyHeld = held.ContainsValue(note);
-        held.Add(code, note);
-        if (!alreadyHeld) await EnterNoteAsync(note);
-    }
-
-    private async Task PointerUpAsync(PointerEventArgs e)
-    {
-        if (IsNoteSource && held.Remove($"pointer-{e.PointerId}", out var note) && !held.ContainsValue(note))
-            await SendAsync(new(PerformanceNoteKind.NoteOff, note));
-    }
+        if (!armed || disposed) return;
+        var code = $"pointer-{pointerId}";
+        var previous = held.Remove(code, out var old) ? (int?)old : null;
+        if (note is int next && NoteSequencerGenerator.IsPlayable(next, Reference))
+        {
+            var alreadyHeld = held.ContainsValue(next);
+            held[code] = next;
+            // Retune first, then release the previous key, for continuous legato.
+            if (previous != next && (!IsNoteSource || !alreadyHeld)) await EnterNoteAsync(next);
+        }
+        if (IsNoteSource && previous is int released && released != note && !held.ContainsValue(released))
+            await SendAsync(new(PerformanceNoteKind.NoteOff, released));
+        StateHasChanged();
+    });
 
     private async Task ClickNoteAsync(int note, MouseEventArgs e)
     {
+        if (!armed || (adapter is not null && e.Detail != 0) || held.ContainsValue(note)) return;
+        // Native keyboard/screen-reader activation is a short strike.
         if (!IsNoteSource) { await EnterNoteAsync(note); return; }
-        // Keyboard/screen-reader activation is a short strike, not a stuck gate.
-        if (e.Detail != 0 || held.ContainsValue(note)) return;
         if (await SendAsync(new(PerformanceNoteKind.NoteOn, note, KeyboardVelocity)))
             await SendAsync(new(PerformanceNoteKind.NoteOff, note));
     }
 
-    private Task ResetAsync() { held.Clear(); return SendAsync(new(PerformanceNoteKind.Reset)); }
+    private async Task ResetAsync()
+    {
+        held.Clear();
+        if (adapter is not null) await adapter.InvokeVoidAsync("clear");
+        await SendAsync(new(PerformanceNoteKind.Reset));
+    }
     private async Task ReleaseAllAsync()
     {
         try { await Performance.SendAsync(PatchId, GraphId, Node.Id, new(PerformanceNoteKind.Reset)); }
