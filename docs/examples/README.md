@@ -11,6 +11,7 @@ This is the entry point for users and agents creating, analyzing or improving mu
 | Task | Start with |
 | --- | --- |
 | Individual effect or modulation | [Effects](../audio/effects.md), [parameters and modulation](../core/parameters-and-modulation.md), [signal observation](../audio/signal-observation.md) |
+| Realistic organ/acoustic/electromechanical instrument emulation | [Faust-first realistic instrument design](../instruments/realistic-instrument-emulation.md) — Hammond, pipe ranks, rotary speaker walkthrough, physical models and licensing |
 | Individual voice, instrument or preset | [Classic synthesizer patch recipes](synthesizer-patch-recipes.md), [Voice quality](sound-quality-and-voice-design.md), [instrument recipes](instrument-recipes.md), [instrument usage](../usage/sound-and-instruments.md) |
 | Drone, evolving texture or sound-design experiment | [Foundations catalogue](foundations/README.md), [worked drone](drone.md), [timbre](music-theory-and-sound-design.md#5-timbre-why-one-oscillator-is-not-always-enough) |
 | Whole piece, ambient or otherwise | [Composition and layers](generative-ambient-composition.md#1-the-structure-of-a-musical-piece), [compositional development](compositional-development.md), [genre index](electronic-music-genres.md), workflow below |
