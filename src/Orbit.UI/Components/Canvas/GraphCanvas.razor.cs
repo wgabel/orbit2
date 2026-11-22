@@ -33,9 +33,9 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter] public bool CanShowScope { get; set; }
     [Parameter] public bool ScopeOpen { get; set; }
     [Parameter] public EventCallback OnToggleScope { get; set; }
-    [Parameter] public EventCallback<bool> OnNoteDraftChanged { get; set; }
-    [Parameter] public EventCallback<string> OnNoteError { get; set; }
-    [Parameter] public bool NoteActionsDisabled { get; set; }
+    [Parameter] public EventCallback<bool> OnAnnotationDraftChanged { get; set; }
+    [Parameter] public EventCallback<string> OnAnnotationError { get; set; }
+    [Parameter] public bool AnnotationActionsDisabled { get; set; }
     [Parameter] public double BeatsPerMinute { get; set; } = MusicalTransport.DefaultTempo;
     [Parameter] public int? SampleRate { get; set; }
     [Parameter] public IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
@@ -75,25 +75,77 @@ public partial class GraphCanvas : IAsyncDisposable
     private SavedNote? notePreview;
     private bool resizingNote;
     private Guid? editingNote;
-    public bool HasNoteDraft => editingNote is not null;
+    private sealed record DescriptionDraft(Guid Id, bool IsConnection, string Heading, string Name, string Body);
+    private DescriptionDraft? editingDescription;
+    public bool HasAnnotationDraft => editingNote is not null || editingDescription is not null;
+
+    private async Task EditNodeDescriptionAsync(Guid nodeId)
+    {
+        if (HasAnnotationDraft || AnnotationActionsDisabled) return;
+        State.SelectNode(nodeId);
+        await EditSelectedDescriptionAsync();
+    }
+
+    public async Task EditSelectedDescriptionAsync()
+    {
+        if (HasAnnotationDraft || AnnotationActionsDisabled) return;
+        if (Snapshot.SelectedNodeIds.Count == 1 && Snapshot.SelectedConnectionIds.Count == 0)
+        {
+            var id = Snapshot.SelectedNodeIds[0];
+            var value = Snapshot.NodeDescriptions.GetValueOrDefault(id);
+            editingDescription = new(id, false, Snapshot.Graph.GetNode(id).Name, value?.Alias ?? "", value?.Description ?? "");
+        }
+        else if (Snapshot.SelectedConnectionIds.Count == 1 && Snapshot.SelectedNodeIds.Count == 0)
+        {
+            var id = Snapshot.SelectedConnectionIds[0];
+            editingDescription = new(id, true, "Connection description",
+                Snapshot.ConnectionDescriptions.GetValueOrDefault(id)?.Label ?? "", "");
+        }
+        else return;
+        pendingSource = null;
+        await SetAnnotationDraftAsync(true);
+    }
+
+    private async Task ApplyDescriptionAsync((string Name, string Body) draft)
+    {
+        if (editingDescription is not { } target) return;
+        try
+        {
+            if (target.IsConnection) State.SetConnectionDescription(new(target.Id, draft.Name));
+            else State.SetNodeDescription(new(target.Id, draft.Name, draft.Body));
+        }
+        catch (Exception exception) { await OnAnnotationError.InvokeAsync(exception.Message); return; }
+        await CloseDescriptionAsync();
+    }
+
+    private async Task CloseDescriptionAsync()
+    {
+        editingDescription = null;
+        await SetAnnotationDraftAsync(false);
+        await viewportElement.FocusAsync(preventScroll: true);
+    }
+
+    private async Task SetAnnotationDraftAsync(bool active)
+    {
+        await OnAnnotationDraftChanged.InvokeAsync(active);
+        if (module is not null) await module.InvokeVoidAsync("setAnnotationDraftWarning", active);
+    }
 
     private async Task BeginNoteEditAsync(Guid id)
     {
-        if (HasNoteDraft || NoteActionsDisabled) return;
+        if (HasAnnotationDraft || AnnotationActionsDisabled) return;
         State.SelectNote(id);
         pendingSource = null;
         editingNote = id;
-        if (module is not null) await module.InvokeVoidAsync("setNoteDraftWarning", true);
-        await OnNoteDraftChanged.InvokeAsync(true);
+        await SetAnnotationDraftAsync(true);
     }
 
     private async Task FinishNoteEditAsync(SavedNote? note)
     {
         try { if (note is not null) State.UpdateNote(note); }
-        catch (Exception exception) { await OnNoteError.InvokeAsync(exception.Message); return; }
+        catch (Exception exception) { await OnAnnotationError.InvokeAsync(exception.Message); return; }
         editingNote = null;
-        if (module is not null) await module.InvokeVoidAsync("setNoteDraftWarning", false);
-        await OnNoteDraftChanged.InvokeAsync(false);
+        await SetAnnotationDraftAsync(false);
         await viewportElement.FocusAsync(preventScroll: true);
     }
 
@@ -101,14 +153,14 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private async Task NoteAction(Func<CanvasChangeResult> action)
     {
-        if (HasNoteDraft || NoteActionsDisabled) return;
+        if (HasAnnotationDraft || AnnotationActionsDisabled) return;
         try { action(); }
-        catch (Exception exception) { await OnNoteError.InvokeAsync(exception.Message); }
+        catch (Exception exception) { await OnAnnotationError.InvokeAsync(exception.Message); }
     }
 
     private async Task BeginNoteAsync(SavedNote note, PointerEventArgs args, bool resize)
     {
-        if (HasNoteDraft || NoteActionsDisabled || args.Button != 0) return;
+        if (HasAnnotationDraft || AnnotationActionsDisabled || args.Button != 0) return;
         State.SelectNote(note.Id);
         pendingSource = null;
         notePreview = note;
@@ -136,7 +188,7 @@ public partial class GraphCanvas : IAsyncDisposable
         EndGesture();
         subscription = State.Subscribe(change =>
         {
-            if (change.Kind == CanvasChangeKind.VisualizationChanged) visualizationGeometryGeneration++;
+            if (change.Kind is CanvasChangeKind.VisualizationChanged or CanvasChangeKind.DescriptionsChanged) visualizationGeometryGeneration++;
             if (pendingSource is PortAddress source &&
                 !Snapshot.Graph.Nodes.Any(node => node.Id == source.NodeId &&
                     node.Outputs.Any(port => port.Id == source.PortId)))
@@ -206,7 +258,8 @@ public partial class GraphCanvas : IAsyncDisposable
                     Snapshot.SelectedConnectionIds.Contains(edge.Id),
                     !destination.IsInputActive(edge.Destination.PortId), edge.Amount,
                     ConnectionBadgeText.Format(Snapshot.Graph, edge),
-                    ConnectionBadgeText.Describe(Snapshot.Graph, edge), center.X, center.Y));
+                    ConnectionBadgeText.Describe(Snapshot.Graph, edge), center.X, center.Y,
+                    Snapshot.ConnectionDescriptions.GetValueOrDefault(edge.Id)?.Label ?? ""));
             }
             return result;
         }
@@ -410,7 +463,7 @@ public partial class GraphCanvas : IAsyncDisposable
     public async Task<bool> AddNoteAsync()
     {
         var context = await MeasurePlacementAsync();
-        if (context is not { } value || HasNoteDraft || NoteActionsDisabled) return false;
+        if (context is not { } value || HasAnnotationDraft || AnnotationActionsDisabled) return false;
         State.AddNote(value.Visible, value.Occupied);
         return true;
     }
@@ -466,7 +519,7 @@ public partial class GraphCanvas : IAsyncDisposable
         subscription?.Dispose();
         if (module is not null)
         {
-            if (HasNoteDraft) await module.InvokeVoidAsync("setNoteDraftWarning", false);
+            if (HasAnnotationDraft) await module.InvokeVoidAsync("setAnnotationDraftWarning", false);
             await module.DisposeAsync();
         }
     }

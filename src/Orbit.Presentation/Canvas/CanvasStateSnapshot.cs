@@ -22,8 +22,14 @@ public sealed record CanvasStateSnapshot(
     public Guid? ExpandedVisualizationNodeId { get; init; }
     public IReadOnlyList<SavedNote> Notes { get; init; } = [];
     public Guid? SelectedNoteId { get; init; }
-    public bool CanUndoNotes { get; init; }
-    public bool CanRedoNotes { get; init; }
+    public bool CanUndoAnnotations { get; init; }
+    public bool CanRedoAnnotations { get; init; }
+    public IReadOnlyDictionary<Guid, SavedNodeDescription> NodeDescriptions { get; init; } =
+        new ReadOnlyDictionary<Guid, SavedNodeDescription>(new Dictionary<Guid, SavedNodeDescription>());
+    public IReadOnlyDictionary<Guid, SavedConnectionDescription> ConnectionDescriptions { get; init; } =
+        new ReadOnlyDictionary<Guid, SavedConnectionDescription>(new Dictionary<Guid, SavedConnectionDescription>());
+    public string DisplayName(Guid nodeId) => NodeDescriptions.GetValueOrDefault(nodeId) is { } annotation &&
+        !string.IsNullOrWhiteSpace(annotation.Alias) ? annotation.Alias : Graph.GetNode(nodeId).Name;
     public NodeVisualizationSettings VisualizationFor(Guid nodeId) =>
         Visualizations.GetValueOrDefault(nodeId, NodeVisualizationSettings.Default);
     /// <summary>False once the owning composite disappears. The last graph is retained read-only.</summary>

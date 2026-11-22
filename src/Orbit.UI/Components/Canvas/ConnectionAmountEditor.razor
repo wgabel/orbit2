@@ -10,6 +10,11 @@
          @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true"
          @onwheel:stopPropagation="true" @onkeydown="HandleKeyDown" @onkeydown:stopPropagation="true">
     <strong>@RouteName</strong>
+    @if (AuthoredLabel.Length > 0)
+    {
+        <p class="connection-authored-label">@AuthoredLabel</p>
+    }
+    <button type="button" class="secondary" disabled="@DescriptionEditDisabled" @onclick="OnEditDescription">Edit connection label</button>
     @if (IsEvent)
     {
         <p class="workspace-notice">Rhythmic event · unity connection. No amount control.</p>

@@ -56,13 +56,21 @@ public sealed partial class CanvasStateService : ICanvasStateService
         SavedNote.Validate(notes);
         if (notes.Length > 0 && saved!.GraphId != graphId)
             throw new ArgumentException("Canvas notes belong to a different graph.", nameof(saved));
+        if (saved is not null)
+        {
+            DescriptionLimits.Validate(saved, graph.Nodes.Select(node => node.Id), graph.Connections.Select(edge => edge.Id));
+            if (saved.GraphId != graphId && (saved.NodeDescriptions.Length > 0 || saved.ConnectionDescriptions.Length > 0))
+                throw new ArgumentException("Descriptions belong to a different graph.", nameof(saved));
+        }
         snapshot = new CanvasStateSnapshot(graph, 0, viewport,
             Freeze(positions), Array.Empty<Guid>(), Array.Empty<Guid>())
         {
             ConnectionLabels = saved?.ConnectionLabels ?? ConnectionLabelMode.All,
             Visualizations = FreezeVisualizations(visualizations),
             ExpandedVisualizationNodeId = ValidExpandedNode(graph, saved?.ExpandedVisualizationNodeId),
-            Notes = Array.AsReadOnly(notes.ToArray())
+            Notes = Array.AsReadOnly(notes.ToArray()),
+            NodeDescriptions = FreezeDescriptions((saved?.NodeDescriptions ?? []).Where(value => !value.IsEmpty).ToDictionary(value => value.NodeId)),
+            ConnectionDescriptions = FreezeDescriptions((saved?.ConnectionDescriptions ?? []).Where(value => !value.IsEmpty).ToDictionary(value => value.ConnectionId))
         };
         // Observe patch commits, including edits of descendants and deletion of
         // the composite that owns this canvas. Each local projection has its own layout.
@@ -224,11 +232,14 @@ public sealed partial class CanvasStateService : ICanvasStateService
             if (snapshot.Visualizations.TryGetValue(node.Id, out var settings) || removedVisualizations.Remove(node.Id, out settings))
                 visualizations[node.Id] = NodeVisualizationCapabilities.Normalize(node, settings);
         var expanded = ValidExpandedNode(graph, snapshot.ExpandedVisualizationNodeId);
+        var nodeDescriptions = ReconcileDescriptions(snapshot.NodeDescriptions, removedNodeDescriptions, nodeIds);
+        var connectionDescriptions = ReconcileDescriptions(snapshot.ConnectionDescriptions, removedConnectionDescriptions, connectionIds);
         var layoutChanged = !positions.Keys.ToHashSet().SetEquals(snapshot.NodePositions.Keys) ||
             selectedNodes.Length != snapshot.SelectedNodeIds.Count ||
             selectedConnections.Length != snapshot.SelectedConnectionIds.Count ||
             expanded != snapshot.ExpandedVisualizationNodeId ||
-            !visualizations.OrderBy(pair => pair.Key).SequenceEqual(snapshot.Visualizations.OrderBy(pair => pair.Key));
+            !visualizations.OrderBy(pair => pair.Key).SequenceEqual(snapshot.Visualizations.OrderBy(pair => pair.Key)) ||
+            !ReferenceEquals(nodeDescriptions, snapshot.NodeDescriptions) || !ReferenceEquals(connectionDescriptions, snapshot.ConnectionDescriptions);
 
         snapshot = snapshot with
         {
@@ -238,7 +249,9 @@ public sealed partial class CanvasStateService : ICanvasStateService
             SelectedNodeIds = Array.AsReadOnly(selectedNodes),
             SelectedConnectionIds = Array.AsReadOnly(selectedConnections),
             Visualizations = FreezeVisualizations(visualizations),
-            ExpandedVisualizationNodeId = expanded
+            ExpandedVisualizationNodeId = expanded,
+            NodeDescriptions = nodeDescriptions,
+            ConnectionDescriptions = connectionDescriptions
         };
 
         ReportSubscriberErrors(Publish(new CanvasStateChange(CanvasChangeKind.GraphCommitted, snapshot)));

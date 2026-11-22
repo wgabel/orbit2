@@ -64,3 +64,4 @@
 .connection-amount-editor[data-positioned] { visibility: visible; }
 .connection-amount-editor .workspace-toolbar { align-items: baseline; }
 .connection-amount-editor input { min-width: 0; width: 100%; }
+.connection-authored-label { overflow-wrap: anywhere; margin: 0; color: var(--semantic-color-text); white-space: pre-wrap; }

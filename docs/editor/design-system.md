@@ -89,7 +89,8 @@ Keep layout structure in CSS and markup, with numeric styling constants in JSON.
 | CanvasViewport | Coordinate conversion, pan, zoom and viewport state |
 | CanvasToolbar | Zoom controls, percentage readout, fit and reset |
 | NodeFrame | Shared node background, role accent, header, input/output layout and content slot |
-| NoteCard / NoteEditor | Presentation-only text, semantic accent, header, resize, collapse and isolated unscaled text draft (6.19.1, in review) |
+| NoteCard / NoteEditor | Presentation-only text, semantic accent, header, resize, collapse and isolated unscaled text draft (6.19.1, implemented) |
+| DescriptionEditor | Unscaled node alias/description or cable label editor, shared annotation draft lifecycle (6.19.2, in review) |
 | PortConnector | Render shape, label, typed endpoint, hit area and connection gesture |
 | ConnectionLayer / ConnectionPath | Render and hit-test Bézier connections using shared port geometry |
 | ParameterSlider | Name, unit, editable numeric base value, min/max, range slider, inline error, modulation band and effective marker |

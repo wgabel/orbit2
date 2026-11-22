@@ -14,8 +14,20 @@
 <article class="@FrameClass" style="@PositionStyle" data-node-id="@Node.Id"
          @onpointerdown:stopPropagation="true">
     <header class="node-header" @onpointerdown="OnHeaderPointerDown">
-        <span>@Node.Name</span>
+        <span class="node-display-name" title="@DocumentationTooltip">
+            <span class="node-alias">@DisplayName</span>
+            @if (DisplayName != Node.Name)
+            {
+                <span class="node-canonical-name">@Node.Name</span>
+            }
+        </span>
         <div class="node-header-actions">
+            @if (Documentation is { Description.Length: > 0 })
+            {
+                <button type="button" class="node-description-toggle" disabled="@DocumentationEditDisabled"
+                        aria-label="Read node description" title="@Documentation.Description"
+                        @onpointerdown:stopPropagation="true" @onclick="OnEditDescription">ⓘ</button>
+            }
             <span class="node-role">@Role</span>
             @if (Node.SupportsMute)
             {

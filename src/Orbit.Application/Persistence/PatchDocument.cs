@@ -28,5 +28,7 @@ public sealed record SavedCanvas(Guid GraphId, double PanX, double PanY, double 
     // A settable optional property lets the JSON reader retain the initializer
     // when older schema-1 documents omit the field.
     public SavedNote[] Notes { get; set; } = [];
+    public SavedNodeDescription[] NodeDescriptions { get; set; } = [];
+    public SavedConnectionDescription[] ConnectionDescriptions { get; set; } = [];
 }
 public sealed record SavedNodePosition(Guid NodeId, double X, double Y);

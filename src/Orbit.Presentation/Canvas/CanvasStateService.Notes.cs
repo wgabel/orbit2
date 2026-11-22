@@ -4,9 +4,10 @@ namespace Orbit.Presentation.Canvas;
 
 public sealed partial class CanvasStateService
 {
-    private const int NoteHistoryLimit = 100;
-    private readonly List<IReadOnlyList<SavedNote>> noteUndo = [];
-    private readonly List<IReadOnlyList<SavedNote>> noteRedo = [];
+    private const int AnnotationHistoryLimit = 100;
+    private sealed record AnnotationEdit(CanvasChangeKind Kind, Func<bool, CanvasStateSnapshot> Apply);
+    private readonly List<AnnotationEdit> annotationUndo = [];
+    private readonly List<AnnotationEdit> annotationRedo = [];
 
     public static CanvasBounds NoteBounds(SavedNote note) =>
         new(note.X, note.Y, note.X + note.Width, note.Y + (note.Collapsed ? SavedNote.CollapsedHeight : note.Height));
@@ -57,8 +58,8 @@ public sealed partial class CanvasStateService
         return EditNotes([.. snapshot.Notes, copy], copy.Id);
     }
 
-    public CanvasChangeResult UndoNote() => RestoreNotes(noteUndo, noteRedo);
-    public CanvasChangeResult RedoNote() => RestoreNotes(noteRedo, noteUndo);
+    public CanvasChangeResult UndoAnnotation() => RestoreAnnotation(annotationUndo, annotationRedo, false);
+    public CanvasChangeResult RedoAnnotation() => RestoreAnnotation(annotationRedo, annotationUndo, true);
 
     private SavedNote GetNote(Guid id) => snapshot.Notes.FirstOrDefault(note => note.Id == id)
         ?? throw new KeyNotFoundException($"Note {id} does not exist in this canvas.");
@@ -67,33 +68,44 @@ public sealed partial class CanvasStateService
     {
         SavedNote.Validate(notes);
         if (snapshot.Notes.SequenceEqual(notes)) return NoChange();
-        PushNotes(noteUndo);
-        noteRedo.Clear();
-        return PublishNotes(Array.AsReadOnly(notes), selected);
+        var before = snapshot.Notes;
+        var after = Array.AsReadOnly(notes);
+        return CommitAnnotation(new AnnotationEdit(CanvasChangeKind.NotesChanged, forward =>
+        {
+            var current = forward ? after : before;
+            var id = forward ? selected : snapshot.SelectedNoteId;
+            return NoteState(current, current.Any(note => note.Id == id) ? id : null);
+        }));
     }
 
-    private void PushNotes(List<IReadOnlyList<SavedNote>> history)
+    private CanvasChangeResult CommitAnnotation(AnnotationEdit edit)
     {
-        history.Add(snapshot.Notes);
-        if (history.Count > NoteHistoryLimit) history.RemoveAt(0);
+        var state = edit.Apply(true);
+        annotationUndo.Add(edit);
+        if (annotationUndo.Count > AnnotationHistoryLimit) annotationUndo.RemoveAt(0);
+        annotationRedo.Clear();
+        return PublishAnnotation(edit.Kind, state);
     }
 
-    private CanvasChangeResult RestoreNotes(List<IReadOnlyList<SavedNote>> from, List<IReadOnlyList<SavedNote>> to)
+    private CanvasChangeResult RestoreAnnotation(List<AnnotationEdit> from, List<AnnotationEdit> to, bool forward)
     {
         EnsureEditable();
         if (from.Count == 0) return NoChange();
-        var notes = from[^1];
+        var edit = from[^1];
+        var state = edit.Apply(forward);
         from.RemoveAt(from.Count - 1);
-        PushNotes(to);
-        return PublishNotes(notes, notes.Any(note => note.Id == snapshot.SelectedNoteId) ? snapshot.SelectedNoteId : null);
+        to.Add(edit);
+        return PublishAnnotation(edit.Kind, state);
     }
 
-    private CanvasChangeResult PublishNotes(IReadOnlyList<SavedNote> notes, Guid? selected) =>
-        CommitLayout(CanvasChangeKind.NotesChanged, snapshot with
+    private CanvasStateSnapshot NoteState(IReadOnlyList<SavedNote> notes, Guid? selected) =>
+        snapshot with
         {
             Notes = notes, SelectedNoteId = selected,
             SelectedNodeIds = selected is null ? snapshot.SelectedNodeIds : [],
-            SelectedConnectionIds = selected is null ? snapshot.SelectedConnectionIds : [],
-            CanUndoNotes = noteUndo.Count > 0, CanRedoNotes = noteRedo.Count > 0
-        });
+            SelectedConnectionIds = selected is null ? snapshot.SelectedConnectionIds : []
+        };
+
+    private CanvasChangeResult PublishAnnotation(CanvasChangeKind kind, CanvasStateSnapshot state) =>
+        CommitLayout(kind, state with { CanUndoAnnotations = annotationUndo.Count > 0, CanRedoAnnotations = annotationRedo.Count > 0 });
 }

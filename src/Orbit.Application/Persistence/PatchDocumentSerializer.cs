@@ -29,21 +29,24 @@ public sealed class PatchDocumentSerializer
             throw new NotSupportedException($"Unsupported patch schema {document.SchemaVersion}.");
         _ = new MusicalTransport(document.BeatsPerMinute);
         var root = RestoreGraph(document.RootGraph, registry);
-        var graphIds = new HashSet<Guid>();
-        void Collect(SavedGraph graph)
+        var graphs = new Dictionary<Guid, (Guid[] Nodes, Guid[] Connections)>();
+        void Collect(SavedGraph graph, Guid[] racks)
         {
-            graphIds.Add(graph.Id);
+            graphs.Add(graph.Id, (graph.Nodes.Select(node => node.Id).Concat(racks).ToArray(),
+                graph.Connections.Select(edge => edge.Id).ToArray()));
             foreach (var node in graph.Nodes)
-                if (node.Composite is { } composite) Collect(composite.Graph);
+                if (node.Composite is { } composite) Collect(composite.Graph, [composite.InputRackId, composite.OutputRackId]);
         }
-        Collect(document.RootGraph);
+        Collect(document.RootGraph, []);
         var canvasIds = new HashSet<Guid>();
         foreach (var canvas in document.CanvasLayouts)
         {
             SavedNote.Validate(canvas.Notes);
             if (!canvasIds.Add(canvas.GraphId) ||
-                (canvas.Notes.Length > 0 && !graphIds.Contains(canvas.GraphId)))
+                (canvas.Notes.Length > 0 && !graphs.ContainsKey(canvas.GraphId)))
                 throw new ArgumentException("Invalid canvas note ownership or duplicate canvas.");
+            var targets = graphs.GetValueOrDefault(canvas.GraphId);
+            DescriptionLimits.Validate(canvas, targets.Nodes ?? [], targets.Connections ?? []);
         }
         return new PatchSession(registry, root, document.PatchId);
     }

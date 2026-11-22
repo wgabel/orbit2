@@ -21,8 +21,10 @@ public interface ICanvasStateService : IDisposable
     CanvasChangeResult SelectNote(Guid id);
     CanvasChangeResult DeleteNote(Guid id);
     CanvasChangeResult DuplicateNote(Guid id);
-    CanvasChangeResult UndoNote();
-    CanvasChangeResult RedoNote();
+    CanvasChangeResult UndoAnnotation();
+    CanvasChangeResult RedoAnnotation();
+    CanvasChangeResult SetNodeDescription(SavedNodeDescription description);
+    CanvasChangeResult SetConnectionDescription(SavedConnectionDescription description);
     CanvasChangeResult PanBy(CanvasPoint screenDelta);
     CanvasChangeResult ZoomAt(double zoom, CanvasPoint screenAnchor);
     CanvasChangeResult ResetViewport();

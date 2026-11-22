@@ -20,7 +20,7 @@
             @foreach (var note in Snapshot.Notes)
             {
                 <NoteCard @key="note.Id" Note="@(notePreview?.Id == note.Id ? notePreview : note)" Selected="@(Snapshot.SelectedNoteId == note.Id)"
-                          Locked="@(HasNoteDraft || NoteActionsDisabled)"
+                          Locked="@(HasAnnotationDraft || AnnotationActionsDisabled)"
                           OnMove="@(args => BeginNoteAsync(note, args, false))" OnResize="@(args => BeginNoteAsync(note, args, true))"
                           OnSelect="@(() => { State.SelectNote(note.Id); })" OnEdit="@(() => BeginNoteEditAsync(note.Id))"
                           OnUpdate="UpdateNote" OnDuplicate="@(() => NoteAction(() => State.DuplicateNote(note.Id)))"
@@ -29,6 +29,8 @@
             @foreach (var node in Snapshot.Graph.Nodes.OrderBy(node => node.TypeKey is InputRack.NodeType or OutputRack.NodeType ? 1 : 0))
             {
                 <NodeFrame @key="node.Id" Node="@node" Position="@Snapshot.NodePositions[node.Id]" PatchId="@PatchId" GraphId="@Snapshot.GraphId"
+                           Documentation="@Snapshot.NodeDescriptions.GetValueOrDefault(node.Id)"
+                           OnEditDescription="@(() => EditNodeDescriptionAsync(node.Id))" DocumentationEditDisabled="@(HasAnnotationDraft || AnnotationActionsDisabled)"
                            Visualization="@Snapshot.VisualizationFor(node.Id)" VisualizationExpanded="@(Snapshot.ExpandedVisualizationNodeId == node.Id)"
                            OnVisualizationChange="@(settings => { State.SetVisualization(node.Id, settings); })"
                            OnExpandVisualization="@(() => { State.SetExpandedVisualization(Snapshot.ExpandedVisualizationNodeId == node.Id ? null : node.Id); })"
@@ -67,8 +69,16 @@
         {
             <ConnectionAmountEditor @key="(Snapshot.GraphId, selectedWire.Id)" Graph="@Snapshot.Graph"
                                     Connection="@Snapshot.Graph.Connections.Single(edge => edge.Id == selectedWire.Id)"
+                                    AuthoredLabel="@selectedWire.AuthoredLabel" OnEditDescription="EditSelectedDescriptionAsync"
+                                    DescriptionEditDisabled="@(HasAnnotationDraft || AnnotationActionsDisabled)"
                                     Anchor="@Snapshot.Viewport.WorldToScreen(new CanvasPoint(selectedWire.BadgeX, selectedWire.BadgeY))"
                                     Dispatch="@DispatchConnectionAmount" OnCancel="CloseConnectionEditorAsync" />
+        }
+        @if (editingDescription is { } description)
+        {
+            <DescriptionEditor @key="description.Id" Heading="@description.Heading" IsConnection="@description.IsConnection"
+                               InitialName="@description.Name" InitialBody="@description.Body"
+                               OnApply="ApplyDescriptionAsync" OnCancel="CloseDescriptionAsync" />
         }
         @if (Snapshot.Graph.Nodes.Count == 0 && Snapshot.Notes.Count == 0)
         {
