@@ -2,6 +2,8 @@
 
 [Architecture](../../ORBIT2-ARCHITECTURE.md) · [Generative composition](generative-ambient-composition.md) · [Music theory and sound design](music-theory-and-sound-design.md)
 
+Documentation provenance: [PR #26](https://github.com/wgabel/orbit2/pull/26) introduces the genre reference, technique bridge and agent routing (documentation only; not evidence of new engine capabilities).
+
 This is a modular reference for composing **whole pieces** and designing their constituent sounds in Orbit 2. Genre is a musical vocabulary, not a preset or a mandatory formula. The same synthesizer voice can belong to many genres; rhythm, harmonic language, sound selection, arrangement, contrast and production choices together establish the identity. The tables describe useful listening/composition starting points, not exhaustive definitions, historical boundaries or fixed BPM rules. Some entries are established scenes, others are crossovers, processes or descriptive tags; these are identified where helpful.
 
 ## Find a genre
