@@ -12,7 +12,7 @@ Related: [envelopes](../audio/envelopes.md) · [pitch control](../instruments/pi
 - Planned: random, step sequencers, automation, explicit feedback; reuse the Phase 7.1 event and envelope infrastructure.
 - Partial: shared musical pitch control implemented (7.2.2); note control, resonator and modal instrument templates planned; reuse Phase 7.1 articulations and existing composite graphs (Phase 7.2).
 - Additional routing adapters and channel handling; extend Phase 6.18 observation infrastructure to multichannel signals and future node types.
-- Group/ungroup nodes; versioned reusable graph definitions.
+- Group/ungroup nodes; versioned reusable graph definitions and a custom Module Library (Phase 7.4).
 - Improve graph swap continuity, compile cache and performance profiling.
 - Validate original Orbit's clicking/underrun concerns with large patches.
 
@@ -59,6 +59,22 @@ The detailed implementation and usage contract lives in [performance.md](../../p
 - **7.3.6 — Reports, stress and regression diagnostics (planned):** opt-in bounded local reports, history, safe reproducible stress fixtures, long-running resource cleanup and comparable CI trends; prioritize measured bottlenecks.
 
 Deliverable: a musician can inspect audio latency and reliability while safely editing a patch, identify performance pressure and distinguish it from clipping or DSP discontinuities; developers can reproduce and compare performance regressions without changing sound. The first four increments do not depend on NoteSource, ADSR or polyphony. No ordinary browser API is assumed to expose an exact whole-renderer CPU or physical key-to-speaker latency measurement.
+
+<a id="phase-74--reusable-composite-modules-planned"></a>
+
+#### Phase 7.4 — Reusable composite modules (planned)
+
+The detailed design, user workflows, graph transformation rules, storage contracts and acceptance tests live in [reusable-modules.md](../editor/reusable-modules.md). Use independent, editable composite instances first, not special drone types or live template references.
+
+- **7.4.1 — Multi-node selection and actions (planned refinement):** reuse existing additive Shift/Ctrl/Meta selection and graph-scoped state; add marquee selection and shared accessible selection actions with eligibility feedback. Selection alone must not mutate the DSP graph.
+- **7.4.2 — Group and ungroup composites (planned):** atomic selection-to-composite and single-level expansion; preserve typed boundary crossings, weights, dormant wiring, relative layout, nested ownership and undo/redo; reject non-equivalent/cyclic transformations with clear reasons; compare flattened behavior.
+- **7.4.3 — Custom Module Library (planned):** save existing composites, immutable versioned data definitions, metadata and grouped searchable Add Node catalog, validated deep-cloning with remapped identities, independent persistence, built-in protections and explicit library management. Can start with existing composites independently of grouping.
+- **7.4.4 — Whole-patch reuse (planned):** save a current or saved root patch as a reusable module without changing the source; convert its master-feed routing into an Output Rack and preserve configurations/layout; disclose destination transport semantics and validate the boundary.
+- **7.4.5 — Portable module definitions (planned):** dedicated JSON import/export with preview, ID/name conflict resolution, bounded schema/graph validation and backward-compatible persistence; Phase 8 defines binary asset packaging.
+- **7.4.6 — Composite macro controls (planned):** front-panel named controls mapped to one or more internal parameters, configurable ranges/units/curves, explicit conflict and manual-value handling, shared parameter UI, optional audio-rate modulation, validated mapping persistence/cloning and history.
+- **7.4.7 — Optional linked/versioned template updates (deferred):** investigate explicit opt-in revision updates, boundary compatibility, local-edit conflicts and self-contained fallback. Never silently modify placed instances when a library record changes.
+
+Deliverable: create a drone, instrument, effect or modulation network once; group it or save a complete patch as a module, reuse it across workspaces as independently editable composite copies, share it portably and eventually adjust internal sound parameters through front-panel macros. This track uses existing composite/port/persistence foundations and does not depend on Note-mode sequencing, resonators, polyphony or the Performance Monitor. Prioritize 7.4.2–7.4.4 for immediate practical graph reuse; 7.4.3 may ship first if saving already-authored composites is the most useful increment.
 
 ### Phase 8 — Audio assets and sample-based synthesis (planned)
 

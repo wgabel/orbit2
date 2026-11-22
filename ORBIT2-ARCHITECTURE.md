@@ -55,6 +55,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 | Playback, clicking, latency | [DSP engine](docs/audio/dsp-engine.md), [performance index](performance.md), [transport](docs/audio/transport-and-timing.md) |
 | Canvas, node frame or UI | [Canvas](docs/editor/canvas.md), [design system](docs/editor/design-system.md), relevant feature module |
 | Composite routing | [Composite nodes](docs/editor/composite-nodes.md), [signals/ports](docs/core/signals-and-ports.md), [commands](docs/core/commands-and-events.md) |
+| Reusing patches, grouping nodes into composites, custom module library and macros | [Reusable modules](docs/editor/reusable-modules.md), [composite nodes](docs/editor/composite-nodes.md), [persistence](docs/editor/persistence-and-history.md) |
 | Plots and tap capacity | [Visualizations](docs/editor/visualizations.md), [signal observation](docs/audio/signal-observation.md) |
 | Keyboard, sequencing and instruments | [Note Sequencer](docs/instruments/note-sequencer.md), [pitch control](docs/instruments/pitch-control.md), [envelopes](docs/audio/envelopes.md), [transport](docs/audio/transport-and-timing.md) |
 | Generative music, ambient patches and whole-piece arrangement | [Generative ambient composition](docs/examples/generative-ambient-composition.md); for individual sounds also see [instrument recipes](docs/examples/instrument-recipes.md) and [effects](docs/audio/effects.md) |
@@ -90,6 +91,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 
 - [canvas](docs/editor/canvas.md)
 - <a id="7-hierarchical-signal-graphs-and-canvases"></a><a id="8-input-and-output-racks"></a>[composite nodes](docs/editor/composite-nodes.md)
+- [reusable composite modules](docs/editor/reusable-modules.md) — selection-to-composite, whole-patch conversion, custom module library, portable definitions and macro controls (planned Phase 7.4)
 - <a id="shared-canvas-and-component-standards"></a>[design system](docs/editor/design-system.md)
 - <a id="signal-analysis-and-visualization-planned-phase-618"></a>[visualizations](docs/editor/visualizations.md)
 - [node presets](docs/editor/node-presets.md)
