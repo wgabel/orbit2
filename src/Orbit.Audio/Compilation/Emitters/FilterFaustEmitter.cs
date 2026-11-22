@@ -8,5 +8,6 @@ public sealed class FilterFaustEmitter : IFaustNodeEmitter
 
     public string Emit(FaustNodeContext context) => FaustStateVariableFilter.Emit(
         (FilterMode)context.ConstantParameter("mode"), context.Input("audio-in"),
-        context.Parameter("cutoff", FaustStateVariableFilter.MaximumCutoff), context.Parameter("resonance"));
+        context.Parameter("cutoff", FaustStateVariableFilter.MaximumCutoff, settlingMilliseconds: FaustControlSmoothing.Cutoff),
+        context.Parameter("resonance"));
 }

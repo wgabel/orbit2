@@ -6,7 +6,7 @@ Related: [performance](../../performance.md) · [dsp engine](../audio/dsp-engine
 
 ## On-demand collection
 
-Follow-up to 7.3.1–7.3.3 (local implementation pending PR). This lifecycle supersedes earlier component-lifetime and page-lifetime descriptions below.
+Follow-up to 7.3.1–7.3.3 ([PR #76](https://github.com/wgabel/orbit2/pull/76), in review). This lifecycle supersedes earlier component-lifetime and page-lifetime descriptions below.
 
 - The default closed toolbar button reads **Performance · Off**. Only opening the panel creates the editor frame sampler, PerformanceObservers, one-second interop polling loop, browser runtime diagnostics and application operation tracker. Closing with the button, closing the mobile More sheet or disposing the workspace cancels and releases them. Rapid reopen waits for prior cleanup.
 - Opening during existing playback seeds a new local underrun baseline and reports current graph/program and runtime resources. It does not invent historical compile times, errors or counters for operations that started while closed. Closing invalidates the session, including in-flight preparation timing; reopening creates fresh history and counters. Stop while open still freezes audio totals; a new Play starts a fresh audio/application playback baseline.

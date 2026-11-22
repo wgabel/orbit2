@@ -21,10 +21,10 @@ public static class TouchWireAssist
         point.Y >= bounds.Top && point.Y <= bounds.Bottom;
 
     public static WireAim Resolve(CanvasPoint finger, CanvasBounds bounds,
-        IReadOnlyList<WireTarget> targets, WireTarget? previous)
+        IReadOnlyList<WireTarget> targets, WireTarget? previous, bool offsetForTouch = true)
     {
         // Ease the offset away at the bottom edge so even the lowest port is reachable.
-        var offset = Math.Clamp(bounds.Bottom - finger.Y, 0, Offset);
+        var offset = offsetForTouch ? Math.Clamp(bounds.Bottom - finger.Y, 0, Offset) : 0;
         var aim = new CanvasPoint(Math.Clamp(finger.X, bounds.Left, bounds.Right),
             Math.Clamp(finger.Y - offset, bounds.Top, bounds.Bottom));
         if (!Contains(bounds, finger)) return new(aim, null);
