@@ -656,7 +656,21 @@ try {
     await descriptionEditor.getByRole("button", { name: "Apply", exact: true }).click();
     await amountEditor.getByText("Brightness sweep", { exact: true }).waitFor();
     assert.equal(await amount.inputValue(), "75");
-    assert.match(await badges.filter({ hasText: /^\+100 Hz$/ }).getAttribute("title"), /Brightness sweep/);
+    // Fit may enter the automatic compact annotation band. At full zoom the
+    // authored tooltip is visible, and titles-only suppresses it without
+    // changing the numeric badge, selected cable, or pending amount draft.
+    await page.getByRole("button", { name: "100%", exact: true }).click();
+    await page.getByLabel("Current zoom", { exact: true }).filter({ hasText: /^100%$/ }).waitFor();
+    const labeledBadge = badges.filter({ hasText: /^\+100 Hz$/ });
+    await labeledBadge.and(page.locator('[title*="Brightness sweep"]')).waitFor();
+    const annotationDisplay = viewport.getByLabel("Annotations", { exact: true });
+    await annotationDisplay.selectOption("TitlesOnly");
+    await labeledBadge.and(page.locator(':not([title*="Brightness sweep"])')).waitFor();
+    assert.equal(await amount.inputValue(), "75");
+    assert.equal(await amountEditor.getByText("Brightness sweep", { exact: true }).count(), 1);
+    await annotationDisplay.selectOption("Show");
+    await labeledBadge.and(page.locator('[title*="Brightness sweep"]')).waitFor();
+    await page.getByRole("button", { name: "Fit", exact: true }).click();
     await page.getByRole("button", { name: "Undo annotation", exact: true }).click();
     assert.equal(await amountEditor.getByText("Brightness sweep", { exact: true }).count(), 0);
     assert.equal(await amount.inputValue(), "75");
