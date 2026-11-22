@@ -94,6 +94,7 @@ try {
     await toolbar.getByRole("button", { name: "Zoom out" }).waitFor();
     await toolbar.getByRole("button", { name: "Add", exact: true }).waitFor();
     await toolbar.getByRole("button", { name: "Play patch" }).waitFor();
+    assert.equal(await page.locator('#node-type option[value="processor.resonator"]').textContent(), "Resonator");
     for (const [key, name] of [["organ", "Organ"], ["flute", "Flute"], ["brass", "Brass"],
         ["bowed-strings", "Bowed strings"], ["didgeridoo", "Didgeridoo"]]) {
         assert.equal(await page.locator(`#node-type option[value="preset.instrument.${key}"]`).textContent(), `Instrument — ${name}`);

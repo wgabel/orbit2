@@ -25,6 +25,7 @@ public sealed class NodeBypassTests
     [InlineData(ParametricEqProcessor.NodeType)]
     [InlineData(DelayProcessor.NodeType)]
     [InlineData(ReverbProcessor.NodeType)]
+    [InlineData(ResonatorProcessor.NodeType)]
     [InlineData(ChorusProcessor.NodeType)]
     public void EffectsDeclareAnExplicitDryPath(string type)
     {
