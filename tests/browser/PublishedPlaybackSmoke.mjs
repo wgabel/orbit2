@@ -53,6 +53,7 @@ try {
     // Exercise device-pixel bitmap resizing independently of CSS plot width.
     const page = await browser.newPage({ deviceScaleFactor: 2 });
     page.on("pageerror", error => console.error(error.message));
+    page.on("console", message => { if (message.type() === "error") console.error(message.text()); });
     await page.goto("http://127.0.0.1:" + server.address().port);
     const status = page.locator(".playback-toolbar").getByRole("status");
     const play = page.getByRole("button", { name: "Play patch" });
@@ -129,7 +130,7 @@ try {
     await libraryRow(page, "generator.oscillator").waitFor({ state: "hidden" });
     assert.equal(await library.locator("[data-node-key]").count(), 1);
     await libraryRow(page, "processor.delay").locator(".node-library-favorite").click();
-    assert.equal(await libraryRow(page, "processor.delay").locator(".node-library-favorite").getAttribute("aria-pressed"), "true");
+    await libraryRow(page, "processor.delay").locator('.node-library-favorite[aria-pressed="true"]').waitFor();
     await library.getByLabel("Search nodes").fill("");
     await library.locator(".node-library-results h3").first().filter({ hasText: "Favorites" }).waitFor();
     await library.getByLabel("Category", { exact: true }).selectOption("Audio");

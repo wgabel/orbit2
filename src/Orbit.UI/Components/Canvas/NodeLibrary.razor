@@ -1,5 +1,6 @@
 @namespace Orbit.UI.Components.Canvas
 @using Orbit.Presentation.Canvas
+@using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
 @implements IAsyncDisposable
 @inject IJSRuntime JavaScript
@@ -12,9 +13,9 @@
             <button type="button" class="secondary" @onclick="OnClose">Close library</button>
         </div>
         <label for="node-library-search">Search nodes</label>
-        <input id="node-library-search" type="search" placeholder="Name, category or keyword…" @bind="query" @bind:event="oninput" />
+        <input id="node-library-search" type="search" placeholder="Name, category or keyword…" disabled="@(!loaded)" @bind="query" @bind:event="oninput" />
         <label for="node-library-category">Category</label>
-        <select id="node-library-category" @bind="category">
+        <select id="node-library-category" disabled="@(!loaded)" @bind="category">
             <option value="">All categories</option>
             @foreach (var item in Enum.GetValues<NodeCategory>())
             {
