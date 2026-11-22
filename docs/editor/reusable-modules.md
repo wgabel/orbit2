@@ -2,7 +2,7 @@
 
 [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap, Phase 7.4](../roadmap/advanced.md#phase-74--reusable-composite-modules-planned)
 
-**Status:** Phase 7.4.1 multi-node selection and actions in review; structural grouping, library, portability and macros remain planned. This is the design contract and implementation record for general-purpose reusable graphs. Existing composite graphs, boundary racks, built-in drone/impact factories and individual node presets are already implemented; see [composite nodes](composite-nodes.md) and [node presets](node-presets.md).
+**Status:** Phase 7.4.1 multi-node selection and actions implemented; structural grouping, library, portability and macros remain planned. This is the design contract and implementation record for general-purpose reusable graphs. Existing composite graphs, boundary racks, built-in drone/impact factories and individual node presets are already implemented; see [composite nodes](composite-nodes.md) and [node presets](node-presets.md).
 
 Related: [canvas](canvas.md) · [persistence and history](persistence-and-history.md) · [signals and ports](../core/signals-and-ports.md) · [commands and events](../core/commands-and-events.md) · [annotations](annotations-and-connections.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
 
@@ -32,7 +32,9 @@ Support the following independent entry points:
 
 The current editor already has additive node selection via Shift/Ctrl/Meta and graph-scoped selection state. Extend and reuse this foundation rather than build a second selection model. Add rectangle/marquee selection, keyboard access and a contextual count/actions if useful; keep connection selection distinct from moving nodes. Selection never changes playback, graph revision or history.
 
-### Implementation: multi-node selection (7.4.1, in review)
+<a id="implementation-multi-node-selection-741-in-review"></a>
+
+### Implementation: multi-node selection (7.4.1, implemented)
 
 Implementation: [PR #45](https://github.com/wgabel/orbit2/pull/45).
 

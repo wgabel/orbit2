@@ -23,7 +23,7 @@ For exact serialized keys, Hold code, ramp behavior and the combined 30 reachabl
 
 ### Play held notes with Note Source
 
-For live keyboard articulation (7.2.3, [PR #41](https://github.com/wgabel/orbit2/pull/41)), add **Note Source** rather than Note Sequencer. Set Reference note to A3 for a 220 Hz oscillator or handpan, and Keyboard velocity (default 0.8). Connect Pitch at amount 1 and Trigger to Modal — Handpan; connect Handpan Audio to Master output. Play patch, select Note Source and Arm keyboard, then hold keys or on-screen piano keys. For velocity, open Handpan and set the shared excitation Gain receiving Strength offset to base zero, then connect Note Source Velocity to Strength offset at unity.
+For live keyboard articulation (7.2.3, [PR #41](https://github.com/wgabel/orbit2/pull/41)), add **Note Source** rather than Note Sequencer. Set Reference note to A3 for a 220 Hz oscillator or handpan, and Keyboard velocity (default 0.8). For the original Modal — Handpan connect Pitch at amount 1 and Trigger, then Audio to Master. For direct velocity with no internal edits, choose [Playable modal percussion](#playable-modal-percussion) instead. Play patch, select Note Source and Arm keyboard, then press keys or on-screen piano keys.
 
 For sustained voices, wire Gate to an ADSR Envelope and its output to zero-base oscillator amplitude; use a separate zero-base Gain controlled by Velocity if desired. Last pressed key wins; releasing it falls back to the previous held key without triggering a new strike. Final release closes Gate while Pitch and Velocity remain held for release tails. This is monophonic; Note-mode patterns and polyphony remain future work. See the [Note Source contract](../instruments/pitch-control.md#phase-723--note-source-in-review).
 
@@ -117,6 +117,17 @@ Several resonators with different frequencies and decay times create a more comp
 Exposed controls are **Trigger** (accepts typed Clock), **Pitch (st)** (continuous transposition of every mode), **Strength offset** (additive around 0.75 on internal shared excitation Gain, −0.375 halves the default, −0.75 prevents new excitation without immediately stopping existing tails), and **Excitation** (optional external mono audio, internally attenuated ×0.03 before the shared excitation gain). Continuous pitch changes retune ringing modes as well as future strikes; this is not latched note velocity or independent polyphonic notes. External excitation gives other textures, e.g. a quiet oscillator or shaped audio burst, but keep headroom. Do not connect raw event pulses to the audio excitation socket.
 
 Open the composite to alter the short AD burst, each mode's frequency (stored as Hz), T60, output gain and shared mixer. Moving one mode slightly changes timbre; moving all with Pitch keeps the ratios. Connect Audio to external reverb or chorus for space. To tame the total volume while preserving internal modal interactions, attenuate the output rather than altering all the individual modes. See [modal contract and exact preset ratios](../instruments/physical-modelling.md#phase-725--modal-instrument-composites-implemented). For keyboard-powered pitch, trigger and velocity, use [Note Source](#play-held-notes-with-note-source); the compact modal bank/response editor remains a follow-up.
+
+### Playable modal percussion
+
+Use **Playable — Handpan**, **Playable — Bell**, **Playable — Gong** or **Playable — Wood percussion** (7.2.6b, in review, [PR #46](https://github.com/wgabel/orbit2/pull/46)) for direct velocity-sensitive strikes. Unlike Playable sustained instruments, these use Trigger instead of Gate.
+
+1. Add Note Source and Playable — Handpan; set Note Source Reference note to A3. For Bell use E4, Gong E2 or Wood D4 (approximate native tunings).
+2. Wire Pitch → Pitch (st), Trigger → Trigger and Velocity → Velocity, all at unity. Connect Audio → Master output.
+3. Play, select Note Source and Arm keyboard. Tap a key to strike the instrument; try changing Keyboard velocity from 0.8 to 0.3 before the next hit. A new note-on strikes again even if the previous note is still held. Key release does not stop the ringing.
+4. Optional: connect quiet external audio to Excitation. It excites the resonators independently of velocity. Open the composite to edit attack, decay, mode frequencies, weights or output gain.
+
+If the instrument does not strike, check the Velocity cable and value, Trigger and armed keyboard. If you want a Clock with no velocity controller, choose the original **Modal — …** (default strength .75) or set the playable version's internal velocity Gain base to a fixed level. Pitch is shared by all modes, including ringing tails; simultaneous independent notes require future polyphony. See [contract and exact behavior](../instruments/physical-modelling.md#phase-726b--playable-modal-instruments-in-review).
 
 ## 4. Make a full piece
 

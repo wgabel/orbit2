@@ -265,6 +265,33 @@ var modalInstruments = new[] { ModalInstrumentTemplates.Handpan, ModalInstrument
 }).ToArray();
 File.WriteAllText(Path.Combine(args[0], "modal-instruments.json"), JsonSerializer.Serialize(modalInstruments));
 
+var playableModalInstruments = new[] { ModalInstrumentTemplates.PlayableHandpan, ModalInstrumentTemplates.PlayableBell,
+    ModalInstrumentTemplates.PlayableGong, ModalInstrumentTemplates.PlayableWood }.Select(key =>
+{
+    using var playableModalSession = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+    var playableModalRoot = playableModalSession.GraphId;
+    GraphNodeSnapshot AddPlayableModal(string type) => playableModalSession.Execute(new AddNodeCommand(playableModalRoot, type))
+        .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+    var instrument = AddPlayableModal(key);
+    var note = AddPlayableModal(NoteSourceGenerator.NodeType);
+    var external = AddPlayableModal(OscillatorGenerator.NodeType);
+    var output = AddPlayableModal(MasterOutput.NodeType);
+    foreach (var (port, index) in new[] { ("trigger-out", 0), ("pitch-out", 1), ("velocity-out", 2) })
+        playableModalSession.Execute(new ConnectNodesCommand(playableModalRoot, new(note.Id, note.Outputs.Single(p => p.Key == port).Id), new(instrument.Id, instrument.Inputs[index].Id)));
+    playableModalSession.Execute(new ConnectNodesCommand(playableModalRoot, new(external.Id, external.Outputs[0].Id), new(instrument.Id, instrument.Inputs[3].Id)));
+    playableModalSession.Execute(new ConnectNodesCommand(playableModalRoot, new(instrument.Id, instrument.Outputs[0].Id), new(output.Id, output.Inputs[0].Id)));
+    var modes = instrument.Composite!.Graph.Nodes.Where(n => n.TypeKey == ResonatorProcessor.NodeType).ToArray();
+    var fundamental = modes.Min(n => n.Parameters.Single(p => p.Definition.Key == "frequency").BaseValue);
+    playableModalSession.Execute(new SetParameterValueCommand(playableModalRoot, Address(external, "amplitude"), 0));
+    playableModalSession.Execute(new SetParameterValueCommand(playableModalRoot, Address(external, "frequency"), fundamental));
+    var compiled = FaustGraphCompiler.CreateBuiltIn().Compile(playableModalSession.Snapshot);
+    return new { key, source = compiled.Source, values = compiled.InitialControlValues(), inputs = compiled.RhythmicInputs.Count,
+        external = compiled.Controls.Single(c => c.Address == Address(external, "amplitude")).Name,
+        frequencies = modes.Select(v => v.Parameters.Single(p => p.Definition.Key == "frequency").BaseValue).ToArray(),
+        meters = modes.Select(v => compiled.Controls.Single(c => c.Address == Address(v, "frequency")).MeterName).ToArray() };
+}).ToArray();
+File.WriteAllText(Path.Combine(args[0], "playable-modal-instruments.json"), JsonSerializer.Serialize(playableModalInstruments));
+
 // One note action lane reaches all four output addresses in an ordinary graph.
 using var noteSession = new PatchSession(BuiltInNodes.CreateRegistry());
 var noteRoot = noteSession.GraphId;

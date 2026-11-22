@@ -55,7 +55,9 @@ Try describing a composition, hiding its annotations during performance, then op
 
 For example, add a Flute instrument, open **Outline**, search `Flute Output Rack` and filter by Node. Select the matching **Locate node: Output Rack** action to enter the Flute's canvas, select its rack and fit it into view. **Locate composite** selects a composite in its parent; **Open canvas** enters its child. Locate a hidden note to reveal it temporarily without changing the canvas visibility setting. Apply or cancel an active annotation draft before navigating. These actions do not change the signal graph or interrupt playback. The outline is navigation, not a module library or an editing tool. See the [outline contract](../editor/patch-annotations.md#3-patch-outline-and-navigation-6198--implemented).
 
-### Select multiple nodes for reuse (in review)
+<a id="select-multiple-nodes-for-reuse-in-review"></a>
+
+### Select multiple nodes for reuse
 
 [PR #45](https://github.com/wgabel/orbit2/pull/45) adds selection tools. For example, prepare a drone by selecting its oscillator, filter and gain without selecting Master output. Shift-drag from empty canvas around their frames; even partly intersecting frames are selected. Hold Ctrl/Meta as well to add another rectangle to the selection. On touch or without modifiers, open **Selection → Marquee mode**, drag, and use Escape or **Return to pan** to leave the mode. Ordinary background dragging pans when not in selection mode.
 
