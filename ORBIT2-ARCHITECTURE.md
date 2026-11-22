@@ -58,6 +58,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 | Plots and tap capacity | [Visualizations](docs/editor/visualizations.md), [signal observation](docs/audio/signal-observation.md) |
 | Keyboard, sequencing and instruments | [Note Sequencer](docs/instruments/note-sequencer.md), [pitch control](docs/instruments/pitch-control.md), [envelopes](docs/audio/envelopes.md), [transport](docs/audio/transport-and-timing.md) |
 | Generative music, ambient patches and whole-piece arrangement | [Generative ambient composition](docs/examples/generative-ambient-composition.md); for individual sounds also see [instrument recipes](docs/examples/instrument-recipes.md) and [effects](docs/audio/effects.md) |
+| Harmony, tuning, timbre, musical quality, perceived loudness and spatial depth | [Music theory and sound design](docs/examples/music-theory-and-sound-design.md); use with the relevant instrument/effect or composition guide |
 | Save/load, undo/redo, presets | [Persistence](docs/editor/persistence-and-history.md), [commands](docs/core/commands-and-events.md), [node presets](docs/editor/node-presets.md) |
 | Roadmap or feature priority | [Roadmap](ROADMAP.md); open only the relevant milestone register if needed |
 
@@ -107,6 +108,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 - <a id="musical-instrument-synthesis-and-physical-modelling-planned-phase-72"></a>[instrument recipes](docs/examples/instrument-recipes.md)
 - <a id="12-worked-patch-example"></a>[drone](docs/examples/drone.md)
 - [generative ambient composition](docs/examples/generative-ambient-composition.md) — musical layers, long-form arrangement and a worked multi-voice patch
+- [music theory and electronic sound design](docs/examples/music-theory-and-sound-design.md) — interval/scale/chord recipes, voice leading, articulation, psychoacoustics, mix/depth and quality checks
 
 **Quality and delivery**
 
