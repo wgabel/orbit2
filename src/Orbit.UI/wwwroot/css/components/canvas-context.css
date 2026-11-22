@@ -1,0 +1,40 @@
+.canvas-viewport:has(.canvas-context-overlay) { touch-action: auto; }
+.canvas-context-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: var(--component-workspace-overlay-layer);
+    cursor: default;
+}
+.canvas-context-backdrop { position: absolute; inset: 0; }
+.canvas-context-menu {
+    position: absolute;
+    display: grid;
+    gap: var(--semantic-space-tight);
+    width: var(--component-connection-editor-width);
+    max-width: 100%;
+    max-height: 100%;
+    padding: var(--semantic-space-compact);
+    box-sizing: border-box;
+    overflow: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    background: var(--semantic-color-surface);
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-surface);
+}
+.canvas-context-menu.canvas-context-sheet {
+    inset-inline: 0;
+    inset-block-end: 0;
+    width: 100%;
+    border-radius: var(--semantic-radius-surface) var(--semantic-radius-surface) 0 0;
+}
+.canvas-context-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--semantic-space-compact);
+    overflow-wrap: anywhere;
+}
+.canvas-context-menu > button { text-align: start; white-space: normal; }
+.canvas-context-sheet button { min-height: var(--component-workspace-mobile-toolbar-height); }
+.canvas-context-menu > .canvas-context-destructive { color: var(--semantic-color-error); }

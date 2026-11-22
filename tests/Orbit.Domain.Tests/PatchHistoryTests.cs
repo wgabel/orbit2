@@ -47,6 +47,31 @@ public sealed class PatchHistoryTests
     }
 
     [Fact]
+    public void CancelPendingParameterGestureRestoresLiveValueWithoutAddingUndoOrClearingRedo()
+    {
+        using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+        var node = session.Execute(new AddNodeCommand(session.GraphId, OscillatorGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        var parameter = node.Parameters.Single(p => p.Definition.Key == "frequency");
+        var address = new ParameterAddress(node.Id, parameter.Id);
+        double Current() => session.Snapshot.GetNode(node.Id).Parameters.Single(p => p.Id == parameter.Id).BaseValue;
+        session.Execute(new SetParameterValueCommand(session.GraphId, address, 520));
+        session.Undo();
+        var gesture = Guid.NewGuid();
+        session.Execute(new SetParameterValueCommand(session.GraphId, address, 700), gesture);
+        session.CancelParameterGesture(Guid.NewGuid());
+        Assert.Equal(700, Current());
+        var cancellation = session.CancelParameterGesture(gesture);
+        Assert.IsType<ParameterChanged>(Assert.Single(cancellation.ChangeSet!.Events));
+        Assert.Equal(parameter.BaseValue, Current());
+        Assert.True(session.CanRedo);
+        session.Redo();
+        Assert.Equal(520, Current());
+        session.Undo();
+        session.Undo();
+        Assert.Empty(session.Snapshot.Nodes);
+    }
+
+    [Fact]
     public void InterveningCommandsAndDifferentTargetsNeverMergeHistory()
     {
         using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());

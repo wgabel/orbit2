@@ -10,6 +10,21 @@ public partial class GraphWorkspace
     private bool desktopLibraryOpen;
     private bool NodeLibraryOpen => desktopLibraryOpen || mobilePanel == "nodes";
     private void ToggleNodeLibrary() => desktopLibraryOpen = !desktopLibraryOpen;
+    private void OpenContextLibrary(bool mobile)
+    {
+        if (!CanLeaveMobilePanel() || annotationDraft || addingNode) return;
+        outlineOpen = false;
+        desktopLibraryOpen = !mobile;
+        mobilePanel = mobile ? "nodes" : null;
+    }
+
+    private void OpenContextSelection(bool mobile)
+    {
+        if (!CanLeaveMobilePanel() || annotationDraft) return;
+        outlineOpen = false;
+        desktopLibraryOpen = false;
+        mobilePanel = mobile ? "selection" : null;
+    }
     private void CloseNodeLibrary() { desktopLibraryOpen = false; if (mobilePanel == "nodes") mobilePanel = null; }
     private string? ActiveMobilePanel => outlineOpen ? "outline" : mobilePanel;
     private ElementReference workspaceElement;

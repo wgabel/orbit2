@@ -124,6 +124,21 @@ public sealed class PatchSession : IPatchSession
 
     internal void ClearHistory() { lock (gate) history.Clear(); }
 
+    public GraphCommandResult CancelParameterGesture(Guid gestureId)
+    {
+        lock (gate)
+        {
+            ObjectDisposedException.ThrowIf(disposed, this);
+            if (executing) throw new InvalidOperationException("History cannot change inside a graph notification.");
+            if (history.RestoreGesture(gestureId) is not { } restore) return new GraphCommandResult(null, Array.Empty<Exception>());
+            // Restore via the same command/event path for live audio. The net-zero
+            // pending history gesture is then discarded without touching redo.
+            var result = Execute(restore, gestureId);
+            history.CompleteGesture(gestureId);
+            return result;
+        }
+    }
+
     private GraphCommandResult RestoreHistory(bool isUndo)
     {
         lock (gate)

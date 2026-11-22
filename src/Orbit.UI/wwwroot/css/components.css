@@ -5,6 +5,7 @@
 @import url("./components/validation-message.css");
 @import url("./components/graph-workspace.css");
 @import url("./components/graph-canvas.css");
+@import url("./components/canvas-context.css");
 @import url("./components/node-frame.css");
 @import url("./components/note-card.css");
 @import url("./components/visual-group.css");

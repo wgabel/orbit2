@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Orbit.Presentation.Canvas;
@@ -21,13 +22,69 @@ public partial class GraphCanvas
     private CanvasViewport? pinchStartViewport;
     private int fitGeneration;
     private int fitSequence;
+    private bool universalNavigating;
+    [Parameter] public EventCallback OnCancelParameterGesture { get; set; }
+
+    public sealed record NavigationContact(long Id, double X, double Y);
+    public sealed record NavigationPair(NavigationContact First, NavigationContact Second, double Left, double Top, bool Slider);
+
+    // Capture-phase DOM routing sees both contacts even if a native control or
+    // plot stopped its normal bubbling event. The canvas still owns geometry.
+    [JSInvokable]
+    public async Task BeginUniversalPinchAsync(NavigationPair pair)
+    {
+        if (disposed || universalNavigating) return;
+        var restoreNode = draggedNode;
+        var restorePosition = draggedNodeStart;
+        pendingSource = null;
+        EndGesture();
+        if (restoreNode is Guid id && restorePosition is CanvasPoint position && Snapshot.NodePositions.ContainsKey(id))
+            State.MoveNode(id, position);
+        fitTaps.Reset();
+        fitGeneration++;
+        universalNavigating = true;
+        gestureIsTouch = true;
+        gesturePointer = pair.First.Id;
+        pinchPointer = pair.Second.Id;
+        lastClientPoint = new CanvasPoint(pair.First.X, pair.First.Y);
+        pinchPoint = new CanvasPoint(pair.Second.X, pair.Second.Y);
+        pinchOrigin = new CanvasPoint(pair.Left, pair.Top);
+        pinchStartViewport = Snapshot.Viewport;
+        pinchStartFirst = lastClientPoint.Subtract(pinchOrigin.Value);
+        pinchStartSecond = pinchPoint.Subtract(pinchOrigin.Value);
+        if (pair.Slider) await OnCancelParameterGesture.InvokeAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public Task MoveUniversalPinchAsync(NavigationContact contact)
+    {
+        if (disposed || !universalNavigating) return Task.CompletedTask;
+        var args = new PointerEventArgs { PointerId = contact.Id, ClientX = contact.X, ClientY = contact.Y, PointerType = "touch" };
+        if (!MovePinch(args) && gesturePointer == contact.Id)
+        {
+            var point = new CanvasPoint(contact.X, contact.Y);
+            State.PanBy(point.Subtract(lastClientPoint));
+            lastClientPoint = point;
+        }
+        return InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public Task EndUniversalPinchAsync(long id, bool canceled)
+    {
+        if (disposed || !universalNavigating) return Task.CompletedTask;
+        if (canceled) EndGesture();
+        else if (!ReleasePinch(new PointerEventArgs { PointerId = id }) && gesturePointer == id) EndGesture();
+        return InvokeAsync(StateHasChanged);
+    }
 
     private async Task BeginNodeSurfaceAsync(PointerEventArgs args)
     {
         fitTaps.Reset();
         if (args.PointerType != "touch" || module is null || args.Button != 0 ||
             !await module.InvokeAsync<bool>("isNodeNavigationSurface", viewportElement, args.ClientX, args.ClientY)) return;
-        if (await TakeOverNavigationAsync(args)) return;
+        if (universalNavigating || await TakeOverNavigationAsync(args)) return;
         await BeginGesture(args, null, wire: false);
     }
 
@@ -43,6 +100,7 @@ public partial class GraphCanvas
     // selection, cable, annotation or node edit is started.
     private async Task<bool> TakeOverNavigationAsync(PointerEventArgs args)
     {
+        if (universalNavigating) return true;
         if (gesturePointer is not long first || first == args.PointerId)
             return false;
         if (!gestureIsTouch || args.PointerType != "touch" || pinchPointer is not null)
@@ -145,6 +203,7 @@ public partial class GraphCanvas
 
     private void ClearNavigationGesture()
     {
+        universalNavigating = false;
         tapEligible = gestureIsTouch = false;
         draggedNodeStart = null;
         pinchPointer = null;

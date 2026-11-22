@@ -1,6 +1,7 @@
 using Orbit.Application.Graphs.Snapshots;
 using Orbit.Application.Graphs.Events;
 using Orbit.Domain.Parameters;
+using Orbit.Application.Graphs.Commands;
 
 namespace Orbit.Application.Graphs.Sessions;
 
@@ -40,6 +41,9 @@ internal sealed class PatchHistory
         pending = null;
         if (gesture.HasNetChange) Append(gesture.Entry);
     }
+
+    public SetParameterValueCommand? RestoreGesture(Guid id) => pending is { } gesture && gesture.Id == id
+        ? new(gesture.GraphId, gesture.Address, gesture.InitialValue) : null;
 
     public void Record(GraphSnapshot before, GraphSnapshot after, Guid[] affectedGraphs)
     {
