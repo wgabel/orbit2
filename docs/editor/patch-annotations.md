@@ -4,7 +4,7 @@
 
 Related: [canvas](canvas.md) · [design system](design-system.md) · [persistence and history](persistence-and-history.md) · [commands and events](../core/commands-and-events.md) · [connection visualization](annotations-and-connections.md) · [composite nodes](composite-nodes.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
 
-**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) implemented ([PR #28](https://github.com/wgabel/orbit2/pull/28)); visual groups (6.19.3) implemented ([PR #30](https://github.com/wgabel/orbit2/pull/30)); overview and discovery (6.19.4) implemented ([PR #32](https://github.com/wgabel/orbit2/pull/32)); annotation visibility and zoom detail (6.19.7) in review ([PR #35](https://github.com/wgabel/orbit2/pull/35)); outline (6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
+**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) implemented ([PR #28](https://github.com/wgabel/orbit2/pull/28)); visual groups (6.19.3) implemented ([PR #30](https://github.com/wgabel/orbit2/pull/30)); overview and discovery (6.19.4) implemented ([PR #32](https://github.com/wgabel/orbit2/pull/32)); annotation visibility and zoom detail (6.19.7) implemented ([PR #35](https://github.com/wgabel/orbit2/pull/35)); outline (6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features. See [hands-on organization workflows](../usage/patch-editor.md#3-document-and-organize-a-patch).
 
 <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>
 
@@ -212,7 +212,9 @@ The library save name remains independent of the musical title. The saved-patch 
 
 **Annotated examples** in Patches exports a fresh ordinary portable JSON patch without changing the active workspace or named library. **Modulation study** explains the existing oscillator modulation demo; **Impact — AD percussion** includes the existing impact composite routed to a master output, root and nested notes, aliases, and overview instructions. Import the exported file to inspect or edit it. Both examples use existing graph factories and validated persistence; their annotations are learning aids, not claims of musical mastering or listening verification.
 
-## 2. Annotation visibility and zoom-dependent detail (6.19.7 — in review)
+<a id="2-annotation-visibility-and-zoom-dependent-detail-6197--in-review"></a>
+
+## 2. Annotation visibility and zoom-dependent detail (6.19.7 — implemented)
 
 Provide a compact shared canvas toolbar control for documentation visibility, ideally a labelled toggle/menu with at least Show and Hide (optional Titles only). Keep numeric cable-amount visibility and audio visualization settings in their own controls: hiding author-written notes must not hide necessary port labels or change graph configuration. A performance-friendly clean view can hide notes, group backgrounds/titles and optional authored wire descriptions, while retaining clearly readable node aliases as primary identifiers. Allow access to descriptions through the selection inspector or outline even if canvas decorations are hidden. Do not change the owning graph, note text, manual collapse state or membership.
 
@@ -229,7 +231,9 @@ Use shared configurable screen-space thresholds/hysteresis and theme tokens; tun
 
 Persist per-canvas annotation display preference in the existing optional `SavedCanvas` layout settings, with visible annotations as a backward-compatible default. If a workspace-wide toggle is offered, document whether it is a temporary override (recommended for clean performance mode) rather than rewriting every child preference. Visibility and zoom are presentation changes, not annotation content/history edits. Navigation preserves an active canvas's preference. No graph revision or audio/capture lifecycle changes beyond existing independent view visibility decisions.
 
-### Implementation (6.19.7, in review)
+<a id="implementation-6197-in-review"></a>
+
+### Implementation (6.19.7, implemented)
 
 Implementation: [PR #35](https://github.com/wgabel/orbit2/pull/35).
 
@@ -289,4 +293,4 @@ Keep the original state/persistence/history contracts above authoritative. When 
 | Audio isolation | During continuous playback perform every annotation and navigation action and verify unchanged root graph revision, DSP source/runtime generation and no graph-history entry. |
 | Agents / examples | Annotated example patch explains roles and actual settings, overview provides musical purpose and manual instructions, optional metadata remains data-only and valid. |
 
-These are separate deliverable increments in the [Phase 6.19 register](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-planned). With 6.19.1–6.19.4 implemented and 6.19.7 in review, implement 6.19.8 outline and navigation next. Record actual implementation PR links here and in the roadmap as features ship.
+These are separate deliverable increments in the [Phase 6.19 register](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-planned). With 6.19.1–6.19.4 implemented and 6.19.7 implemented, implement 6.19.8 outline and navigation next. Record actual implementation PR links here and in the roadmap as features ship.

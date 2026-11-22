@@ -4,6 +4,8 @@
 
 Related: [composite nodes](composite-nodes.md) · [design system](design-system.md) · [patch annotations](patch-annotations.md) · [connection visualization](annotations-and-connections.md) · [persistence and history](persistence-and-history.md).
 
+For hands-on navigation, connections, annotation controls and local/recursive counts, see the [patch editor guide](../usage/patch-editor.md).
+
 ### The canvases
 
 A main patch might contain:
@@ -34,7 +36,7 @@ flowchart TD
 
 The same canvas UI, interaction rules, connection rendering and node registry should be used for both root and nested graphs.
 
-**Canvas and entire-patch counts (in review, [PR #36](https://github.com/wgabel/orbit2/pull/36)).** The upper-right overlay preserves the active canvas's node/connection counts (and local notes, if present), and adds a separately labelled entire-patch total. The total recursively sums each committed graph's own nodes and connections, starting at the root, including composite wrappers, internal input/output rack nodes and dormant connections. Visual groups, notes and mirrored sockets are not additional graph elements. For example, a root with one drone wrapper and a four-node, four-connection child shows one local node and five total nodes. `CanvasNavigationService` calculates this projection once at initialization and per committed patch change, so it stays consistent across navigation, nested edits, deletion, undo/redo and patch replacement without traversing the hierarchy on pan, zoom or telemetry updates. The counts do not change audio, commands, or persistence.
+**Canvas and entire-patch counts (implemented, [PR #36](https://github.com/wgabel/orbit2/pull/36)).** The upper-right overlay preserves the active canvas's node/connection counts (and local notes, if present), and adds a separately labelled entire-patch total. The total recursively sums each committed graph's own nodes and connections, starting at the root, including composite wrappers, internal input/output rack nodes and dormant connections. Visual groups, notes and mirrored sockets are not additional graph elements. For example, a root with one drone wrapper and a four-node, four-connection child shows one local node and five total nodes. `CanvasNavigationService` calculates this projection once at initialization and per committed patch change, so it stays consistent across navigation, nested edits, deletion, undo/redo and patch replacement without traversing the hierarchy on pan, zoom or telemetry updates. The counts do not change audio, commands, or persistence.
 
 ### Separation from visual layout
 
@@ -108,7 +110,7 @@ Each view consumes an immutable `CanvasStateSnapshot` with separate graph and la
 
 The geometry and projection are implemented and independently tested. The renderer consumes this state, including measured node bounds, pointer gestures and Bézier paths. Phase 5 implements nested navigation using the same renderer and a cached state per graph.
 
-Phase 6.19.1 (implemented) extends the same canvas projection with graph-scoped note cards, a separate bounded history, measured placement/fit and persistent authored bounds. Phase 6.19.2 (implemented) extends that history and projection to node aliases/descriptions and connection labels, remeasuring node geometry when aliases change. Phase 6.19.3 (implemented) adds graph-local visual groups behind cables, nodes and notes. Drag previews translate the frame, explicit member positions and cable endpoints together, committing one annotation operation; resize affects only the frame. Phase 6.19.4 (implemented) adds patch-wide overview outside the canvas projection. Phase 6.19.7 (in review) derives compact annotation detail from zoom and per-canvas visibility, with temporary reveal and signal-only fit; authored geometry remains unchanged. See [patch annotations](patch-annotations.md) for the user interaction and data contract.
+Phase 6.19.1 (implemented) extends the same canvas projection with graph-scoped note cards, a separate bounded history, measured placement/fit and persistent authored bounds. Phase 6.19.2 (implemented) extends that history and projection to node aliases/descriptions and connection labels, remeasuring node geometry when aliases change. Phase 6.19.3 (implemented) adds graph-local visual groups behind cables, nodes and notes. Drag previews translate the frame, explicit member positions and cable endpoints together, committing one annotation operation; resize affects only the frame. Phase 6.19.4 (implemented) adds patch-wide overview outside the canvas projection. Phase 6.19.7 (implemented) derives compact annotation detail from zoom and per-canvas visibility, with temporary reveal and signal-only fit; authored geometry remains unchanged. See [patch annotations](patch-annotations.md) for the user interaction and data contract.
 
 ### First visible editor implementation
 

@@ -4,6 +4,8 @@
 
 Related: [envelopes](../audio/envelopes.md) · [pitch control](pitch-control.md) · [polyphony](polyphony.md) · [instrument recipes](../examples/instrument-recipes.md).
 
+For practical wiring, playing and retuning examples, see [built-in instruments and resonators](../usage/sound-and-instruments.md#3-built-in-instruments-and-resonators).
+
 ##### Resonator processor and modal synthesis
 
 A resonator is an **audio-input processor**, not an oscillator that always generates a sound. An impulse or noise burst supplies excitation; the internal resonant state rings at its tuned frequency even after input returns to zero. A sustained input may continue exciting it. This makes body resonances and struck instruments possible without a recording. Begin with one `processor.resonator` using the existing node registry, common parameter UI, modulation, bypass/dry contract where appropriate and shared visualization. It is useful by itself for ringing textures and as a component of modal synthesis.
