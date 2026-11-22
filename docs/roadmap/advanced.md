@@ -11,7 +11,7 @@ Related: [envelopes](../audio/envelopes.md) · [pitch control](../instruments/pi
 - Partial: filters, EQ, delay, chorus and reverb implemented in Phase 6; flanger, compression and further processing planned.
 - Planned: random, step sequencers, automation, explicit feedback; reuse the Phase 7.1 event and envelope infrastructure.
 - Partial: shared musical pitch control implemented (7.2.2); note control, resonator and modal instrument templates planned; reuse Phase 7.1 articulations and existing composite graphs (Phase 7.2).
-- Additional routing adapters and channel handling; extend Phase 6.18 observation infrastructure to multichannel signals and future node types.
+- Planned stereo signal routing, audio adapters, panning and oscillator unison (Phase 7.5); extend Phase 6.18 observation infrastructure to multichannel signals after establishing the Phase 7.3 performance baseline.
 - Group/ungroup nodes; versioned reusable graph definitions and a custom Module Library (Phase 7.4).
 - Improve graph swap continuity, compile cache and performance profiling.
 - Validate original Orbit's clicking/underrun concerns with large patches.
@@ -60,6 +60,8 @@ The detailed implementation and usage contract lives in [performance.md](../../p
 
 Deliverable: a musician can inspect audio latency and reliability while safely editing a patch, identify performance pressure and distinguish it from clipping or DSP discontinuities; developers can reproduce and compare performance regressions without changing sound. The first four increments do not depend on NoteSource, ADSR or polyphony. No ordinary browser API is assumed to expose an exact whole-renderer CPU or physical key-to-speaker latency measurement.
 
+**Priority for Phase 7.5:** implement 7.3.1, 7.3.2 and the baseline benchmark workflow in 7.3.4 before adding unison or stereo; characterize the existing mono system and measure each subsequent DSP change. 7.3.3 is recommended for editor work; 7.3.5 and 7.3.6 need not delay Phase 7.5. Benchmark profile additions and limits are specified in [stereo/unison performance first](../audio/stereo-panning-and-unison.md#1-performance-first).
+
 <a id="phase-74--reusable-composite-modules-planned"></a>
 
 #### Phase 7.4 — Reusable composite modules (partial)
@@ -75,6 +77,18 @@ The detailed design, user workflows, graph transformation rules, storage contrac
 - **7.4.7 — Optional linked/versioned template updates (deferred):** investigate explicit opt-in revision updates, boundary compatibility, local-edit conflicts and self-contained fallback. Never silently modify placed instances when a library record changes.
 
 Deliverable: create a drone, instrument, effect or modulation network once; group it or save a complete patch as a module, reuse it across workspaces as independently editable composite copies, share it portably and eventually adjust internal sound parameters through front-panel macros. This track uses existing composite/port/persistence foundations and does not depend on Note-mode sequencing, resonators, polyphony or the Performance Monitor. Prioritize 7.4.2–7.4.4 for immediate practical graph reuse; 7.4.3 may ship first if saving already-authored composites is the most useful increment.
+
+#### Phase 7.5 — Stereo audio, panning and unison (planned)
+
+Authoritative design: [stereo-panning-and-unison.md](../audio/stereo-panning-and-unison.md). Recommended dependency: complete 7.3.1, 7.3.2 and the baseline portion of 7.3.4 first; 7.3.3 is useful during UI work. Re-run paired benchmarks at each milestone and use measured headroom to establish supported voice counts and channel/effect complexity.
+
+- **7.5.1 — Mono oscillator unison (planned):** extend existing free-running oscillator with structural voice count, continuous modulatable symmetric detune/normalized blend, deterministic phase spread, independent phase accumulation, existing anti-aliasing and pitch tracking. Preserve the original single-voice path and BPM locking, compatible persistence, presets, crossfade and gain bounds. Measure cost across voice counts before increasing limits.
+- **7.5.2 — Stereo channel foundation (planned):** explicit mono/stereo audio ports, stable nested rack identities and validation, adapters, weighted channel expression lowering, manifest for ordered audible master channels independent of observation channels, browser/worklet routing and compatibility with old mono patches. Preserve both channels for playback and keep all auxiliary taps silent.
+- **7.5.3 — Pan and stereo mixer (planned):** standalone audio-rate modulatable equal-power mono-to-stereo Pan processor, explicit stereo mixer and master routing, documented mono promotion/downmix, pan UX and LFO auto-pan example; channel-isolation and live-edit tests.
+- **7.5.4 — Oscillator stereo pan/width (planned):** explicit stereo oscillator mode with bank pan and per-voice stereo spread, live modulation, visual distribution preview, mono compatibility and bounded output. Depends on 7.5.1–7.5.3.
+- **7.5.5 — Stereo effects, observation and recipes (planned):** incremental stereo-safe gain/filters/EQ/delay/chorus/reverb, L/R/mid signal selection and level metering, tap-capture regressions, additional stereo effects and verified sound presets, musical usage examples and performance acceptance. Do not claim stereo behavior for a mono-only effect.
+
+Deliverable: position any voice or composite in stereo, build evolving rich timbres directly in one oscillator, maintain existing mono patches and scalar modulation, and verify audible stereo, sound quality and resource cost. Unison is independent of note polyphony; profile their combined cost before layering them.
 
 ### Phase 8 — Audio assets and sample-based synthesis (planned)
 

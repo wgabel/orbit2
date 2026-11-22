@@ -56,6 +56,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 | Task | Suggested starting points |
 |---|---|
 | New node, connection or parameter | [Graph model](docs/core/graph-model.md), [signals/ports](docs/core/signals-and-ports.md), [modulation](docs/core/parameters-and-modulation.md), [DSP](docs/audio/dsp-engine.md) |
+| Stereo routing, panning, oscillator unison | [Stereo audio, panning and oscillator unison](docs/audio/stereo-panning-and-unison.md) — planned Phase 7.5; prioritize the Phase 7.3 performance baseline first |
 | Playback, clicking, latency | [DSP engine](docs/audio/dsp-engine.md), [performance index](performance.md), [transport](docs/audio/transport-and-timing.md) |
 | Canvas, node frame or UI | [Canvas](docs/editor/canvas.md), [design system](docs/editor/design-system.md), relevant feature module |
 | Composite routing | [Composite nodes](docs/editor/composite-nodes.md), [signals/ports](docs/core/signals-and-ports.md), [commands](docs/core/commands-and-events.md) |
@@ -95,6 +96,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 - <a id="10-faust-and-real-time-execution"></a><a id="runtime-foundations-and-safety"></a>[dsp engine](docs/audio/dsp-engine.md)
 - <a id="6-audio-time-oscillator-phase-and-transport"></a>[transport and timing](docs/audio/transport-and-timing.md)
 - [oscillators and noise](docs/audio/oscillators-and-noise.md)
+- [stereo audio, panning and oscillator unison](docs/audio/stereo-panning-and-unison.md) — Phase 7.5 planned; mono unison, stereo channel routing, modulated pan, stereo voice width and effects; performance prerequisites
 - <a id="algorithmic-reverb-phase-614"></a><a id="audio-processors-and-effects"></a><a id="chorus-phase-615"></a><a id="feedback-delay-phase-613"></a><a id="parametric-eq-phase-612"></a>[effects](docs/audio/effects.md)
 - <a id="pitch-shifter-phase-620-planned"></a>[pitch shifter](docs/audio/pitch-shifter.md)
 - <a id="envelope-generators-and-rhythmic-triggers-planned-phase-71"></a><a id="musical-control-performance-and-instrument-synthesis"></a>[envelopes](docs/audio/envelopes.md)

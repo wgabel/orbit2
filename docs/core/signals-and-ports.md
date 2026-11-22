@@ -165,3 +165,5 @@ SignalGraphValidator verifies:
 - Connections never point to deleted nodes or ports.
 
 For the first implementation, reject all cycles. Introduce explicit feedback later when the DSP compiler and tests support it.
+
+**Planned channel expansion (Phase 7.5):** see [stereo audio, panning and unison](../audio/stereo-panning-and-unison.md#3-channel-aware-graph-and-audible-stereo). Explicit ordered L/R Audio ports and compatible rack pairs, channel-wise weighted fan-in and deliberate promotion/downmix/split/select adapters are proposed; modulation, pitch and rhythmic ports remain scalar. Existing mono port identities and saved routes must be preserved. Channel count metadata alone does not make stereo supported by the current compiler.

@@ -120,3 +120,5 @@ When swapping graphs, use an appropriate short fade/crossfade and preserve state
 - Measure CPU and underruns with representative complex patches, including multiple drones.
 
 **Performance specification (planned Phase 7.3):** see [performance.md](../../performance.md) for the Performance Monitor, precise metric definitions and availability limits, browser/Faust instrumentation, latency and underrun measurements, UI and compiler timings, benchmark patches, troubleshooting examples, and regression/acceptance criteria. Monitoring is passive and separate from graph state, playback and signal observation; it must not create audible paths or change sound.
+
+**Planned Phase 7.5:** [Stereo audio, panning and oscillator unison](stereo-panning-and-unison.md) proposes channel-aware Faust lowering and an explicit audible channel layout separate from auxiliary observation channels, plus independent unison oscillators within the existing graph compiler. Current mono/scalar lowering and host routing remain the implemented contract. Prioritize 7.3.1, 7.3.2 and 7.3.4 baseline profiling first, including crossfade peak resource usage.

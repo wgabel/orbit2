@@ -23,6 +23,8 @@ Performance has several independent dimensions:
 
 A single number called "performance" cannot answer these questions. The monitor should expose a small number of useful, honest metrics and allow an expanded diagnostic view when something goes wrong. It should let a musician build richer patches with confidence and let a developer or AI coding agent identify the relevant subsystem before changing code.
 
+**Delivery priority:** Phase 7.5 ([stereo audio, panning and oscillator unison](docs/audio/stereo-panning-and-unison.md)) should follow the 7.3.1 passive monitor, 7.3.2 compilation/runtime/resource diagnostics and 7.3.4 reproducible mono benchmark baseline. Unison multiplies waveform instances; stereo expands channel processing; graph crossfades temporarily run both old/new DSP. Establish measurements before introducing these costs and repeat the benchmark after each Phase 7.5 increment. Use the documented external/offline workflow when in-app load is unsupported. Editor monitoring (7.3.3) is recommended; the timing and advanced reports milestones need not delay Phase 7.5.
+
 ### Non-goals and invariants
 
 - Do not redesign the graph model, audio engine or Faust execution solely to display statistics.

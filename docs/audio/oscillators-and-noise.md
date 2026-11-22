@@ -20,3 +20,5 @@ flowchart TD
     C --> A[Bounded signal times effective amplitude]
     A --> O[Audio or modulation route]
 ~~~
+
+**Planned Phase 7.5:** [Stereo audio, panning and oscillator unison](stereo-panning-and-unison.md) extends the existing oscillator with independent detuned voices, normalized blend and deterministic initial phase spread, then explicit stereo output, pan and stereo spread. Single-voice mode preserves current sound and synchronized oscillators retain exact clock locking. Establish the Phase 7.3 performance baseline before introducing expensive voice banks.
