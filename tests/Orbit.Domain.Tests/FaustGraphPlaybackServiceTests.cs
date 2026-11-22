@@ -578,7 +578,10 @@ public sealed class FaustGraphPlaybackServiceTests
         var initial = service.GetGraphPerformanceSnapshot(session.GraphId)!;
         Assert.Equal(1L, initial.SourceBuilds);
         Assert.Equal(original.Revision, initial.AppliedRevision);
-        Assert.Equal(2, initial.ReachableLeafNodes);
+        // LFO + carrier + gain; the master output is not a DSP leaf.
+        Assert.Equal(3, initial.ReachableLeafNodes);
+        Assert.Equal(3, initial.ReachableEdges);
+        Assert.Equal(0, initial.BoundaryRoutes);
         Assert.NotNull(initial.SourceGenerationMs);
 
         var oscillator = original.Nodes[1];
