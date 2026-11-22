@@ -4,7 +4,7 @@
 
 Related: [canvas](canvas.md) · [design system](design-system.md) · [persistence and history](persistence-and-history.md) · [commands and events](../core/commands-and-events.md) · [connection visualization](annotations-and-connections.md) · [composite nodes](composite-nodes.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
 
-**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) in review; groups, overview, visibility and outline (6.19.3–6.19.4, 6.19.7–6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
+**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) in review ([PR #28](https://github.com/wgabel/orbit2/pull/28)); groups, overview, visibility and outline (6.19.3–6.19.4, 6.19.7–6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
 
 <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>
 
@@ -110,7 +110,10 @@ An alias is display metadata; it does not rename a registered type, alter its st
 
 Connection labels are equally optional and describe intent, e.g. "Brightness sweep" on a connection with a +600 Hz cutoff amount. The implemented [numeric badge and connection editor](annotations-and-connections.md) remain the authoritative presentation of the committed amount and destination unit. Show text as a distinct secondary label or tooltip/inspector detail, and preserve normal selection/editing even when descriptions are hidden. Do not store a second weight, replace the typed-event badge or conflate a label with measured modulation.
 
+<a id="node-and-connection-descriptions-implementation"></a>
 #### Node and connection descriptions — implementation (6.19.2, in review)
+
+Implementation: [PR #28](https://github.com/wgabel/orbit2/pull/28).
 
 Select one node or cable and choose **Describe selected**. The same unscaled editor handles node alias and multiline description or a single connection label; the selected connection's amount editor also offers **Edit connection label**. An existing node description has an info button, while aliases appear above the canonical node name and in composite breadcrumbs. The full alias and description remain accessible in the tooltip/editor; the shared frame truncates long names rather than widening. Empty alias restores the canonical name, and empty fields remove the metadata. Connection descriptions appear in the selected cable editor and badge tooltip, not in the numeric value itself. This also works for typed event and inactive connections; switching amount badges Off does not remove descriptions.
 
