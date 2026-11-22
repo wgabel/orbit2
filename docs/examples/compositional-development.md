@@ -2,6 +2,8 @@
 
 [Music creation index](README.md) · [Musical theory](music-theory-and-sound-design.md) · [Production iteration](mixing-mastering-and-analysis.md#5-agent-workflow-render--analyze--refine--re-render)
 
+Documentation provenance: [PR #43](https://github.com/wgabel/orbit2/pull/43) (composition guidance and listener-feedback case; no new engine features).
+
 **Principle: variation in instrumentation is not a substitute for variation in composition.** A compelling voice, a good motif and clean transitions can coexist with a monotonous piece. Changing only the gain or presence of repeating layers can create effective transitions, but may leave the underlying music unchanged. Design development at the timescales that matter for the musical brief.
 
 ## 1. Three levels of musical development
