@@ -22,7 +22,7 @@ Use this as a discovery index, not a substitute for the feature contracts or roa
 
 | Feature | Where to find practical instructions | Evidence |
 | --- | --- | --- |
-| Multi-node selection and marquee (in review) | [Select multiple nodes for reuse](patch-editor.md#select-multiple-nodes-for-reuse-in-review), [contract](../editor/reusable-modules.md#implementation-multi-node-selection-741-in-review) | Implementation PR pending |
+| Multi-node selection and marquee (in review) | [Select multiple nodes for reuse](patch-editor.md#select-multiple-nodes-for-reuse-in-review), [contract](../editor/reusable-modules.md#implementation-multi-node-selection-741-in-review) | [PR #45](https://github.com/wgabel/orbit2/pull/45) |
 | Monophonic Note Source | [Play held keyboard notes](sound-and-instruments.md#play-held-notes-with-note-source), [contract](../instruments/pitch-control.md#phase-723--note-source-in-review) | [PR #41](https://github.com/wgabel/orbit2/pull/41) — in review |
 | Searchable nested patch outline | [Search and navigate the entire patch](patch-editor.md#search-and-navigate-the-entire-patch), [contract](../editor/patch-annotations.md#3-patch-outline-and-navigation-6198--implemented) | [PR #39](https://github.com/wgabel/orbit2/pull/39) — merged |
 | Annotation visibility, zoom-dependent detail, hidden-item finder, signal-only fit | [Organize and perform](patch-editor.md#3-document-and-organize-a-patch), [contract](../editor/patch-annotations.md#2-annotation-visibility-and-zoom-dependent-detail-6197--implemented) | [PR #35](https://github.com/wgabel/orbit2/pull/35) |
