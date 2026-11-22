@@ -2,7 +2,7 @@
 
 [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
 
-Related: [graph model](../core/graph-model.md) · [commands and events](../core/commands-and-events.md) · [canvas](canvas.md) · [node presets](node-presets.md).
+Related: [graph model](../core/graph-model.md) · [commands and events](../core/commands-and-events.md) · [canvas](canvas.md) · [node presets](node-presets.md) · [reusable modules](reusable-modules.md) (planned separate graph-template storage and cloning).
 
 <a id="workspace-persistence-and-history-phases-68611"></a>
 

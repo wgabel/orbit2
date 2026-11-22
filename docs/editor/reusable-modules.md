@@ -1,0 +1,160 @@
+# Reusable composite modules and module library
+
+[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap, Phase 7.4](../roadmap/advanced.md#phase-74--reusable-composite-modules-planned)
+
+**Status:** Planned. This is the design contract for general-purpose reusable graphs, not an implementation record. Existing composite graphs, boundary racks, built-in drone/impact factories and individual node presets are already implemented; see [composite nodes](composite-nodes.md) and [node presets](node-presets.md).
+
+Related: [canvas](canvas.md) · [persistence and history](persistence-and-history.md) · [signals and ports](../core/signals-and-ports.md) · [commands and events](../core/commands-and-events.md) · [annotations](annotations-and-connections.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
+
+## 1. Purpose and terminology
+
+A musician who creates a good sound or useful routing pattern in one patch should be able to preserve it and insert it into any other patch without rebuilding the graph. A drone is one use of this feature, not a special node family or a separate editor. The same mechanism should support instruments, modulation systems, rhythmic generators, effect chains, layered textures and even complete compositions.
+
+| Concept | What it contains | How it is reused |
+|---|---|---|
+| Individual node preset | Base parameter configuration for one registered leaf type | Apply to an existing node without altering wiring (Phase 6.17) |
+| Composite node | An owned, editable child graph with Input/Output Racks | Open and edit in the shared nested canvas (Phase 5) |
+| Module preset/template | Immutable, reusable composite definition including graph, boundary and layout | Instantiate an independent composite in another graph (Phase 7.4) |
+| Patch | Root graph, master destination, project transport and workspace | Open as a whole workspace or deliberately convert to a module |
+| Visual group | Presentation-only collection of nodes (Phase 6.19.3) | Organize the canvas without changing signal topology |
+
+Use **Module Library** for the user-facing catalog of reusable composites. “Drone”, “Instrument”, “Texture”, “Modulation” and “Effect” are usage categories, not different domain types. Do not extend the leaf parameter preset format to pretend a graph is a parameter list.
+
+## 2. Musician workflows
+
+Support the following independent entry points:
+
+1. **Selection → Create composite:** select related nodes in any active canvas, choose Create composite, supply a name and review the automatically detected boundary. Replace the selection with a composite in the same patch; double-click to open its internal canvas.
+2. **Composite → Save to Module Library:** capture a composite directly from its menu, choose a name, category and optional description/tags; the source remains unchanged. No need to ungroup and regroup an existing module.
+3. **Patch → Save as Module:** capture a complete saved or current patch as an independent template without modifying or closing the original. Convert the Master Output connection into an internal Output Rack port. Review its external interface and timing assumptions before saving.
+4. **Add Node → Module Library:** browse or search built-in and custom modules, inspect inputs/outputs, description, complexity and optional transport assumptions; insert a new independent instance at the intended position. It can be edited like any ordinary composite.
+5. **Composite → Ungroup:** flatten exactly one composite level into its parent graph, preserving valid signal routing; nested composites remain composites.
+
+The current editor already has additive node selection via Shift/Ctrl/Meta and graph-scoped selection state. Extend and reuse this foundation rather than build a second selection model. Add rectangle/marquee selection, keyboard access and a contextual count/actions if useful; keep connection selection distinct from moving nodes. Selection never changes playback, graph revision or history.
+
+### Example: Deep Space Drone
+
+Construct two oscillators, pink noise, a mixer and reverb. Select all five, leaving the Master Output outside. Group them into a composite named Deep Space Drone. The existing reverb-to-master edge becomes a composite Audio output; optional Pitch and Intensity inputs can be exposed deliberately through its Input Rack. A self-contained module can have no inputs. Open the composite to tune it, save it under Drones, then add it twice in a different patch and set their pitches independently.
+
+```mermaid
+flowchart TD
+    S[Selected sound graph] --> C[Create composite]
+    C --> B[Review exposed ports]
+    B --> L[Save module definition]
+    L --> A[Insert independent instance A]
+    L --> D[Insert independent instance B]
+```
+
+### Example: reusable effect and musical layers
+
+Select the delay/reverb/EQ chain in a patch, leaving its source and destination outside. Grouping exposes an Audio input and Audio output. Save it as Dark Echo Chamber in Effects. In another composition connect a melodic voice to its input. For a whole ambient piece, insert different modules for the harmonic bed, bass, melodic accents, environmental texture and slow modulation, and coordinate them with the shared patch transport. Use the [composition guide](../examples/generative-ambient-composition.md) for arrangement and independent musical timescales. Saving a sound module alone does not create a complete arranged piece.
+
+## 3. Grouping and ungrouping contract
+
+Grouping is a structural graph edit, not a visual group or a sequence of UI-driven delete/add calls. Build and validate a complete candidate from the current immutable root snapshot, then commit it through the existing session/command machinery as one atomic edit.
+
+- Limit each selection to one owning graph, excluding its mandatory racks and root Master Output. Selecting a composite moves its owned descendants as a unit. Reject stale/missing IDs and invalid or empty selections clearly. Allow a single ordinary node if it is useful to wrap it. Disconnected selections may be useful as modules if valid.
+- Keep selected node/parameter/port identities where compatible with ownership and graph-qualified addressing; move internal edges, including dormant connections and their signed/zero amounts. Do not duplicate internal DSP nodes, discard configuration or implicitly activate dormant routing.
+- For each crossing edge generate typed boundary ports from actual endpoint contracts (signal type, channel count, direction, receiving fan-in); display candidate names derived from node/port labels and let the user rename them. Use stable IDs, not names, for both rack projections. Preserve Audio, Modulation, Trigger, Gate and Clock semantics, including allowed adapters and event unity rules.
+- Initially favor a conservative one-to-one boundary per crossing edge or a provably equivalent shared port. Place original continuous-edge weight on exactly one segment; the other must be unity. Preserve distinct external sources, fan-out, receiving sums, modulation units and event alignment. Never multiply weights twice, drop a negative weight, merge independent sources illegally or introduce an artificial DSP operation. Reuse one output for identical sources only if equivalent.
+- Keep the composite boundary public contract explicit. Grouping creates necessary crossings, not guessed pitch or volume ports for every internal parameter. Expose additional named ports deliberately via existing rack tools.
+- Validate the parent graph, new child graph, boundary consistency, ownership, nesting, port compatibility, cycles, cardinalities and compiler reachability. Non-contiguous selections can produce a parent-level cycle (e.g. selected A and C with unselected B in A→B→C). Reject a currently unrepresentable selection with a useful explanation and offer selecting the intervening nodes; never silently add feedback or alter dependencies.
+- Preserve existing neighboring placements. Place the new composite near the selection, transform selected relative positions into child coordinates, and use the established rack placement policy. Move/remap supported graph-qualified annotations and view preferences; keep unrelated parent layout intact. Reconcile selection and navigation after commit.
+- One successful grouping/ungrouping operation yields one revision, coherent facts, one undo step and one autosave/playback update. Undo/redo restores both configurations and the associated layout/navigation mapping. If the current history mechanism cannot coordinate layout provenance, extend it deliberately; do not claim ordinary position history is already implemented.
+
+### Crossing-edge example
+
+Before grouping, a parent LFO reaches an oscillator's modulation input with amount -25 in the destination's units. After grouping, the LFO controls an exposed Modulation input and the corresponding Input Rack output connects to the oscillator. Apply -25 on the internal edge and unity on the external edge if the boundary contract preserves those units. A reverb output reaching an external mixer with amount 0.4 becomes an internal unity edge to an Audio Output Rack and an external 0.4 edge. Verify actual flattening, not just visible labels.
+
+```mermaid
+flowchart TD
+    L[Parent LFO] -->|1| I[Input Rack]
+    subgraph C[Composite internal graph]
+        I -->|-25| O[Oscillator]
+        O --> R[Reverb]
+        R -->|1| U[Output Rack]
+    end
+    U -->|0.4| M[Parent mixer]
+```
+
+Ungrouping inverts the actual boundary routing, not merely the original grouping recipe. A user may have added internal branches, changed rack names, weights, fan-in, mute or nested graphs after grouping. Resolve current flattened dependencies, compose continuous weights once and preserve event unity. If a sum, unused/default input, macro, mute gate or other boundary behavior cannot be represented exactly by ordinary parent edges/nodes, reject with a concrete reason or explicitly materialize an equivalent supported adapter after preview/confirmation. Never silently change the sound. Ungroup can remove the wrapper/racks only after proving equivalence; preserve unrelated parent wiring and generate unique names/IDs where necessary.
+
+Grouping and ungrouping should preserve the audible mathematical graph. A structural edit may currently require the ordinary compile/voice crossfade and thus restart some runtime state. Avoid gratuitous recompilation; test deterministic flattened signal equivalence and use the existing last-good-voice protection. Do not promise phase/tail continuity for a recompiled graph unless separately proven; reuse improved topology equivalence when available.
+
+## 4. Module data, ownership and persistence
+
+A module definition is an immutable, schema-versioned data document; it is neither compiled DSP nor a running voice. Suggested fields (names are design sketches):
+
+- Definition ID, schema version, name, category, description, tags, optional attribution and template revision.
+- Canonical composite boundary definitions (including port order and identity) and internal graph snapshot: recursive nodes/types, stable configuration keys, parameters, ports, connections, weights, nested composites, supported persisted note patterns, audition flags and future supported payloads.
+- Child canvas layouts keyed by local graph/node IDs, supported annotation/visualization preferences, and optional macro definitions as Phase 7.4.6 becomes available.
+- Optional descriptive source metadata and transport assumptions (e.g. intended BPM, whether using beats or free seconds). No dependency on the source patch ID, active canvas, history, open captures, transport phase, live telemetry or compiled binaries.
+
+Reuse validated reconstruction/serialization infrastructure (currently `PatchDocumentSerializer`, `SavedGraph`, `SavedComposite`, `SavedCanvas`) where practical. Extend versioned payloads rather than silently dropping non-scalar graph features. Persist module definitions independently of named patches and individual node presets, through an application-facing repository and a dedicated IndexedDB logical namespace. Follow existing atomic compare-and-replace and storage error patterns; load the library independently of patch recovery.
+
+Saved module IDs identify definitions, not graph instances. Insertion deep-clones the entire definition, assigns fresh graph/node/parameter/port/connection/rack IDs and remaps assignments consistently, including mirrored boundary ports, nested graph addresses, layouts, visualization settings, annotations and future macro mappings. Use one shared identity-remapping utility, not string replacement or shallow copies. A boundary's mirrored socket ID must be remapped once to both projections. No mutable object, musical playhead or DSP state is shared between inserted instances.
+
+Existing instances carry their own complete serializable graph/parameters. Optional origin template ID/revision is provenance only. Editing, overwriting, renaming or deleting library entries never silently modifies an existing patch. Library management is not patch history; inserting/removing a module is normal atomic graph history. Undo insertion does not delete the definition.
+
+### Library presentation and management
+
+Reuse the Add Node catalog and shared menu/dialog patterns. Provide searchable categories (Drones, Instruments, Textures, Modulation, Effects, Rhythm, other/custom), user-defined labels where justified, input/output summary with signal types, internal node count, description, tags and usage example. Keep built-ins read-only and allow Save as copy. Existing built-in factory entries can coexist with data-driven user definitions; avoid one hardcoded UI case per module. Offer Save as, rename, category/description edit, explicit overwrite, delete, duplicate, preview and later import/export. Handle stale source snapshots and concurrent tabs, name/ID collisions and storage quota failures explicitly. A failing or canceled save must not mutate the current patch or the published catalog.
+
+## 5. Convert a complete patch to a module
+
+Use the same definition builder, not a second patch format. Read the complete root graph; substitute its terminal Master Output input with a public Audio Output Rack port (retaining actual receiver fan-in and weights), and add the mandatory Input Rack. Root-only sinks must not follow the graph into its child. Validate the supported Master topology; if missing, multiple or otherwise ambiguous in a future schema, prompt for a meaningful exported signal or reject. Do not invent a mix or omit audible branches.
+
+- Preserve nested composites and actual saved configuration, layout and connections. Include disconnected editable nodes unless the user explicitly chooses to prune them; disclose that reachability remains governed by ordinary compilation.
+- Root playback volume/envelope, physical device, running transport phase, current performance input focus and patch-specific history are not properties of the new module. Never introduce a second Master Output or audio destination.
+- Transport-dependent internal nodes use the **destination patch's shared transport**. Preview source BPM and differing musical timing. Do not silently change the destination tempo or bake BPM-based rates into free seconds; allow deliberate conversion or future explicit local timing as a separate capability. A 10-minute patch with tempo-dependent sections cannot be promised the same duration under every BPM.
+- Save as Module must not modify the source patch, even if it is playing. For a template intended as an effect/instrument rather than a self-contained source, provide an optional interface editing/preview step to expose inputs deliberately; do not auto-wire arbitrary external controls.
+
+## 6. Portable module files
+
+Export a single self-contained versioned module JSON (suggested `.orbit-module.json`) rather than a whole patch or leaf preset. Import previews name, version, graph complexity, boundary, category and dependencies before confirmation. Reuse strict schema validation and explicit identity-conflict choices from individual presets: preserve if unique, save a new definition copy, or deliberately replace a matching custom definition. Validate built-in identity protections, size/depth/node/edge/port limits, finite values, known type keys, schema and ownership, and all references on a detached graph. Reject invalid, unsupported or incomplete data without partial library changes or graph insertion. Future binary audio assets follow [Phase 8](../audio/sample-assets.md) portability/dependency rules; report or reject unresolved assets rather than silently substitute sound. No downloaded executable code or generated Faust is required in a module file.
+
+## 7. Composite macro controls
+
+A macro is a named, musician-facing control on a composite that maps one logical value to one or more internal parameters. Unlike an Input Rack socket alone, it has an editable base value and a parameter presentation (slider, units, range, default, optional modulation input). An exposed input can still be a pure audio, modulation or event routing port with no slider. A macro need not replace internal editing.
+
+| Macro | Example mappings when macro value moves from 0 to 1 |
+|---|---|
+| Warmth | Low-pass cutoff 4000 → 700 Hz (log interpolation); EQ low gain 0 → +4 dB |
+| Movement | Modulation depth 0.05 → 0.35; LFO rate 0.01 → 0.06 Hz |
+| Space | Reverb mix 0.15 → 0.60; decay 2 → 8 s; delay feedback within safe bounds |
+| Intensity | Multiple oscillator gains increase within estimated mix headroom |
+
+Values are illustrative; validate against actual node definitions, parameter units/ranges and safe gain staging. Support direct one-target controls first, then multiple targets and inverse/linear/log mappings. A module creator selects a supported internal parameter, chooses its intended range and relationship and previews resulting values. Store stable macro IDs, metadata, default/base value, ordered mappings to graph-qualified stable parameter targets and an explicit mapping mode. Prefer normalized 0–1 controls for multi-target heterogeneous units; use physical units when a simple direct control is more meaningful.
+
+Define an unambiguous control contract before shipping:
+
+- A base-value edit uses one validated command and history entry. Avoid repeatedly overwriting or losing internal manual settings. Distinguish manual base value, macro-controlled contribution/override and other incoming modulation. Expose mapping status in the internal parameter UI. Define one deterministic ownership/combination rule for several macro targets; initially reject conflicting overrides instead of allowing last-writer-wins. Removing/unassigning a macro restores or retains the explicitly documented manual configuration rather than changing values unexpectedly.
+- Continuous modulatable macros must use existing sample-rate parameter/control and modulation lowering semantics; never drive audio-rate modulation by periodic Blazor commands. A stable modulation socket should flow through the same boundary/compiler resolution. Include range prediction and effective-value telemetry where meaningful. Macros must be bounded and composable; no cycles, arbitrary scripts, event-to-number coercion or unvalidated choice mappings. Structural choices may be handled later through explicit transactions, not audio-rate modulation.
+- Clone/remap macro mappings with graph copies, persist in portable modules and patch snapshots, and validate target deletion or ungrouping. Do not leave orphaned mappings. Mappings are configuration changes; ordinary continuous value edits should use existing live control smoothing without recompilation when topology is unchanged.
+
+Example front panel for Deep Space Drone: Warmth, Movement, Space sliders, Pitch modulation input and Audio output, with Open internals always available. Rich macros can come after basic grouping/library support; the library must not depend on them.
+
+## 8. Independent copies first; optional linked/versioned templates later
+
+Initial implementation inserts independent copies only. Two instances can have different tuning, internal edits and runtime state, and a portable patch is self-contained.
+
+Later investigate optional provenance-aware revision updates: user explicitly previews differences, maps old/new boundary IDs, resolves conflicts with local edits, and chooses which instances update. Support pinned revisions, safe undo, compatibility/migration and missing/deleted library entries without broken playback. Never replace a live graph just because a library entry changed. Avoid mandatory external references and do not require linked-template support before delivering useful independent modules.
+
+## 9. Implementation boundaries and verification
+
+Follow [project responsibility boundaries](../core/project-structure.md). Domain validates graph transformation and ownership; Application owns commands, template capture/clone and library services; Presentation owns selection/layout projection and preview; Infrastructure provides storage/portable files; UI assembles reusable controls; the existing compiler flattens normal composites, without module-name-specific synthesis rules. Use existing code and tests to determine precise implementation touchpoints; this design is not a fixed class-name prescription.
+
+Deliver and test in [Phase 7.4 increments](../roadmap/advanced.md#phase-74--reusable-composite-modules-planned). Important acceptance cases:
+
+| Area | Acceptance evidence |
+|---|---|
+| Selection | Additive/marquee selection, nested canvas isolation, rack/master exclusion, no audio revision for visual selection |
+| Group/ungroup | Weighted Audio/Modulation, trigger/gate/clock, fan-out and sums, dormant links, nested graphs, invalid cyclic selections rejected atomically |
+| Sound | Equivalent flattened routing and offline deterministic samples at 44.1/48 kHz where meaningful; no leakage or duplicate DSP roots; last-good live runtime on failed compilation |
+| History/layout | One undo/redo for structural edit, restored parent/child positions, independent selections, retained annotations/preferences, save/reload |
+| Module cloning | Repeated insert in root/child, distinct IDs and runtime state, no external references, rename/delete/overwrite leaves placed instances intact |
+| Patch conversion | Original unchanged; same master-feed signal before host gain; destination transport rules explicit; no child Master Output |
+| Storage/import | Restart and cross-tab conflict, malformed/oversized data and unsupported versions, no partial commits, repeat export/import and independent portable copies |
+| Macros | Direct/multi-target mappings, inverse/log ranges, conflicts and removal, undo, modulation, independent instances and no unnecessary compile |
+
+Use a substantial ambient graph as a worked end-to-end fixture alongside small deterministic unit cases. Profile resource usage for repeated large modules under Phase 7.3; reusable definitions are not an optimization that automatically shares DSP computation. Record actual implementation PRs in this module and the milestone register as work ships, distinguishing design, in-review and merged evidence.

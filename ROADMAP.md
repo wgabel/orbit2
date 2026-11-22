@@ -24,6 +24,7 @@
 | Envelope curve, measured output and live stage | Implemented · 7.1.5 | [Envelopes](docs/audio/envelopes.md); [PR #14](https://github.com/wgabel/orbit2/pull/14) |
 | Live keyboard and pitch pattern sequencer | Implemented · 7.2.8a–c | [Note Sequencer](docs/instruments/note-sequencer.md); [PR #16](https://github.com/wgabel/orbit2/pull/16), [PR #17](https://github.com/wgabel/orbit2/pull/17), [PR #19](https://github.com/wgabel/orbit2/pull/19) |
 | Composite boundary visibility | Implemented · 6.19.6 | [Composite nodes](docs/editor/composite-nodes.md); [PR #18](https://github.com/wgabel/orbit2/pull/18) |
+| Reusable custom composite modules, grouping, patch-to-module conversion, macros | Planned · 7.4; existing additive selection and built-in composite factories are foundations | [Reusable modules](docs/editor/reusable-modules.md) |
 | Playable note source, Note-mode articulation, resonators, polyphony | Planned · remaining Phase 7 | [Sequencer design](docs/instruments/note-sequencer-design.md), [physical modelling](docs/instruments/physical-modelling.md), [polyphony](docs/instruments/polyphony.md); [PR #9](https://github.com/wgabel/orbit2/pull/9) is design documentation only |
 | Post-mixer pitch shifter; recorded audio assets and sample synthesis | Planned · 6.20, Phase 8 | [Pitch shifter](docs/audio/pitch-shifter.md), [audio assets](docs/audio/sample-assets.md) |
 
@@ -40,6 +41,7 @@ Keep identifiers stable even when independent milestones ship out of numerical o
 | Track | Delivered now | Next work |
 |---|---|---|
 | Foundation and editor | 1–5; 6.1–6.17 | Deferred version-aware reload / additional graph reuse |
+| Reusable modules | Composite graphs, built-in composite factories, additive selection, leaf preset library | 7.4.1–7.4.5 selection/grouping, independent module library, whole-patch reuse and portable module JSON; 7.4.6 macros; optional 7.4.7 linked versions |
 | Visualization | 6.18.1–6.18.5 | 6.18.8 dynamic signal taps in review ([PR #20](https://github.com/wgabel/orbit2/pull/20)); then 6.18.6 analyzer sink, 6.18.7 advanced comparisons and profiling |
 | Patch organization | 6.19.5 core; 6.19.6 boundary visibility | 6.19.1–6.19.4 notes, descriptions, groups, discovery; optional badge refinements |
 | Rhythmic articulation | 7.1.1–7.1.5 | 7.1.6–7.1.7 |
@@ -58,4 +60,4 @@ The most direct drone-performance path is 7.2.2 and 7.2.8a–b (delivered) → 7
 
 - [Phases 1–6.15: foundations, timing, sound generation, workspace and effects](docs/roadmap/foundation.md)
 - [Phases 6.16–6.20: audition, presets, plots, organization and pitch shifting](docs/roadmap/editor-and-effects.md)
-- [Phases 7–8: envelopes, musical control, instruments, performance and samples](docs/roadmap/advanced.md)
+- [Phases 7–8: envelopes, musical control, instruments, performance, reusable modules and samples](docs/roadmap/advanced.md)
