@@ -4,6 +4,8 @@
 
 Related: [envelopes](../audio/envelopes.md) · [pitch control](pitch-control.md) · [polyphony](polyphony.md) · [instrument recipes](../examples/instrument-recipes.md).
 
+For the expansion beyond these existing resonator-based approximations, see [Faust-first realistic instrument emulation](realistic-instrument-emulation.md) (7.2.7): audit exact dependency licenses, evaluate upstream waveguide/excitation/models, add continuous expression and validate sound and performance. The current resonator remains an independent primitive.
+
 For practical wiring, playing and retuning examples, see [built-in instruments and resonators](../usage/sound-and-instruments.md#3-built-in-instruments-and-resonators).
 
 ##### Resonator processor and modal synthesis
