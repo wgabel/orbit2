@@ -10,6 +10,8 @@ For the principles behind tuning, harmonic content, articulation, level balancin
 
 For a richer musical sound palette and candidate editable instrument recipes, including intentional noise shaping and an audition/revision process, see [sound quality and voice design](sound-quality-and-voice-design.md). These complement the instrument approximations below rather than claiming additional deployed presets.
 
+For an analyzed, listener-validated synthetic instrument foundation rather than an acoustic approximation, see [breathing harmonic drone](foundations/breathing-harmonic-drone.md): a heavy, evolving sound based on interacting oscillators, modulation and chorus. It is a reference graph, not a shipped composite preset.
+
 <a id="musical-instrument-synthesis-and-physical-modelling-planned-phase-72"></a>
 
 #### Musical instrument synthesis and physical modelling (Phase 7.2 — partial)

@@ -6,6 +6,12 @@ Documentation provenance: [PR #29](https://github.com/wgabel/orbit2/pull/29) (gu
 
 This is a practical companion for **finished musical voices**, rather than a catalog of new node types. A graph can be valid and its harmony and arrangement good while its instruments sound thin, hollow, synthetic in an unintended way, or tiring. Work on the instrument before trying to fix its identity on the master. A sound with few nodes can be excellent; complexity, extra oscillators and maximum wet effects do not automatically improve it.
 
+### Sound-design foundations (listening-validated references)
+
+Foundations record useful, generalizable sound relationships demonstrated by a real patch and listener feedback. They are a growing palette, not prescribed recipes for every piece or a claim of shipped presets. Different musical roles may call for simpler or entirely different designs.
+
+- **01 — [Breathing harmonic drone](foundations/breathing-harmonic-drone.md):** monumental, heavy, wet, industrial, grungy, dark and grim. Weighted, slightly detuned octaves, audio-rate-to-amplitude interaction on a slow oscillator, coordinated cutoff and chorus generate emergent harmonic movement with no raw noise. The reference documents the nonlinear behavior, headroom/subsonic risks and transferable experiments. Design relationships rather than just layering sounds.
+
 ## 1. Musical quality targets and feedback
 
 For polished ambient, space music, melodic electronica and bass hybrids, prefer distinctive, dimensional and evolving voices. Avoid the feel of an isolated test oscillator or an exposed steady broadband noise source. This preference comes from the listening feedback on the original ten-minute *Event Horizon — A Signal Returns* patch: the composition and transitions worked, several voices were appreciated, but prominent recognizable noise and hollow/basic synth timbres reduced the quality of the whole. Preserve the successful form when evaluating a revised palette. It is not a rule banning experimental noise, deliberate chip-style tones, minimalist sine music or clear sub fundamentals; a different brief may deliberately choose those qualities.
