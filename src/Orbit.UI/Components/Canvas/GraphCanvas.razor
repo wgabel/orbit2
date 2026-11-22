@@ -17,6 +17,15 @@
             {
                 <ConnectionAmountBadge @key="wire.Id" Wire="@wire" Zoom="@Snapshot.Viewport.Zoom" OnSelect="SelectConnection" />
             }
+            @foreach (var note in Snapshot.Notes)
+            {
+                <NoteCard @key="note.Id" Note="@(notePreview?.Id == note.Id ? notePreview : note)" Selected="@(Snapshot.SelectedNoteId == note.Id)"
+                          Locked="@(HasNoteDraft || NoteActionsDisabled)"
+                          OnMove="@(args => BeginNoteAsync(note, args, false))" OnResize="@(args => BeginNoteAsync(note, args, true))"
+                          OnSelect="@(() => { State.SelectNote(note.Id); })" OnEdit="@(() => BeginNoteEditAsync(note.Id))"
+                          OnUpdate="UpdateNote" OnDuplicate="@(() => NoteAction(() => State.DuplicateNote(note.Id)))"
+                          OnDelete="@(() => NoteAction(() => State.DeleteNote(note.Id)))" />
+            }
             @foreach (var node in Snapshot.Graph.Nodes.OrderBy(node => node.TypeKey is InputRack.NodeType or OutputRack.NodeType ? 1 : 0))
             {
                 <NodeFrame @key="node.Id" Node="@node" Position="@Snapshot.NodePositions[node.Id]" PatchId="@PatchId" GraphId="@Snapshot.GraphId"
@@ -34,6 +43,10 @@
                            OnParameterEdit="OnParameterEdit" OnParameterGestureEnded="OnParameterGestureEnded" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" Playhead="@EnvelopePlayheads.GetValueOrDefault(node.Id)" BeatsPerMinute="@BeatsPerMinute" SampleRate="@SampleRate" />
             }
         </div>
+        @if (Snapshot.Notes.FirstOrDefault(note => note.Id == editingNote) is { } editing)
+        {
+            <NoteEditor @key="editing.Id" Note="@editing" OnApply="FinishNoteEditAsync" OnCancel="@(() => FinishNoteEditAsync(null))" />
+        }
         <div class="connection-label-control" @onpointerdown:stopPropagation="true">
             <label for="connection-label-mode">Connection labels</label>
             <select id="connection-label-mode" @bind="LabelMode" aria-label="Connection labels">
@@ -43,7 +56,7 @@
                 }
             </select>
         </div>
-        <span class="canvas-count">@($"{Snapshot.Graph.Nodes.Count} nodes · {Snapshot.Graph.Connections.Count} connections")</span>
+        <span class="canvas-count">@($"{Snapshot.Graph.Nodes.Count} nodes · {Snapshot.Graph.Connections.Count} connections{(Snapshot.Notes.Count > 0 ? $" · {Snapshot.Notes.Count} notes" : "")}")</span>
         @if (CanShowScope)
         {
             <button type="button" class="secondary canvas-scope-action" @onpointerdown:stopPropagation="true"
@@ -57,7 +70,7 @@
                                     Anchor="@Snapshot.Viewport.WorldToScreen(new CanvasPoint(selectedWire.BadgeX, selectedWire.BadgeY))"
                                     Dispatch="@DispatchConnectionAmount" OnCancel="CloseConnectionEditorAsync" />
         }
-        @if (Snapshot.Graph.Nodes.Count == 0)
+        @if (Snapshot.Graph.Nodes.Count == 0 && Snapshot.Notes.Count == 0)
         {
             <div class="canvas-empty">Add a node to start building your graph.</div>
         }

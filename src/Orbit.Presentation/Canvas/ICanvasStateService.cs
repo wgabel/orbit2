@@ -16,6 +16,13 @@ public interface ICanvasStateService : IDisposable
     CanvasChangeResult SelectNode(Guid nodeId, bool additive = false);
     CanvasChangeResult SelectConnection(Guid connectionId, bool additive = false);
     CanvasChangeResult ClearSelection();
+    CanvasChangeResult AddNote(CanvasBounds visible, IEnumerable<CanvasBounds> occupied);
+    CanvasChangeResult UpdateNote(SavedNote note);
+    CanvasChangeResult SelectNote(Guid id);
+    CanvasChangeResult DeleteNote(Guid id);
+    CanvasChangeResult DuplicateNote(Guid id);
+    CanvasChangeResult UndoNote();
+    CanvasChangeResult RedoNote();
     CanvasChangeResult PanBy(CanvasPoint screenDelta);
     CanvasChangeResult ZoomAt(double zoom, CanvasPoint screenAnchor);
     CanvasChangeResult ResetViewport();

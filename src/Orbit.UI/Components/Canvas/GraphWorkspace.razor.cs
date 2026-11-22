@@ -68,10 +68,12 @@ public partial class GraphWorkspace : IDisposable
     private long workspaceGeneration;
     private bool switchingWorkspace;
     private bool addingNode;
+    private bool noteDraft;
+    private const string NoteType = "canvas.note";
     private static readonly GridNodePlacementPolicy Placement = new(columnSpacing: 320, rowSpacing: 360, columns: 4);
     private NodeRegistry catalog = default!;
     private IEnumerable<string> RegisteredTypes => catalog.RegisteredTypes.Where(type =>
-        Canvas.Snapshot.GraphId == session.GraphId || type != MasterOutput.NodeType);
+        Canvas.Snapshot.GraphId == session.GraphId || type != MasterOutput.NodeType).Append(NoteType);
     private string SelectedType { get; set; } = "";
     private string? Error { get; set; }
     private (Guid GraphId, Guid NodeId)? editingRack;
@@ -90,7 +92,7 @@ public partial class GraphWorkspace : IDisposable
             Canvas.SetVisualization(nodeId, settings);
     }
     private bool HasSelection => DeletableNodes.Any() ||
-        Canvas.Snapshot.SelectedConnectionIds.Count > 0;
+        Canvas.Snapshot.SelectedConnectionIds.Count > 0 || Canvas.Snapshot.SelectedNoteId is not null;
     private SignalConnection? SelectedConnection => Canvas.Snapshot.SelectedConnectionIds.Count == 1
         ? Canvas.Snapshot.Graph.Connections.SingleOrDefault(edge => edge.Id == Canvas.Snapshot.SelectedConnectionIds[0])
         : null;
@@ -148,6 +150,25 @@ public partial class GraphWorkspace : IDisposable
     private PatchDocument CaptureWorkspace() => Serializer.Capture(session, tempo,
         Canvas.Snapshot.GraphId, Navigation.CaptureLayouts());
 
+    private PatchDocument CaptureCommittedWorkspace()
+    {
+        if (noteDraft) throw new InvalidOperationException("Apply or cancel the note edit first.");
+        return CaptureWorkspace();
+    }
+
+    private bool CheckNoteDraft()
+    {
+        if (!noteDraft) return true;
+        Error = "Apply or cancel the note edit first.";
+        return false;
+    }
+
+    private void OnNoteDraftChanged(bool active)
+    {
+        noteDraft = active;
+        if (!active && Error == "Apply or cancel the note edit first.") Error = null;
+    }
+
     private async Task NewWorkspaceAsync()
     {
         using var fresh = new PatchSession(catalog);
@@ -159,6 +180,7 @@ public partial class GraphWorkspace : IDisposable
     // Playback must be stopped; a new generation recreates presentation and playback views.
     private async Task ReplaceWorkspaceAsync(PatchDocument document)
     {
+        if (noteDraft) throw new InvalidOperationException("Apply or cancel the note edit first.");
         if (switchingWorkspace || playbackControls?.CanReplaceWorkspace != true)
             throw new InvalidOperationException("Stop playback before opening another patch.");
         switchingWorkspace = true;
@@ -243,10 +265,11 @@ public partial class GraphWorkspace : IDisposable
 
     private void OnSampleRateChanged(int? sampleRate) => responseSampleRate = sampleRate;
 
-    private string DescribeType(string type) => catalog.Describe(type);
+    private string DescribeType(string type) => type == NoteType ? "Note (annotation)" : catalog.Describe(type);
 
     private void OpenComposite(Guid graphId, Guid nodeId)
     {
+        if (!CheckNoteDraft()) return;
         if (graphId != Canvas.Snapshot.GraphId) return;
         Error = null;
         session.CompleteHistoryGesture();
@@ -258,6 +281,7 @@ public partial class GraphWorkspace : IDisposable
 
     private void NavigateTo(Guid graphId)
     {
+        if (!CheckNoteDraft()) return;
         Error = null;
         session.CompleteHistoryGesture();
         CloseRackEditor();
@@ -315,12 +339,18 @@ public partial class GraphWorkspace : IDisposable
 
     private async Task AddNodeAsync()
     {
-        if (switchingWorkspace || addingNode || canvasView is null) return;
+        if (switchingWorkspace || addingNode || canvasView is null || !CheckNoteDraft()) return;
         var canvas = Canvas;
         var type = SelectedType;
         addingNode = true;
         try
         {
+            if (type == NoteType)
+            {
+                if (!await canvasView.AddNoteAsync()) Error = "The canvas view changed. Try adding the note again.";
+                else Error = null;
+                return;
+            }
             using var placement = await canvasView.ReserveVisibleNodePlacementAsync();
             if (disposed || switchingWorkspace || !ReferenceEquals(Canvas, canvas)) return;
             if (placement is null)
@@ -336,10 +366,12 @@ public partial class GraphWorkspace : IDisposable
 
     private void Undo() => RestoreHistory(session.Undo);
     private void Redo() => RestoreHistory(session.Redo);
+    private void UndoNote() { if (CheckNoteDraft()) Canvas.UndoNote(); }
+    private void RedoNote() { if (CheckNoteDraft()) Canvas.RedoNote(); }
 
     private void RestoreHistory(Func<GraphCommandResult> operation)
     {
-        if (switchingWorkspace) return;
+        if (switchingWorkspace || !CheckNoteDraft()) return;
         Error = null;
         try
         {
@@ -404,9 +436,15 @@ public partial class GraphWorkspace : IDisposable
 
     private void DeleteSelection()
     {
+        if (!CheckNoteDraft()) return;
         // Snapshot selection before commands reconcile the view. Each node is
         // removed atomically with all its incident edges by SignalGraph.
         var selected = Canvas.Snapshot;
+        if (selected.SelectedNoteId is Guid noteId)
+        {
+            Canvas.DeleteNote(noteId);
+            return;
+        }
         var nodes = DeletableNodes.ToArray();
         foreach (var id in selected.SelectedConnectionIds)
             if (!Execute(new RemoveConnectionCommand(selected.GraphId, id))) return;

@@ -51,18 +51,26 @@ public sealed class GridNodePlacementPolicy : INodePlacementPolicy
     /// Search the visible rectangle for space, preferring its center. Even if the view is
     /// crowded or smaller than one slot, the new frame's upper-left corner stays visible.</summary>
     public CanvasPoint FindVisiblePosition(CanvasBounds visibleBounds, IEnumerable<CanvasBounds> occupiedBounds)
+        => FindVisiblePositionCore(visibleBounds, occupiedBounds, null, rowSpacing);
+
+    public CanvasPoint FindVisiblePosition(CanvasBounds visibleBounds, IEnumerable<CanvasBounds> occupiedBounds, double width, double height)
+        => FindVisiblePositionCore(visibleBounds, occupiedBounds, width, height);
+
+    private CanvasPoint FindVisiblePositionCore(CanvasBounds visibleBounds, IEnumerable<CanvasBounds> occupiedBounds, double? footprintWidth, double footprintHeight)
     {
         if (!visibleBounds.IsValid) throw new ArgumentOutOfRangeException(nameof(visibleBounds));
         ArgumentNullException.ThrowIfNull(occupiedBounds);
         var measured = occupiedBounds.Where(bounds => bounds.IsValid).ToArray();
         // Node frames share one tokenized width; use the measured width when
         // available instead of assuming the whole grid column is occupied.
-        var frameWidth = measured.Length == 0 ? columnSpacing : measured.Max(bounds => bounds.Width);
+        var frameWidth = footprintWidth ?? (measured.Length == 0 ? columnSpacing : measured.Max(bounds => bounds.Width));
+        if (!double.IsFinite(frameWidth) || frameWidth <= 0 || !double.IsFinite(footprintHeight) || footprintHeight <= 0)
+            throw new ArgumentOutOfRangeException(nameof(footprintWidth));
         var searchBounds = new CanvasBounds(visibleBounds.Left, visibleBounds.Top,
-            visibleBounds.Right + frameWidth, visibleBounds.Bottom + rowSpacing);
+            visibleBounds.Right + frameWidth, visibleBounds.Bottom + footprintHeight);
         var occupied = measured.Where(bounds => OverlapArea(bounds, searchBounds) > 0).ToArray();
         var width = Math.Min(frameWidth, visibleBounds.Width);
-        var height = Math.Min(rowSpacing, visibleBounds.Height);
+        var height = Math.Min(footprintHeight, visibleBounds.Height);
         var availableX = visibleBounds.Width - width;
         var availableY = visibleBounds.Height - height;
         var center = new CanvasPoint(visibleBounds.Left + availableX / 2, visibleBounds.Top + availableY / 2);
@@ -87,15 +95,15 @@ public sealed class GridNodePlacementPolicy : INodePlacementPolicy
                 xs.Add(Math.Clamp(obstacle.Right, visibleBounds.Left, visibleBounds.Left + availableX));
                 xs.Add(Math.Clamp(obstacle.Left - frameWidth, visibleBounds.Left, visibleBounds.Left + availableX));
                 ys.Add(Math.Clamp(obstacle.Bottom, visibleBounds.Top, visibleBounds.Top + verticalRange));
-                ys.Add(Math.Clamp(obstacle.Top - rowSpacing, visibleBounds.Top, visibleBounds.Top + verticalRange));
+                ys.Add(Math.Clamp(obstacle.Top - footprintHeight, visibleBounds.Top, visibleBounds.Top + verticalRange));
             }
             foreach (var y in ys.Order())
             foreach (var x in xs.Order())
             {
                 var candidate = new CanvasPoint(x, y);
-                var bounds = new CanvasBounds(candidate.X, candidate.Y, candidate.X + frameWidth, candidate.Y + rowSpacing);
+                var bounds = new CanvasBounds(candidate.X, candidate.Y, candidate.X + frameWidth, candidate.Y + footprintHeight);
                 var overlap = occupied.Sum(node => OverlapArea(node, bounds));
-                var clipping = Math.Max(0, frameWidth * rowSpacing - OverlapArea(bounds, visibleBounds));
+                var clipping = Math.Max(0, frameWidth * footprintHeight - OverlapArea(bounds, visibleBounds));
                 var distance = Math.Pow(candidate.X - center.X, 2) + Math.Pow(candidate.Y - center.Y, 2);
                 if (overlap < bestOverlap || overlap == bestOverlap &&
                     (clipping < bestClipping || clipping == bestClipping && distance < bestDistance))
@@ -113,7 +121,7 @@ public sealed class GridNodePlacementPolicy : INodePlacementPolicy
         // extend below the viewport, keeping its draggable header on screen.
         // Do not hide existing controls just to fit the new frame completely.
         if (bestOverlap > 0)
-            Search(Math.Max(availableY, visibleBounds.Height - Math.Min(rowSpacing / 4, visibleBounds.Height)));
+            Search(Math.Max(availableY, visibleBounds.Height - Math.Min(footprintHeight / 4, visibleBounds.Height)));
         return best;
     }
 

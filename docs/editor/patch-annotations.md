@@ -4,11 +4,11 @@
 
 Related: [canvas](canvas.md) · [design system](design-system.md) · [persistence and history](persistence-and-history.md) · [commands and events](../core/commands-and-events.md) · [connection visualization](annotations-and-connections.md) · [composite nodes](composite-nodes.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
 
-**Status:** Planned (6.19.1–6.19.4, 6.19.7–6.19.8). This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
+**Status:** Note cards (6.19.1) in review ([PR #27](https://github.com/wgabel/orbit2/pull/27)); aliases, descriptions, groups, overview, visibility and outline (6.19.2–6.19.4, 6.19.7–6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
 
 <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>
 
-### Patch documentation and canvas annotations (Phase 6.19.1–6.19.4 — planned)
+### Patch documentation and canvas annotations (Phase 6.19.1–6.19.4)
 
 The independent cable badge/editor (6.19.5) has shipped; it does not depend on these presentation-only annotations.
 
@@ -22,6 +22,30 @@ Complex patches should explain their musical intent as well as their signal topo
 - Use selectable notes in Fit-to-content and shared hit testing, without counting them as signal nodes or introducing fake connectors. Notes remain visible when playback is stopped and survive pan/zoom, navigation, autosave, restart, named save and JSON import/export.
 
 Example: a note titled “Thump — pitch and noise” explains a short high-frequency onset, descending pitch, longer low-frequency decay and a filtered noise transient; the neighboring nodes remain independently editable.
+
+#### Note cards — implementation (6.19.1, in review)
+
+Choose **Note (annotation)** in Add node, then **Add**. Drag the header to move the card, **Edit** to change title/body/accent in the unscaled canvas editor overlay, and drag the lower-right handle (or use its arrow keys) to resize. Collapse/expand preserves the expanded dimensions. The selected note can be duplicated or deleted; a collapsed note can also be removed using Delete selected. **Undo note / Redo note** are per-canvas, independent of graph Undo / Redo, with up to 100 operations. Drag and resize previews commit only on release; Escape cancels a gesture or an open text draft. Apply commits the complete draft; Cancel discards it. Navigation, patch replacement and explicit save/export are blocked while a draft is open; supported browsers warn before closing/reloading. Recovery saves only committed text.
+
+`SavedCanvas.Notes` defaults to an empty list for older schema-1 documents. Each record stores ID, title, body, accent, x/y, width/height and collapsed flag, with graph ownership inherited from its layout. Validation enforces 200 notes per graph, 120 title and 16,000 body characters per note, finite coordinates within ±1,000,000 world units, width 220–1,200, height 150–1,200, a valid accent and unique nonempty IDs within the graph. The existing 10 MiB JSON import limit applies. Default dimensions are 300 × 200 world units; collapsed height is 44. The optional fields use the same source-generated patch JSON and existing recovery/named-save storage. The note history and active selection are transient. Removed child layouts retain committed notes for graph undo, not annotation history. Fit includes note bounds and measured signal frames; adding notes and nodes uses measured occupied bounds. There is no registry entry or graph command for a note.
+
+For agents generating patch documents, add a `notes` array to the existing canvas layout object for the owning graph. Accent values are numeric, as in other schema-1 enums: 0 neutral, 1 idea, 2 instruction, 3 warning. For example, a single array entry:
+
+```json
+{
+  "id": "cc109484-4a18-4a52-9066-084db8878d19",
+  "title": "Harmonic foundation",
+  "body": "A minor.\nKeep the fifth quieter than the root.",
+  "accent": 2,
+  "x": 320,
+  "y": 120,
+  "width": 300,
+  "height": 200,
+  "collapsed": false
+}
+```
+
+Generate a fresh UUID for each new note; choose bounds that do not obscure actual signal nodes.
 
 #### Descriptive patch features
 
@@ -164,4 +188,4 @@ Keep the original state/persistence/history contracts above authoritative. When 
 | Audio isolation | During continuous playback perform every annotation and navigation action and verify unchanged root graph revision, DSP source/runtime generation and no graph-history entry. |
 | Agents / examples | Annotated example patch explains roles and actual settings, overview provides musical purpose and manual instructions, optional metadata remains data-only and valid. |
 
-These are separate deliverable increments in the [Phase 6.19 register](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-planned). Implement 6.19.1/6.19.2 first for immediate usefulness in generated musical patches; the other increments can proceed independently as their model/UI foundations are available. Record actual implementation PR links here and in the roadmap as features ship.
+These are separate deliverable increments in the [Phase 6.19 register](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-planned). With 6.19.1 in review, implement 6.19.2 next for immediate usefulness in generated musical patches; the other increments can proceed independently as their model/UI foundations are available. Record actual implementation PR links here and in the roadmap as features ship.

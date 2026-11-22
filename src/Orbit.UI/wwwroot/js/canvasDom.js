@@ -14,6 +14,16 @@ export function capturePointer(viewport, pointerId) {
     }
 }
 
+function warnNoteDraft(event) {
+    event.preventDefault();
+    event.returnValue = true;
+}
+
+export function setNoteDraftWarning(active) {
+    if (active) window.addEventListener("beforeunload", warnNoteDraft);
+    else window.removeEventListener("beforeunload", warnNoteDraft);
+}
+
 export function measureCanvas(viewport, zoom) {
     const bounds = viewportBounds(viewport);
     const nodes = [];
