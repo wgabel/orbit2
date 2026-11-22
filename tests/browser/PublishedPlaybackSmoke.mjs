@@ -99,6 +99,7 @@ try {
     for (const [key, name] of [["organ", "Organ"], ["flute", "Flute"], ["brass", "Brass"],
         ["bowed-strings", "Bowed strings"], ["didgeridoo", "Didgeridoo"]]) {
         assert.equal(await page.locator(`#node-type option[value="preset.instrument.${key}"]`).textContent(), `Instrument — ${name}`);
+        assert.equal(await page.locator(`#node-type option[value="preset.instrument.playable-${key}"]`).textContent(), `Playable — ${name}`);
     }
     const viewport = page.locator(".canvas-viewport");
     const panCanvas = async delta => {

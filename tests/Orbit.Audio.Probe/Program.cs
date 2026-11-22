@@ -212,6 +212,27 @@ var instruments = new[] { InstrumentTemplates.Organ, InstrumentTemplates.Flute, 
 }).ToArray();
 File.WriteAllText(Path.Combine(args[0], "instruments.json"), JsonSerializer.Serialize(instruments));
 
+var playableInstruments = new[] { InstrumentTemplates.PlayableOrgan, InstrumentTemplates.PlayableFlute,
+    InstrumentTemplates.PlayableBrass, InstrumentTemplates.PlayableStrings, InstrumentTemplates.PlayableDidgeridoo }.Select(key =>
+{
+    using var playableSession = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+    var playableRoot = playableSession.GraphId;
+    GraphNodeSnapshot AddPlayable(string type) => playableSession.Execute(new AddNodeCommand(playableRoot, type))
+        .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+    var instrument = AddPlayable(key);
+    var note = AddPlayable(NoteSourceGenerator.NodeType);
+    var playableMaster = AddPlayable(MasterOutput.NodeType);
+    foreach (var (port, index) in new[] { ("pitch-out", 0), ("gate-out", 1), ("velocity-out", 2) })
+        playableSession.Execute(new ConnectNodesCommand(playableRoot, new(note.Id, note.Outputs.Single(p => p.Key == port).Id), new(instrument.Id, instrument.Inputs[index].Id)));
+    playableSession.Execute(new ConnectNodesCommand(playableRoot, new(instrument.Id, instrument.Outputs[0].Id), new(playableMaster.Id, playableMaster.Inputs[0].Id)));
+    var compiled = FaustGraphCompiler.CreateBuiltIn().Compile(playableSession.Snapshot);
+    var voices = instrument.Composite!.Graph.Nodes.Where(n => n.TypeKey == OscillatorGenerator.NodeType).ToArray();
+    return new { key, source = compiled.Source, values = compiled.InitialControlValues(), inputs = compiled.RhythmicInputs.Count,
+        frequencies = voices.Select(v => v.Parameters.Single(p => p.Definition.Key == "frequency").BaseValue).ToArray(),
+        meters = voices.Select(v => compiled.Controls.Single(c => c.Address == Address(v, "frequency")).MeterName).ToArray() };
+}).ToArray();
+File.WriteAllText(Path.Combine(args[0], "playable-instruments.json"), JsonSerializer.Serialize(playableInstruments));
+
 var modalInstruments = new[] { ModalInstrumentTemplates.Handpan, ModalInstrumentTemplates.Bell,
     ModalInstrumentTemplates.Gong, ModalInstrumentTemplates.Wood }.Select(key =>
 {

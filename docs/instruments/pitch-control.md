@@ -27,9 +27,13 @@ flowchart TD
 
 Runtime note actions are generation-qualified and scheduled on the shared sample timeline, following Phase 7.1 event delivery. Do not rebuild or recompile the graph for notes, change persisted base settings, or record note-on/off in graph undo history. Pitch/velocity update coherently with gate/trigger on the intended sample; stop, navigation/runtime replacement, losing input focus or disconnection must not leave a stuck gate. Reject stale events and bound queues. Keep a held note's sound stable across ordinary parameter edits; failed structural replacements retain the last-good runtime. Test note-to-Hz mapping, exact octaves, harmonic ratios under vibrato, monotonic pitch modulation, conditional connections and accurate range estimation. Full polyphonic note allocation is deferred until monophonic performance is reliable.
 
-### Phase 7.2.3 — Note Source (in review)
+<a id="phase-723--note-source-in-review"></a>
+
+### Phase 7.2.3 — Note Source (implemented)
 
 Implementation: [PR #41](https://github.com/wgabel/orbit2/pull/41).
+
+For a ready-to-play sustained voice, see [Playable sustained instruments](../usage/sound-and-instruments.md#playable-sustained-instruments) (7.2.6a, implemented).
 
 Add **Note Source** from Add node. This is a control source, not an audio generator. Select it, play the connected patch, and choose **Arm keyboard**. Use A–K / W E T Y U or hold the on-screen piano keys; Z/X change octave. The reference note maps to zero semitones (A4 by default; choose A3 for a 220 Hz bank). Keyboard velocity is a fixed editable 0–1 value, default .8, captured at note-on and quantized to 127 steps. The five presets provide useful reference notes and soft/full strikes. No hardware MIDI is required.
 
