@@ -4,7 +4,7 @@
 
 ## Responsive workspace
 
-Desktop and mobile share the same **Nodes**, **Outline**, **Edit**, **View** and **More** buttons. Desktop puts all five in the single top toolbar beside breadcrumbs and transport; mobile keeps them in its bottom bar. Desktop menus open as floating popovers below their trigger; click outside, press Escape or use Close to dismiss. On mobile, sheets keep their existing Close and Back handling. Neither layout resizes the canvas when a menu opens. The optional piano sits at the bottom on desktop and above navigation on mobile.
+In review ([PR #77](https://github.com/wgabel/orbit2/pull/77)): desktop and mobile share the same **Nodes**, **Outline**, **Edit**, **View** and **More** buttons. Desktop puts all five in the single top toolbar beside breadcrumbs and transport; mobile keeps them in its bottom bar. Desktop menus open as floating popovers below their trigger; click outside, press Escape or use Close to dismiss. On mobile, sheets keep their existing Close and Back handling. Neither layout resizes the canvas when a menu opens. The optional piano sits at the bottom on desktop and above navigation on mobile.
 
 [PR #60](https://github.com/wgabel/orbit2/pull/60) introduces a canvas-first layout on phones and short touch landscape screens. Use the top BPM button to edit tempo or reset the transport; Play and Stop remain immediately available. The bottom toolbar opens existing controls without reducing the canvas rectangle:
 
