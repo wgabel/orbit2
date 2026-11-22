@@ -4,6 +4,8 @@
 
 Related: [envelopes](../audio/envelopes.md) · [pitch control](pitch-control.md) · [polyphony](polyphony.md) · [instrument recipes](../examples/instrument-recipes.md).
 
+For practical wiring, playing and retuning examples, see [built-in instruments and resonators](../usage/sound-and-instruments.md#3-built-in-instruments-and-resonators).
+
 ##### Resonator processor and modal synthesis
 
 A resonator is an **audio-input processor**, not an oscillator that always generates a sound. An impulse or noise burst supplies excitation; the internal resonant state rings at its tuned frequency even after input returns to zero. A sustained input may continue exciting it. This makes body resonances and struck instruments possible without a recording. Begin with one `processor.resonator` using the existing node registry, common parameter UI, modulation, bypass/dry contract where appropriate and shared visualization. It is useful by itself for ringing textures and as a component of modal synthesis.
@@ -38,7 +40,9 @@ Add **Resonator** from the normal node catalog. It accepts mono audio, emits mon
 
 Offline WASM regression tests compare the impulse to its analytic damped cosine and −60 dB decay, stress sample-rate modulation at 44.1/48 kHz, verify silence/dry path and check exact shared-pitch transposition through a real registered graph. Domain tests cover independent parameter identities, live controls, effective frequency and JSON round-trip.
 
-### Phase 7.2.5 — Modal instrument composites (in review)
+<a id="phase-725--modal-instrument-composites-in-review"></a>
+
+### Phase 7.2.5 — Modal instrument composites (implemented)
 
 Implementation: [PR #37](https://github.com/wgabel/orbit2/pull/37).
 

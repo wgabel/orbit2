@@ -6,6 +6,8 @@ Related: [pitch control](../instruments/pitch-control.md) · [envelopes](../audi
 
 These recipes address individual sounds. For combining voices into a structured musical piece, see [generative ambient composition](generative-ambient-composition.md).
 
+For the available catalog, exposed ports and quick-start examples, see [using built-in instruments](../usage/sound-and-instruments.md#3-built-in-instruments-and-resonators).
+
 For the principles behind tuning, harmonic content, articulation, level balancing and perceived sound quality, see [music theory and sound design](music-theory-and-sound-design.md).
 
 For a richer musical sound palette and candidate editable instrument recipes, including intentional noise shaping and an audition/revision process, see [sound quality and voice design](sound-quality-and-voice-design.md). These complement the instrument approximations below rather than claiming additional deployed presets.
@@ -16,7 +18,7 @@ For an analyzed, listener-validated synthetic instrument foundation rather than 
 
 #### Musical instrument synthesis and physical modelling (Phase 7.2 — partial)
 
-**Status:** five sustained instrument composites (7.2.1), shared oscillator pitch and Pitch Control (7.2.2), single-mode [Resonator](../instruments/physical-modelling.md) (7.2.4) and pitch-only keyboard sequencing (7.2.8a–c) implemented. Four editable [modal percussion composites](../instruments/physical-modelling.md#phase-725--modal-instrument-composites-in-review) (7.2.5 first stage) are in review. Articulated note sources, optional compact modal bank and polyphony remain planned.
+**Status:** five sustained instrument composites (7.2.1), shared oscillator pitch and Pitch Control (7.2.2), single-mode [Resonator](../instruments/physical-modelling.md) (7.2.4) and pitch-only keyboard sequencing (7.2.8a–c) implemented. Four editable [modal percussion composites](../instruments/physical-modelling.md#phase-725--modal-instrument-composites-implemented) (7.2.5 first stage) are implemented. Articulated note sources, optional compact modal bank and polyphony remain planned.
 
 **Goal and scope.** Build editable synthesized instrument approximations from reusable oscillators, noise, filters, effects, envelopes, pitch controllers and resonators. Do not create a separate DSP class for each instrument. An instrument template is an ordinary composite graph with stable named rack inputs, independent state and an audio output. Preserve the possibility of opening it, inspecting its components, changing routing and saving a new configuration. This is sound design, not a claim of exact reproduction of acoustic instruments. Sample-based approximations and hybrid instruments can additionally use Phase 8 assets later.
 
@@ -49,7 +51,7 @@ The **Impact — AD percussion** worked patch is exportable from Patches → Ann
 | Analog brass | Saw/triangle layers, resonant low-pass, EQ and reverb. | Separate amplitude/filter envelopes and velocity-dependent brightness. |
 | Bowed strings | Detuned saw/triangle oscillator layers, resonant filtering, chorus and reverb. | Bow-like excitation, slow attack, vibrato and resonant body. |
 | Didgeridoo / vocal drone | Low sawtooth around 65 Hz, quiet brown noise, independently tuned parallel band-pass filters or EQ bands and slowly moving cutoff. | Several independently controllable vocal/formant resonances and breath excitation. |
-| Handpan, bell, gong and struck wood | Modal composites with independent resonator frequencies, decays and weights, typed Trigger, shared pitch/strength, and optional audio excitation (in review). | Direct note velocity, dedicated response visualization and optional compact modal bank. |
+| Handpan, bell, gong and struck wood | Modal composites with independent resonator frequencies, decays and weights, typed Trigger, shared pitch/strength, and optional audio excitation (implemented). | Direct note velocity, dedicated response visualization and optional compact modal bank. |
 | Piano / plucked strings | Limited with continuous oscillators; do not market a static harmonic patch as a natural piano. | Short excitation, multiple decaying modes, later string/waveguide or sample hybrid modelling. |
 
 An organ example at 130.81 Hz uses five sine voices at ratios 1:2:3:4:5 and amplitudes 0.30, 0.15, 0.10, 0.05 and 0.025. Its fundamental and harmonics can be mixed before effects with sufficient peak headroom. A flute example uses both tonal and breath lanes; later an ADSR can shape the tonal amplitude while a separate envelope controls the breath lane. Apply vibrato to the shared pitch reference rather than modifying only the fundamental when harmonic tuning must remain intact.

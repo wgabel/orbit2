@@ -1,7 +1,7 @@
 # Orbit 2 — Modular audio engine and hierarchical graph architecture
 
 **Status:** Living architecture, implemented contracts and implementation roadmap  
-**Implementation audit:** 2026-11-21 · main through [`886d23f`](https://github.com/wgabel/orbit2/commit/886d23f)
+**Implementation and usage audit:** 2026-11-22 · main through [`f66fe0a`](https://github.com/wgabel/orbit2/commit/f66fe0a) (PR #38)
 **Target repository:** [wgabel/orbit2](https://github.com/wgabel/orbit2)  
 **Original design date:** 2026-11-20
 
@@ -44,6 +44,8 @@ The goal is a modular architecture in which new generators, processors, paramete
 10. Validate graph changes, preserve consistent state and test foundational behavior before adding numerous node types.
 
 ## Find the context for your task
+
+For hands-on workflows and concrete examples, start with the [user and agent usage guide](docs/usage/README.md). Each page links the authoritative feature contracts and actual implementation PRs; use it alongside the task routing below, not as a constraint on exploration.
 
 Start here. Read the relevant module(s), source and tests; follow additional references as needed. This index is a discovery aid, not a limit on exploration. For projects spanning layers, combine the relevant modules. For a novel subsystem, inspect the existing architecture and code, make a reasonable design consistent with the principles above (or propose an explicit change), and create or extend documentation when the topic merits it. No matching document is required to begin work.
 
@@ -105,7 +107,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 - <a id="workspace-persistence-and-history-phases-68611"></a>[persistence and history](docs/editor/persistence-and-history.md)
 - <a id="node-mute-and-processor-bypass-phase-616"></a>[audition](docs/editor/audition.md)
 - <a id="connection-amount-badges-and-inline-editing-planned-phase-6195"></a>[connection visualization](docs/editor/annotations-and-connections.md)
-- <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>[patch annotations](docs/editor/patch-annotations.md) — note cards, node/wire descriptions, visual groups, patch metadata and library search (6.19.1–6.19.4 implemented), annotation visibility and zoom detail (6.19.7 in review), nested outline (planned)
+- <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>[patch annotations](docs/editor/patch-annotations.md) — note cards, node/wire descriptions, visual groups, patch metadata and library search (6.19.1–6.19.4 implemented), annotation visibility and zoom detail (6.19.7 implemented), nested outline (planned)
 
 **Instruments and examples**
 
