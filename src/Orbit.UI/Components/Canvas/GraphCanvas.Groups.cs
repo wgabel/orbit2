@@ -40,7 +40,7 @@ public partial class GraphCanvas
 
     private async Task BeginGroupAsync(SavedVisualGroup group, PointerEventArgs args, bool resize)
     {
-        if (HasAnnotationDraft || AnnotationActionsDisabled || args.Button != 0) return;
+        if (RejectAdditionalWirePointer(args) || HasAnnotationDraft || AnnotationActionsDisabled || args.Button != 0) return;
         State.SelectGroup(group.Id);
         pendingSource = null;
         groupStart = groupPreview = group;

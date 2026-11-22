@@ -104,4 +104,28 @@
 .canvas-selection-panel select { max-width: 100%; }
 .canvas-selection-panel { max-height: 65vh; overflow: auto; }
 .canvas-selection-panel input { min-width: 0; max-width: 100%; }
+/* Unscaled aiming aids: visible at any world zoom and never intercept pointer input. */
+.touch-wire-assist { position: absolute; inset: 0; z-index: var(--component-touch-wire-layer); pointer-events: none; }
+.touch-wire-target, .touch-wire-cursor {
+    position: absolute; transform: translate(-50%, -50%); border-radius: var(--semantic-radius-round); box-sizing: border-box;
+    pointer-events: none;
+}
+.touch-wire-target {
+    width: var(--component-touch-wire-target-size); height: var(--component-touch-wire-target-size);
+    border: var(--semantic-border-width) solid var(--semantic-color-selected);
+    box-shadow: 0 0 var(--component-touch-wire-target-glow) var(--semantic-color-selected);
+    transition: width var(--component-touch-wire-target-duration) var(--component-touch-wire-target-easing), height var(--component-touch-wire-target-duration) var(--component-touch-wire-target-easing);
+}
+.touch-wire-target.is-snapped { width: var(--component-touch-wire-snapped-size); height: var(--component-touch-wire-snapped-size); border-width: var(--semantic-border-focus-width); }
+.touch-wire-cursor { width: var(--component-touch-wire-cursor-size); height: var(--component-touch-wire-cursor-size); border: var(--semantic-border-focus-width) solid var(--semantic-color-selected); background: var(--semantic-color-canvas); }
+.touch-wire-label {
+    position: absolute; z-index: var(--component-touch-wire-layer); top: var(--semantic-space-compact); left: 50%; transform: translateX(-50%);
+    max-width: calc(100% - 2 * var(--semantic-space-compact));
+    padding: var(--semantic-space-compact); border-radius: var(--semantic-radius-control);
+    border: var(--semantic-border-width) solid var(--semantic-color-selected);
+    background: var(--semantic-color-surface); color: var(--semantic-color-text);
+    font-size: var(--semantic-typography-caption); font-weight: bold;
+    overflow-wrap: anywhere; pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) { .touch-wire-target { transition: none; } }
 .canvas-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--semantic-color-muted); pointer-events: none; }

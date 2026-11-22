@@ -9,7 +9,7 @@
     <div class="canvas-viewport" @ref="viewportElement" tabindex="0" aria-label="Graph canvas"
          @onpointerdown="BeginBackground" @onpointerdown:preventDefault="true"
          @onpointermove="PointerMoved" @onpointerup="PointerReleasedAsync"
-         @onpointercancel="CancelGesture" @onpointerleave="CancelGesture"
+         @onpointercancel="CancelGesture" @onpointerleave="CancelGesture" @onlostpointercapture="CancelGesture"
          @onwheel="OnWheelAsync" @onwheel:preventDefault="true" @onkeydown="KeyDown">
         <div class="canvas-world" style="@WorldStyle">
             @foreach (var group in Snapshot.VisualGroups.Where(group => Snapshot.GroupDetail(group.Id) != AnnotationDetail.Hidden))
@@ -49,6 +49,7 @@
                            OnExpandVisualization="@(() => { State.SetExpandedVisualization(Snapshot.ExpandedVisualizationNodeId == node.Id ? null : node.Id); })"
                            Role="@NodeRoleClassifier.Classify(Snapshot.Graph, node)"
                            Selected="@Snapshot.SelectedNodeIds.Contains(node.Id)" PendingSource="@pendingSource"
+                           WireTargets="@(wireAim is not null ? wireTargetAddresses : null)"
                            OnHeaderPointerDown="@(args => BeginNode(node.Id, args))"
                            OnOutputPointerDown="BeginOutput" OnPortActivate="ActivatePortAsync"
                            OnOpenComposite="OnOpenComposite"
@@ -58,6 +59,21 @@
                            OnParameterEdit="OnParameterEdit" OnParameterGestureEnded="OnParameterGestureEnded" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" Playhead="@EnvelopePlayheads.GetValueOrDefault(node.Id)" BeatsPerMinute="@BeatsPerMinute" SampleRate="@SampleRate" />
             }
         </div>
+        @if (wireAim is { } aim)
+        {
+            <div class="touch-wire-assist" aria-hidden="true">
+                @foreach (var target in wireTargets)
+                {
+                    <span class="touch-wire-target @(target == aim.Target ? "is-snapped" : "")"
+                          style="@WireTargetStyle(target.Point)"></span>
+                }
+                <span class="touch-wire-cursor" style="@WireTargetStyle(aim.Point)"></span>
+            </div>
+            @if (aim.Target is { } snapped)
+            {
+                <div class="touch-wire-label" role="status">@WireTargetLabel(snapped.Address)</div>
+            }
+        }
         @if (MarqueeStyle is { } marqueeStyle)
         {
             <div class="canvas-marquee" style="@marqueeStyle" aria-hidden="true"></div>
@@ -128,7 +144,7 @@
         <div class="workspace-mobile-only workspace-view-summary">
             <p class="workspace-notice">Canvas: @Snapshot.Graph.Nodes.Count nodes · @Snapshot.Graph.Connections.Count connections</p>
             <p class="workspace-notice">Entire patch: @PatchCounts.Nodes nodes · @PatchCounts.Connections connections</p>
-            <p class="workspace-notice">Drag the background to pan; use the floating zoom controls. Edit → Selection actions enables marquee selection.</p>
+            <p class="workspace-notice">Drag the background to pan; use the floating zoom controls. Drag a cable and aim with the cursor above your finger. Edit → Selection actions enables marquee selection.</p>
         </div>
         <div class="annotation-display-control" @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true" @onwheel:stopPropagation="true">
             <label for="annotation-visibility">Annotations</label>

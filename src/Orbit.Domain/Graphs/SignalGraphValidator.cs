@@ -95,20 +95,27 @@ public sealed class SignalGraphValidator
         if (output is null || input is null)
             throw new GraphValidationException("A connection must link an existing output to an existing input.");
 
-        if (!AreCompatible(output, input))
-            throw new GraphValidationException("Port signal types or channel counts are incompatible.");
         ValidateConnectionAmount(connection.Amount, input.SignalType);
-
-        if (graph.Connections.Any(existing => existing.Id == connection.Id ||
-            (existing.Source == connection.Source && existing.Destination == connection.Destination)))
+        if (graph.Connections.Any(existing => existing.Id == connection.Id))
             throw new GraphValidationException("The connection already exists.");
+        if (RoutingRejection(connection.Source, output, connection.Destination, input, graph.Connections) is { } rejection)
+            throw new GraphValidationException(rejection);
+    }
 
-        if (input.FanIn == FanInPolicy.Single &&
-            graph.Connections.Any(existing => existing.Destination == connection.Destination))
-            throw new GraphValidationException("This input accepts only one connection.");
-
-        if (CreatesCycle(graph, source.Id, destination.Id))
-            throw new GraphValidationException("The connection would create a dependency cycle.");
+    /// <summary>Read-only routing preview for already resolved endpoints. The committed
+    /// command still resolves endpoints and validates the whole connection and amount.</summary>
+    public static string? RoutingRejection(PortAddress source, PortDefinition output,
+        PortAddress destination, PortDefinition input, IReadOnlyList<SignalConnection> connections)
+    {
+        if (!AreCompatible(output, input))
+            return "Port signal types or channel counts are incompatible.";
+        if (connections.Any(existing => existing.Source == source && existing.Destination == destination))
+            return "The connection already exists.";
+        if (input.FanIn == FanInPolicy.Single && connections.Any(existing => existing.Destination == destination))
+            return "This input accepts only one connection.";
+        if (CreatesCycle(connections, source.NodeId, destination.NodeId))
+            return "The connection would create a dependency cycle.";
+        return null;
     }
 
     /// <summary>Signed, finite coefficients are valid for existing and new edges.</summary>
@@ -128,7 +135,7 @@ public sealed class SignalGraphValidator
             (output.SignalType == SignalType.Clock && input.SignalType == SignalType.Trigger) ||
             (output.SignalType == SignalType.Audio && input.SignalType == SignalType.Modulation));
 
-    private static bool CreatesCycle(SignalGraph graph, Guid sourceId, Guid destinationId)
+    private static bool CreatesCycle(IReadOnlyList<SignalConnection> connections, Guid sourceId, Guid destinationId)
     {
         // If destination can already reach source, adding source -> destination
         // closes a cycle. Traversal also rejects self-connections.
@@ -144,7 +151,7 @@ public sealed class SignalGraphValidator
             if (!visited.Add(current))
                 continue;
 
-            foreach (var connection in graph.Connections)
+            foreach (var connection in connections)
             {
                 if (connection.Source.NodeId == current)
                     pending.Push(connection.Destination.NodeId);

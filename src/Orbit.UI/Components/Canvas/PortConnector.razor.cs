@@ -11,11 +11,12 @@ public partial class PortConnector
     [Parameter] public Guid NodeId { get; set; }
     [Parameter] public bool Active { get; set; }
     [Parameter] public bool Dormant { get; set; }
+    [Parameter] public bool? WireCandidate { get; set; }
     [Parameter] public EventCallback<PortPointerStart> OnOutputPointerDown { get; set; }
     [Parameter] public EventCallback<PortAddress> OnActivate { get; set; }
 
     private PortAddress Address => new(NodeId, Port.Id);
-    private string ConnectorClass => $"port-connector port-{Port.Direction.ToString().ToLowerInvariant()}{(Active ? " port-active" : "")}{(Dormant ? " port-dormant" : "")}";
+    private string ConnectorClass => $"port-connector port-{Port.Direction.ToString().ToLowerInvariant()}{(Active ? " port-active" : "")}{(Dormant ? " port-dormant" : "")}{(WireCandidate == true ? " port-wire-candidate" : WireCandidate == false ? " port-wire-incompatible" : "")}";
     private string MarkerClass => $"port-marker port-kind-{Port.SignalType.ToString().ToLowerInvariant()}";
     private string Description => $"{Port.Direction}: {Port.Name} ({Port.SignalType}){(Dormant ? " — inactive in current mode" : "")}";
 

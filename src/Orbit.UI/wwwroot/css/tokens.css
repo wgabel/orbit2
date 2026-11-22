@@ -183,6 +183,14 @@
     --component-canvas-grid-dot: 1px;
     --component-canvas-toolbar-gap: var(--semantic-space-compact);
     --component-canvas-zoom-width: 4rem;
+    --component-touch-wire-target-size: 16px;
+    --component-touch-wire-snapped-size: 26px;
+    --component-touch-wire-cursor-size: 10px;
+    --component-touch-wire-target-glow: 6px;
+    --component-touch-wire-target-duration: 120ms;
+    --component-touch-wire-target-easing: ease-out;
+    --component-touch-wire-candidate-brightness: 1.5;
+    --component-touch-wire-layer: 5;
     --component-node-library-icon-size: 1.25rem;
     --component-node-library-row-icon-size: 2rem;
     --component-node-library-width: 32rem;
