@@ -24,6 +24,18 @@ public partial class GraphCanvas
         SelectedProtected == 0 && Snapshot.SelectedConnectionIds.Count == 0 && !SelectedVisualGroupMember;
     private IReadOnlyList<CompositeGrouping.Crossing> GroupCrossings => CanGroup
         ? CompositeGrouping.Preview(Snapshot.Graph, Snapshot.SelectedNodeIds) : [];
+    private Orbit.Application.Graphs.Snapshots.GraphNodeSnapshot? SelectedComposite => Snapshot.SelectedNodeIds.Count == 1 &&
+        Snapshot.SelectedConnectionIds.Count == 0 ? Snapshot.Graph.Nodes.SingleOrDefault(node =>
+            node.Id == Snapshot.SelectedNodeIds[0] && node.Composite is not null) : null;
+
+    private async Task UngroupCompositeAsync()
+    {
+        if (AnnotationControlsLocked || !OnUngroupComposite.HasDelegate || SelectedComposite is not { } composite) return;
+        EndGesture();
+        pendingSource = null;
+        selectionPanelOpen = false;
+        await OnUngroupComposite.InvokeAsync(new UngroupCompositeCommand(Snapshot.GraphId, composite.Id, Snapshot.GraphRevision));
+    }
 
     private async Task CreateCompositeAsync()
     {

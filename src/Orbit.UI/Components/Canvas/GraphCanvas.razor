@@ -113,6 +113,11 @@
                         </details>
                         <button type="button" disabled="@string.IsNullOrWhiteSpace(compositeName)" @onclick="CreateCompositeAsync">Create composite</button>
                     }
+                    @if (SelectedComposite is { } selectedComposite && OnUngroupComposite.HasDelegate)
+                    {
+                        <p class="workspace-notice">Expand @selectedComposite.Name one level using its current routing. Nested composites stay intact.</p>
+                        <button type="button" class="secondary" disabled="@AnnotationControlsLocked" @onclick="UngroupCompositeAsync">Ungroup composite</button>
+                    }
                     <button type="button" class="secondary" @onclick="() => selectionPanelOpen = false">Close selection actions</button>
                 </section>
             }

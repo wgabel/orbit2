@@ -3,6 +3,9 @@ using Orbit.Application.Graphs.Sessions;
 using Orbit.Application.Notifications;
 using Orbit.Application.Persistence;
 using Orbit.Application.Graphs.Snapshots;
+using Orbit.Application.Graphs;
+using Orbit.Application.Graphs.Commands;
+using Orbit.Domain.Graphs;
 
 namespace Orbit.Presentation.Canvas;
 
@@ -72,7 +75,10 @@ public sealed class CanvasNavigationService : IDisposable
         foreach (var node in graph.Nodes)
             if (node.Composite is { } composite && TryFindPath(composite.Graph, target, out var children))
             {
-                path.Add(new CanvasBreadcrumb(composite.Graph.Id, canvases.TryGetValue(graph.Id, out var canvas) ? canvas.Snapshot.DisplayName(node.Id) : node.Name));
+                // During a structural commit a surviving projection may still have
+                // its old graph. Resolve the alias independently of node ownership.
+                var alias = canvases.TryGetValue(graph.Id, out var canvas) ? canvas.Snapshot.NodeDescriptions.GetValueOrDefault(node.Id)?.Alias : null;
+                path.Add(new CanvasBreadcrumb(composite.Graph.Id, string.IsNullOrWhiteSpace(alias) ? node.Name : alias));
                 path.AddRange(children);
                 return true;
             }
@@ -97,6 +103,25 @@ public sealed class CanvasNavigationService : IDisposable
     public bool IsFirstVisit { get; private set; }
 
     public IDisposable Subscribe(Action<CanvasStateSnapshot> handler) => changes.Subscribe(handler);
+
+    /// <summary>Validate the graph and both canvas layouts before dispatching one edit.</summary>
+    public GraphCommandResult UngroupComposite(UngroupCompositeCommand command)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        if (session.Snapshot.Revision != command.ExpectedRevision ||
+            !canvases.TryGetValue(command.GraphId, out var parent) || parent is not CanvasStateService target)
+            throw new GraphValidationException("The canvas changed. Review the composite before expanding it.");
+        var plan = CompositeUngrouping.Preview(parent.Snapshot.Graph, command.CompositeId);
+        var childId = plan.Wrapper.Composite!.Graph.Id;
+        // Unvisited composites still have a deterministic default child layout.
+        // Construct it temporarily; rejection changes neither navigation nor layout.
+        using var temporary = canvases.ContainsKey(childId) ? null : new CanvasStateService(session, childId, placement);
+        var child = temporary?.Snapshot ?? canvases[childId].Snapshot;
+        var layout = CompositeExpansionLayout.Create(parent.Snapshot, child, plan);
+        target.PrepareExpansion(layout);
+        try { return session.Execute(command); }
+        finally { target.CancelExpansion(); }
+    }
 
     public bool OpenChild(Guid compositeNodeId)
     {
@@ -217,7 +242,7 @@ public sealed class CanvasNavigationService : IDisposable
         }
         // Grouping history can move a still-live descendant to a different depth.
         // Rebuild its breadcrumbs from actual ownership rather than the old path.
-        if (change.Events.Any(fact => fact is NodesGrouped or GraphHistoryRestored) &&
+        if (change.Events.Any(fact => fact is NodesGrouped or CompositeUngrouped or GraphHistoryRestored) &&
             TryFindPath(change.Snapshot, ActiveCanvas.Snapshot.GraphId, out var actualPath) &&
             !path.Skip(1).Select(crumb => crumb.GraphId).SequenceEqual(actualPath.Select(crumb => crumb.GraphId)))
         {

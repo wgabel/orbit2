@@ -4,17 +4,16 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const fixtures = JSON.parse(await readFile(join(process.env.ORBIT_GRAPH_PROBE_DIR, 'grouping.json'), 'utf8'));
 const faust = process.env.ORBIT_FAUST_DIR;
 const { instantiateFaustModuleFromFile, LibFaust, FaustCompiler, FaustMonoDspGenerator } =
     await import(pathToFileURL(join(faust, 'dist/esm/index.js')));
 const compiler = new FaustCompiler(new LibFaust(await instantiateFaustModuleFromFile(join(faust, 'libfaust-wasm/libfaust-wasm.js'))));
-const factories = [];
-for (const [index, fixture] of fixtures.entries())
-    factories.push(await compiler.createMonoDSPFactory(`Grouping${index}`, fixture.source, ''));
-
-for (const rate of [44100, 48000]) {
-    test(`Grouping retains deterministic weighted audio at ${rate} Hz`, async () => {
+for (const operation of ['grouping', 'ungrouping']) {
+    const fixtures = JSON.parse(await readFile(join(process.env.ORBIT_GRAPH_PROBE_DIR, `${operation}.json`), 'utf8'));
+    const factories = [];
+    for (const [index, fixture] of fixtures.entries())
+        factories.push(await compiler.createMonoDSPFactory(`${operation}${index}`, fixture.source, ''));
+    for (const rate of [44100, 48000]) test(`${operation} retains deterministic weighted audio at ${rate} Hz`, async () => {
         const rendered = [];
         for (const [index, fixture] of fixtures.entries()) {
             const dsp = await new FaustMonoDspGenerator().createOfflineProcessor(rate, 128, { ...factories[index], soundfiles: {} });
