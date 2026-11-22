@@ -58,6 +58,8 @@ Open **Selection**, select 1–512 eligible nodes, enter a composite name and ex
 
 ### Implementation: ungroup composite (7.4.2b, in review)
 
+Implementation: [PR #48](https://github.com/wgabel/orbit2/pull/48).
+
 Select exactly one composite in its parent canvas, open **Selection** and choose **Ungroup composite**. The wrapper and its two racks disappear; its current internal ordinary nodes (including nested composites) move into the parent and become selected. The operation uses the current wiring, not the original grouping recipe. For example, an incoming boundary cable at 2 and its internal receiver cable at -25 become one cable at -50. Rack-to-rack passthrough and fan-out are supported when every used boundary has one source. The receiving edge retains its ID and dormant/zero amounts, and the product must be representable as a finite float. Event paths retain unity and the final direct type must pass domain validation.
 
 `CompositeUngrouping.Preview` constructs the candidate routes; `UngroupCompositeCommand` verifies revision and restores a detached complete root candidate through domain validation. `CompositeUngrouped` publishes one structural fact. Reject muted wrappers, used one-sided boundaries, sums of multiple boundary sources, duplicate or colliding identities/routes and any incompatible or cyclic candidate. Completely unused ports are harmless. This deliberately conservative scope avoids inventing zero/default sources, hidden mixers or a replacement mute control; connect or remove one-sided cables, or expose a separate mixer before expanding. A refusal leaves graph, revision and history unchanged.

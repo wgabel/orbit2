@@ -75,6 +75,8 @@ For example, select a carrier oscillator and gain processor while leaving the ex
 
 ### Ungroup an edited composite (7.4.2b, in review)
 
+Implementation: [PR #48](https://github.com/wgabel/orbit2/pull/48).
+
 Open the composite created above, change an internal parameter or cable amount, then return to the parent. Select only that composite and choose **Selection → Ungroup composite**. The current nodes appear around the former wrapper; an internal composite remains nested. Their current settings and relative positions are retained, and incoming/outgoing cables reconnect with composed amounts. Undo restores the edited composite, not its original pre-edit configuration; Redo expands it again.
 
 If expansion is refused, read the error: unmute the composite; remove or connect unused rack cables on both sides; use explicit mixers instead of summed boundary inputs/outputs; move wrapper/rack descriptions, labels on disappearing cables, child notes or visual groups before expanding. No partial graph edit occurs on refusal. See the [ungrouping contract](../editor/reusable-modules.md#implementation-ungroup-composite-742b-in-review).
