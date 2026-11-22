@@ -4,7 +4,7 @@
 
 Related: [canvas](canvas.md) · [design system](design-system.md) · [persistence and history](persistence-and-history.md) · [commands and events](../core/commands-and-events.md) · [connection visualization](annotations-and-connections.md) · [composite nodes](composite-nodes.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
 
-**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) in review ([PR #28](https://github.com/wgabel/orbit2/pull/28)); groups, overview, visibility and outline (6.19.3–6.19.4, 6.19.7–6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
+**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) implemented ([PR #28](https://github.com/wgabel/orbit2/pull/28)); visual groups (6.19.3) in review; overview, visibility and outline (6.19.4, 6.19.7–6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
 
 <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>
 
@@ -111,7 +111,7 @@ An alias is display metadata; it does not rename a registered type, alter its st
 Connection labels are equally optional and describe intent, e.g. "Brightness sweep" on a connection with a +600 Hz cutoff amount. The implemented [numeric badge and connection editor](annotations-and-connections.md) remain the authoritative presentation of the committed amount and destination unit. Show text as a distinct secondary label or tooltip/inspector detail, and preserve normal selection/editing even when descriptions are hidden. Do not store a second weight, replace the typed-event badge or conflate a label with measured modulation.
 
 <a id="node-and-connection-descriptions-implementation"></a>
-#### Node and connection descriptions — implementation (6.19.2, in review)
+#### Node and connection descriptions — implementation (6.19.2, implemented)
 
 Implementation: [PR #28](https://github.com/wgabel/orbit2/pull/28).
 
@@ -146,6 +146,30 @@ Suggested workflow: select related members using the existing multi-selection, c
 Initially support ordinary nodes (including whole composites as members) and notes owned by the same graph; do not recursively include child graphs when moving a composite in its parent. Reject cross-graph membership. If overlapping group membership is supported, translate each member ID once per move, and define multi-group edit/undo behavior; a simpler one-group-per-member policy is acceptable initially if clearly communicated. Render group backgrounds behind wires, nodes and notes; avoid making the frame a large invisible interaction blocker. Delete group removes only the frame. Moving a group is a single layout/annotation operation restoring its bounds and member positions on undo.
 
 A visual group can later become an actual composite via an explicit validated structural operation under Phase 7 graph grouping. That operation belongs to the composite implementation, not annotation history; preview the boundary and reject non-equivalent or invalid conversions. Never implicitly convert a group because it was renamed, moved or collapsed.
+
+#### Visual groups — implementation (6.19.3, in review)
+
+Choose **Create visual group** in the workspace toolbar after selecting nodes (or a note), or clear the selection to create an empty frame. The frame is initially fitted around measured selected items, with header space. Use **Edit** on the frame to set its title, description, semantic accent, and explicit member checkboxes. Each node or note can belong to at most one group in its graph; items already assigned to other groups are excluded from the editor. Empty groups are valid. Membership never changes automatically when objects overlap, move independently, or the frame is resized.
+
+Drag the header to move the frame and its live members together; cables follow their endpoints during the preview. The bottom-right handle (also operable with arrow keys) changes only the frame size. Fit includes group bounds. Delete the group to remove just the frame, retaining all members, positions and connections. Group changes share the 100-operation annotation history with notes and descriptions. Moving a group commits one operation on release and restores exact member positions and frame bounds on undo/redo. Escape cancels gestures or an open edit draft.
+
+The optional schema-1 `SavedCanvas.visualGroups` array defaults to empty for older documents. Each entry contains a stable ID, title (up to 120 characters), description (up to 16,000), semantic accent, finite world-space bounds (minimum 260 × 120, maximum 2,000,000 per dimension; origins within ±1,000,000), and graph-local node/note IDs. Documents reject duplicate IDs, unknown or cross-graph members, multiple membership and invalid bounds; limits are 200 groups per canvas and 512 members per group. Deleted targets are excluded from exported layouts; dormant membership can be restored when graph or annotation undo restores the original ID. Restoring a removed child graph also restores its group layout. A composite is moved as a single parent node, never recursively.
+
+Example entry (IDs are illustrative and must refer to actual same-graph items):
+
+```json
+{
+  "id": "a0000000-0000-0000-0000-000000000001",
+  "title": "Drone voices",
+  "description": "Sustained harmonic layer",
+  "accent": 0,
+  "x": 100, "y": 100, "width": 900, "height": 600,
+  "nodeIds": ["b0000000-0000-0000-0000-000000000001"],
+  "noteIds": []
+}
+```
+
+The group is a layout annotation only: it creates no graph commands, DSP, signal ports, rack or playback revision changes. Structural conversion to a composite remains a separate planned feature.
 
 ### Patch overview and discovery (6.19.4)
 
@@ -218,4 +242,4 @@ Keep the original state/persistence/history contracts above authoritative. When 
 | Audio isolation | During continuous playback perform every annotation and navigation action and verify unchanged root graph revision, DSP source/runtime generation and no graph-history entry. |
 | Agents / examples | Annotated example patch explains roles and actual settings, overview provides musical purpose and manual instructions, optional metadata remains data-only and valid. |
 
-These are separate deliverable increments in the [Phase 6.19 register](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-planned). With 6.19.1 implemented and 6.19.2 in review, implement 6.19.3 visual groups next; the other increments can proceed independently as their model/UI foundations are available. Record actual implementation PR links here and in the roadmap as features ship.
+These are separate deliverable increments in the [Phase 6.19 register](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-planned). With 6.19.1–6.19.2 implemented and 6.19.3 in review, implement 6.19.4 patch overview and discovery next; the other increments can proceed independently as their model/UI foundations are available. Record actual implementation PR links here and in the roadmap as features ship.

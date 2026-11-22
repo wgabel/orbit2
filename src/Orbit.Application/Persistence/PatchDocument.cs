@@ -30,5 +30,6 @@ public sealed record SavedCanvas(Guid GraphId, double PanX, double PanY, double 
     public SavedNote[] Notes { get; set; } = [];
     public SavedNodeDescription[] NodeDescriptions { get; set; } = [];
     public SavedConnectionDescription[] ConnectionDescriptions { get; set; } = [];
+    public SavedVisualGroup[] VisualGroups { get; set; } = [];
 }
 public sealed record SavedNodePosition(Guid NodeId, double X, double Y);

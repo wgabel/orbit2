@@ -77,7 +77,7 @@ public partial class GraphCanvas : IAsyncDisposable
     private Guid? editingNote;
     private sealed record DescriptionDraft(Guid Id, bool IsConnection, string Heading, string Name, string Body);
     private DescriptionDraft? editingDescription;
-    public bool HasAnnotationDraft => editingNote is not null || editingDescription is not null;
+    public bool HasAnnotationDraft => editingNote is not null || editingDescription is not null || editingGroup is not null;
 
     private async Task EditNodeDescriptionAsync(Guid nodeId)
     {
@@ -212,7 +212,7 @@ public partial class GraphCanvas : IAsyncDisposable
         if (measuredRevision != Snapshot.GraphRevision || measuredVisualizationGeneration != visualizationGeometryGeneration)
         {
             await MeasureAsync();
-            if (!initialFit && measurement is not null && (measurement.Nodes.Length > 0 || Snapshot.Notes.Count > 0))
+            if (!initialFit && measurement is not null && (measurement.Nodes.Length > 0 || Snapshot.Notes.Count > 0 || Snapshot.VisualGroups.Count > 0))
             {
                 initialFit = true;
                 FitMeasured();
@@ -237,8 +237,8 @@ public partial class GraphCanvas : IAsyncDisposable
     }
 
     private CanvasPoint? PortPoint(PortAddress address) =>
-        Snapshot.NodePositions.TryGetValue(address.NodeId, out var position) &&
-        portOffsets.TryGetValue(address, out var offset) ? position.Add(offset) : null;
+        Snapshot.NodePositions.ContainsKey(address.NodeId) &&
+        portOffsets.TryGetValue(address, out var offset) ? DisplayNodePosition(address.NodeId).Add(offset) : null;
 
     private IReadOnlyList<ConnectionVisual> Wires
     {
@@ -318,7 +318,9 @@ public partial class GraphCanvas : IAsyncDisposable
         var current = new CanvasPoint(args.ClientX, args.ClientY);
         var delta = current.Subtract(lastClientPoint);
         lastClientPoint = current;
-        if (notePreview is { } note)
+        if (groupPreview is not null)
+            PreviewGroupDelta(Snapshot.Viewport.ScreenDeltaToWorld(delta));
+        else if (notePreview is { } note)
         {
             var world = Snapshot.Viewport.ScreenDeltaToWorld(delta);
             notePreview = resizingNote
@@ -343,7 +345,15 @@ public partial class GraphCanvas : IAsyncDisposable
         if (gesturePointer != args.PointerId) return;
         var wasWire = drawingWire;
         var note = notePreview;
+        var originalGroup = groupStart;
+        var group = groupPreview;
+        var wasResizingGroup = resizingGroup;
         EndGesture();
+        if (originalGroup is not null && group is not null)
+        {
+            await CommitGroupGestureAsync(originalGroup, group, wasResizingGroup);
+            return;
+        }
         if (note is not null)
         {
             await UpdateNote(note);
@@ -368,6 +378,8 @@ public partial class GraphCanvas : IAsyncDisposable
         draftEnd = null;
         notePreview = null;
         resizingNote = false;
+        groupPreview = groupStart = null;
+        resizingGroup = false;
     }
 
     private async Task ActivatePortAsync(PortAddress address)
@@ -468,7 +480,7 @@ public partial class GraphCanvas : IAsyncDisposable
         return true;
     }
 
-    private async Task<(CanvasBounds Visible, CanvasBounds[] Occupied)?> MeasurePlacementAsync()
+    private async Task<(CanvasBounds Visible, CanvasBounds[] Occupied, Dictionary<Guid, CanvasBounds> NodeBounds)?> MeasurePlacementAsync()
     {
         if (module is null || disposed) return null;
         var state = State;
@@ -485,12 +497,12 @@ public partial class GraphCanvas : IAsyncDisposable
         var start = snapshot.Viewport.ScreenToWorld(new CanvasPoint(screen.Left + padding, screen.Top + padding));
         var end = snapshot.Viewport.ScreenToWorld(new CanvasPoint(screen.Right - padding, screen.Bottom - padding));
         var occupied = result.Nodes.Where(node => snapshot.NodePositions.ContainsKey(node.NodeId))
-            .Select(node =>
+            .ToDictionary(node => node.NodeId, node =>
             {
                 var position = snapshot.NodePositions[node.NodeId];
                 return new CanvasBounds(position.X, position.Y, position.X + node.Width, position.Y + node.Height);
             });
-        return (new CanvasBounds(start.X, start.Y, end.X, end.Y), occupied.ToArray());
+        return (new CanvasBounds(start.X, start.Y, end.X, end.Y), occupied.Values.ToArray(), occupied);
     }
 
     private void FitMeasured()
@@ -501,7 +513,7 @@ public partial class GraphCanvas : IAsyncDisposable
             {
                 var position = Snapshot.NodePositions[node.NodeId];
                 return new CanvasBounds(position.X, position.Y, position.X + node.Width, position.Y + node.Height);
-            }).Concat(Snapshot.Notes.Select(CanvasStateService.NoteBounds)).ToArray();
+            }).Concat(Snapshot.Notes.Select(CanvasStateService.NoteBounds)).Concat(Snapshot.VisualGroups.Select(CanvasStateService.GroupBounds)).ToArray();
         if (rectangles.Length == 0)
         {
             State.ResetViewport();

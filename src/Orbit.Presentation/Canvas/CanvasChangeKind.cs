@@ -11,5 +11,6 @@ public enum CanvasChangeKind
     ConnectionLabelsChanged,
     VisualizationChanged,
     NotesChanged,
-    DescriptionsChanged
+    DescriptionsChanged,
+    GroupsChanged
 }

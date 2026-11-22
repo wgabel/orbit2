@@ -47,6 +47,9 @@ public sealed class PatchDocumentSerializer
                 throw new ArgumentException("Invalid canvas note ownership or duplicate canvas.");
             var targets = graphs.GetValueOrDefault(canvas.GraphId);
             DescriptionLimits.Validate(canvas, targets.Nodes ?? [], targets.Connections ?? []);
+            SavedVisualGroup.Validate(canvas.VisualGroups, targets.Nodes ?? [], canvas.Notes.Select(note => note.Id));
+            if (canvas.VisualGroups.Length > 0 && !graphs.ContainsKey(canvas.GraphId))
+                throw new ArgumentException("Visual groups belong to an unknown graph.");
         }
         return new PatchSession(registry, root, document.PatchId);
     }

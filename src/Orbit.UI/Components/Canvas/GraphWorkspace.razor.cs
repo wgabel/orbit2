@@ -92,7 +92,7 @@ public partial class GraphWorkspace : IDisposable
             Canvas.SetVisualization(nodeId, settings);
     }
     private bool HasSelection => DeletableNodes.Any() ||
-        Canvas.Snapshot.SelectedConnectionIds.Count > 0 || Canvas.Snapshot.SelectedNoteId is not null;
+        Canvas.Snapshot.SelectedConnectionIds.Count > 0 || Canvas.Snapshot.SelectedNoteId is not null || Canvas.Snapshot.SelectedGroupId is not null;
     private bool CanDescribeSelection => Canvas.Snapshot.SelectedNodeIds.Count + Canvas.Snapshot.SelectedConnectionIds.Count == 1;
     private SignalConnection? SelectedConnection => Canvas.Snapshot.SelectedConnectionIds.Count == 1
         ? Canvas.Snapshot.Graph.Connections.SingleOrDefault(edge => edge.Id == Canvas.Snapshot.SelectedConnectionIds[0])
@@ -441,6 +441,11 @@ public partial class GraphWorkspace : IDisposable
         // Snapshot selection before commands reconcile the view. Each node is
         // removed atomically with all its incident edges by SignalGraph.
         var selected = Canvas.Snapshot;
+        if (selected.SelectedGroupId is Guid groupId)
+        {
+            Canvas.DeleteGroup(groupId);
+            return;
+        }
         if (selected.SelectedNoteId is Guid noteId)
         {
             Canvas.DeleteNote(noteId);

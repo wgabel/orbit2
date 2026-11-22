@@ -12,6 +12,14 @@
          @onpointercancel="CancelGesture" @onpointerleave="CancelGesture"
          @onwheel="OnWheelAsync" @onwheel:preventDefault="true" @onkeydown="KeyDown">
         <div class="canvas-world" style="@WorldStyle">
+            @foreach (var group in Snapshot.VisualGroups)
+            {
+                <VisualGroupFrame @key="group.Id" Group="@(groupPreview?.Id == group.Id ? groupPreview : group)"
+                                  Selected="@(Snapshot.SelectedGroupId == group.Id)" Locked="@(HasAnnotationDraft || AnnotationActionsDisabled)"
+                                  OnMove="@(args => BeginGroupAsync(group, args, false))" OnResize="@(args => BeginGroupAsync(group, args, true))"
+                                  OnEdit="@(() => BeginGroupEditAsync(group))" OnDelete="@(() => NoteAction(() => State.DeleteGroup(group.Id)))"
+                                  OnUpdate="@(updated => NoteAction(() => State.UpdateGroup(updated)))" />
+            }
             <ConnectionLayer Wires="@wires" DraftPath="@DraftPath" OnSelect="SelectConnection" />
             @foreach (var wire in wires.Where(ShowBadge))
             {
@@ -19,7 +27,7 @@
             }
             @foreach (var note in Snapshot.Notes)
             {
-                <NoteCard @key="note.Id" Note="@(notePreview?.Id == note.Id ? notePreview : note)" Selected="@(Snapshot.SelectedNoteId == note.Id)"
+                <NoteCard @key="note.Id" Note="@DisplayNote(note)" Selected="@(Snapshot.SelectedNoteId == note.Id)"
                           Locked="@(HasAnnotationDraft || AnnotationActionsDisabled)"
                           OnMove="@(args => BeginNoteAsync(note, args, false))" OnResize="@(args => BeginNoteAsync(note, args, true))"
                           OnSelect="@(() => { State.SelectNote(note.Id); })" OnEdit="@(() => BeginNoteEditAsync(note.Id))"
@@ -28,7 +36,7 @@
             }
             @foreach (var node in Snapshot.Graph.Nodes.OrderBy(node => node.TypeKey is InputRack.NodeType or OutputRack.NodeType ? 1 : 0))
             {
-                <NodeFrame @key="node.Id" Node="@node" Position="@Snapshot.NodePositions[node.Id]" PatchId="@PatchId" GraphId="@Snapshot.GraphId"
+                <NodeFrame @key="node.Id" Node="@node" Position="@DisplayNodePosition(node.Id)" PatchId="@PatchId" GraphId="@Snapshot.GraphId"
                            Documentation="@Snapshot.NodeDescriptions.GetValueOrDefault(node.Id)"
                            OnEditDescription="@(() => EditNodeDescriptionAsync(node.Id))" DocumentationEditDisabled="@(HasAnnotationDraft || AnnotationActionsDisabled)"
                            Visualization="@Snapshot.VisualizationFor(node.Id)" VisualizationExpanded="@(Snapshot.ExpandedVisualizationNodeId == node.Id)"
@@ -80,7 +88,12 @@
                                InitialName="@description.Name" InitialBody="@description.Body"
                                OnApply="ApplyDescriptionAsync" OnCancel="CloseDescriptionAsync" />
         }
-        @if (Snapshot.Graph.Nodes.Count == 0 && Snapshot.Notes.Count == 0)
+        @if (editingGroup is { } groupEdit)
+        {
+            <VisualGroupEditor @key="groupEdit.Id" Group="@groupEdit" Options="@GroupMemberOptions(groupEdit.Id)"
+                               OnApply="FinishGroupEditAsync" OnCancel="@(() => FinishGroupEditAsync(null))" />
+        }
+        @if (Snapshot.Graph.Nodes.Count == 0 && Snapshot.Notes.Count == 0 && Snapshot.VisualGroups.Count == 0)
         {
             <div class="canvas-empty">Add a node to start building your graph.</div>
         }

@@ -36,7 +36,7 @@ public sealed partial class CanvasStateService
         if (snapshot.SelectedNoteId == id) return NoChange();
         return CommitLayout(CanvasChangeKind.SelectionChanged, snapshot with
         {
-            SelectedNoteId = id, SelectedNodeIds = [], SelectedConnectionIds = []
+            SelectedNoteId = id, SelectedGroupId = null, SelectedNodeIds = [], SelectedConnectionIds = []
         });
     }
 
@@ -102,10 +102,11 @@ public sealed partial class CanvasStateService
         snapshot with
         {
             Notes = notes, SelectedNoteId = selected,
+            SelectedGroupId = selected is null ? snapshot.SelectedGroupId : null,
             SelectedNodeIds = selected is null ? snapshot.SelectedNodeIds : [],
             SelectedConnectionIds = selected is null ? snapshot.SelectedConnectionIds : []
         };
 
     private CanvasChangeResult PublishAnnotation(CanvasChangeKind kind, CanvasStateSnapshot state) =>
-        CommitLayout(kind, state with { CanUndoAnnotations = annotationUndo.Count > 0, CanRedoAnnotations = annotationRedo.Count > 0 });
+        CommitLayout(kind, ProjectGroups(state with { CanUndoAnnotations = annotationUndo.Count > 0, CanRedoAnnotations = annotationRedo.Count > 0 }));
 }

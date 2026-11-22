@@ -22,6 +22,8 @@ public sealed record CanvasStateSnapshot(
     public Guid? ExpandedVisualizationNodeId { get; init; }
     public IReadOnlyList<SavedNote> Notes { get; init; } = [];
     public Guid? SelectedNoteId { get; init; }
+    public IReadOnlyList<SavedVisualGroup> VisualGroups { get; init; } = [];
+    public Guid? SelectedGroupId { get; init; }
     public bool CanUndoAnnotations { get; init; }
     public bool CanRedoAnnotations { get; init; }
     public IReadOnlyDictionary<Guid, SavedNodeDescription> NodeDescriptions { get; init; } =

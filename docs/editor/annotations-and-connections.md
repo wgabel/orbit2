@@ -18,7 +18,7 @@ The full annotation design has moved to [Patch documentation and canvas organiza
 
 Every connection already owns a signed finite `SignalConnection.Amount`. Make this configured value readable directly on its cable, without requiring the user to select each connection. The badge is a derived presentation of the committed edge, distinct from the optional human-authored connection description in Phase 6.19.2. It never introduces a second copy of the amount, a new signal port, or a modulation destination.
 
-Phase 6.19.2 (in review, [PR #28](https://github.com/wgabel/orbit2/pull/28)) adds authored labels to the badge tooltip and selected cable editor, with a separate Apply action and annotation history. See [patch annotations](patch-annotations.md#node-and-connection-descriptions-implementation). The existing amount draft remains independent.
+Phase 6.19.2 (implemented, [PR #28](https://github.com/wgabel/orbit2/pull/28)) adds authored labels to the badge tooltip and selected cable editor, with a separate Apply action and annotation history. See [patch annotations](patch-annotations.md#node-and-connection-descriptions-implementation). The existing amount draft remains independent.
 
 | Receiving destination | Example badge | Meaning |
 |---|---|---|
