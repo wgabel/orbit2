@@ -1,8 +1,12 @@
 /* The graph workspace includes shared graph and playback controls. */
 .workspace-shell { width: min(100%, var(--component-workspace-max-width)); height: 100%; margin-inline: auto; }
 .graph-workspace { display: flex; flex-direction: column; height: 100%; gap: var(--semantic-space-tight); }
-.workspace-header { display: flex; align-items: center; flex-wrap: wrap; gap: var(--semantic-space-normal); }
+.workspace-header { display: flex; align-items: center; flex-wrap: wrap; gap: var(--semantic-space-compact); }
 .workspace-header h1 { margin: 0; font-size: var(--semantic-typography-section); }
+.workspace-header > button, .workspace-header > .workspace-toolbar > button, .canvas-breadcrumbs > button {
+    padding: var(--component-workspace-toolbar-button-block) var(--component-workspace-toolbar-button-inline);
+    font-size: var(--semantic-typography-label);
+}
 .workspace-library-panel {
     position: absolute;
     inset-block-start: var(--semantic-space-normal);
