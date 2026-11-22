@@ -4,7 +4,7 @@
 
 Related: [canvas](canvas.md) · [design system](design-system.md) · [persistence and history](persistence-and-history.md) · [commands and events](../core/commands-and-events.md) · [connection visualization](annotations-and-connections.md) · [composite nodes](composite-nodes.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
 
-**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) implemented ([PR #28](https://github.com/wgabel/orbit2/pull/28)); visual groups (6.19.3) implemented ([PR #30](https://github.com/wgabel/orbit2/pull/30)); overview and discovery (6.19.4) in review; visibility and outline (6.19.7–6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
+**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) implemented ([PR #28](https://github.com/wgabel/orbit2/pull/28)); visual groups (6.19.3) implemented ([PR #30](https://github.com/wgabel/orbit2/pull/30)); overview and discovery (6.19.4) in review ([PR #32](https://github.com/wgabel/orbit2/pull/32)); visibility and outline (6.19.7–6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
 
 <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>
 
@@ -190,6 +190,8 @@ Prefer the real project transport value when showing current BPM; distinguish a 
 Example for agents: use overview text to give duration, musical concept, manual actions and assumptions; visual groups identify arrangement lanes; node aliases mark voices and control functions; a few note cards explain a tricky harmonic choice or modulation scheme. For an individual effect preset, a short note describing what it does may suffice. Use meaningful descriptions, not a repetition of every parameter value; separate unverified musical intent from actually auditioned/verified behavior. Once implemented, include these fields in generated patch JSON according to the current schema, not hypothetical keys.
 
 #### Patch overview and discovery — implementation (6.19.4, in review)
+
+Implementation: [PR #32](https://github.com/wgabel/orbit2/pull/32).
 
 Open **Patches → Edit patch overview** from any canvas. The overview describes the entire patch, not the currently open composite. Edit title, multiline description, usage instructions and comma-separated tags. Apply commits the complete draft and schedules recovery; Cancel or Escape discards it. An open draft is protected by the annotation draft warning and blocks patch replacement, graph navigation, other annotation edits and current-patch save/export. Editing while playing does not change the graph revision, transport, playback or graph history. Overview edits are patch-wide and are not entries in the per-canvas annotation undo history.
 
