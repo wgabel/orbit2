@@ -74,14 +74,14 @@ Use Note Sequencer reference matching the native tuning and connect it to **Pitc
 
 ### Playable sustained instruments
 
-For held notes rather than drones, choose **Playable — Organ**, **Playable — Flute**, **Playable — Brass**, **Playable — Bowed strings** or **Playable — Didgeridoo** (7.2.6a, [PR #44](https://github.com/wgabel/orbit2/pull/44)).
+For held notes rather than drones, choose **Playable — Organ**, **Playable — Flute**, **Playable — Brass**, **Playable — Bowed strings** or **Playable — Didgeridoo** (7.2.6a, implemented, [PR #44](https://github.com/wgabel/orbit2/pull/44)).
 
 1. Add Note Source and Playable — Flute. Set Reference note to A3 (A2 for organ, brass and strings; A1 for didgeridoo).
 2. Connect Note Source Pitch → Pitch (st) at amount 1, Gate → Gate, and Velocity → Velocity at amount 1. Connect Audio → Master output.
 3. Play patch, select Note Source, Arm keyboard, hold a note and release. Try a lower Keyboard velocity and press again; the note is quieter. Overlap keys to play legato, or release before playing a new note for a fresh attack.
 4. Open the composite and edit the ADSR for slower swells or shorter articulation. Reverb follows the envelope so it can ring after release.
 
-If silent, check that both Gate and Velocity are connected and that the keyboard is armed. No Trigger cable is needed for these ADSR voices. The original **Instrument — …** entries still sound continuously. These are monophonic editable voices, not sample-based or polyphonic instruments. See [settings and technical recipe](../examples/instrument-recipes.md#phase-726a--playable-sustained-instruments-in-review).
+If silent, check that both Gate and Velocity are connected and that the keyboard is armed. No Trigger cable is needed for these ADSR voices. The original **Instrument — …** entries still sound continuously. These are monophonic editable voices, not sample-based or polyphonic instruments. See [settings and technical recipe](../examples/instrument-recipes.md#phase-726a--playable-sustained-instruments-implemented).
 
 ### Impact — AD percussion
 

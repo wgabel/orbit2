@@ -15,6 +15,7 @@ public interface ICanvasStateService : IDisposable
     CanvasChangeResult MoveNode(Guid nodeId, CanvasPoint worldPosition);
     CanvasChangeResult MoveNodeByScreenDelta(Guid nodeId, CanvasPoint screenDelta);
     CanvasChangeResult SelectNode(Guid nodeId, bool additive = false);
+    CanvasChangeResult SelectModuleNodes(IEnumerable<Guid> nodeIds, bool additive = false);
     CanvasChangeResult SelectConnection(Guid connectionId, bool additive = false);
     CanvasChangeResult ClearSelection();
     CanvasChangeResult AddNote(CanvasBounds visible, IEnumerable<CanvasBounds> occupied);

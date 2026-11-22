@@ -263,6 +263,36 @@ try {
     assert.ok(countBounds.x > canvasBounds.x + canvasBounds.width / 2 && countBounds.y < canvasBounds.y + 40,
         "Node and connection count must remain in the upper right of the canvas");
     assert.equal(await marker.count(), 0);
+    // Bulk selection does not move the canvas or enter graph history. Keyboard
+    // users can toggle a particular eligible node from the shared selection panel.
+    const selectionToggle = viewport.getByRole("button", { name: "Selection actions" });
+    const originalSelectionViewport = await viewport.locator(".canvas-world").getAttribute("style");
+    const selectionUndo = await page.getByRole("button", { name: "Undo", exact: true }).isEnabled();
+    await selectionToggle.click();
+    const selectionPanel = viewport.getByRole("region", { name: "Node selection" });
+    await selectionPanel.getByRole("button", { name: "Select all module nodes" }).press("Enter");
+    await selectionPanel.getByRole("status").filter({ hasText: "3 nodes selected · 3 eligible" }).waitFor();
+    assert.equal(await viewport.locator(".node-selected").count(), 3);
+    await selectionPanel.getByLabel("Individual module node").selectOption({ index: 1 });
+    await selectionPanel.getByRole("button", { name: "Toggle node selection" }).press("Enter");
+    await selectionPanel.getByRole("status").filter({ hasText: "2 nodes selected · 2 eligible" }).waitFor();
+    await selectionPanel.getByRole("button", { name: "Clear selection" }).click();
+    await selectionPanel.getByRole("button", { name: "Marquee mode" }).click();
+    await selectionPanel.waitFor({ state: "detached" });
+    const targetNode = await articles.nth(1).boundingBox();
+    const region = { left: targetNode.x + targetNode.width / 4, top: targetNode.y + targetNode.height / 4,
+        right: targetNode.x + targetNode.width * 3 / 4, bottom: targetNode.y + targetNode.height * 3 / 4 };
+    const pointer = { pointerId: 87, pointerType: "mouse", button: 0, buttons: 1 };
+    await viewport.dispatchEvent("pointerdown", { ...pointer, clientX: region.right, clientY: region.bottom });
+    await viewport.locator(".canvas-marquee").waitFor({ state: "attached" });
+    await viewport.dispatchEvent("pointermove", { ...pointer, clientX: region.left, clientY: region.top });
+    await viewport.dispatchEvent("pointerup", { ...pointer, buttons: 0, clientX: region.left, clientY: region.top });
+    await viewport.locator(`.node-selected[data-node-id="${await articles.nth(1).getAttribute("data-node-id")}"]`).waitFor();
+    assert.equal(await viewport.locator(".canvas-world").getAttribute("style"), originalSelectionViewport);
+    assert.equal(await page.getByRole("button", { name: "Undo", exact: true }).isEnabled(), selectionUndo);
+    await viewport.press("Escape"); // leave marquee mode; selection remains until explicitly cleared
+    await viewport.press("Escape");
+    assert.equal(await viewport.locator(".node-selected").count(), 0);
     // A real range drag commits multiple input events but exactly one undo step.
     const range = amplitude.getByRole("slider");
     const amplitudeInput = amplitude.getByRole("spinbutton");
