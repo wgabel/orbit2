@@ -4,6 +4,8 @@
 
 Related: [signals and ports](../core/signals-and-ports.md) · [transport and timing](transport-and-timing.md) · [dsp engine](dsp-engine.md) · [note sequencer](../instruments/note-sequencer.md).
 
+For example Clock, Gate, AD and ADSR wiring, see [creating attacks and releases](../usage/sound-and-instruments.md#2-create-distinct-attacks-and-releases).
+
 ### Musical control, performance and instrument synthesis
 
 <a id="envelope-generators-and-rhythmic-triggers-planned-phase-71"></a>
