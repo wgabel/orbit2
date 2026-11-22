@@ -154,6 +154,7 @@ Add a single shared, optional expandable Performance button in the workspace too
 Illustrative UI, not measured Orbit data:
 
 ```text
+Performance · Off                          (closed)
 ● Performance   Audio 12.4 ms   Underruns 0   UI 60 FPS
 ```
 
@@ -216,11 +217,11 @@ An expanded history view can later draw bounded charts for recent frames/latency
 
 ### 4.3 User controls and workflow
 
-- Open the monitor during playback to see current session statistics. No metrics query may create or resume audio before Play.
+- Open the monitor before the operation you want to measure, or during playback to start a fresh local observation session. Close to stop monitoring; no history is gathered while closed. No metrics query may create or resume audio before Play.
 - Reset session counters establishes a new local baseline, resets Orbit histories, and optionally calls the browser latency-stat reset method when supported and explicitly requested. It must not reset BPM, transport, graph or playback. Cumulative browser counters may not be resettable: subtract the new baseline.
 - Copy or export a diagnostic JSON report to attach to a bug report. Include metric provenance, supported capabilities, environment, patch revision, timing windows, app revision, and a bounded recent timeline. Do not send anything automatically.
 - Start diagnostic mode only after explaining extra measurement load. A developer can enable timed profiling, choose test duration, stop it, and compare with the passive baseline. Stress tests which render a different patch or deliberately increase load must be a separate opt-in workflow, normally run with interactive playback stopped.
-- Refresh the basic monitor at about 1 Hz (browser stats can update slowly) and at most 2 Hz for compact updates. Reuse current shared data where possible. An expanded diagnostic view may sample faster if measured overhead is acceptable; do not make 25 Hz parameter updates cause the whole performance panel to rerender.
+- Refresh the open monitor at about 1 Hz (browser stats can update slowly) and at most 2 Hz for compact updates while open. Never poll while closed. Reuse current shared data where possible. An expanded diagnostic view may sample faster if measured overhead is acceptable; do not make 25 Hz parameter updates cause the whole performance panel to rerender.
 
 Examples:
 
@@ -294,7 +295,7 @@ A valid 0 reported by a browser can be displayed, but a null or missing metric c
 
 ## Phase 7.3.1 — Passive Performance Monitor (implemented)
 
-[PR #53](https://github.com/wgabel/orbit2/pull/53). In the workspace toolbar (root or nested canvas), select **Performance** to open Audio performance diagnostics. Before Play, it reports idle and not-created without starting a context. During a patch, it updates roughly once per second: sample rate, audio context state, base and output latency (when available), estimated pipeline latency (their sum only when both are known), reported underrun events, missing output duration, reported playback duration and missing-audio fraction. Reset session counters while playing to start a fresh local baseline, e.g. immediately before adding a heavy sound layer. Stop freezes the completed session; Play starts a fresh baseline. A graph replacement does not reset the session. Close the panel to keep only the compact indicator; it continues foreground passive sampling. Unsupported data appears as unavailable, not zero.
+[PR #53](https://github.com/wgabel/orbit2/pull/53). In the workspace toolbar (root or nested canvas), select **Performance · Off** to start monitoring and open Audio performance diagnostics. Before Play, it reports idle and not-created without starting a context. During a patch, it updates roughly once per second: sample rate, audio context state, base and output latency (when available), estimated pipeline latency (their sum only when both are known), reported underrun events, missing output duration, reported playback duration and missing-audio fraction. Reset session counters while playing to start a fresh local baseline, e.g. immediately before adding a heavy sound layer. Stop freezes the completed session; Play starts a fresh baseline. A graph replacement does not reset the session. Close the panel to stop sampling and return to Off; reopening starts a fresh baseline. Unsupported data appears as unavailable, not zero. See the [on-demand lifecycle](performance-implementation.md#on-demand-collection).
 
 Example: base 4 ms and output 8.4 ms yield an estimated pipeline of 12.4 ms; this is not physical key-to-speaker latency. An increase from 12 to 15 browser cumulative underrun events after a session begins appears as 3 reported events. If the platform lacks playbackStats, no underrun claims can be made. The browser stats describe the shared audio context, not a particular oscillator or isolated patch. Zero reported events cannot prove glitch-free audio. DSP load and headroom explicitly say Not measured until validated in-app timing is available. Phase 7.3.4 external/offline benchmark reports are separate and never shown as production load.
 
@@ -308,7 +309,7 @@ The feature does not allocate an audio analyzer or alter sound. Use [performance
 
 Example: moving a frequency slider should increase reused/control updates without increasing source builds or browser preparations. Adding a disconnected node can increase source builds but still reuse the accepted DSP. Rewiring an audible path may require a new source, worker call and worklet; request-to-completion includes the old voice fading out. Open a plot to inspect existing capture lease/slot counts; the monitor itself requires no extra plot.
 
-Browser counts persist for the page lifetime; application counts reset on Play. The underrun reset button affects only its local underrun baseline. A long worker round trip explains editing delay, not increased steady-state device output latency or DSP load. Neither a fast compile nor an unchanged source proves a cache hit. See [implementation contract](performance-implementation.md#phase-732--compilation-and-runtime-diagnostics-in-review).
+Browser counts cover the current open monitoring session; application counts reset on opening or Play. Open before triggering a compile or edit to measure it. When opened during playback, current resource/program counts are available but earlier timings and operation totals are not recovered. The underrun reset button affects only its local underrun baseline. A long worker round trip explains editing delay, not increased steady-state device output latency or DSP load. Neither a fast compile nor an unchanged source proves a cache hit. See [implementation contract](performance-implementation.md#on-demand-collection).
 
 <a id="phase-733--editor-responsiveness-in-review"></a>
 

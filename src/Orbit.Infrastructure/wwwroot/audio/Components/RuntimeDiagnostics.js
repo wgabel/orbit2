@@ -11,12 +11,14 @@ export class RuntimeDiagnostics {
     #cancelled = 0;
     #pending = 0;
     #processorErrors = 0;
+    #collecting = true;
 
     constructor(clock = () => globalThis.performance.now()) { this.#clock = clock; }
 
     begin(kind, request, revision = request.graphRevision ?? null) {
+        const owner = this;
         const attempt = { id: ++this.#nextId, kind, revision, generation: request.generation ?? null,
-            start: this.#clock(), timings: {}, result: "pending", finished: false };
+            start: this.#clock(), timings: { get collecting() { return owner.#collecting; } }, result: "pending", finished: false };
         this.#attempts++;
         this.#pending++;
         this.#lastAttempt = attempt;
@@ -24,7 +26,7 @@ export class RuntimeDiagnostics {
     }
 
     accept(attempt, fadeDurationMs = null) {
-        if (attempt.finished || attempt.result !== "pending") return;
+        if (!this.#collecting || attempt.finished || attempt.result !== "pending") return;
         attempt.acceptanceMs = this.#clock() - attempt.start;
         attempt.fadeDurationMs = fadeDurationMs;
         attempt.result = "accepted";
@@ -33,7 +35,7 @@ export class RuntimeDiagnostics {
     }
 
     finish(attempt, outcome) {
-        if (attempt.finished) return;
+        if (!this.#collecting || attempt.finished) return;
         attempt.finished = true;
         this.#pending--;
         attempt.completionMs = this.#clock() - attempt.start;
@@ -44,7 +46,8 @@ export class RuntimeDiagnostics {
         else this.#cancelled++;
     }
 
-    processorError() { this.#processorErrors++; }
+    stop() { this.#collecting = false; }
+    processorError() { if (this.#collecting) this.#processorErrors++; }
 
     #operation(attempt) {
         if (!attempt) return null;

@@ -309,6 +309,7 @@ test("stop while replacement compiles cannot resurrect the playback", async () =
 
 test("performance reads do not create audio, and track accepted playback through stop", async () => {
     const { engine, calls, context } = setup();
+    engine.setPerformanceCollection(true);
     assert.equal(engine.getPerformanceSnapshot().contextState, "not-created");
     assert.deepEqual(calls, []);
     const playback = engine.play(request);
@@ -329,6 +330,7 @@ test("performance reads do not create audio, and track accepted playback through
 
 test("structural replacement preserves the accepted performance session", async () => {
     const { engine, context } = replacementSetup();
+    engine.setPerformanceCollection(true);
     const playing = engine.play(request);
     await new Promise(resolve => setImmediate(resolve));
     const epoch = engine.getPerformanceSnapshot().sessionEpoch;
@@ -343,6 +345,7 @@ test("structural replacement preserves the accepted performance session", async 
 
 test("runtime preparation counts distinguish a replacement from live parameter changes", async () => {
     const { engine } = replacementSetup();
+    engine.setPerformanceCollection(true);
     const playing = engine.play({ ...request, graphRevision: 1 });
     await new Promise(resolve => setImmediate(resolve));
     const first = engine.getPerformanceSnapshot().runtime;
@@ -366,6 +369,7 @@ test("runtime preparation counts distinguish a replacement from live parameter c
 
 test("failed replacement leaves the accepted voice diagnostics intact", async () => {
     const { engine, nodeFactory } = replacementSetup();
+    engine.setPerformanceCollection(true);
     const playing = engine.play({ ...request, graphRevision: 1 });
     await new Promise(resolve => setImmediate(resolve));
     nodeFactory.create = async () => { throw new Error("failed"); };
@@ -375,6 +379,69 @@ test("failed replacement leaves the accepted voice diagnostics intact", async ()
     assert.equal(runtime.failed, 1);
     assert.equal(runtime.lastAccepted.revision, 1);
     assert.equal(runtime.currentVoices, 1);
+    engine.stop(request.soundId);
+    await playing;
+});
+
+test("closed diagnostics do not read browser stats or collect timings; reopening is a fresh session", async () => {
+    const { engine, context, nodeFactory } = setup();
+    const stats = context.playbackStats;
+    let reads = 0;
+    Object.defineProperty(context, "playbackStats", { get() { reads++; return stats; } });
+    const create = nodeFactory.create;
+    nodeFactory.create = (...args) => {
+        assert.equal(args[4], undefined);
+        return create(...args);
+    };
+    const playing = engine.play(request);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(engine.getPerformanceSnapshot(), null);
+    assert.equal(reads, 0);
+    stats.underrunEvents += 5;
+    engine.setPerformanceCollection(true);
+    const first = engine.getPerformanceSnapshot();
+    assert.equal(first.playbackState, "active");
+    assert.equal(first.underrunEvents, 0);
+    assert.equal(first.runtime.attempts, 0);
+    assert.equal(first.runtime.currentVoices, 1);
+    stats.underrunEvents++;
+    assert.equal(engine.getPerformanceSnapshot().underrunEvents, 1);
+    engine.setPerformanceCollection(false);
+    const readsAtClose = reads;
+    stats.underrunEvents += 10;
+    assert.equal(engine.getPerformanceSnapshot(), null);
+    assert.equal(reads, readsAtClose);
+    engine.setPerformanceCollection(true);
+    assert.equal(engine.getPerformanceSnapshot().underrunEvents, 0);
+    engine.setPerformanceCollection(false);
+    const beforeStop = reads;
+    engine.stop(request.soundId);
+    await playing;
+    assert.equal(reads, beforeStop);
+});
+
+test("a preparation finishing after close cannot affect a reopened diagnostics session", async () => {
+    const { engine, nodeFactory, makeNode } = replacementSetup();
+    engine.setPerformanceCollection(true);
+    const playing = engine.play(request);
+    await new Promise(resolve => setImmediate(resolve));
+    let complete, timing;
+    nodeFactory.create = (...args) => {
+        timing = args[4];
+        return new Promise(resolve => { complete = resolve; });
+    };
+    const replacement = engine.replace({ ...request, processor: "replacement" }, 1);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(timing.collecting, true);
+    engine.setPerformanceCollection(false);
+    assert.equal(timing.collecting, false);
+    engine.setPerformanceCollection(true);
+    complete(makeNode("replacement"));
+    assert.equal(await replacement, true);
+    const snapshot = engine.getPerformanceSnapshot();
+    assert.equal(snapshot.runtime.attempts, 0);
+    assert.equal(snapshot.runtime.accepted, 0);
+    assert.equal(snapshot.runtime.currentVoices, 1);
     engine.stop(request.soundId);
     await playing;
 });

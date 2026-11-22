@@ -28,7 +28,7 @@ public sealed class FaustGraphCompiler
         if (outputs.Length != 1)
             throw new FaustCompilationException("A patch must have exactly one master output.");
 
-        var ordered = GraphDependencyOrder.Get(graph, outputs[0].Id);
+        var ordered = GraphDependencyOrder.Get(graph, outputs[0].Id, out var reachableEdges);
         var incoming = graph.Connections.ToLookup(edge => edge.Destination);
         var signals = new Dictionary<PortAddress, string>();
         var inputSignals = new Dictionary<PortAddress, string>();
@@ -51,8 +51,10 @@ public sealed class FaustGraphCompiler
         var outputExpression = "0.0";
         var masterIdentity = "0.0";
 
+        var boundaries = 0;
         foreach (var node in ordered)
         {
+            if (node.TypeKey == BoundaryFaustEmitter.NodeType) boundaries++;
             var context = new FaustNodeContext(node, incoming, signals, controls, definitions);
             if (auxiliaryChannels > 0)
                 foreach (var port in node.Inputs.Where(port => node.IsInputActive(port.Id)))
@@ -187,11 +189,11 @@ public sealed class FaustGraphCompiler
             return control with { GraphId = origin.GraphId,
                 Address = control.Address with { NodeId = origin.NodeId } };
         }).ToArray();
-        var reachableIds = ordered.Select(node => node.Id).ToHashSet();
-        var boundaries = ordered.Count(node => node.TypeKey == BoundaryFaustEmitter.NodeType);
+        // Keep static program metadata available for benchmarks and opening the
+        // monitor mid-play, without a separate diagnostic graph traversal.
         return new FaustGraphProgram(graph.Id, graph.Revision, source, Array.AsReadOnly(manifest))
             { ReachableLeafNodes = ordered.Count - boundaries - 1, BoundaryRoutes = boundaries,
-                ReachableEdges = graph.Connections.Count(edge => reachableIds.Contains(edge.Destination.NodeId)),
+                ReachableEdges = reachableEdges,
                 RequiresTransport = requiresTransportBeat || requiresTransportTempo || actionInputs.Any(input => input.Input.Pattern is not null), TransportInputChannels = transportChannels,
                 RhythmicInputs = actionInputs.Select(input => input.Input).ToArray(), AuditionControls = audition.Manifest,
                 SignalTaps = new SignalTapManifest(tapChannels, outputExpressions.Count, selectorCount), EnvelopeMeters = envelopeMeters.AsReadOnly(), PitchMeters = pitchMeters.AsReadOnly() };

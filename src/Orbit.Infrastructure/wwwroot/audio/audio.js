@@ -49,6 +49,7 @@ export const readSignalWindow = (soundId, generation, subscription, channel) => 
 export const readObservation = (soundId, generation, subscription, selector) => engine.readObservation(soundId, generation, subscription, selector);
 export const readObservationWindow = (soundId, generation, subscription, selector) => engine.readObservation(soundId, generation, subscription, selector, true);
 export const getPerformanceSnapshot = (reset = false) => engine.getPerformanceSnapshot(reset);
+export const setPerformanceCollection = enabled => engine.setPerformanceCollection(enabled);
 export const getSignalDiagnostics = soundId => engine.getSignalDiagnostics(soundId);
 export const releaseSignal = (soundId, subscription, generation = null) => engine.releaseSignal(soundId, subscription, generation);
 export async function dispose() {

@@ -562,6 +562,7 @@ try {
     assert.equal(await beat.innerText(), "0");
     assert.equal(await transport.getByTestId("transport-sample-rate").count(), 0);
     const performanceToggle = page.getByRole("button", { name: /^Performance ·/ });
+    assert.equal(await performanceToggle.innerText(), "Performance · Off");
     await performanceToggle.click();
     const performancePanel = page.getByRole("region", { name: "Audio performance diagnostics" });
     await performancePanel.locator("[data-performance-session]").filter({ hasText: "idle" }).waitFor({ timeout: 10000 });
@@ -570,6 +571,7 @@ try {
     await performancePanel.locator("[data-performance-editor-history]").filter({ hasText: /[1-9][0-9]* \/ 120/ }).waitFor({ timeout: 10000 });
     assert.match(await performanceToggle.innerText(), /UI [0-9]+ FPS/);
     await performancePanel.getByRole("button", { name: "Close" }).click();
+    assert.equal(await performanceToggle.innerText(), "Performance · Off");
     await play.click({ timeout: 30000 });
     await status.filter({ hasText: /Playing revision/ }).waitFor({ timeout: 30000 });
     let initialRevision = Number((await status.innerText()).match(/Playing revision (\d+)/)[1]);
@@ -577,8 +579,8 @@ try {
     await performancePanel.locator("[data-performance-session]").filter({ hasText: "active" }).waitFor({ timeout: 10000 });
     assert.match(await performancePanel.innerText(), /\d+ Hz/);
     await performancePanel.locator("[data-performance-worklets]").filter({ hasText: "1 / 0" }).waitFor({ timeout: 10000 });
-    await performancePanel.locator("[data-performance-source-builds]").filter({ hasText: /^1$/ }).waitFor({ timeout: 10000 });
-    assert.match(await performancePanel.innerText(), /Compiler worker round trip/);
+    await performancePanel.locator("[data-performance-source-builds]").filter({ hasText: /^0$/ }).waitFor({ timeout: 10000 });
+    assert.doesNotMatch(await performancePanel.innerText(), /Compiler worker round trip/);
     await performancePanel.getByRole("button", { name: "Reset session counters" }).click();
     await performancePanel.getByRole("button", { name: "Reset session counters" }).waitFor({ state: "visible" });
     await page.waitForFunction(() => !document.querySelector("#audio-performance-details button:last-child")?.disabled);
@@ -2060,7 +2062,13 @@ try {
     await mobilePage.getByRole("button", { name: /BPM$/ }).click();
     await mobileBar.getByRole("button", { name: "More", exact: true }).click();
     await mobilePage.getByRole("button", { name: "Patches", exact: true }).waitFor();
-    await mobilePage.getByRole("button", { name: /^Performance ·/ }).waitFor();
+    const mobilePerformanceToggle = mobilePage.getByRole("button", { name: "Performance · Off" });
+    await mobilePerformanceToggle.click();
+    await mobilePage.getByRole("region", { name: "Audio performance diagnostics" }).waitFor();
+    await mobileBar.getByRole("button", { name: "View", exact: true }).click();
+    await mobilePage.getByRole("region", { name: "Audio performance diagnostics" }).waitFor({ state: "detached" });
+    await mobileBar.getByRole("button", { name: "More", exact: true }).click();
+    await mobilePerformanceToggle.waitFor();
     await mobilePage.getByRole("button", { name: "Patches", exact: true }).click();
     const mobileManager = mobilePage.getByRole("region", { name: "Patch manager" });
     await mobileManager.getByRole("button", { name: "Edit patch overview" }).click();
