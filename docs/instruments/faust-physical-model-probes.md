@@ -46,6 +46,8 @@ Each render had exactly zero pre-note peak. Final 150 ms RMS was at most .000757
 
 ### Pluck — advance as a candidate
 
+**Follow-up:** [Calibrated expressive Physical Pluck](faust-physical-pluck.md) extends this initial experiment. A single rate-aware length correction and T60 mapping pass 222 chromatic pitch/decay trials, with trigger-latched pitch/velocity and optional bounded excitation. The proposed integration remains gated; the original measurements below remain the historical baseline.
+
 Length calibration is nearly trivial at 44.1 kHz over the tested range; at 48 kHz the uncorrected tuning is slightly sharp, so a sample-rate-aware pitch mapping is required. With the test calibration, all six notes at both rates are within one cent. Damping materially changes decay, and high notes decay faster at the same damping; expose a musically meaningful decay/time mapping rather than assuming damping is the same duration for every pitch. String excitation/noise must be bounded. One waveguide alone lacks body radiation, string stiffness, fret/hammer sounds, multi-string coupling and the full resonant signature of a guitar or other named instrument. First proposed local integration prototype: gated/triggered generic **Physical Pluck**, external excitation optional, latched strike velocity, pitch changes handled explicitly for ringing notes, damping and output trim. Do not name it Acoustic Guitar yet.
 
 ### Flute — useful mechanism, incomplete playable range
