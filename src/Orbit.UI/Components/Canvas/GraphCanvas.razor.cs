@@ -435,11 +435,11 @@ public partial class GraphCanvas : IAsyncDisposable
         if (assistedWire)
         {
             if (!TouchWireStale) UpdateTouchWire(new CanvasPoint(args.ClientX, args.ClientY));
-            var target = TouchWireStale ? null : wireAim?.Target;
+            var snappedTarget = TouchWireStale ? null : wireAim?.Target;
             var moved = touchWireMoved;
             EndGesture();
-            if (target is not null)
-                await ActivatePortAsync(target.Address);
+            if (snappedTarget is not null)
+                await ActivatePortAsync(snappedTarget.Address);
             else if (moved)
                 pendingSource = null;
             return;
