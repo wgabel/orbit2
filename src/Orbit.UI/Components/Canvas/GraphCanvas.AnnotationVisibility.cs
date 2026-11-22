@@ -58,7 +58,10 @@ public partial class GraphCanvas
         finderOpen = false;
         await SelectAnnotationAsync(id, isGroup);
         if (!disposed && ReferenceEquals(State, state) && measurement is not null && !AnnotationControlsLocked)
+        {
             State.FitToBounds(bounds, measurement.Width, measurement.Height, 32);
+            await OnMobileToolCompleted.InvokeAsync();
+        }
     }
 
     private async Task FitSignalsAsync()
@@ -67,6 +70,9 @@ public partial class GraphCanvas
         var state = State;
         await MeasureAsync();
         if (!disposed && ReferenceEquals(state, State) && !AnnotationControlsLocked)
+        {
             FitMeasured(signalOnly: true);
+            await OnMobileToolCompleted.InvokeAsync();
+        }
     }
 }

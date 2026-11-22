@@ -20,7 +20,7 @@ using Orbit.Domain.Timing;
 namespace Orbit.UI.Components.Canvas;
 
 /// <summary>Composition and command boundary for the complete patch editor.</summary>
-public partial class GraphWorkspace : IDisposable
+public partial class GraphWorkspace : IAsyncDisposable
 {
     [Inject] private IGraphModulationRangeEstimator ModulationEstimator { get; set; } = default!;
     [Inject] private PatchDocumentSerializer Serializer { get; set; } = default!;
@@ -549,12 +549,13 @@ public partial class GraphWorkspace : IDisposable
         }
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         disposed = true;
         Persistence.Dispose();
         subscription?.Dispose();
         Navigation?.Dispose();
         session?.Dispose();
+        await DisposeMobilePanelsAsync();
     }
 }

@@ -46,6 +46,11 @@ public partial class PerformanceMonitor : IAsyncDisposable
         return Task.CompletedTask;
     }
 
+    internal void CloseMobilePanel()
+    {
+        if (expanded) { expanded = false; StateHasChanged(); }
+    }
+
     private void Toggle() => expanded = !expanded;
     private void RequestReset() => resetPending = true;
 

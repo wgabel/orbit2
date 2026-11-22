@@ -1,0 +1,13 @@
+@namespace Orbit.UI.Components.Canvas
+@using Microsoft.AspNetCore.Components.Web
+
+<div class="mobile-sheet-heading">
+    <strong tabindex="-1" data-panel-focus>@Title</strong>
+    <button type="button" class="secondary" disabled="@Locked" aria-label="@($"Close {Title.ToLowerInvariant()} tools")" @onclick="OnClose">Close</button>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public bool Locked { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+}
