@@ -93,7 +93,8 @@ Keep layout structure in CSS and markup, with numeric styling constants in JSON.
 | DescriptionEditor | Unscaled node alias/description or cable label editor, shared annotation draft lifecycle (6.19.2, implemented) |
 | VisualGroupFrame / VisualGroupEditor | Background frame, header drag, frame-only resize, explicit membership and unscaled metadata draft (6.19.3, implemented) |
 | PatchOverviewEditor / PatchOverviewSummary | Patch-wide protected metadata draft and read-only summary, reused by PatchManager for active and saved documents (6.19.4, implemented) |
-| AnnotationMarker / AnnotationDetailPolicy | Shared screen-scaled title/marker detail and per-canvas visibility, with selection reveal and stable authored geometry (6.19.7, in review) |
+| AnnotationMarker / AnnotationDetailPolicy | Shared screen-scaled title/marker detail and per-canvas visibility, with selection reveal and stable authored geometry (6.19.7, implemented) |
+| PatchOutlinePanel / PatchOutline | Searchable, bounded hierarchy of committed graph-qualified targets, with explicit locate/open actions (6.19.8, in review) |
 | PortConnector | Render shape, label, typed endpoint, hit area and connection gesture |
 | ConnectionLayer / ConnectionPath | Render and hit-test Bézier connections using shared port geometry |
 | ParameterSlider | Name, unit, editable numeric base value, min/max, range slider, inline error, modulation band and effective marker |

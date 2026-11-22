@@ -14,6 +14,9 @@ public sealed class CanvasNavigationService : IDisposable
     private readonly IPatchSession session;
     private readonly INodePlacementPolicy? placement;
     private readonly Dictionary<Guid, ICanvasStateService> canvases = [];
+    private readonly Dictionary<Guid, IDisposable> outlineSubscriptions = [];
+    private PatchOutline? outline;
+    private string? outlineTitle;
     private readonly Dictionary<Guid, SavedCanvas> removedLayouts = [];
     private readonly List<CanvasBreadcrumb> path = [];
     private readonly NotificationChannel<CanvasStateSnapshot> changes = new();
@@ -33,7 +36,7 @@ public sealed class CanvasNavigationService : IDisposable
         path.Add(new CanvasBreadcrumb(session.GraphId, "Patch"));
         if (layouts is not null)
             foreach (var layout in layouts.Where(layout => session.Snapshot.FindGraph(layout.GraphId) is not null))
-                canvases.Add(layout.GraphId, new CanvasStateService(session, layout.GraphId, placement, layout));
+                AddCanvas(layout.GraphId, new CanvasStateService(session, layout.GraphId, placement, layout));
         Activate(session.GraphId);
         if (activeGraphId is Guid target && target != session.GraphId)
         {
@@ -78,6 +81,16 @@ public sealed class CanvasNavigationService : IDisposable
     public ICanvasStateService ActiveCanvas { get; private set; } = default!;
     /// <summary>Root and all descendant graph elements, refreshed once per patch commit.</summary>
     public GraphElementCounts PatchCounts { get; private set; }
+    public PatchOutline GetOutline(string title)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        if (outline is null || outlineTitle != title)
+        {
+            outline = new PatchOutline(session.Snapshot, canvases.Values.Select(canvas => canvas.Snapshot), title);
+            outlineTitle = title;
+        }
+        return outline;
+    }
     public IReadOnlyList<CanvasBreadcrumb> Path => path.AsReadOnly();
     /// <summary>Fit a newly visited canvas once. Returning must not reset its viewport.</summary>
     public bool IsFirstVisit { get; private set; }
@@ -107,6 +120,30 @@ public sealed class CanvasNavigationService : IDisposable
         return true;
     }
 
+    /// <summary>Jump to any live graph, including unvisited descendants and siblings.</summary>
+    public bool JumpToGraph(Guid graphId)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        if (graphId == ActiveCanvas.Snapshot.GraphId) return true;
+        if (!TryFindPath(session.Snapshot, graphId, out var children)) return false;
+        path.Clear();
+        path.Add(new CanvasBreadcrumb(session.GraphId, "Patch"));
+        path.AddRange(children);
+        Activate(graphId);
+        Publish();
+        return true;
+    }
+
+    private void AddCanvas(Guid graphId, ICanvasStateService canvas)
+    {
+        canvases.Add(graphId, canvas);
+        outlineSubscriptions.Add(graphId, canvas.Subscribe(change =>
+        {
+            if (change.Kind is CanvasChangeKind.NotesChanged or CanvasChangeKind.GroupsChanged or CanvasChangeKind.DescriptionsChanged or CanvasChangeKind.GraphCommitted)
+                outline = null;
+        }));
+    }
+
     private void Activate(Guid graphId)
     {
         activeSubscription?.Dispose();
@@ -116,7 +153,8 @@ public sealed class CanvasNavigationService : IDisposable
             removedLayouts.Remove(graphId, out var restored);
             if (restored is not null) IsFirstVisit = false;
             canvas = new CanvasStateService(session, graphId, placement, restored);
-            canvases.Add(graphId, canvas);
+            AddCanvas(graphId, canvas);
+            outline = null;
         }
         ActiveCanvas = canvas;
         activeSubscription = canvas.Subscribe(_ => Publish());
@@ -124,7 +162,14 @@ public sealed class CanvasNavigationService : IDisposable
 
     private void OnPatchCommitted(GraphChangeSet change)
     {
+        outline = null;
         PatchCounts = GraphElementCounts.CountHierarchy(change.Snapshot);
+        // Restored subtrees must be searchable before they are visited again.
+        foreach (var pair in removedLayouts.Where(pair => change.Snapshot.FindGraph(pair.Key) is not null).ToArray())
+        {
+            AddCanvas(pair.Key, new CanvasStateService(session, pair.Key, placement, pair.Value));
+            removedLayouts.Remove(pair.Key);
+        }
         // If an ancestor was deleted, navigate back to the closest surviving
         // canvas and dispose cached projections for the removed subtree.
         var removed = canvases.Keys.Where(id => change.Snapshot.FindGraph(id) is null).ToArray();
@@ -139,6 +184,8 @@ public sealed class CanvasNavigationService : IDisposable
         foreach (var id in removed)
         {
             removedLayouts[id] = CaptureLayout(canvases[id].Snapshot);
+            outlineSubscriptions[id].Dispose();
+            outlineSubscriptions.Remove(id);
             canvases[id].Dispose();
             canvases.Remove(id);
         }
@@ -160,6 +207,8 @@ public sealed class CanvasNavigationService : IDisposable
         disposed = true;
         patchSubscription.Dispose();
         activeSubscription?.Dispose();
+        foreach (var listener in outlineSubscriptions.Values) listener.Dispose();
+        outlineSubscriptions.Clear();
         foreach (var canvas in canvases.Values) canvas.Dispose();
         canvases.Clear();
         removedLayouts.Clear();
