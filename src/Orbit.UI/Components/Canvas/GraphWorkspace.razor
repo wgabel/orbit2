@@ -71,7 +71,7 @@ else
     }
     <GraphCanvas @key="(workspaceGeneration, graphId)" @ref="canvasView" State="@Canvas" PatchId="@session.GraphId" AutoFitOnFirstRender="@Navigation.IsFirstVisit"
                  DispatchConnectionAmount="@DispatchConnectionCommand"
-                 OnNoteDraftChanged="@(value => noteDraft = value)" OnNoteError="@(value => Error = value)"
+                 NoteActionsDisabled="@switchingWorkspace" OnNoteDraftChanged="OnNoteDraftChanged" OnNoteError="@(value => Error = value)"
                  CanShowScope="@(ScopeSelection is not null || ScopeOpen)" ScopeOpen="@ScopeOpen" OnToggleScope="ToggleScope"
                  OnConnect="@(request => Connect(graphId, request))" OnParameterEdit="@(request => EditParameter(graphId, request))"
                  OnParameterGestureEnded="@(id => CompleteParameterGesture(graphId, id))"

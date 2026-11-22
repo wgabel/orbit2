@@ -15,7 +15,7 @@
 .note-instruction { --component-note-accent: var(--semantic-color-action); }
 .note-warning { --component-note-accent: var(--semantic-color-error); }
 .note-selected { outline: var(--semantic-border-focus-width) solid var(--semantic-color-selected); outline-offset: var(--semantic-border-focus-offset); }
-.note-selected, .note-editing { z-index: var(--component-note-layer); }
+.note-selected { z-index: var(--component-note-layer); }
 .note-header, .note-footer {
     display: flex;
     align-items: center;
@@ -38,7 +38,25 @@
 .note-body { flex: 1; min-height: 0; white-space: pre-wrap; overflow-wrap: anywhere; overflow: auto; padding: var(--component-note-padding); user-select: text; touch-action: pan-y; }
 .note-footer { flex-wrap: wrap; border-top: var(--semantic-border-width) solid var(--semantic-color-border); color: var(--semantic-color-muted); font-size: var(--semantic-typography-caption); }
 .note-resize { cursor: nwse-resize; touch-action: none; }
-.note-editor { flex: 1; min-height: 0; overflow: auto; padding: var(--component-note-padding); display: flex; flex-direction: column; gap: var(--component-note-action-gap); }
+.note-editor {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: var(--component-workspace-overlay-layer);
+    width: min(var(--component-note-editor-width), 90%);
+    max-height: 90%;
+    box-sizing: border-box;
+    overflow: auto;
+    padding: var(--semantic-space-normal);
+    display: flex;
+    flex-direction: column;
+    gap: var(--component-note-action-gap);
+    background: var(--semantic-color-surface);
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-control);
+    cursor: default;
+}
 .note-editor label { display: flex; flex-direction: column; gap: var(--semantic-space-tight); }
 .note-editor input, .note-editor select, .note-editor textarea { width: 100%; box-sizing: border-box; color: var(--semantic-color-text); background: var(--semantic-color-input); border: var(--semantic-border-width) solid var(--semantic-color-border); font: inherit; }
 .note-editor textarea { resize: vertical; min-height: var(--component-note-editor-min-height); }

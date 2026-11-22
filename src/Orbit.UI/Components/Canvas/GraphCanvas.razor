@@ -20,10 +20,9 @@
             @foreach (var note in Snapshot.Notes)
             {
                 <NoteCard @key="note.Id" Note="@(notePreview?.Id == note.Id ? notePreview : note)" Selected="@(Snapshot.SelectedNoteId == note.Id)"
-                          Locked="@HasNoteDraft" Editing="@(editingNote == note.Id)"
+                          Locked="@(HasNoteDraft || NoteActionsDisabled)"
                           OnMove="@(args => BeginNoteAsync(note, args, false))" OnResize="@(args => BeginNoteAsync(note, args, true))"
                           OnSelect="@(() => { State.SelectNote(note.Id); })" OnEdit="@(() => BeginNoteEditAsync(note.Id))"
-                          OnCancel="@(() => FinishNoteEditAsync(null))" OnApply="FinishNoteEditAsync"
                           OnUpdate="UpdateNote" OnDuplicate="@(() => NoteAction(() => State.DuplicateNote(note.Id)))"
                           OnDelete="@(() => NoteAction(() => State.DeleteNote(note.Id)))" />
             }
@@ -44,6 +43,10 @@
                            OnParameterEdit="OnParameterEdit" OnParameterGestureEnded="OnParameterGestureEnded" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" Playhead="@EnvelopePlayheads.GetValueOrDefault(node.Id)" BeatsPerMinute="@BeatsPerMinute" SampleRate="@SampleRate" />
             }
         </div>
+        @if (Snapshot.Notes.FirstOrDefault(note => note.Id == editingNote) is { } editing)
+        {
+            <NoteEditor @key="editing.Id" Note="@editing" OnApply="FinishNoteEditAsync" OnCancel="@(() => FinishNoteEditAsync(null))" />
+        }
         <div class="connection-label-control" @onpointerdown:stopPropagation="true">
             <label for="connection-label-mode">Connection labels</label>
             <select id="connection-label-mode" @bind="LabelMode" aria-label="Connection labels">

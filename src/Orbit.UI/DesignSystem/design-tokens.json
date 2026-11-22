@@ -180,6 +180,7 @@
       "accent": "{semantic.color.border}",
       "header-height": "42px",
       "editor-min-height": "76px",
+      "editor-width": "24rem",
       "action-height": "24px",
       "action-gap": "{semantic.space.tight}",
       "padding": "{semantic.space.compact}",

@@ -134,6 +134,7 @@
     --component-note-accent: var(--semantic-color-border);
     --component-note-header-height: 42px;
     --component-note-editor-min-height: 76px;
+    --component-note-editor-width: 24rem;
     --component-note-action-height: 24px;
     --component-note-action-gap: var(--semantic-space-tight);
     --component-note-padding: var(--semantic-space-compact);

@@ -163,6 +163,12 @@ public partial class GraphWorkspace : IDisposable
         return false;
     }
 
+    private void OnNoteDraftChanged(bool active)
+    {
+        noteDraft = active;
+        if (!active && Error == "Apply or cancel the note edit first.") Error = null;
+    }
+
     private async Task NewWorkspaceAsync()
     {
         using var fresh = new PatchSession(catalog);
@@ -333,7 +339,7 @@ public partial class GraphWorkspace : IDisposable
 
     private async Task AddNodeAsync()
     {
-        if (switchingWorkspace || addingNode || canvasView is null) return;
+        if (switchingWorkspace || addingNode || canvasView is null || !CheckNoteDraft()) return;
         var canvas = Canvas;
         var type = SelectedType;
         addingNode = true;

@@ -35,6 +35,7 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter] public EventCallback OnToggleScope { get; set; }
     [Parameter] public EventCallback<bool> OnNoteDraftChanged { get; set; }
     [Parameter] public EventCallback<string> OnNoteError { get; set; }
+    [Parameter] public bool NoteActionsDisabled { get; set; }
     [Parameter] public double BeatsPerMinute { get; set; } = MusicalTransport.DefaultTempo;
     [Parameter] public int? SampleRate { get; set; }
     [Parameter] public IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
@@ -78,7 +79,7 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private async Task BeginNoteEditAsync(Guid id)
     {
-        if (HasNoteDraft) return;
+        if (HasNoteDraft || NoteActionsDisabled) return;
         State.SelectNote(id);
         pendingSource = null;
         editingNote = id;
@@ -93,20 +94,21 @@ public partial class GraphCanvas : IAsyncDisposable
         editingNote = null;
         if (module is not null) await module.InvokeVoidAsync("setNoteDraftWarning", false);
         await OnNoteDraftChanged.InvokeAsync(false);
+        await viewportElement.FocusAsync(preventScroll: true);
     }
 
     private Task UpdateNote(SavedNote note) => NoteAction(() => State.UpdateNote(note));
 
     private async Task NoteAction(Func<CanvasChangeResult> action)
     {
-        if (HasNoteDraft) return;
+        if (HasNoteDraft || NoteActionsDisabled) return;
         try { action(); }
         catch (Exception exception) { await OnNoteError.InvokeAsync(exception.Message); }
     }
 
     private async Task BeginNoteAsync(SavedNote note, PointerEventArgs args, bool resize)
     {
-        if (HasNoteDraft || args.Button != 0) return;
+        if (HasNoteDraft || NoteActionsDisabled || args.Button != 0) return;
         State.SelectNote(note.Id);
         pendingSource = null;
         notePreview = note;
@@ -408,7 +410,7 @@ public partial class GraphCanvas : IAsyncDisposable
     public async Task<bool> AddNoteAsync()
     {
         var context = await MeasurePlacementAsync();
-        if (context is not { } value || HasNoteDraft) return false;
+        if (context is not { } value || HasNoteDraft || NoteActionsDisabled) return false;
         State.AddNote(value.Visible, value.Occupied);
         return true;
     }

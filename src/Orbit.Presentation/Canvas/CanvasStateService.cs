@@ -54,6 +54,8 @@ public sealed partial class CanvasStateService : ICanvasStateService
                 visualizations[node.Id] = NodeVisualizationCapabilities.Normalize(node, preference.Settings);
         var notes = saved is null ? [] : saved.Notes;
         SavedNote.Validate(notes);
+        if (notes.Length > 0 && saved!.GraphId != graphId)
+            throw new ArgumentException("Canvas notes belong to a different graph.", nameof(saved));
         snapshot = new CanvasStateSnapshot(graph, 0, viewport,
             Freeze(positions), Array.Empty<Guid>(), Array.Empty<Guid>())
         {

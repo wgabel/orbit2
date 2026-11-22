@@ -1,0 +1,46 @@
+@namespace Orbit.UI.Components.Canvas
+@using Orbit.Application.Persistence
+@using Microsoft.AspNetCore.Components.Web
+
+<section class="note-editor" aria-label="Edit canvas note" role="region"
+         @onpointerdown:stopPropagation="true" @onwheel:stopPropagation="true"
+         @onkeydown="EditKey" @onkeydown:stopPropagation="true">
+    <strong>Edit note</strong>
+    <label>Title <input @ref="titleInput" maxlength="@SavedNote.MaxTitleLength" @bind="title" @bind:event="oninput" /></label>
+    <label>Body <textarea maxlength="@SavedNote.MaxBodyLength" @bind="body" @bind:event="oninput"></textarea></label>
+    <label>Accent <select @bind="accent">
+        @foreach (var option in Enum.GetValues<NoteAccent>())
+        {
+            <option value="@option">@option</option>
+        }
+    </select></label>
+    <div class="note-actions">
+        <button type="button" @onclick="Apply">Apply</button>
+        <button type="button" class="secondary" @onclick="OnCancel">Cancel</button>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public SavedNote Note { get; set; } = default!;
+    [Parameter] public EventCallback<SavedNote> OnApply { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    private string title = "";
+    private string body = "";
+    private NoteAccent accent;
+    private ElementReference titleInput;
+
+    protected override void OnInitialized()
+    {
+        title = Note.Title;
+        body = Note.Body;
+        accent = Note.Accent;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await titleInput.FocusAsync(preventScroll: true);
+    }
+
+    private Task Apply() => OnApply.InvokeAsync(Note with { Title = title, Body = body, Accent = accent });
+    private Task EditKey(KeyboardEventArgs args) => args.Key == "Escape" ? OnCancel.InvokeAsync() : Task.CompletedTask;
+}

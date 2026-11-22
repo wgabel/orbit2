@@ -2,36 +2,19 @@
 @using Orbit.Application.Persistence
 @using Microsoft.AspNetCore.Components.Web
 
-<article class="note-card note-@Note.Accent.ToString().ToLowerInvariant() @(Selected ? "note-selected" : "") @(Editing ? "note-editing" : "")"
+<article class="note-card note-@Note.Accent.ToString().ToLowerInvariant() @(Selected ? "note-selected" : "")"
          data-note-id="@Note.Id" style="@Style" aria-label="@($"Note: {Note.Title}")"
          @onpointerdown:stopPropagation="true" @onkeydown:stopPropagation="true"
          @onwheel:stopPropagation="true">
     <header class="note-header" @onpointerdown="OnMove" @onpointerdown:preventDefault="@(!Locked)">
         <span class="note-title" title="@Note.Title">@Note.Title</span>
         <div class="note-actions" @onpointerdown:stopPropagation="true">
-            <button type="button" disabled="@Locked" title="Edit note" @onclick="BeginEdit">Edit</button>
+            <button type="button" disabled="@Locked" title="Edit note" @onclick="OnEdit">Edit</button>
             <button type="button" disabled="@Locked" title="@(Note.Collapsed ? "Expand note" : "Collapse note")"
                     @onclick="() => OnUpdate.InvokeAsync(Note with { Collapsed = !Note.Collapsed })">@(Note.Collapsed ? "+" : "−")</button>
         </div>
     </header>
-    @if (Editing)
-    {
-        <div class="note-editor" @onkeydown="EditKey">
-            <label>Title <input @ref="titleInput" maxlength="@SavedNote.MaxTitleLength" @bind="title" @bind:event="oninput" /></label>
-            <label>Body <textarea maxlength="@SavedNote.MaxBodyLength" @bind="body" @bind:event="oninput"></textarea></label>
-            <label>Accent <select @bind="accent">
-                @foreach (var option in Enum.GetValues<NoteAccent>())
-                {
-                    <option value="@option">@option</option>
-                }
-            </select></label>
-            <div class="note-actions">
-                <button type="button" @onclick="Apply">Apply</button>
-                <button type="button" @onclick="OnCancel">Cancel</button>
-            </div>
-        </div>
-    }
-    else if (!Note.Collapsed)
+    @if (!Note.Collapsed)
     {
         <div class="note-body" tabindex="0" @onclick="OnSelect">@Note.Body</div>
         <footer class="note-footer">
@@ -50,41 +33,14 @@
     [Parameter, EditorRequired] public SavedNote Note { get; set; } = default!;
     [Parameter] public bool Selected { get; set; }
     [Parameter] public bool Locked { get; set; }
-    [Parameter] public bool Editing { get; set; }
     [Parameter] public EventCallback<PointerEventArgs> OnMove { get; set; }
     [Parameter] public EventCallback<PointerEventArgs> OnResize { get; set; }
     [Parameter] public EventCallback OnSelect { get; set; }
     [Parameter] public EventCallback OnEdit { get; set; }
-    [Parameter] public EventCallback OnCancel { get; set; }
-    [Parameter] public EventCallback<SavedNote> OnApply { get; set; }
     [Parameter] public EventCallback<SavedNote> OnUpdate { get; set; }
     [Parameter] public EventCallback OnDuplicate { get; set; }
     [Parameter] public EventCallback OnDelete { get; set; }
-    private string title = "";
-    private string body = "";
-    private NoteAccent accent;
-    private ElementReference titleInput;
-    private bool focusDraft;
-    private string Style => FormattableString.Invariant($"left:{Note.X}px;top:{Note.Y}px;width:{Note.Width}px;height:{(Editing ? Math.Max(320, Note.Height) : Note.Collapsed ? SavedNote.CollapsedHeight : Note.Height)}px");
-
-    private async Task BeginEdit()
-    {
-        title = Note.Title;
-        body = Note.Body;
-        accent = Note.Accent;
-        focusDraft = true;
-        await OnEdit.InvokeAsync();
-    }
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (Editing && focusDraft)
-        {
-            focusDraft = false;
-            await titleInput.FocusAsync(preventScroll: true);
-        }
-    }
-    private Task Apply() => OnApply.InvokeAsync(Note with { Title = title, Body = body, Accent = accent });
-    private Task EditKey(KeyboardEventArgs args) => args.Key == "Escape" ? OnCancel.InvokeAsync() : Task.CompletedTask;
+    private string Style => FormattableString.Invariant($"left:{Note.X}px;top:{Note.Y}px;width:{Note.Width}px;height:{(Note.Collapsed ? SavedNote.CollapsedHeight : Note.Height)}px");
     private Task ResizeKey(KeyboardEventArgs args)
     {
         var width = Note.Width + (args.Key == "ArrowRight" ? 16 : args.Key == "ArrowLeft" ? -16 : 0);
