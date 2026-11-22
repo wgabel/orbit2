@@ -36,9 +36,6 @@ else
         </div>
     </header>
     <div class="canvas-caption">
-        <CanvasToolbar ZoomPercentage="@Canvas.Snapshot.Viewport.ZoomPercentage"
-                       ZoomIn="@(() => canvasView!.ZoomIn())" ZoomOut="@(() => canvasView!.ZoomOut())"
-                       Reset="@(() => canvasView!.ResetViewport())" Fit="@(() => canvasView!.FitAsync())" />
         <div class="workspace-toolbar toolbar-group workspace-nodes-tools" data-mobile-sheet="nodes" role="region" aria-label="Add nodes">
         <NodeLibrary Open="@NodeLibraryOpen" Entries="@LibraryEntries" KnownKeys="@LibraryKeys" Disabled="@(addingNode || switchingWorkspace || annotationDraft)"
                      OnAdd="@AddNodeFromLibraryAsync" OnClose="CloseNodeLibrary" />

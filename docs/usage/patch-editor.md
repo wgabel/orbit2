@@ -11,9 +11,19 @@
 - **Edit:** graph and annotation undo/redo, Create visual group, selection actions (marquee/multi-select and grouping/ungrouping) and contextual Describe/Delete selected. Enable Marquee mode to close the sheet and drag a selection; reopen Edit → Selection actions → Return to pan to exit.
 - **View:** connection labels, annotations, local/entire-patch counts, gesture help and scope.
 - **More:** Patches and Performance diagnostics. Toggle the bottom tool again to close it; apply/cancel an active overview draft before switching tools.
-- The floating zoom control provides minus, plus, percentage, 100% and Fit. In a nested graph, use its parent breadcrumb to return.
+- Navigate the canvas without zoom buttons. In a nested graph, use its parent breadcrumb to return.
 
-With [PR #61](https://github.com/wgabel/orbit2/pull/61), close a tool via its Close button, the active bottom tab, Escape or browser/Android Back; changing tools dismisses the previous one. Apply/cancel a protected overview draft before leaving it. The color-coded Node Library ([PR #62](https://github.com/wgabel/orbit2/pull/62), implemented) replaces the old dropdown. Automatic node expansion/pinning, new pinch gestures and fullscreen are planned in subsequent milestones. Resizing the browser retains the same active graph and playback controller. 
+With [PR #61](https://github.com/wgabel/orbit2/pull/61), close a tool via its Close button, the active bottom tab, Escape or browser/Android Back; changing tools dismisses the previous one. Apply/cancel a protected overview draft before leaving it. The color-coded Node Library ([PR #62](https://github.com/wgabel/orbit2/pull/62), implemented) replaces the old dropdown. Automatic node expansion/pinning remains planned; fullscreen is deferred. Resizing the browser retains the same active graph and playback controller.
+
+### Gesture-only canvas navigation (6.21.4)
+
+In review: [PR #69](https://github.com/wgabel/orbit2/pull/69).
+
+- On touchscreens, drag empty space to pan. Put two fingers on the canvas and spread/pinch to zoom around their midpoint; move both together to pan. Lift one finger to continue panning without a jump.
+- On desktop, drag the background to pan and use the mouse wheel to zoom around the pointer.
+- To fit the current graph, quickly tap or click the same empty canvas area three times. Fit eases to the new viewport (instant with reduced motion). On desktop, focus the canvas and press `F` to fit, `+`/`-` to zoom, or `0` to reset to 100%.
+- Header drags still move nodes, and parameter controls keep their own interactions. Adding a second finger to a canvas drag takes over for navigation and cancels any unfinished cable or node movement. Zoom stays within 25–400%; the viewport remains independent of audio and saved per graph.
+- The former zoom toolbar, percentage, reset and Fit buttons are removed on both layouts. Annotation-specific Fit signals and Outline locate actions remain available.
 
 ### Delete a connection on mobile
 
@@ -21,7 +31,7 @@ With [PR #61](https://github.com/wgabel/orbit2/pull/61), close a tool via its Cl
 2. Tap **Edit** on the bottom toolbar, check that the summary shows 0 nodes and 1 connection selected, then tap **Delete selected**. Only the selected connection is removed.
 3. To restore it, tap **Undo** in Edit.
 
-If badges obscure a cable, open **View → Connection labels → Off**, close View and tap the exposed cable. Use **Fit** or zoom/pan to make it easier to reach. Setting a connection amount to zero does not delete it. See [PR #63](https://github.com/wgabel/orbit2/pull/63) for the mobile touch regression coverage.
+If badges obscure a cable, open **View → Connection labels → Off**, close View and tap the exposed cable. Triple-tap empty canvas to fit, or zoom/pan to make it easier to reach. Setting a connection amount to zero does not delete it. See [PR #63](https://github.com/wgabel/orbit2/pull/63) for the mobile touch regression coverage.
 
 ### Node Library
 
@@ -40,7 +50,7 @@ For individual node settings, use the Preset selector and its adjacent **…** m
 
 ### Assisted touch cable dragging
 
-In review ([PR #65](https://github.com/wgabel/orbit2/pull/65)). On a touchscreen, touch and hold an output port, then drag. Aim with the small cursor above your finger, not the fingertip itself. Compatible input sockets show rings even when zoomed out; invalid or already connected destinations dim. Move until the larger ring and floating label name the intended parameter, for example **Oscillator → Amplitude**. Release to connect. Move away from all highlighted ports (or cancel the gesture) to abandon it without adding a cable. Closely spaced sockets switch as you aim directly at the next one; near the lower edge the offset reduces. The cursor and magnetic radius are screen-sized at every zoom. No extra picker or node expansion is necessary. Touch vibration is optional, and mouse/keyboard operation is unchanged. If a port is covered or off-screen, pan/zoom to expose it first. Undo removes a successful connection as usual.
+Implemented ([PR #65](https://github.com/wgabel/orbit2/pull/65)). On a touchscreen, touch and hold an output port, then drag. Aim with the small cursor above your finger, not the fingertip itself. Compatible input sockets show rings even when zoomed out; invalid or already connected destinations dim. Move until the larger ring and floating label name the intended parameter, for example **Oscillator → Amplitude**. Release to connect. Move away from all highlighted ports (or cancel the gesture) to abandon it without adding a cable. Closely spaced sockets switch as you aim directly at the next one; near the lower edge the offset reduces. The cursor and magnetic radius are screen-sized at every zoom. No extra picker or node expansion is necessary. Touch vibration is optional, and mouse/keyboard operation is unchanged. If a port is covered or off-screen, pan/zoom to expose it first. Undo removes a successful connection as usual.
 
 ## 2. Interpret and edit connections
 

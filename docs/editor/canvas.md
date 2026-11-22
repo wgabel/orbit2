@@ -122,11 +122,19 @@ Phase 6.19.1 (implemented) extends the same canvas projection with graph-scoped 
 
 ### First visible editor implementation
 
-`GraphWorkspace` constructs the root patch session from `ModulationDemoPatch.OpenSession`, owns one presentation state service, and translates completed user actions into typed commands. `GraphCanvas` consumes that state and is reusable for future child graphs. It composes `CanvasToolbar`, `NodeFrame`, `PortConnector`, `ConnectionLayer`, `ConnectionPath` and the existing `ParameterSlider` inside node frames. There is no per-node renderer duplication.
+`GraphWorkspace` constructs the root patch session from `ModulationDemoPatch.OpenSession`, owns one presentation state service, and translates completed user actions into typed commands. `GraphCanvas` consumes that state and is reusable for future child graphs. It composes `NodeFrame`, `PortConnector`, `ConnectionLayer`, `ConnectionPath` and the existing `ParameterSlider` inside node frames. There is no per-node renderer duplication.
 
 The canvas world is one transformed coordinate space shared by HTML node frames and SVG Bézier paths. The browser adapter (`wwwroot/js/canvasDom.js`) only measures actual DOM bounds/port centers, captures a pointer, and identifies the input under a dropped wire. The renderer converts measured offsets back into world coordinates, so zoom and panning do not change the topology or require new measurements. Nodes move using the state service and connections follow their positions. Fit uses measured frame bounds; `BezierConnection.Between` supplies horizontal tangents even for backwards edges.
 
 The editor supports node addition/removal, base parameter edits, drag-to-connect or keyboard/click port activation, selection, background panning, middle-button panning from node headers, pointer zoom and fit, and nested canvas navigation. Space-drag remains a future enhancement. The fixed modulation proof is preserved separately from the dynamic Faust compiler.
+
+### Gesture-only canvas navigation
+
+**Phase 6.21.4, in review ([PR #69](https://github.com/wgabel/orbit2/pull/69)).** Remove the floating/mobile and desktop zoom toolbar, including the percentage, reset and Fit buttons. Keep wheel zoom anchored at its pointer. Two captured touch pointers promote an active canvas gesture into a pinch; cancel wire/annotation previews and restore a dragged node's original position before takeover. Noninteractive node surfaces support touch panning too; native controls keep their interactions. Each change computes the two-finger separation ratio from the gesture baseline and maps the initial midpoint's world point to the current midpoint (preventing zoom ratcheting at either limit), clamping zoom at 25–400% and committing a single viewport transform. Releasing one finger sets the remaining finger's last position as the pan baseline; cancellation resets the gesture. This is presentation-only and uses the same state on every graph level.
+
+Fit uses three completed primary taps/clicks on empty canvas within 600 ms and 24 CSS px, with no drag over 8 px or hold over 250 ms. A single tap continues to deselect; a third eligible tap fits the active graph's measured bounds. Other canvas gestures reset the sequence. Fit interpolates pan and zoom together over approximately 220 ms with ease-out; reduced-motion preference skips the animation, and new navigation interrupts it. Canvas-focused keyboard shortcuts F, +/− and 0 remain as nonvisual alternatives. Explicit annotation Fit signals, outline locate and initial programmatic fitting are preserved. Fullscreen is deferred.
+
+Browser coverage uses real Chromium CDP two-finger movement, wheel and triple-tap/click events; since CDP releases touch contacts together, the independent one-finger handoff regression dispatches a partial pointer-up using the actual second pointer ID before continuing the first contact. Adding a second finger directly over an input port also takes over an in-progress wire gesture, avoiding accidental activation. Physical-device verification remains separate.
 
 ### Assisted touch cable dragging
 

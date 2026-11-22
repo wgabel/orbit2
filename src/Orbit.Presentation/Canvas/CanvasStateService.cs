@@ -223,6 +223,12 @@ public sealed partial class CanvasStateService : ICanvasStateService
         return CommitViewport(CanvasViewport.Initial);
     }
 
+    public CanvasChangeResult SetViewport(CanvasViewport viewport)
+    {
+        EnsureEditable();
+        return CommitViewport(viewport);
+    }
+
     public CanvasChangeResult FitToBounds(CanvasBounds bounds, double width, double height, double padding)
     {
         EnsureEditable();

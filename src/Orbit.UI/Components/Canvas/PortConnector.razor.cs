@@ -13,6 +13,7 @@ public partial class PortConnector
     [Parameter] public bool Dormant { get; set; }
     [Parameter] public bool? WireCandidate { get; set; }
     [Parameter] public EventCallback<PortPointerStart> OnOutputPointerDown { get; set; }
+    [Parameter] public EventCallback<PointerEventArgs> OnInputPointerDown { get; set; }
     [Parameter] public EventCallback<PortAddress> OnActivate { get; set; }
 
     private PortAddress Address => new(NodeId, Port.Id);
@@ -23,7 +24,8 @@ public partial class PortConnector
     private Task PointerDown(PointerEventArgs args) =>
         Port.Direction == PortDirection.Output && args.Button == 0
             ? OnOutputPointerDown.InvokeAsync(new PortPointerStart(Address, args))
-            : Task.CompletedTask;
+            : Port.Direction == PortDirection.Input && args.PointerType == "touch"
+                ? OnInputPointerDown.InvokeAsync(args) : Task.CompletedTask;
 
     // Mouse output activation is handled by pointer-down; keyboard activation
     // (Detail == 0) uses the same click-to-connect workflow.

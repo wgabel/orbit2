@@ -14,6 +14,22 @@ export function capturePointer(viewport, pointerId) {
     }
 }
 
+export function canvasHasFocus(viewport) {
+    return document.activeElement === viewport;
+}
+
+export function prefersReducedMotion() {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+// Noninteractive node surfaces remain useful for navigation at high zoom,
+// while native inputs, labels, buttons and plot interactions keep ownership.
+export function isNodeNavigationSurface(viewport, x, y) {
+    const element = document.elementFromPoint(x, y);
+    return !!element && viewport.contains(element) && !!element.closest("[data-node-id]") &&
+        !element.closest("button, input, select, textarea, label, a, [contenteditable], [role='button'], canvas, .node-header");
+}
+
 function warnNoteDraft(event) {
     event.preventDefault();
     event.returnValue = true;

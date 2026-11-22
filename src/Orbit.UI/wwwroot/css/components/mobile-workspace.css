@@ -57,13 +57,13 @@
         padding-inline: var(--semantic-space-tight);
         border: 0;
     }
-    .playback-toolbar button, .mobile-workspace-bar button, .canvas-toolbar button {
+    .playback-toolbar button, .mobile-workspace-bar button {
         min-height: var(--component-workspace-mobile-toolbar-height);
         padding: 0 var(--semantic-space-tight);
         font-size: var(--semantic-typography-caption);
         white-space: nowrap;
     }
-    .playback-toolbar button:not(.workspace-mobile-tempo), .canvas-toolbar button {
+    .playback-toolbar button:not(.workspace-mobile-tempo) {
         min-width: var(--component-workspace-mobile-toolbar-height);
     }
     .workspace-mobile-tempo, .mobile-playback-label { display: inline; }
@@ -99,22 +99,6 @@
         background: var(--semantic-color-action);
         color: var(--semantic-color-action-text);
     }
-    .canvas-toolbar {
-        position: absolute;
-        z-index: 3;
-        inset-inline-end: var(--semantic-space-compact);
-        inset-block-end: calc(var(--component-workspace-mobile-toolbar-height) + var(--semantic-space-compact));
-        display: flex;
-        flex-direction: column;
-        flex-wrap: nowrap;
-        gap: var(--semantic-space-tight);
-        padding: var(--semantic-space-tight);
-        background: var(--semantic-color-surface);
-        border: var(--semantic-border-width) solid var(--semantic-color-border);
-        border-radius: var(--semantic-radius-control);
-    }
-    .canvas-toolbar .canvas-zoom { min-width: 0; font-size: var(--semantic-typography-caption); }
-    .canvas-toolbar button { width: 100%; }
     .workspace-edit-tools, .workspace-nodes-tools, .workspace-more-tools, .workspace-transport-tools,
     .canvas-view-tools { display: none; }
     .graph-workspace[data-mobile-panel="edit"] .workspace-edit-tools,

@@ -74,14 +74,6 @@ public partial class GraphCanvas
         return $"{Snapshot.DisplayName(node.Id)} → {node.Inputs.Single(port => port.Id == address.PortId).Name}";
     }
 
-    private bool RejectAdditionalWirePointer(PointerEventArgs args)
-    {
-        if (!assistedWire || gesturePointer == args.PointerId) return false;
-        pendingSource = null;
-        EndGesture();
-        return true;
-    }
-
     private void ClearTouchWire()
     {
         assistedWire = touchWireMoved = false;
