@@ -9,6 +9,7 @@ public interface ICanvasStateService : IDisposable
     IDisposable Subscribe(Action<CanvasStateChange> handler);
     IDisposable ReserveVisibleNodePlacement(CanvasBounds visibleBounds, IEnumerable<CanvasBounds> occupiedBounds);
     CanvasChangeResult SetConnectionLabels(ConnectionLabelMode mode);
+    CanvasChangeResult SetAnnotationVisibility(AnnotationVisibility visibility);
     CanvasChangeResult SetVisualization(Guid nodeId, NodeVisualizationSettings settings);
     CanvasChangeResult SetExpandedVisualization(Guid? nodeId);
     CanvasChangeResult MoveNode(Guid nodeId, CanvasPoint worldPosition);

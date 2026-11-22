@@ -22,7 +22,7 @@
             }
         </span>
         <div class="node-header-actions">
-            @if (Documentation is { Description.Length: > 0 })
+            @if (ShowSecondaryDocumentation && Documentation is { Description.Length: > 0 })
             {
                 <button type="button" class="node-description-toggle" disabled="@DocumentationEditDisabled"
                         aria-label="Read node description" title="@Documentation.Description"

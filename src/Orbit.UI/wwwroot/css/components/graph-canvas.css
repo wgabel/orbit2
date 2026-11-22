@@ -33,6 +33,37 @@
 }
 .canvas-count { inset-block-start: var(--semantic-space-compact); }
 .canvas-hint { inset-block-end: var(--semantic-space-compact); }
+.annotation-display-control {
+    position: absolute;
+    z-index: 3;
+    inset-block-end: var(--semantic-space-compact);
+    inset-inline-start: var(--semantic-space-compact);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--semantic-space-tight);
+    padding: var(--semantic-space-tight);
+    background: var(--semantic-color-surface);
+    border-radius: var(--semantic-radius-control);
+    font-size: var(--semantic-typography-caption);
+    cursor: default;
+}
+.annotation-display-control button, .annotation-display-control select { font-size: inherit; }
+.annotation-finder {
+    position: absolute;
+    inset-block-end: 100%;
+    inset-inline-start: 0;
+    display: grid;
+    gap: var(--semantic-space-compact);
+    max-width: var(--component-note-editor-width);
+    min-width: 100%;
+    padding: var(--semantic-space-normal);
+    background: var(--semantic-color-surface);
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-control);
+    box-sizing: border-box;
+}
+.annotation-finder select { min-width: 0; max-width: 100%; }
 .canvas-viewport {
     position: relative;
     flex: 1;

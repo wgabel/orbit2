@@ -11,6 +11,27 @@
     border-radius: var(--component-node-border-radius);
     overflow: hidden;
 }
+.note-card-compact { border: 0; background: transparent; overflow: visible; }
+.annotation-marker {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    transform-origin: top left;
+    display: flex;
+    align-items: center;
+    gap: var(--semantic-space-tight);
+    min-width: 0;
+    min-height: 0;
+    box-sizing: border-box;
+    padding: var(--semantic-space-tight);
+    pointer-events: auto;
+    background: var(--semantic-color-surface);
+    color: var(--semantic-color-text);
+    border: var(--semantic-border-width) solid var(--component-note-accent, var(--semantic-color-border));
+    font-size: var(--semantic-typography-caption);
+    overflow: hidden;
+}
+.annotation-marker-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .note-idea { --component-note-accent: var(--semantic-color-eyebrow); }
 .note-instruction { --component-note-accent: var(--semantic-color-action); }
 .note-warning { --component-note-accent: var(--semantic-color-error); }

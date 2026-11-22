@@ -1,0 +1,23 @@
+@namespace Orbit.UI.Components.Canvas
+@using Orbit.Application.Persistence
+@using Orbit.Presentation.Canvas
+
+<button type="button" class="annotation-marker note-@Accent.ToString().ToLowerInvariant()"
+        style="@Style" title="@Title" aria-label="@($"Reveal {Kind}: {Title}")"
+        disabled="@Locked" @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true"
+        @onclick="OnReveal" @onkeydown:stopPropagation="true">
+    <span aria-hidden="true">@(Kind == "note" ? "▤" : "▣")</span>
+    <span class="annotation-marker-title">@Title</span>
+</button>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Kind { get; set; } = "note";
+    [Parameter] public NoteAccent Accent { get; set; }
+    [Parameter] public double Zoom { get; set; } = 1;
+    [Parameter] public double WorldWidth { get; set; }
+    [Parameter] public AnnotationDetail Detail { get; set; }
+    [Parameter] public bool Locked { get; set; }
+    [Parameter] public EventCallback OnReveal { get; set; }
+    private string Style => FormattableString.Invariant($"width:{AnnotationDetailPolicy.MarkerWidth(WorldWidth, Zoom, Detail)}px;height:{AnnotationDetailPolicy.MarkerHeight}px;transform:scale({1 / Zoom})");
+}

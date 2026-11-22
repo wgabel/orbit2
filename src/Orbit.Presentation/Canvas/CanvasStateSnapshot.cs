@@ -15,6 +15,11 @@ public sealed record CanvasStateSnapshot(
     IReadOnlyList<Guid> SelectedConnectionIds)
 {
     public ConnectionLabelMode ConnectionLabels { get; init; } = ConnectionLabelMode.All;
+    public AnnotationVisibility AnnotationVisibility { get; init; } = AnnotationVisibility.Show;
+    public AnnotationDetail ZoomAnnotationDetail { get; init; } = AnnotationDetail.Full;
+    public AnnotationDetail NoteDetail(Guid id) => AnnotationDetailPolicy.Resolve(AnnotationVisibility, ZoomAnnotationDetail, SelectedNoteId == id);
+    public AnnotationDetail GroupDetail(Guid id) => AnnotationDetailPolicy.Resolve(AnnotationVisibility, ZoomAnnotationDetail, SelectedGroupId == id);
+    public bool ShowSecondaryAnnotations => AnnotationVisibility == AnnotationVisibility.Show && ZoomAnnotationDetail == AnnotationDetail.Full;
     public Guid GraphId => Graph.Id;
     public long GraphRevision => Graph.Revision;
     public IReadOnlyDictionary<Guid, NodeVisualizationSettings> Visualizations { get; init; } =

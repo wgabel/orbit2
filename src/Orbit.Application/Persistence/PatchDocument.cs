@@ -25,6 +25,7 @@ public sealed record SavedCanvas(Guid GraphId, double PanX, double PanY, double 
 {
     public SavedNodeVisualization[] Visualizations { get; init; } = [];
     public ConnectionLabelMode ConnectionLabels { get; init; } = ConnectionLabelMode.All;
+    public AnnotationVisibility AnnotationVisibility { get; set; } = AnnotationVisibility.Show;
     public Guid? ExpandedVisualizationNodeId { get; init; }
     // A settable optional property lets the JSON reader retain the initializer
     // when older schema-1 documents omit the field.

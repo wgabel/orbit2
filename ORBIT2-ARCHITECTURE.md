@@ -104,7 +104,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 - <a id="workspace-persistence-and-history-phases-68611"></a>[persistence and history](docs/editor/persistence-and-history.md)
 - <a id="node-mute-and-processor-bypass-phase-616"></a>[audition](docs/editor/audition.md)
 - <a id="connection-amount-badges-and-inline-editing-planned-phase-6195"></a>[connection visualization](docs/editor/annotations-and-connections.md)
-- <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>[patch annotations](docs/editor/patch-annotations.md) — note cards, node/wire descriptions and visual groups (6.19.1–6.19.3 implemented), patch metadata and library search (6.19.4 in review), visibility and nested outline (planned)
+- <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>[patch annotations](docs/editor/patch-annotations.md) — note cards, node/wire descriptions, visual groups, patch metadata and library search (6.19.1–6.19.4 implemented), annotation visibility and zoom detail (6.19.7 in review), nested outline (planned)
 
 **Instruments and examples**
 

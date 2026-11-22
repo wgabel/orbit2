@@ -64,6 +64,8 @@ public partial class GraphCanvas : IAsyncDisposable
     private long measuredRevision = -1;
     private long visualizationGeometryGeneration;
     private long measuredVisualizationGeneration = -1;
+    private bool previousSecondaryDetail;
+    private IReadOnlyList<Guid> previousSelectedNodes = [];
     private bool initialFit;
     private bool disposed;
     private long? gesturePointer;
@@ -192,10 +194,19 @@ public partial class GraphCanvas : IAsyncDisposable
         measuredRevision = -1;
         initialFit = !AutoFitOnFirstRender;
         pendingSource = null;
+        finderOpen = false;
+        finderTarget = "";
+        previousSecondaryDetail = Snapshot.ShowSecondaryAnnotations;
+        previousSelectedNodes = Snapshot.SelectedNodeIds;
         EndGesture();
         subscription = State.Subscribe(change =>
         {
             if (change.Kind is CanvasChangeKind.VisualizationChanged or CanvasChangeKind.DescriptionsChanged) visualizationGeometryGeneration++;
+            if (previousSecondaryDetail != change.Snapshot.ShowSecondaryAnnotations ||
+                (!change.Snapshot.ShowSecondaryAnnotations && !previousSelectedNodes.SequenceEqual(change.Snapshot.SelectedNodeIds)))
+                visualizationGeometryGeneration++;
+            previousSecondaryDetail = change.Snapshot.ShowSecondaryAnnotations;
+            previousSelectedNodes = change.Snapshot.SelectedNodeIds;
             if (pendingSource is PortAddress source &&
                 !Snapshot.Graph.Nodes.Any(node => node.Id == source.NodeId &&
                     node.Outputs.Any(port => port.Id == source.PortId)))
@@ -512,7 +523,7 @@ public partial class GraphCanvas : IAsyncDisposable
         return (new CanvasBounds(start.X, start.Y, end.X, end.Y), occupied.Values.ToArray(), occupied);
     }
 
-    private void FitMeasured()
+    private void FitMeasured(bool signalOnly = false)
     {
         if (measurement is null || measurement.Width <= 0 || measurement.Height <= 0) return;
         var rectangles = measurement.Nodes.Where(node => Snapshot.NodePositions.ContainsKey(node.NodeId))
@@ -520,7 +531,7 @@ public partial class GraphCanvas : IAsyncDisposable
             {
                 var position = Snapshot.NodePositions[node.NodeId];
                 return new CanvasBounds(position.X, position.Y, position.X + node.Width, position.Y + node.Height);
-            }).Concat(Snapshot.Notes.Select(CanvasStateService.NoteBounds)).Concat(Snapshot.VisualGroups.Select(CanvasStateService.GroupBounds)).ToArray();
+            }).Concat(signalOnly ? [] : AnnotationDetailPolicy.FitBounds(Snapshot)).ToArray();
         if (rectangles.Length == 0)
         {
             State.ResetViewport();

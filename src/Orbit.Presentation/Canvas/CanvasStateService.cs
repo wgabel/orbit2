@@ -58,6 +58,8 @@ public sealed partial class CanvasStateService : ICanvasStateService
             throw new ArgumentException("Canvas notes belong to a different graph.", nameof(saved));
         if (saved is not null)
         {
+            if (!Enum.IsDefined(saved.AnnotationVisibility))
+                throw new ArgumentException("Invalid annotation visibility preference.", nameof(saved));
             DescriptionLimits.Validate(saved, graph.Nodes.Select(node => node.Id), graph.Connections.Select(edge => edge.Id));
             SavedVisualGroup.Validate(saved.VisualGroups, graph.Nodes.Select(node => node.Id), notes.Select(note => note.Id));
             if (saved.GraphId != graphId && saved.VisualGroups.Length > 0)
@@ -70,6 +72,8 @@ public sealed partial class CanvasStateService : ICanvasStateService
             Freeze(positions), Array.Empty<Guid>(), Array.Empty<Guid>())
         {
             ConnectionLabels = saved?.ConnectionLabels ?? ConnectionLabelMode.All,
+            AnnotationVisibility = saved?.AnnotationVisibility ?? AnnotationVisibility.Show,
+            ZoomAnnotationDetail = AnnotationDetailPolicy.Initial(viewport.Zoom),
             Visualizations = FreezeVisualizations(visualizations),
             ExpandedVisualizationNodeId = ValidExpandedNode(graph, saved?.ExpandedVisualizationNodeId),
             Notes = Array.AsReadOnly(notes.ToArray()),
@@ -106,6 +110,19 @@ public sealed partial class CanvasStateService : ICanvasStateService
         if (!Enum.IsDefined(mode)) throw new ArgumentOutOfRangeException(nameof(mode));
         return snapshot.ConnectionLabels == mode ? NoChange() :
             CommitLayout(CanvasChangeKind.ConnectionLabelsChanged, snapshot with { ConnectionLabels = mode });
+    }
+
+    public CanvasChangeResult SetAnnotationVisibility(AnnotationVisibility visibility)
+    {
+        EnsureEditable();
+        if (!Enum.IsDefined(visibility)) throw new ArgumentOutOfRangeException(nameof(visibility));
+        if (visibility == snapshot.AnnotationVisibility) return NoChange();
+        return CommitLayout(CanvasChangeKind.AnnotationVisibilityChanged, snapshot with
+        {
+            AnnotationVisibility = visibility,
+            SelectedNoteId = null,
+            SelectedGroupId = null
+        });
     }
 
     public CanvasChangeResult SetVisualization(Guid nodeId, NodeVisualizationSettings settings)
@@ -294,7 +311,11 @@ public sealed partial class CanvasStateService : ICanvasStateService
 
     private CanvasChangeResult CommitViewport(CanvasViewport viewport) =>
         viewport == snapshot.Viewport ? NoChange()
-            : CommitLayout(CanvasChangeKind.ViewportChanged, snapshot with { Viewport = viewport });
+            : CommitLayout(CanvasChangeKind.ViewportChanged, snapshot with
+            {
+                Viewport = viewport,
+                ZoomAnnotationDetail = AnnotationDetailPolicy.Update(viewport.Zoom, snapshot.ZoomAnnotationDetail)
+            });
 
     private CanvasChangeResult CommitLayout(CanvasChangeKind kind, CanvasStateSnapshot state)
     {

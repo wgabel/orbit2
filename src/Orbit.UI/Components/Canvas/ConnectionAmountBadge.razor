@@ -15,7 +15,8 @@
 @code {
     [Parameter, EditorRequired] public ConnectionVisual Wire { get; set; } = default!;
     [Parameter] public double Zoom { get; set; } = 1;
+    [Parameter] public bool ShowAuthoredLabel { get; set; } = true;
     [Parameter] public EventCallback<Guid> OnSelect { get; set; }
     private Task Select() => OnSelect.InvokeAsync(Wire.Id);
-    private string Tooltip => Wire.AuthoredLabel.Length == 0 ? Wire.Description : $"{Wire.AuthoredLabel} · {Wire.Description}";
+    private string Tooltip => !ShowAuthoredLabel || Wire.AuthoredLabel.Length == 0 ? Wire.Description : $"{Wire.AuthoredLabel} · {Wire.Description}";
 }

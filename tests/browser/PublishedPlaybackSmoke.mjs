@@ -137,6 +137,9 @@ try {
         assert.equal(await note.getAttribute("style"), originalBounds);
         await note.getByRole("button", { name: "Edit", exact: true }).click();
         const editor = page.getByRole("region", { name: "Edit canvas note" });
+        const visibility = page.getByLabel("Annotations", { exact: true });
+        await editor.waitFor();
+        assert.equal(await visibility.isEnabled(), false, "Protect an open annotation draft");
         await editor.getByLabel("Title").fill(title);
         await editor.getByLabel("Body").fill("A minor\nOpen fifth");
         await editor.getByLabel("Accent").selectOption("Idea");
@@ -151,6 +154,24 @@ try {
         assert.equal(await note.locator(".note-title").innerText(), "Note");
         await page.getByRole("button", { name: "Redo annotation", exact: true }).click();
         assert.equal(await note.locator(".note-title").innerText(), title);
+        const badgeCount = await viewport.locator(".connection-amount-badge").count();
+        await visibility.selectOption("TitlesOnly");
+        await note.getByRole("button", { name: `Reveal note: ${title}`, exact: true }).waitFor();
+        assert.equal(await note.locator(".note-body").count(), 0);
+        await note.getByRole("button", { name: `Reveal note: ${title}`, exact: true }).press("Enter");
+        await note.locator(".note-body").waitFor();
+        assert.equal(await note.locator(".note-body").textContent(), "A minor\nOpen fifth");
+        await visibility.selectOption("Hide");
+        await note.waitFor({ state: "detached" });
+        assert.equal(await viewport.locator(".connection-amount-badge").count(), badgeCount);
+        await viewport.getByRole("button", { name: "Find annotation", exact: true }).click();
+        await viewport.getByRole("region", { name: "Find annotation" }).getByRole("option", { name: `Note: ${title}`, exact: true }).waitFor({ state: "attached" });
+        await viewport.getByRole("button", { name: "Find annotation", exact: true }).click();
+        await visibility.selectOption("Show");
+        await note.waitFor();
+        if (await note.locator(".annotation-marker").count())
+            await note.locator(".annotation-marker").press("Enter");
+        assert.equal(await visibility.inputValue(), "Show");
         await note.getByTitle("Collapse note").click();
         assert.equal(await note.locator(".note-body").count(), 0);
         await note.getByTitle("Expand note").click();
@@ -158,6 +179,8 @@ try {
         assert.equal(await note.count(), 2);
         await page.getByRole("button", { name: "Undo annotation", exact: true }).click();
         assert.equal(await note.count(), 1);
+        if (await note.locator(".annotation-marker").count())
+            await note.locator(".annotation-marker").press("Enter");
         await note.getByRole("button", { name: "Delete", exact: true }).click();
         assert.equal(await note.count(), 0);
         await page.locator("#node-type").selectOption(previousType);
@@ -1519,6 +1542,43 @@ try {
     await instrumentPage.getByRole("button", { name: "Output: Pitch (st) (Modulation)" }).waitFor();
     assert.equal(await instrumentPage.getByRole("combobox", { name: "Pitch tracking (free)" }).count(), 3);
     await instrumentPage.close();
+    // Exercise automatic detail and temporary reveal independently of the main playback viewport.
+    const annotationPage = await browser.newPage();
+    await annotationPage.goto("http://127.0.0.1:" + server.address().port);
+    const annotationViewport = annotationPage.locator(".canvas-viewport");
+    await annotationPage.getByRole("button", { name: "100%", exact: true }).click();
+    await annotationPage.getByLabel("Current zoom", { exact: true }).filter({ hasText: /^100%$/ }).waitFor();
+    await annotationPage.locator("#node-type").selectOption("canvas.note");
+    await annotationPage.getByRole("button", { name: "Add", exact: true }).click();
+    await annotationPage.locator(".note-card").waitFor();
+    await annotationPage.getByRole("button", { name: "Create visual group", exact: true }).click();
+    await annotationPage.locator(".visual-group").waitFor();
+    const annotationMode = annotationViewport.getByLabel("Annotations", { exact: true });
+    await annotationMode.selectOption("TitlesOnly");
+    await annotationViewport.getByRole("button", { name: "Reveal note: Note", exact: true }).waitFor();
+    await annotationViewport.getByRole("button", { name: "Reveal group: Visual group", exact: true }).waitFor();
+    assert.equal(await annotationViewport.locator(".annotation-marker").count(), 2);
+    await annotationMode.selectOption("Show");
+    for (let i = 1; i <= 6; i++) {
+        await annotationPage.getByRole("button", { name: "Zoom out", exact: true }).click();
+        await annotationPage.getByLabel("Current zoom", { exact: true }).filter({ hasText: new RegExp(`^${Math.round(100 * 0.8 ** i)}%$`) }).waitFor();
+    }
+    const markerButton = annotationViewport.getByRole("button", { name: "Reveal note: Note", exact: true });
+    await markerButton.waitFor();
+    assert.ok(Math.abs((await markerButton.boundingBox()).height - 30) < 2, "Compact marker should remain screen readable");
+    await annotationMode.selectOption("Hide");
+    await annotationViewport.locator(".note-card, .visual-group").first().waitFor({ state: "detached" });
+    assert.equal(await annotationViewport.locator(".note-card, .visual-group").count(), 0);
+    await annotationViewport.getByRole("button", { name: "Find annotation", exact: true }).click();
+    const finder = annotationViewport.getByRole("region", { name: "Find annotation" });
+    await finder.getByLabel("Note or group").selectOption({ label: "Group: Visual group" });
+    await finder.getByRole("button", { name: "Reveal and fit" }).click();
+    await annotationViewport.locator(".visual-group").waitFor();
+    assert.equal(await annotationMode.inputValue(), "Hide");
+    assert.equal(await annotationViewport.locator(".note-card").count(), 0);
+    await annotationViewport.getByRole("button", { name: "Fit signals", exact: true }).click();
+    assert.equal(await annotationMode.inputValue(), "Hide");
+    await annotationPage.close();
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {
     await browser?.close();
