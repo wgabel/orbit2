@@ -18,6 +18,8 @@ For an analyzed, listener-validated synthetic instrument foundation rather than 
 
 <a id="musical-instrument-synthesis-and-physical-modelling-planned-phase-72"></a>
 
+For the next generation of instrument realism, see [Faust-first realistic instrument emulation](../instruments/realistic-instrument-emulation.md), including existing-node Hammond and pipe-organ candidates, rotary-speaker wiring, physical-model references and license/validation gates. The following original presets remain editable synthetic approximations; their technical tests do not establish acoustic realism.
+
 #### Musical instrument synthesis and physical modelling (Phase 7.2 — partial)
 
 **Status:** five sustained instrument composites (7.2.1), shared oscillator pitch and Pitch Control (7.2.2), [Monophonic Note Source](../instruments/pitch-control.md#phase-723--note-source-in-review) (7.2.3), single-mode [Resonator](../instruments/physical-modelling.md) (7.2.4), four editable [modal percussion composites](../instruments/physical-modelling.md#phase-725--modal-instrument-composites-implemented) (7.2.5 first stage) and pitch-only keyboard sequencing (7.2.8a–c) implemented. Five playable sustained templates (7.2.6a) are implemented; [four direct-velocity modal variants](../instruments/physical-modelling.md#phase-726b--playable-modal-instruments-in-review) (7.2.6b) are in review. Note-mode patterns, optional compact modal bank and polyphony remain follow-ups.
