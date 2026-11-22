@@ -69,7 +69,16 @@ public sealed class PatchSession : IPatchSession
                 var nextRevision = checked(snapshot.Revision + 1);
                 // Validation happens in the domain before each mutation. A
                 // rejected command leaves the revision and snapshots untouched.
-                var events = commands.Execute(targetGraph, command, nextRevision);
+                IReadOnlyList<IGraphEvent> events;
+                if (command is GroupNodesCommand grouping)
+                {
+                    var candidate = CompositeGrouping.Build(snapshot, grouping, registry);
+                    var grouped = GraphSnapshot.Capture(candidate.Root, nextRevision).GetGraph(grouping.GraphId).GetNode(candidate.CompositeId);
+                    graph = candidate.Root;
+                    events = [new NodesGrouped(grouping.GraphId, grouped, Array.AsReadOnly(grouping.NodeIds.Distinct().ToArray())),
+                        new NodeAdded(grouping.GraphId, grouped)];
+                }
+                else events = commands.Execute(targetGraph, command, nextRevision);
                 if (events.Count == 0)
                     return new GraphCommandResult(null, Array.Empty<Exception>());
 

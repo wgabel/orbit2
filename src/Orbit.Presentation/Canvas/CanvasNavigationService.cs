@@ -18,6 +18,7 @@ public sealed class CanvasNavigationService : IDisposable
     private PatchOutline? outline;
     private string? outlineTitle;
     private readonly Dictionary<Guid, SavedCanvas> removedLayouts = [];
+    private readonly HashSet<Guid> unvisitedGroupedLayouts = [];
     private readonly List<CanvasBreadcrumb> path = [];
     private readonly NotificationChannel<CanvasStateSnapshot> changes = new();
     private readonly IDisposable patchSubscription;
@@ -147,7 +148,7 @@ public sealed class CanvasNavigationService : IDisposable
     private void Activate(Guid graphId)
     {
         activeSubscription?.Dispose();
-        IsFirstVisit = !canvases.TryGetValue(graphId, out var canvas);
+        IsFirstVisit = !canvases.TryGetValue(graphId, out var canvas) || unvisitedGroupedLayouts.Remove(graphId);
         if (canvas is null)
         {
             removedLayouts.Remove(graphId, out var restored);
@@ -164,6 +165,31 @@ public sealed class CanvasNavigationService : IDisposable
     {
         outline = null;
         PatchCounts = GraphElementCounts.CountHierarchy(change.Snapshot);
+        foreach (var grouped in change.Events.OfType<NodesGrouped>())
+            if (canvases.TryGetValue(grouped.GraphId, out var parent))
+            {
+                var child = grouped.Composite.Composite!;
+                var selected = grouped.NodeIds.ToHashSet();
+                var source = parent.Snapshot;
+                var anchor = GroupAnchor(source, selected);
+                var spacing = (placement ?? new GridNodePlacementPolicy()).FindOutputRackPosition([CanvasPoint.Zero]);
+                var positions = source.NodePositions.Where(pair => selected.Contains(pair.Key))
+                    .Select(pair => new SavedNodePosition(pair.Key, pair.Value.X - anchor.X + spacing.X, pair.Value.Y - anchor.Y)).ToList();
+                positions.Add(new SavedNodePosition(child.InputRackId, 0, 0));
+                var output = (placement ?? new GridNodePlacementPolicy()).FindOutputRackPosition(positions.Select(p => new CanvasPoint(p.X, p.Y)));
+                positions.Add(new SavedNodePosition(child.OutputRackId, output.X, output.Y));
+                var edgeIds = child.Graph.Connections.Select(edge => edge.Id).ToHashSet();
+                var layout = new SavedCanvas(child.Graph.Id, 0, 0, 1, positions.ToArray())
+                {
+                    ConnectionLabels = source.ConnectionLabels,
+                    AnnotationVisibility = source.AnnotationVisibility,
+                    NodeDescriptions = source.NodeDescriptions.Values.Where(value => selected.Contains(value.NodeId)).ToArray(),
+                    ConnectionDescriptions = source.ConnectionDescriptions.Values.Where(value => edgeIds.Contains(value.ConnectionId)).ToArray(),
+                    Visualizations = source.Visualizations.Where(pair => selected.Contains(pair.Key)).Select(pair => new SavedNodeVisualization(pair.Key, pair.Value)).ToArray()
+                };
+                AddCanvas(child.Graph.Id, new CanvasStateService(session, child.Graph.Id, placement, layout));
+                unvisitedGroupedLayouts.Add(child.Graph.Id);
+            }
         // Restored subtrees must be searchable before they are visited again.
         foreach (var pair in removedLayouts.Where(pair => change.Snapshot.FindGraph(pair.Key) is not null).ToArray())
         {
@@ -173,7 +199,6 @@ public sealed class CanvasNavigationService : IDisposable
         // If an ancestor was deleted, navigate back to the closest surviving
         // canvas and dispose cached projections for the removed subtree.
         var removed = canvases.Keys.Where(id => change.Snapshot.FindGraph(id) is null).ToArray();
-        if (removed.Length == 0) return;
         var activeRemoved = removed.Contains(ActiveCanvas.Snapshot.GraphId);
         if (activeRemoved)
         {
@@ -188,11 +213,25 @@ public sealed class CanvasNavigationService : IDisposable
             outlineSubscriptions.Remove(id);
             canvases[id].Dispose();
             canvases.Remove(id);
+            unvisitedGroupedLayouts.Remove(id);
+        }
+        // Grouping history can move a still-live descendant to a different depth.
+        // Rebuild its breadcrumbs from actual ownership rather than the old path.
+        if (change.Events.Any(fact => fact is NodesGrouped or GraphHistoryRestored) &&
+            TryFindPath(change.Snapshot, ActiveCanvas.Snapshot.GraphId, out var actualPath) &&
+            !path.Skip(1).Select(crumb => crumb.GraphId).SequenceEqual(actualPath.Select(crumb => crumb.GraphId)))
+        {
+            path.RemoveRange(1, path.Count - 1);
+            path.AddRange(actualPath);
         }
         while (removedLayouts.Count > 100) removedLayouts.Remove(removedLayouts.Keys.First());
         // The surviving active projection receives this same patch commit next
         // and publishes the reconciled state (including the truncated path).
     }
+
+    internal static CanvasPoint GroupAnchor(CanvasStateSnapshot source, IReadOnlySet<Guid> selected) =>
+        new(source.NodePositions.Where(pair => selected.Contains(pair.Key)).Min(pair => pair.Value.X),
+            source.NodePositions.Where(pair => selected.Contains(pair.Key)).Min(pair => pair.Value.Y));
 
     private void Publish()
     {

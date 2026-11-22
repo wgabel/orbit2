@@ -706,6 +706,27 @@ File.WriteAllText(Path.Combine(args[0], "dynamic-taps.json"), JsonSerializer.Ser
     disconnected = dynamicTap.SignalTaps.ObservationIds.ContainsKey(new(tapGraph, tapGraph, tapDisconnected.Id, tapDisconnected.Outputs[0].Id, PortDirection.Output))
 }));
 
+// Compare the same deterministic weighted graph before and after grouping.
+using var groupSession = new PatchSession(BuiltInNodes.CreateEditorRegistry());
+var groupGraph = groupSession.GraphId;
+GraphNodeSnapshot GroupAdd(string type) => groupSession.Execute(new AddNodeCommand(groupGraph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+void GroupSet(GraphNodeSnapshot node, string key, double value) => groupSession.Execute(new SetParameterValueCommand(groupGraph, Address(node, key), value));
+void GroupWire(GraphNodeSnapshot from, GraphNodeSnapshot to, string key, double amount) => groupSession.Execute(new ConnectNodesCommand(groupGraph,
+    new(from.Id, from.Outputs[0].Id), new(to.Id, to.Inputs.Single(p => p.Key == key).Id), amount));
+var groupLfo = GroupAdd(OscillatorGenerator.NodeType); GroupSet(groupLfo, "frequency", 3); GroupSet(groupLfo, "amplitude", .8);
+var groupCarrier = GroupAdd(OscillatorGenerator.NodeType); GroupSet(groupCarrier, "frequency", 220); GroupSet(groupCarrier, "amplitude", .2);
+var groupGain = GroupAdd(GainProcessor.NodeType);
+var groupMaster = GroupAdd(MasterOutput.NodeType);
+GroupWire(groupLfo, groupCarrier, "frequency-modulation-in", -25);
+GroupWire(groupCarrier, groupGain, "audio-in", .7);
+GroupWire(groupGain, groupMaster, "audio-in", .4);
+var groupingCompiler = FaustGraphCompiler.CreateBuiltIn();
+var groupingBefore = groupingCompiler.Compile(groupSession.Snapshot);
+groupSession.Execute(new GroupNodesCommand(groupGraph, [groupCarrier.Id, groupGain.Id], "Grouped voice", groupSession.Snapshot.Revision));
+var groupingAfter = groupingCompiler.Compile(groupSession.Snapshot);
+File.WriteAllText(Path.Combine(args[0], "grouping.json"), JsonSerializer.Serialize(new[] { groupingBefore, groupingAfter }
+    .Select(program => new { source = program.Source, values = program.InitialControlValues() })));
+
 GraphNodeSnapshot TempoAdd(Guid graph, string type) =>
     tempoSession.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
 

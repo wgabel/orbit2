@@ -90,6 +90,7 @@ else
                  OnPresetApply="@(request => ApplyNodePreset(graphId, request))"
                  OnManagePresets="@(nodeId => OpenPresetManagerAsync(graphId, nodeId))" PresetCatalogRevision="@PresetCatalog.Revision"
                  OnOpenComposite="@(nodeId => OpenComposite(graphId, nodeId))"
+                 OnGroupNodes="GroupNodes"
                  OnEditRack="@(nodeId => OpenRackEditor(graphId, nodeId))"
                  ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" EnvelopePlayheads="@EnvelopePlayheads" BeatsPerMinute="@tempo" SampleRate="@responseSampleRate" />
     @if (ScopeNode is { } scopeNode)

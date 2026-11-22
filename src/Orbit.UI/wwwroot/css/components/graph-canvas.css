@@ -102,4 +102,6 @@
     box-sizing: border-box;
 }
 .canvas-selection-panel select { max-width: 100%; }
+.canvas-selection-panel { max-height: 65vh; overflow: auto; }
+.canvas-selection-panel input { min-width: 0; max-width: 100%; }
 .canvas-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--semantic-color-muted); pointer-events: none; }

@@ -2,7 +2,7 @@
 
 [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap, Phase 7.4](../roadmap/advanced.md#phase-74--reusable-composite-modules-planned)
 
-**Status:** Phase 7.4.1 multi-node selection and actions implemented; structural grouping, library, portability and macros remain planned. This is the design contract and implementation record for general-purpose reusable graphs. Existing composite graphs, boundary racks, built-in drone/impact factories and individual node presets are already implemented; see [composite nodes](composite-nodes.md) and [node presets](node-presets.md).
+**Status:** Phase 7.4.1 multi-node selection and actions implemented; 7.4.2a grouping in review. Ungrouping (7.4.2b), library, portability and macros remain planned. This is the design contract and implementation record for general-purpose reusable graphs. Existing composite graphs, boundary racks, built-in drone/impact factories and individual node presets are already implemented; see [composite nodes](composite-nodes.md) and [node presets](node-presets.md).
 
 Related: [canvas](canvas.md) · [persistence and history](persistence-and-history.md) · [signals and ports](../core/signals-and-ports.md) · [commands and events](../core/commands-and-events.md) · [annotations](annotations-and-connections.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
 
@@ -42,7 +42,17 @@ Open **Selection** beside Connection labels. **Select all module nodes** replace
 
 Drag empty canvas with Shift, or activate **Marquee mode** and drag without a keyboard. An outlined rectangle previews the area until release; any measured node frame with positive-area intersection is selected. Ctrl/Meta adds to the existing eligible node set; otherwise the rectangle replaces it. A click or thin line is ignored. Escape cancels a marquee or exits selection mode without changing the existing selection. Use **Return to pan** or Escape to resume normal background panning. Bulk actions clear cable and annotation selection; drafts lock these actions. Canvas navigation resets the transient mode but preserves the existing graph-local selection as before.
 
-`ModuleSelection` defines eligible node IDs and measured hit testing; `CanvasStateService.SelectModuleNodes` validates all requested IDs, deduplicates, filters protected types, and publishes one selection change without graph history. `GraphCanvas` previews in screen space and resolves the final rectangle against freshly measured world-space node geometry, rejecting stale graph/layout/viewport snapshots during the gesture. No new persistence schema or DSP behavior is required. Actual grouping and saving reusable modules are still future increments.
+`ModuleSelection` defines eligible node IDs and measured hit testing; `CanvasStateService.SelectModuleNodes` validates all requested IDs, deduplicates, filters protected types, and publishes one selection change without graph history. `GraphCanvas` previews in screen space and resolves the final rectangle against freshly measured world-space node geometry, rejecting stale graph/layout/viewport snapshots during the gesture. No new persistence schema or DSP behavior is required. Grouping is the separate structural operation below; saving reusable modules remains planned.
+
+### Implementation: create composite (7.4.2a, in review)
+
+Implementation: [PR #47](https://github.com/wgabel/orbit2/pull/47).
+
+Open **Selection**, select 1–512 eligible nodes, enter a composite name and expand **Boundary preview** to inspect generated names and actual signal types. Choose **Create composite**. The selected nodes become one editable composite, selected at the top-left of the previous selection. Open it to inspect the moved nodes, Input Rack and Output Rack; rename exposed ports using the rack editors. Empty boundaries and nested composites are supported. Master/rack nodes, selected cables and members of visual groups cannot be grouped; remove the affected visual-group membership first. Note cards and unrelated visual groups stay in the parent.
+
+`CompositeGrouping` builds a detached candidate through the same saved-graph reconstruction and domain validation used by persistence/history. `GroupNodesCommand` verifies the expected revision; `NodesGrouped` describes the atomic ownership change. One port per crossing uses the original **source** type, preserving adapters (Audio → Modulation and Clock → Trigger). The segment entering the original receiver retains the original edge ID and amount; the new segment has unity amount. Internal edges are unchanged, even dormant modulation. Connection order at receivers is retained. Non-contiguous selections that create cycles fail before commit. No new schema or DSP emitter is required.
+
+`CanvasNavigationService` creates a child layout with translated relative positions, rack placement, node/edge descriptions and visualization preferences; existing descendant canvases are retained. The parent layout keeps unrelated positions. One graph Undo restores the nodes and retained parent metadata; Redo restores the composite and retained child layout using existing bounded history caches. Grouping requires the normal structural recompile/crossfade, not guaranteed uninterrupted oscillator phase. Undo is not a general ungroup action: 7.4.2b will expand a composite's current edited routing. The independent Module Library is 7.4.3.
 
 ### Example: Deep Space Drone
 

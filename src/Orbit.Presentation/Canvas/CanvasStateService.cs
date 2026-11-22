@@ -238,6 +238,7 @@ public sealed partial class CanvasStateService : ICanvasStateService
         // every surviving layout and selection and publish just one canvas update.
         var nodeIds = graph.Nodes.Select(node => node.Id).ToHashSet();
         var connectionIds = graph.Connections.Select(connection => connection.Id).ToHashSet();
+        var grouping = change.Events.OfType<NodesGrouped>().SingleOrDefault(fact => fact.GraphId == graph.Id);
         var positions = snapshot.NodePositions
             .Where(pair => nodeIds.Contains(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value);
         foreach (var pair in snapshot.NodePositions.Where(pair => !nodeIds.Contains(pair.Key)))
@@ -248,6 +249,8 @@ public sealed partial class CanvasStateService : ICanvasStateService
             {
                 if (removedPositions.Remove(node.Id, out var restored))
                     positions.Add(node.Id, restored);
+                else if (grouping is not null && node.Id == grouping.Composite.Id)
+                    positions.Add(node.Id, CanvasNavigationService.GroupAnchor(snapshot, grouping.NodeIds.ToHashSet()));
                 else if (nextPlacement is { } reserved && change.Events.OfType<NodeAdded>()
                     .Any(added => added.GraphId == graph.Id && added.Node.Id == node.Id))
                 {
@@ -257,8 +260,8 @@ public sealed partial class CanvasStateService : ICanvasStateService
                 else positions.Add(node.Id, PlaceNode(positions));
             }
 
-        var selectedNodes = snapshot.SelectedNodeIds.Where(nodeIds.Contains).ToArray();
-        var selectedConnections = snapshot.SelectedConnectionIds.Where(connectionIds.Contains).ToArray();
+        var selectedNodes = grouping is null ? snapshot.SelectedNodeIds.Where(nodeIds.Contains).ToArray() : [grouping.Composite.Id];
+        var selectedConnections = grouping is null ? snapshot.SelectedConnectionIds.Where(connectionIds.Contains).ToArray() : [];
         foreach (var pair in snapshot.Visualizations.Where(pair => !nodeIds.Contains(pair.Key)))
             removedVisualizations[pair.Key] = pair.Value;
         while (removedVisualizations.Count > 512) removedVisualizations.Remove(removedVisualizations.Keys.First());
