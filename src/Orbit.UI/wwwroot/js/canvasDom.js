@@ -19,7 +19,7 @@ function warnNoteDraft(event) {
     event.returnValue = true;
 }
 
-export function setNoteDraftWarning(active) {
+export function setAnnotationDraftWarning(active) {
     if (active) window.addEventListener("beforeunload", warnNoteDraft);
     else window.removeEventListener("beforeunload", warnNoteDraft);
 }

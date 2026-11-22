@@ -53,17 +53,19 @@ public sealed class CanvasNavigationService : IDisposable
             ConnectionLabels = snapshot.ConnectionLabels,
             Visualizations = snapshot.Visualizations.Select(pair => new SavedNodeVisualization(pair.Key, pair.Value)).ToArray(),
             ExpandedVisualizationNodeId = snapshot.ExpandedVisualizationNodeId,
-            Notes = snapshot.Notes.ToArray()
+            Notes = snapshot.Notes.ToArray(),
+            NodeDescriptions = snapshot.NodeDescriptions.Values.ToArray(),
+            ConnectionDescriptions = snapshot.ConnectionDescriptions.Values.ToArray()
         };
 
-    private static bool TryFindPath(GraphSnapshot graph, Guid target, out List<CanvasBreadcrumb> path)
+    private bool TryFindPath(GraphSnapshot graph, Guid target, out List<CanvasBreadcrumb> path)
     {
         path = [];
         if (graph.Id == target) return true;
         foreach (var node in graph.Nodes)
             if (node.Composite is { } composite && TryFindPath(composite.Graph, target, out var children))
             {
-                path.Add(new CanvasBreadcrumb(composite.Graph.Id, node.Name));
+                path.Add(new CanvasBreadcrumb(composite.Graph.Id, canvases.TryGetValue(graph.Id, out var canvas) ? canvas.Snapshot.DisplayName(node.Id) : node.Name));
                 path.AddRange(children);
                 return true;
             }
@@ -83,7 +85,7 @@ public sealed class CanvasNavigationService : IDisposable
         var graph = session.Snapshot.GetGraph(ActiveCanvas.Snapshot.GraphId);
         var node = graph.Nodes.SingleOrDefault(candidate => candidate.Id == compositeNodeId);
         if (node?.Composite is not { } composite) return false;
-        path.Add(new CanvasBreadcrumb(composite.Graph.Id, node.Name));
+        path.Add(new CanvasBreadcrumb(composite.Graph.Id, ActiveCanvas.Snapshot.DisplayName(node.Id)));
         Activate(composite.Graph.Id);
         Publish();
         return true;

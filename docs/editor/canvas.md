@@ -106,7 +106,7 @@ Each view consumes an immutable `CanvasStateSnapshot` with separate graph and la
 
 The geometry and projection are implemented and independently tested. The renderer consumes this state, including measured node bounds, pointer gestures and Bézier paths. Phase 5 implements nested navigation using the same renderer and a cached state per graph.
 
-Phase 6.19.1 (in review) extends the same canvas projection with graph-scoped note cards, a separate bounded history, measured placement/fit and persistent authored bounds. See [patch annotations](patch-annotations.md#note-cards--implementation-6191-in-review) for the user interaction and data contract.
+Phase 6.19.1 (implemented) extends the same canvas projection with graph-scoped note cards, a separate bounded history, measured placement/fit and persistent authored bounds. Phase 6.19.2 (in review) extends that history and projection to node aliases/descriptions and connection labels, remeasuring node geometry when aliases change. See [patch annotations](patch-annotations.md) for the user interaction and data contract.
 
 ### First visible editor implementation
 

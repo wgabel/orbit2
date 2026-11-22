@@ -4,7 +4,7 @@
 
 Related: [canvas](canvas.md) · [design system](design-system.md) · [persistence and history](persistence-and-history.md) · [commands and events](../core/commands-and-events.md) · [connection visualization](annotations-and-connections.md) · [composite nodes](composite-nodes.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
 
-**Status:** Note cards (6.19.1) in review ([PR #27](https://github.com/wgabel/orbit2/pull/27)); aliases, descriptions, groups, overview, visibility and outline (6.19.2–6.19.4, 6.19.7–6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
+**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) in review ([PR #28](https://github.com/wgabel/orbit2/pull/28)); groups, overview, visibility and outline (6.19.3–6.19.4, 6.19.7–6.19.8) planned. This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features.
 
 <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>
 
@@ -23,9 +23,10 @@ Complex patches should explain their musical intent as well as their signal topo
 
 Example: a note titled “Thump — pitch and noise” explains a short high-frequency onset, descending pitch, longer low-frequency decay and a filtered noise transient; the neighboring nodes remain independently editable.
 
-#### Note cards — implementation (6.19.1, in review)
+<a id="note-cards--implementation-6191-in-review"></a>
+#### Note cards — implementation (6.19.1, implemented)
 
-Choose **Note (annotation)** in Add node, then **Add**. Drag the header to move the card, **Edit** to change title/body/accent in the unscaled canvas editor overlay, and drag the lower-right handle (or use its arrow keys) to resize. Collapse/expand preserves the expanded dimensions. The selected note can be duplicated or deleted; a collapsed note can also be removed using Delete selected. **Undo note / Redo note** are per-canvas, independent of graph Undo / Redo, with up to 100 operations. Drag and resize previews commit only on release; Escape cancels a gesture or an open text draft. Apply commits the complete draft; Cancel discards it. Navigation, patch replacement and explicit save/export are blocked while a draft is open; supported browsers warn before closing/reloading. Recovery saves only committed text.
+Choose **Note (annotation)** in Add node, then **Add**. Drag the header to move the card, **Edit** to change title/body/accent in the unscaled canvas editor overlay, and drag the lower-right handle (or use its arrow keys) to resize. Collapse/expand preserves the expanded dimensions. The selected note can be duplicated or deleted; a collapsed note can also be removed using Delete selected. **Undo annotation / Redo annotation** (renamed from Undo note / Redo note in 6.19.2) are per-canvas, independent of graph Undo / Redo, with up to 100 shared annotation operations. Drag and resize previews commit only on release; Escape cancels a gesture or an open text draft. Apply commits the complete draft; Cancel discards it. Navigation, patch replacement and explicit save/export are blocked while a draft is open; supported browsers warn before closing/reloading. Recovery saves only committed text.
 
 `SavedCanvas.Notes` defaults to an empty list for older schema-1 documents. Each record stores ID, title, body, accent, x/y, width/height and collapsed flag, with graph ownership inherited from its layout. Validation enforces 200 notes per graph, 120 title and 16,000 body characters per note, finite coordinates within ±1,000,000 world units, width 220–1,200, height 150–1,200, a valid accent and unique nonempty IDs within the graph. The existing 10 MiB JSON import limit applies. Default dimensions are 300 × 200 world units; collapsed height is 44. The optional fields use the same source-generated patch JSON and existing recovery/named-save storage. The note history and active selection are transient. Removed child layouts retain committed notes for graph undo, not annotation history. Fit includes note bounds and measured signal frames; adding notes and nodes uses measured occupied bounds. There is no registry entry or graph command for a note.
 
@@ -109,6 +110,35 @@ An alias is display metadata; it does not rename a registered type, alter its st
 
 Connection labels are equally optional and describe intent, e.g. "Brightness sweep" on a connection with a +600 Hz cutoff amount. The implemented [numeric badge and connection editor](annotations-and-connections.md) remain the authoritative presentation of the committed amount and destination unit. Show text as a distinct secondary label or tooltip/inspector detail, and preserve normal selection/editing even when descriptions are hidden. Do not store a second weight, replace the typed-event badge or conflate a label with measured modulation.
 
+<a id="node-and-connection-descriptions-implementation"></a>
+#### Node and connection descriptions — implementation (6.19.2, in review)
+
+Implementation: [PR #28](https://github.com/wgabel/orbit2/pull/28).
+
+Select one node or cable and choose **Describe selected**. The same unscaled editor handles node alias and multiline description or a single connection label; the selected connection's amount editor also offers **Edit connection label**. An existing node description has an info button, while aliases appear above the canonical node name and in composite breadcrumbs. The full alias and description remain accessible in the tooltip/editor; the shared frame truncates long names rather than widening. Empty alias restores the canonical name, and empty fields remove the metadata. Connection descriptions appear in the selected cable editor and badge tooltip, not in the numeric value itself. This also works for typed event and inactive connections; switching amount badges Off does not remove descriptions.
+
+The two metadata types use optional `SavedCanvas.nodeDescriptions` and `connectionDescriptions` arrays in schema 1. The graph is identified by the layout's existing `graphId`; each target must exist in that graph (including its real rack nodes). Duplicate or unknown targets, null text, multiline names, names longer than 120 characters, and node descriptions longer than 16,000 characters are rejected. Aliases need not be unique. Missing arrays in older documents default to empty; no domain or DSP fields are changed. Example layout members for agents (substitute the actual target UUIDs):
+
+```json
+{
+  "nodeDescriptions": [
+    {
+      "nodeId": "ab83657b-56df-4a85-af2a-fb31052744e1",
+      "alias": "Slow brightness drift",
+      "description": "77-second modulation cycle. Opens the filter gradually."
+    }
+  ],
+  "connectionDescriptions": [
+    {
+      "connectionId": "a0a818d5-d58b-4413-bbfd-587b9a89ea97",
+      "label": "Brightness sweep"
+    }
+  ]
+}
+```
+
+Apply is one annotation-history operation, interleaved chronologically with note edits. The shared 100-operation history stores reversible note changes and target-specific metadata changes; graph undo/redo is independent. Deleted targets leave active snapshots/export, but a bounded cache of up to 512 removed node and 512 removed connection descriptions per canvas restores metadata on graph undo. Undoing an annotation while its target is deleted changes that cached value, never creates a new target or pollutes the exported document. Removed child canvases use the same existing removed-layout restoration policy as notes. Draft protection is shared across all text editors, and editing the label of a selected cable does not alter an uncommitted numeric amount draft.
+
 ### Visual groups (6.19.3)
 
 Suggested workflow: select related members using the existing multi-selection, choose Create visual group, set its title/accent and adjust bounds. A frame can also start empty and allow explicit Add/Remove members. Give the group a separate header/drag affordance for moving its members. Resizing changes the visual frame, not member positions or membership; overlapping a node does not add it. Group title and optional description are editable. Group bounds and header remain identifiable at low zoom.
@@ -188,4 +218,4 @@ Keep the original state/persistence/history contracts above authoritative. When 
 | Audio isolation | During continuous playback perform every annotation and navigation action and verify unchanged root graph revision, DSP source/runtime generation and no graph-history entry. |
 | Agents / examples | Annotated example patch explains roles and actual settings, overview provides musical purpose and manual instructions, optional metadata remains data-only and valid. |
 
-These are separate deliverable increments in the [Phase 6.19 register](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-planned). With 6.19.1 in review, implement 6.19.2 next for immediate usefulness in generated musical patches; the other increments can proceed independently as their model/UI foundations are available. Record actual implementation PR links here and in the roadmap as features ship.
+These are separate deliverable increments in the [Phase 6.19 register](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-planned). With 6.19.1 implemented and 6.19.2 in review, implement 6.19.3 visual groups next; the other increments can proceed independently as their model/UI foundations are available. Record actual implementation PR links here and in the roadmap as features ship.

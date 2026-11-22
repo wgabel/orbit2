@@ -10,5 +10,6 @@ public enum CanvasChangeKind
     GraphRemoved,
     ConnectionLabelsChanged,
     VisualizationChanged,
-    NotesChanged
+    NotesChanged,
+    DescriptionsChanged
 }

@@ -30,10 +30,13 @@
     touch-action: none;
 }
 .node-header:active { cursor: grabbing; }
+.node-display-name { min-width: 0; display: flex; flex-direction: column; }
+.node-alias, .node-canonical-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.node-canonical-name { font-size: var(--semantic-typography-caption); color: var(--semantic-color-muted); font-weight: normal; }
 .node-role { color: var(--component-node-accent); font-size: var(--semantic-typography-caption); font-weight: normal; }
 .node-boundary-description { padding: var(--component-node-padding); color: var(--semantic-color-muted); font-size: var(--semantic-typography-caption); border-bottom: var(--semantic-border-width) solid var(--semantic-color-border); }
 .node-header-actions { display: flex; align-items: center; gap: var(--semantic-space-tight); flex-shrink: 0; }
-.node-header .node-audition-toggle {
+.node-header .node-audition-toggle, .node-header .node-description-toggle {
     display: grid;
     place-items: center;
     width: var(--component-node-audition-size);

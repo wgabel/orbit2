@@ -20,6 +20,9 @@ public partial class ConnectionAmountEditor : IAsyncDisposable
     [Parameter, EditorRequired] public Func<SetConnectionAmountCommand, string?> Dispatch { get; set; } = default!;
     [Parameter, EditorRequired] public CanvasPoint Anchor { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public string AuthoredLabel { get; set; } = "";
+    [Parameter] public EventCallback OnEditDescription { get; set; }
+    [Parameter] public bool DescriptionEditDisabled { get; set; }
 
     private ElementReference root;
     private IJSObjectReference? module;

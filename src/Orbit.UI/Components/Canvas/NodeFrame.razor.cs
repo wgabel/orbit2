@@ -16,6 +16,12 @@ public partial class NodeFrame
     [Parameter, EditorRequired] public GraphNodeSnapshot Node { get; set; } = default!;
     [Parameter] public Guid PatchId { get; set; }
     [Parameter] public Guid GraphId { get; set; }
+    [Parameter] public SavedNodeDescription? Documentation { get; set; }
+    [Parameter] public EventCallback OnEditDescription { get; set; }
+    [Parameter] public bool DocumentationEditDisabled { get; set; }
+    private string DisplayName => Documentation is { } metadata && !string.IsNullOrWhiteSpace(metadata.Alias) ? metadata.Alias : Node.Name;
+    private string DocumentationTooltip => Documentation is null ? Node.Name :
+        $"{DisplayName} ({Node.Name})\n{Documentation.Description}";
     [Parameter] public NodeVisualizationSettings Visualization { get; set; } = NodeVisualizationSettings.Default;
     [Parameter] public bool VisualizationExpanded { get; set; }
     [Parameter] public EventCallback<NodeVisualizationSettings> OnVisualizationChange { get; set; }

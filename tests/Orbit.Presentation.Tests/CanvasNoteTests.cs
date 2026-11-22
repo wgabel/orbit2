@@ -35,13 +35,13 @@ public sealed class CanvasNoteTests
         var copy = Assert.Single(canvas.Snapshot.Notes, n => n.Id != note.Id);
         Assert.Equal(edited.Body, copy.Body);
         canvas.DeleteNote(copy.Id);
-        canvas.UndoNote();
+        canvas.UndoAnnotation();
         Assert.Equal(2, canvas.Snapshot.Notes.Count);
-        canvas.UndoNote();
+        canvas.UndoAnnotation();
         Assert.Equal(edited, Assert.Single(canvas.Snapshot.Notes));
-        canvas.UndoNote();
+        canvas.UndoAnnotation();
         Assert.Equal(note, Assert.Single(canvas.Snapshot.Notes));
-        canvas.RedoNote();
+        canvas.RedoAnnotation();
         Assert.Equal(edited, Assert.Single(canvas.Snapshot.Notes));
         Assert.Equal(note, Assert.Single(initial.Notes));
         Assert.Same(graph, session.Snapshot);
@@ -50,7 +50,7 @@ public sealed class CanvasNoteTests
         Assert.Throws<ArgumentException>(() => canvas.UpdateNote(edited with { Width = double.NaN }));
         Assert.Equal(edited, Assert.Single(canvas.Snapshot.Notes));
         canvas.UpdateNote(edited with { Collapsed = false });
-        Assert.False(canvas.Snapshot.CanRedoNotes);
+        Assert.False(canvas.Snapshot.CanRedoAnnotations);
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public sealed class CanvasNoteTests
         using var loaded = serializer.Restore(restored, registry);
         using var loadedNav = new CanvasNavigationService(loaded, layouts: restored.CanvasLayouts, activeGraphId: restored.ActiveGraphId);
         Assert.Equal(childNote, Assert.Single(loadedNav.ActiveCanvas.Snapshot.Notes));
-        Assert.False(loadedNav.ActiveCanvas.Snapshot.CanUndoNotes);
+        Assert.False(loadedNav.ActiveCanvas.Snapshot.CanUndoAnnotations);
         loadedNav.NavigateTo(loaded.GraphId);
         Assert.Equal(rootNote, Assert.Single(loadedNav.ActiveCanvas.Snapshot.Notes));
         session.Execute(new RemoveNodeCommand(session.GraphId, composite.Id));
@@ -98,9 +98,9 @@ public sealed class CanvasNoteTests
         for (var step = 0; step < 110; step++)
             canvas.UpdateNote(note with { Title = $"Edit {step}" });
         var undoCount = 0;
-        while (canvas.Snapshot.CanUndoNotes)
+        while (canvas.Snapshot.CanUndoAnnotations)
         {
-            canvas.UndoNote();
+            canvas.UndoAnnotation();
             undoCount++;
         }
         Assert.Equal(100, undoCount);
