@@ -2699,7 +2699,7 @@
   "overview": {
     "title": "TEST — Melody driver / instrument audition v1",
     "description": "Repeatable D-major 4-bar test score; separate pitch, gate, trigger and velocity. Replace the plain reference voice while preserving the score.",
-    "instructions": "Reset transport, play at 120 BPM. Connect driver outputs to a candidate instrument and its Audio to the root mixer. Match levels, mute inactive instrument, compare and save a copy. Pitch reference A4. See the modern pop instrument guide.",
+    "instructions": "Reset transport, play at 120 BPM. Connect driver outputs to a candidate instrument and its Audio to the root mixer. Match levels, mute inactive instrument, compare and save a copy. Pitch reference A4. See the instrument and sound design guide; use this melody for pitched voices in any genre, or choose a role-appropriate test profile.",
     "tags": [
       "TEST",
       "Instrument audition",

@@ -17,7 +17,7 @@
 | Design evolving drones, an individual sound or an entire piece | [Music creation index](../examples/README.md), [foundations catalogue](../examples/foundations/README.md), [genre index](../examples/electronic-music-genres.md) |
 | Compose pitched music, chords, melodies and independent keyboard-like parts | [Harmony, scales and temperament](../examples/harmony-scales-and-temperament.md), [classical composition and melody](../examples/classical-composition-and-melody.md#8-technical-translation-independently-sequenced-keyboard-like-parts) |
 | Improve timbre, layer balance and final presentation | [Voice design](../examples/sound-quality-and-voice-design.md), [music theory](../examples/music-theory-and-sound-design.md), [production workflow](../examples/mixing-mastering-and-analysis.md), [contextual layer balance](../examples/contextual-layer-balance.md) |
-| Compare proposed instruments on the same simple melody, A/B audition and build a modern pop palette | [Instrument audition walkthrough](../examples/modern-pop-instrument-design.md#how-to-use-it-today), [download the TEST Melody Driver v1 patch](../examples/instrument-audition/reference.orbit2.json) (available now as importable JSON; built-in catalog integration planned) |
+| Compare proposed instruments and sounds across genres, A/B audition and build a reusable palette | [Instrument audition walkthrough](../examples/instrument-design-and-audition.md#how-to-use-it-today), [download the TEST Melody Driver v1 patch](../examples/instrument-audition/reference.orbit2.json) (available now as importable JSON; built-in catalog integration planned) |
 
 ## Recent features and earlier implementation trail
 
