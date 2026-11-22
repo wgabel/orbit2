@@ -79,4 +79,27 @@
 }
 .canvas-viewport:active { cursor: grabbing; }
 .canvas-world { position: absolute; inset: 0; transform-origin: top left; pointer-events: none; }
+.canvas-marquee {
+    position: absolute;
+    z-index: 2;
+    border: var(--semantic-border-focus-width) solid var(--semantic-color-selected);
+    background: color-mix(in srgb, var(--semantic-color-selected) 12%, transparent);
+    box-sizing: border-box;
+    pointer-events: none;
+}
+.canvas-selection-panel {
+    position: absolute;
+    inset-block-start: 100%;
+    inset-inline-start: 0;
+    width: var(--component-connection-editor-width);
+    max-width: calc(100vw - 2 * var(--semantic-space-normal));
+    padding: var(--semantic-space-compact);
+    display: grid;
+    gap: var(--semantic-space-tight);
+    background: var(--semantic-color-surface);
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-control);
+    box-sizing: border-box;
+}
+.canvas-selection-panel select { max-width: 100%; }
 .canvas-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--semantic-color-muted); pointer-events: none; }

@@ -4,7 +4,7 @@
 
 Related: [canvas](canvas.md) · [design system](design-system.md) · [persistence and history](persistence-and-history.md) · [commands and events](../core/commands-and-events.md) · [connection visualization](annotations-and-connections.md) · [composite nodes](composite-nodes.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
 
-**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) implemented ([PR #28](https://github.com/wgabel/orbit2/pull/28)); visual groups (6.19.3) implemented ([PR #30](https://github.com/wgabel/orbit2/pull/30)); overview and discovery (6.19.4) implemented ([PR #32](https://github.com/wgabel/orbit2/pull/32)); annotation visibility and zoom detail (6.19.7) implemented ([PR #35](https://github.com/wgabel/orbit2/pull/35)); outline (6.19.8) in review ([PR #39](https://github.com/wgabel/orbit2/pull/39)). This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features. See [hands-on organization workflows](../usage/patch-editor.md#3-document-and-organize-a-patch).
+**Status:** Note cards (6.19.1) implemented ([PR #27](https://github.com/wgabel/orbit2/pull/27)); node aliases, descriptions and connection labels (6.19.2) implemented ([PR #28](https://github.com/wgabel/orbit2/pull/28)); visual groups (6.19.3) implemented ([PR #30](https://github.com/wgabel/orbit2/pull/30)); overview and discovery (6.19.4) implemented ([PR #32](https://github.com/wgabel/orbit2/pull/32)); annotation visibility and zoom detail (6.19.7) implemented ([PR #35](https://github.com/wgabel/orbit2/pull/35)); outline (6.19.8) implemented ([PR #39](https://github.com/wgabel/orbit2/pull/39)). This document owns annotation and navigation requirements. Connection amount badges and composite boundary visibility (6.19.5–6.19.6) are separate implemented features. See [hands-on organization workflows](../usage/patch-editor.md#3-document-and-organize-a-patch).
 
 <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>
 
@@ -255,7 +255,9 @@ Compact note and group markers handle Enter and Space explicitly, as well as poi
 
 Schema-1 layouts add optional `annotationVisibility`: `0` (Show, also the default when absent), `1` (Titles only), or `2` (Hide). Invalid enum values are rejected on restore. Root and child canvases save independent preferences in recovery and portable files; selection, finder state and zoom-detail hysteresis are transient. Visibility and viewport edits do not enter graph or annotation history and do not create graph/audio events.
 
-## 3. Patch outline and navigation (6.19.8 — in review)
+<a id="3-patch-outline-and-navigation-6198--in-review"></a>
+
+## 3. Patch outline and navigation (6.19.8 — implemented)
 
 Large nested patches need a lightweight outline similar to a project navigator. Add one workspace-level outline panel derived from the existing immutable root graph and graph-qualified layout snapshots; do not maintain a second editable signal topology. Example:
 
@@ -278,7 +280,9 @@ Selecting an entry navigates through the existing `CanvasNavigationService` to t
 
 Update the outline after graph/layout commits, including group membership edits, renamed aliases, deleted nodes, removed descendants, undo/redo, imported or replaced patches. Clear stale search results safely; never follow an orphaned ID after replacement. Search committed content only (or clearly marked draft preview), avoid hidden secondary selection state and keep keyboard navigation accessible. Outline open/search/expanded branches can be transient UI preferences; these are not musical metadata required in portable documents. No graph commits or playback changes from outline navigation; ordinary visible-plot lease reconciliation on canvas changes remains the existing visualization lifecycle, and the outline itself requests no captures.
 
-### Implementation (6.19.8, in review)
+<a id="implementation-6198-in-review"></a>
+
+### Implementation (6.19.8, implemented)
 
 Implementation: [PR #39](https://github.com/wgabel/orbit2/pull/39).
 
@@ -303,4 +307,4 @@ Keep the original state/persistence/history contracts above authoritative. When 
 | Audio isolation | During continuous playback perform every annotation and navigation action and verify unchanged root graph revision, DSP source/runtime generation and no graph-history entry. |
 | Agents / examples | Annotated example patch explains roles and actual settings, overview provides musical purpose and manual instructions, optional metadata remains data-only and valid. |
 
-These are separate deliverable increments in the [Phase 6.19 register](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-planned). With 6.19.1–6.19.7 implemented (6.19.5 core), 6.19.8 outline and navigation is in review. Record actual implementation PR links here and in the roadmap as features ship.
+These are separate deliverable increments in the [Phase 6.19 register](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-planned). With 6.19.1–6.19.7 implemented (6.19.5 core), 6.19.8 outline and navigation is implemented. Record actual implementation PR links here and in the roadmap as features ship.
