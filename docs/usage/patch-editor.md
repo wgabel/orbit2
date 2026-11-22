@@ -65,6 +65,8 @@ For keyboard-only selection, open **Selection**, choose **Select all module node
 
 ### Create an editable composite (7.4.2a, in review)
 
+Implementation: [PR #47](https://github.com/wgabel/orbit2/pull/47).
+
 For example, select a carrier oscillator and gain processor while leaving the external LFO and Master Output outside. In **Selection**, enter a **Composite name**, expand **Boundary preview** (the incoming LFO and outgoing audio each get a port), then choose **Create composite**. The two nodes become one editable composite without changing the mathematical signal routing. Double-click its header or choose **Open** to see the original nodes and racks. The original cable weights are preserved, not applied twice. Use rack port editing to give the generated socket names more musical labels.
 
 **Undo** immediately reverses the structural operation and **Redo** restores it. You can save/reload the resulting patch normally. If grouping is unavailable, exclude master/rack nodes and cables, or remove selected nodes from visual groups first. If the selection surrounds an unselected intervening processor and produces a cycle, include that processor. This is grouping within the current patch; generic ungrouping and saving to a cross-patch Module Library are not available yet. See the [grouping implementation](../editor/reusable-modules.md#implementation-create-composite-742a-in-review).

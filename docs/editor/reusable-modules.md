@@ -46,6 +46,8 @@ Drag empty canvas with Shift, or activate **Marquee mode** and drag without a ke
 
 ### Implementation: create composite (7.4.2a, in review)
 
+Implementation: [PR #47](https://github.com/wgabel/orbit2/pull/47).
+
 Open **Selection**, select 1–512 eligible nodes, enter a composite name and expand **Boundary preview** to inspect generated names and actual signal types. Choose **Create composite**. The selected nodes become one editable composite, selected at the top-left of the previous selection. Open it to inspect the moved nodes, Input Rack and Output Rack; rename exposed ports using the rack editors. Empty boundaries and nested composites are supported. Master/rack nodes, selected cables and members of visual groups cannot be grouped; remove the affected visual-group membership first. Note cards and unrelated visual groups stay in the parent.
 
 `CompositeGrouping` builds a detached candidate through the same saved-graph reconstruction and domain validation used by persistence/history. `GroupNodesCommand` verifies the expected revision; `NodesGrouped` describes the atomic ownership change. One port per crossing uses the original **source** type, preserving adapters (Audio → Modulation and Clock → Trigger). The segment entering the original receiver retains the original edge ID and amount; the new segment has unity amount. Internal edges are unchanged, even dormant modulation. Connection order at receivers is retained. Non-contiguous selections that create cycles fail before commit. No new schema or DSP emitter is required.
