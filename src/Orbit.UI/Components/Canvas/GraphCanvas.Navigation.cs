@@ -79,13 +79,13 @@ public partial class GraphCanvas
         return InvokeAsync(StateHasChanged);
     }
 
-    private async Task BeginNodeSurfaceAsync(PointerEventArgs args)
+    private async Task BeginNodeSurfaceAsync(Guid nodeId, PointerEventArgs args)
     {
         fitTaps.Reset();
-        if (args.PointerType != "touch" || module is null || args.Button != 0 ||
+        if (module is null || args.Button != 0 ||
             !await module.InvokeAsync<bool>("isNodeNavigationSurface", viewportElement, args.ClientX, args.ClientY)) return;
         if (universalNavigating || await TakeOverNavigationAsync(args)) return;
-        await BeginGesture(args, null, wire: false);
+        await BeginGesture(args, null, wire: false, tapNodeId: nodeId);
     }
 
     // A single input tap remains a port activation. A second finger landing

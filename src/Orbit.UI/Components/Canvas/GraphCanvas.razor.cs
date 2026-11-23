@@ -70,6 +70,10 @@ public partial class GraphCanvas : IAsyncDisposable
     private readonly Dictionary<PortAddress, CanvasPoint> portOffsets = [];
     private long measuredRevision = -1;
     private long visualizationGeometryGeneration;
+    private readonly NodeExpansionState nodeExpansion = new();
+    private Guid? nodeTapId;
+    private CanvasPoint nodeTapStart;
+    private bool nodeTapEligible;
     private long measuredVisualizationGeneration = -1;
     private bool previousSecondaryDetail;
     private IReadOnlyList<Guid> previousSelectedNodes = [];
@@ -198,6 +202,7 @@ public partial class GraphCanvas : IAsyncDisposable
         if (ReferenceEquals(State, subscribedState)) return;
         subscription?.Dispose();
         subscribedState = State;
+        nodeExpansion.Reset();
         measurement = null;
         portOffsets.Clear();
         measuredRevision = -1;
@@ -221,6 +226,7 @@ public partial class GraphCanvas : IAsyncDisposable
             if (helpNodeId is Guid openHelp && change.Snapshot.Graph.Nodes.All(node => node.Id != openHelp))
                 helpNodeId = positionedHelpId = null;
             if (change.Kind is CanvasChangeKind.VisualizationChanged or CanvasChangeKind.DescriptionsChanged) visualizationGeometryGeneration++;
+            if (nodeExpansion.Prune(change.Snapshot.Graph.Nodes)) visualizationGeometryGeneration++;
             if (previousSecondaryDetail != change.Snapshot.ShowSecondaryAnnotations ||
                 (!change.Snapshot.ShowSecondaryAnnotations && !previousSelectedNodes.SequenceEqual(change.Snapshot.SelectedNodeIds)))
                 visualizationGeometryGeneration++;
@@ -379,7 +385,30 @@ public partial class GraphCanvas : IAsyncDisposable
         if (args.Button == 0 && (args.PointerType != "touch" || !Snapshot.SelectedNodeIds.Contains(nodeId)))
             State.SelectNode(nodeId, args.ShiftKey || args.CtrlKey || args.MetaKey);
         pendingSource = null;
-        await BeginGesture(args, args.Button == 0 ? nodeId : null, wire: false);
+        await BeginGesture(args, args.Button == 0 ? nodeId : null, wire: false, tapNodeId: nodeId);
+    }
+
+    private void BeginNodeTap(Guid nodeId, PointerEventArgs args)
+    {
+        nodeTapEligible = args.Button == 0 && !args.ShiftKey && !args.CtrlKey &&
+            !args.MetaKey && !args.AltKey && NodeExpansionState.IsEligible(
+                Snapshot.Graph.Nodes.First(node => node.Id == nodeId));
+        nodeTapId = nodeTapEligible ? nodeId : null;
+        nodeTapStart = new CanvasPoint(args.ClientX, args.ClientY);
+    }
+
+    private void ToggleNodeExpand(Guid nodeId)
+    {
+        var node = Snapshot.Graph.Nodes.FirstOrDefault(candidate => candidate.Id == nodeId);
+        if (node is not null && NodeExpansionState.IsEligible(node) && nodeExpansion.Toggle(nodeId))
+            visualizationGeometryGeneration++;
+    }
+
+    private void ExpandNodeOnTap(Guid nodeId)
+    {
+        var node = Snapshot.Graph.Nodes.FirstOrDefault(candidate => candidate.Id == nodeId);
+        if (node is not null && NodeExpansionState.IsEligible(node) && nodeExpansion.Expand(nodeId))
+            visualizationGeometryGeneration++;
     }
 
     private async Task BeginOutput(PortPointerStart start)
@@ -398,13 +427,18 @@ public partial class GraphCanvas : IAsyncDisposable
             await PrepareWireGestureAsync(start);
     }
 
-    private async Task BeginGesture(PointerEventArgs args, Guid? nodeId, bool wire, bool backgroundTap = false)
+    private async Task BeginGesture(PointerEventArgs args, Guid? nodeId, bool wire, bool backgroundTap = false, Guid? tapNodeId = null)
     {
+        nodeTapId = null;
+        nodeTapEligible = false;
         StartNavigationGesture(args, nodeId, backgroundTap);
         gesturePointer = args.PointerId;
         draggedNode = nodeId;
         drawingWire = wire;
         lastClientPoint = new CanvasPoint(args.ClientX, args.ClientY);
+        // Arm the tap synchronously. A short mobile touch can end before the
+        // asynchronous browser pointer-capture call returns.
+        if (tapNodeId is Guid candidate) BeginNodeTap(candidate, args);
         if (module is not null)
             await module.InvokeVoidAsync("capturePointer", viewportElement, args.PointerId);
     }
@@ -416,6 +450,12 @@ public partial class GraphCanvas : IAsyncDisposable
         if (drawingWire && wirePanStopped) return;
         var current = new CanvasPoint(args.ClientX, args.ClientY);
         CheckTapMovement(current);
+        if (nodeTapEligible)
+        {
+            var moved = current.Subtract(nodeTapStart);
+            if (moved.X * moved.X + moved.Y * moved.Y > 8 * 8)
+                nodeTapEligible = false;
+        }
         var delta = current.Subtract(lastClientPoint);
         lastClientPoint = current;
         if (marquee is { } selection)
@@ -511,6 +551,9 @@ public partial class GraphCanvas : IAsyncDisposable
             else if (panned) pendingSource = null;
             return;
         }
+        var tappedNode = nodeTapEligible && nodeTapId is Guid id &&
+            new CanvasPoint(args.ClientX, args.ClientY).Subtract(nodeTapStart) is var shift &&
+            shift.X * shift.X + shift.Y * shift.Y <= 8 * 8 ? nodeTapId : null;
         var note = notePreview;
         var originalGroup = groupStart;
         var group = groupPreview;
@@ -526,6 +569,8 @@ public partial class GraphCanvas : IAsyncDisposable
             await UpdateNote(note);
             return;
         }
+        if (tappedNode is Guid expandedNode)
+            ExpandNodeOnTap(expandedNode);
     }
 
     private void CancelGesture(PointerEventArgs args)
@@ -546,6 +591,8 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private void EndGesture()
     {
+        nodeTapId = null;
+        nodeTapEligible = false;
         ClearNavigationGesture();
         ClearTouchWire();
         gesturePointer = null;

@@ -42,6 +42,8 @@ Use the repository's normal vocabulary: `Planned`, `In progress`, `In review`, `
 
 ## Finish the slice; enable a clean restart
 
+**Required green-CI closeout:** When all required implementation CI checks pass, update the authoritative `docs/roadmap/*.md` slice entry **in the same implementation PR before reporting the slice done**. Set `Implemented (CI verified; awaiting merge)` (or equivalent explicit wording), link the actual PR and successful run, state the verified acceptance outcomes, and name the next dependent slice. A passing build alone is not enough if required browser, interaction, or performance checks remain incomplete. If checks fail, leave `In progress`/`In review` and fix them instead. Once merged, the next roadmap edit may mark the entry `Merged` with the verified PR; never mark an open PR merged. The closeout documentation commit triggers CI again: ensure that final run passes too, but avoid repeatedly editing the register only to replace one passing CI run URL with another.
+
 Complete the existing `AGENTS.md` quality and documentation checks. Keep the handoff compact (normally **at most ~8 short lines**), containing:
 
 1. Slice ID, current status and PR link/commit (if any).

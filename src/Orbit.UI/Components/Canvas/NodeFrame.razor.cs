@@ -32,6 +32,8 @@ public partial class NodeFrame
     [Parameter] public CanvasPoint Position { get; set; }
     [Parameter] public NodeVisualRole Role { get; set; }
     [Parameter] public bool Selected { get; set; }
+    [Parameter] public bool Expanded { get; set; }
+    [Parameter] public EventCallback<Guid> OnToggleExpand { get; set; }
     [Parameter] public double BeatsPerMinute { get; set; } = MusicalTransport.DefaultTempo;
     [Parameter] public int? SampleRate { get; set; }
     [Parameter] public PortAddress? PendingSource { get; set; }
@@ -57,7 +59,9 @@ public partial class NodeFrame
     private ParameterRange? GetRange(Guid id) => ModulationRanges.GetValueOrDefault(new ParameterAddress(Node.Id, id));
     private double? GetEffective(Guid id) => EffectiveValues.TryGetValue(new ParameterAddress(Node.Id, id), out var value) ? value : null;
 
+    private bool Compactable => NodeExpansionState.IsEligible(Node);
+    private bool ShowFullControls => !Compactable || Expanded;
     private NodeAppearance Appearance => NodeAppearanceCatalog.Get(Node.TypeKey, Role);
-    private string FrameClass => $"node-frame {Appearance.CssClass} node-role-{Role.ToString().ToLowerInvariant()}{(Selected ? " node-selected" : "")}{(Node.IsMuted ? " node-muted" : "")}{(Node.IsBypassed ? " node-bypassed" : "")}";
+    private string FrameClass => $"node-frame {Appearance.CssClass} node-role-{Role.ToString().ToLowerInvariant()}{(Selected ? " node-selected" : "")}{(Node.IsMuted ? " node-muted" : "")}{(Node.IsBypassed ? " node-bypassed" : "")}{(Compactable ? " node-compactable" : "")}{(Compactable && Expanded ? " node-expanded" : "")}";
     private string PositionStyle => FormattableString.Invariant($"left:{Position.X}px;top:{Position.Y}px;");
 }

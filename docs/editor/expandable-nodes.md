@@ -1,6 +1,6 @@
-# Phase 6.21.5 — Expandable node design contract (approved, not implemented)
+# Phase 6.21.5 — Expandable node design contract (approved; staged implementation)
 
-Status: design approved on 2026-11-23. **Documentation only**. Implementation and verification remain future work.
+Status: design approved on 2026-11-23. **6.21.5-S1 implemented and [CI-verified](https://github.com/wgabel/orbit2/actions/runs/45264402110) in [PR #100](https://github.com/wgabel/orbit2/pull/100), awaiting merge**. The full target remains compact by default, but S1 keeps detailed views as the temporary default while compact value editing is not implemented. S2–S4 remain planned; PR #95 is not the implementation source. Track slice status in [the editor roadmap](../roadmap/editor-and-effects.md).
 
 This document supersedes the earlier Phase 6.21.5 proposal in [the editor roadmap](../roadmap/editor-and-effects.md). It describes the agreed target rather than claiming existing product behavior. Implementation must cross-check the actual registered node definitions and their active parameter/port rules.
 

@@ -74,6 +74,41 @@ export async function tripleTapFit(page, touch = true) {
     await waitFit(page, sequence);
 }
 
+async function verifyManualCompactShell(page, touch) {
+    const node = canvas(page).locator("article.node-compactable:has([data-port-id])").first();
+    const toggle = node.locator(".node-expand-toggle");
+    await toggle.waitFor();
+    await toggle.locator("xpath=..").waitFor();
+    const anchors = () => node.evaluate(element => {
+        const frame = element.getBoundingClientRect();
+        return [...element.querySelectorAll("[data-port-id]")].map(marker => {
+            const rect = marker.getBoundingClientRect();
+            return { id: marker.dataset.portId,
+                x: Math.round((rect.left + rect.width / 2 - frame.left) * 10) / 10,
+                y: Math.round((rect.top + rect.height / 2 - frame.top) * 10) / 10 };
+        });
+    });
+    const before = await anchors();
+    const expandedHeight = await node.evaluate(element => element.getBoundingClientRect().height);
+    assert.equal(await toggle.getAttribute("aria-expanded"), "true");
+    if (touch) await toggle.tap();
+    else await toggle.click();
+    await node.locator('.node-expand-toggle[aria-expanded="false"]').waitFor();
+    assert.deepEqual(await anchors(), before, "Collapsing must not move any connector anchor");
+    assert.ok(await node.evaluate(element => element.getBoundingClientRect().height) < expandedHeight);
+    const title = node.locator(".node-display-name");
+    const clearTitle = await title.evaluate(element => {
+        const bounds = element.getBoundingClientRect();
+        const target = document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
+        return target === element || element.contains(target);
+    });
+    assert.ok(clearTitle, "Node title center must not be obscured by header controls");
+    if (touch) await title.tap();
+    else await title.click();
+    await node.locator('.node-expand-toggle[aria-expanded="true"]').waitFor();
+    assert.deepEqual(await anchors(), before, "Reopening must not move connector anchors");
+}
+
 async function verifyCoveredNodePinch(page) {
     // Focus a parameter-rich node, then zoom around the viewport centre until
     // there is no exposed background to start a navigation gesture on.
@@ -132,6 +167,7 @@ export async function verifyCanvasNavigation(browser, url) {
         await desktop.goto(url);
         await canvas(desktop).locator("article[data-node-id]").nth(3).waitFor();
         await fitCanvas(desktop);
+        await verifyManualCompactShell(desktop, false);
         const fitted = await currentViewport(desktop);
         const [point] = await emptyPoints(desktop);
         await desktop.mouse.move(point.x, point.y);
@@ -150,6 +186,7 @@ export async function verifyCanvasNavigation(browser, url) {
             await page.goto(url);
             await canvas(page).locator("article[data-node-id]").nth(3).waitFor();
             await fitCanvas(page);
+            await verifyManualCompactShell(page, true);
             const fitted = await currentViewport(page);
             const positions = () => canvas(page).locator("article[data-node-id]").evaluateAll(nodes =>
                 nodes.map(node => [node.dataset.nodeId, node.getAttribute("style")]));
