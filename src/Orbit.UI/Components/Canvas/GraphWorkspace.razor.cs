@@ -421,6 +421,28 @@ public partial class GraphWorkspace : IAsyncDisposable
         finally { addingNode = false; }
     }
 
+    private void DuplicateNode(Guid graphId, Guid nodeId)
+    {
+        if (switchingWorkspace || addingNode || graphId != Canvas.Snapshot.GraphId || !CheckAnnotationDraft()) return;
+        var before = Canvas.Snapshot;
+        if (before.SelectedNodeIds.Count != 1 || before.SelectedNodeIds[0] != nodeId ||
+            before.SelectedConnectionIds.Count != 0 ||
+            !before.NodePositions.TryGetValue(nodeId, out var position) ||
+            before.Graph.GetNode(nodeId).TypeKey is InputRack.NodeType or OutputRack.NodeType or MasterOutput.NodeType)
+            return;
+
+        var duplicateId = Guid.NewGuid();
+        var description = before.NodeDescriptions.GetValueOrDefault(nodeId);
+        var visualization = before.Visualizations.GetValueOrDefault(nodeId);
+        if (!Execute(new DuplicateNodeCommand(graphId, nodeId, duplicateId))) return;
+
+        // Keep the copy close to its source while making both headers visible.
+        Canvas.MoveNode(duplicateId, position.Add(new CanvasPoint(320, 32)));
+        if (description is not null) Canvas.SetNodeDescription(description with { NodeId = duplicateId });
+        if (visualization is not null) Canvas.SetVisualization(duplicateId, visualization);
+        Canvas.SelectNode(duplicateId);
+    }
+
     private void Undo() => RestoreHistory(session.Undo);
 
     private void GroupNodes(GroupNodesCommand command)

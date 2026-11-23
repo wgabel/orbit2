@@ -96,7 +96,7 @@ else
                  OnUngroupComposite="UngroupComposite"
                  OnEditRack="@(nodeId => OpenRackEditor(graphId, nodeId))"
                  OnContextAddNode="OpenContextLibrary" OnContextSelection="OpenContextSelection"
-                 OnContextDelete="DeleteSelection" OnContextUndo="Undo" OnContextRedo="Redo"
+                 OnContextDelete="DeleteSelection" OnContextDuplicate="@(nodeId => DuplicateNode(graphId, nodeId))" OnContextUndo="Undo" OnContextRedo="Redo"
                  ContextCanUndo="@session.CanUndo" ContextCanRedo="@session.CanRedo"
                  ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" EnvelopePlayheads="@EnvelopePlayheads" BeatsPerMinute="@tempo" SampleRate="@responseSampleRate" />
     @if (performanceAddress is { } address && PerformanceTarget is { } target)

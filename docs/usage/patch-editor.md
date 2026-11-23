@@ -38,12 +38,16 @@ On Android or another touchscreen, touch and hold for about half a second. On de
 | Hold or right-click | Available actions (when applicable) |
 | --- | --- |
 | Empty canvas | Add node/note, create visual group, marquee select, select all module nodes, undo/redo and annotation history |
-| Node header or noninteractive surface | Mute/bypass, show/hide plot, scope, presets, describe/rename, focus, open/ungroup composite, rack ports, grouping and delete |
+| Node header or noninteractive surface | Duplicate node, mute/bypass, show/hide plot, scope, presets, describe/rename, focus, open/ungroup composite, rack ports, grouping and delete |
 | Selected nodes | Create composite or visual group, delete selection, clear selection |
 | Cable or amount badge | Edit amount, describe, focus either endpoint, delete connection |
 | Note or visual group header/marker | Edit, delete; notes also allow collapse/expand, duplicate and visual grouping |
 
 Regular buttons, port sockets, parameter inputs, plots and note body text keep their current interactions. The menu supplements the existing controls for now; composite creation still uses its name and boundary-preview workflow. Add node opens the Node Library and uses its existing placement behavior.
+
+### Duplicate a node
+
+In review ([PR #88](https://github.com/wgabel/orbit2/pull/88)). On desktop, right-click a node; on mobile, long-press its header or noninteractive body. Choose **Duplicate node**. The new node appears slightly down and right of its source and becomes selected, ready to drag or connect. Its parameters, mute/bypass state, alias/description and node plot preference are copied. Cables connecting the source to other nodes **are not copied**—connect the new node as needed. A duplicated composite retains its nested nodes and internal cables with new identities; the new internal canvas starts with normal layout defaults. Input and Output Rack nodes and the Master Output cannot be duplicated. The graph copy is one Undo/Redo step; descriptions still use annotation history.
 
 ### Delete a connection on mobile
 

@@ -10,8 +10,8 @@ const emptyPoint = page => page.locator('.canvas-viewport').evaluate(element => 
     throw new Error('No empty context gesture target');
 });
 
-async function rightClickHeader(page, selector) {
-    const point = await page.locator('.canvas-viewport').evaluate((viewport, selector) => {
+async function visibleHeaderPoint(page, selector) {
+    return page.locator('.canvas-viewport').evaluate((viewport, selector) => {
         const bounds = viewport.getBoundingClientRect();
         for (const header of viewport.querySelectorAll(selector)) {
             const rect = header.getBoundingClientRect();
@@ -23,6 +23,10 @@ async function rightClickHeader(page, selector) {
         }
         throw Error('No exposed header for ' + selector);
     }, selector);
+}
+
+async function rightClickHeader(page, selector) {
+    const point = await visibleHeaderPoint(page, selector);
     await page.mouse.click(point.x, point.y, { button: 'right' });
 }
 
@@ -34,6 +38,17 @@ export async function verifyCanvasContext(browser, url) {
         await fitCanvas(desktop);
         await rightClickHeader(desktop, 'article[data-node-id] .node-header');
         await menu(desktop).getByRole('button', { name: 'Focus node', exact: true }).waitFor();
+        const originalIds = await desktop.locator('article[data-node-id]').evaluateAll(nodes => nodes.map(node => node.dataset.nodeId));
+        await menu(desktop).getByRole('button', { name: 'Duplicate node', exact: true }).click();
+        await menu(desktop).waitFor({ state: 'hidden' });
+        await desktop.waitForFunction(count => document.querySelectorAll('article[data-node-id]').length === count, originalIds.length + 1);
+        const duplicatedId = await desktop.locator('article[data-node-id]').evaluateAll((nodes, original) =>
+            nodes.map(node => node.dataset.nodeId).find(id => !original.includes(id)), originalIds);
+        assert.ok(duplicatedId, 'A fresh graph node was created');
+        await desktop.locator(`article[data-node-id="${duplicatedId}"].node-selected`).waitFor();
+        await fitCanvas(desktop);
+        await rightClickHeader(desktop, `article[data-node-id="${duplicatedId}"] .node-header`);
+        await menu(desktop).getByRole('button', { name: 'Duplicate node', exact: true }).waitFor();
         await menu(desktop).getByRole('button', { name: 'Close contextual actions' }).press('Escape');
         await menu(desktop).waitFor({ state: 'hidden' });
         const point = await emptyPoint(desktop);
@@ -71,5 +86,18 @@ export async function verifyCanvasContext(browser, url) {
         await mobile.waitForTimeout(550);
         assert.equal(await menu(mobile).count(), 0);
         await end();
+
+        // Verify the actual touch path, not just a simulated desktop context menu.
+        await fitCanvas(mobile);
+        const header = await visibleHeaderPoint(mobile, 'article[data-node-id] .node-header');
+        const initialCount = await mobile.locator('article[data-node-id]').count();
+        await cdp.send('Input.dispatchTouchEvent', {
+            type: 'touchStart', touchPoints: [{ ...header, id: 2 }]
+        });
+        await menu(mobile).getByRole('button', { name: 'Duplicate node', exact: true }).waitFor();
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await menu(mobile).getByRole('button', { name: 'Duplicate node', exact: true }).tap();
+        await mobile.waitForFunction(previous =>
+            document.querySelectorAll('article[data-node-id]').length === previous + 1, initialCount);
     } finally { await cdp.detach(); await mobile.close(); }
 }

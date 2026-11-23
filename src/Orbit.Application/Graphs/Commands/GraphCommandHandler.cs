@@ -20,6 +20,7 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
         command switch
         {
             AddNodeCommand add => AddNode(graph, add, revision),
+            DuplicateNodeCommand duplicate => DuplicateNode(graph, duplicate, revision),
             RemoveNodeCommand remove => RemoveNode(graph, remove, revision),
             ConnectNodesCommand connect => Connect(graph, connect),
             RemoveConnectionCommand disconnect => RemoveConnection(graph, disconnect),
@@ -60,6 +61,14 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
         var snapshot = GraphNodeSnapshot.Capture(node, revision);
         graph.AddNode(node);
         return [new NodeAdded(graph.Id, snapshot)];
+    }
+
+    private IReadOnlyList<IGraphEvent> DuplicateNode(SignalGraph graph, DuplicateNodeCommand command, long revision)
+    {
+        var source = GraphNodeSnapshot.Capture(graph.GetNode(command.NodeId), revision);
+        var duplicate = NodeDuplicator.Duplicate(source, command.DuplicateId, registry);
+        graph.AddNode(duplicate);
+        return [new NodeAdded(graph.Id, GraphNodeSnapshot.Capture(duplicate, revision))];
     }
 
     private static IReadOnlyList<IGraphEvent> RemoveNode(SignalGraph graph, RemoveNodeCommand command, long revision)
