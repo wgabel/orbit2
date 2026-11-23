@@ -74,9 +74,30 @@
         <div class="node-inputs">
             @foreach (var port in Node.Inputs)
             {
-                <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port" HintText="@NodeHelpCatalog.PortHint(Node.TypeKey, port)" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
-                               WireCandidate="@(WireTargets?.Contains(new PortAddress(Node.Id, port.Id)))"
-                               OnOutputPointerDown="OnOutputPointerDown" OnInputPointerDown="OnInputPointerDown" />
+                <div class="node-modulation-slot" @key="port.Id">
+                    <PortConnector NodeId="@Node.Id" Port="@port" HintText="@NodeHelpCatalog.PortHint(Node.TypeKey, port)" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
+                                   WireCandidate="@(WireTargets?.Contains(new PortAddress(Node.Id, port.Id)))"
+                                   OnOutputPointerDown="OnOutputPointerDown" OnInputPointerDown="OnInputPointerDown" />
+                    @if (Compactable && ModulatedInput(port.Id) is { } parameter)
+                    {
+                        <CompactParameterValue @key="parameter.Id" ParameterId="@parameter.Id"
+                                               Definition="@parameter.Definition" Value="@parameter.BaseValue"
+                                               IsModulated="@IsModulated(parameter.Id)" EffectiveValue="@GetEffective(parameter.Id)"
+                                               ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))" />
+                    }
+                </div>
+            }
+            @if (Compactable)
+            {
+                @foreach (var parameter in UnmappedModulatable)
+                {
+                    <div class="node-modulation-slot node-unmapped-parameter" @key="parameter.Id">
+                        <span class="node-unmapped-parameter-label">@parameter.Definition.Name</span>
+                        <CompactParameterValue ParameterId="@parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue"
+                                               IsModulated="@IsModulated(parameter.Id)" EffectiveValue="@GetEffective(parameter.Id)"
+                                               ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))" />
+                    </div>
+                }
             }
         </div>
         <div class="node-outputs">
