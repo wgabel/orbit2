@@ -4,23 +4,27 @@
 @* Persistent compact base editor for a modulatable parameter. The read-only
    effective value is displayed only for a connected modulation route. *@
 <div class="node-compact-value" data-modulation-parameter-id="@ParameterId">
-    <label for="@InputId">Base</label>
-    <input id="@InputId" type="number" min="@Format(Definition.Minimum)" max="@Format(Definition.Maximum)"
-           step="any" value="@Draft" aria-label="@($"{Definition.Name} base value")"
-           aria-invalid="@(Error is not null ? "true" : "false")" aria-describedby="@ErrorId"
-           @onfocus="BeginEdit" @oninput="EditDraft" @onkeydown="HandleKeyDownAsync"
-           @onkeydown:stopPropagation="true"
-           @onblur="CommitOnBlurAsync"
-           @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true" />
-    @if (!string.IsNullOrEmpty(UnitLabel))
-    {
-        <span class="node-compact-unit">@UnitLabel</span>
-    }
+    <div class="node-compact-base">
+        <label for="@InputId">Base</label>
+        <input id="@InputId" type="number" min="@Format(Definition.Minimum)" max="@Format(Definition.Maximum)"
+               step="any" value="@Draft" aria-label="@($"{Definition.Name} base value")"
+               aria-invalid="@(Error is not null ? "true" : "false")" aria-describedby="@ErrorId"
+               @onfocus="BeginEdit" @oninput="EditDraft" @onkeydown="HandleKeyDownAsync"
+               @onkeydown:stopPropagation="true"
+               @onblur="CommitOnBlurAsync"
+               @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true" />
+        @if (!string.IsNullOrEmpty(UnitLabel))
+        {
+            <span class="node-compact-unit">@UnitLabel</span>
+        }
+    </div>
     @if (IsModulated)
     {
-        <span class="node-compact-arrow" aria-hidden="true">→</span>
-        <output class="node-compact-effective" aria-label="@($"{Definition.Name} live effective value")"
-                aria-live="off" title="@EffectiveText">@EffectiveText</output>
+        <div class="node-compact-live">
+            <span class="node-compact-arrow" aria-hidden="true">→</span>
+            <output class="node-compact-effective" aria-label="@($"{Definition.Name} live effective value")"
+                    aria-live="off" title="@EffectiveText">@EffectiveText</output>
+        </div>
     }
     <ValidationMessage Message="@Error" MessageId="@ErrorId" />
 </div>
