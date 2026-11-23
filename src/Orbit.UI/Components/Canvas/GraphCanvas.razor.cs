@@ -198,6 +198,8 @@ public partial class GraphCanvas : IAsyncDisposable
         if (ReferenceEquals(State, subscribedState)) return;
         subscription?.Dispose();
         subscribedState = State;
+        transientExpandedNodeId = pendingNodeTapId = null;
+        editingCompactParameters.Clear();
         measurement = null;
         portOffsets.Clear();
         measuredRevision = -1;
@@ -217,7 +219,8 @@ public partial class GraphCanvas : IAsyncDisposable
         {
             if (contextMenu is { } openContext && !ReferenceEquals(openContext.Snapshot, change.Snapshot))
                 contextMenu = positionedContext = null;
-            if (change.Kind is CanvasChangeKind.VisualizationChanged or CanvasChangeKind.DescriptionsChanged) visualizationGeometryGeneration++;
+            if (change.Kind is CanvasChangeKind.VisualizationChanged or CanvasChangeKind.DescriptionsChanged or CanvasChangeKind.NodePresentationChanged) visualizationGeometryGeneration++;
+            ReconcileNodeExpansion();
             if (previousSecondaryDetail != change.Snapshot.ShowSecondaryAnnotations ||
                 (!change.Snapshot.ShowSecondaryAnnotations && !previousSelectedNodes.SequenceEqual(change.Snapshot.SelectedNodeIds)))
                 visualizationGeometryGeneration++;
@@ -354,7 +357,8 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private async Task BeginBackground(PointerEventArgs args)
     {
-        if (await TakeOverNavigationAsync(args) || args.Button is not (0 or 1)) return;
+        if (await TakeOverNavigationAsync(args) || args.Button is not (0 or 1) || editingCompactParameters.Count > 0) return;
+        pendingNodeTapId = null;
         if (args.Button == 0 && (marqueeMode || args.ShiftKey))
         {
             await BeginMarqueeAsync(args);
@@ -371,7 +375,8 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private async Task BeginNode(Guid nodeId, PointerEventArgs args)
     {
-        if (await TakeOverNavigationAsync(args) || args.Button is not (0 or 1)) return;
+        if (await TakeOverNavigationAsync(args) || args.Button is not (0 or 1) || editingCompactParameters.Count > 0) return;
+        if (args.Button == 0) BeginNodeTap(nodeId, args);
         if (args.Button == 0 && (args.PointerType != "touch" || !Snapshot.SelectedNodeIds.Contains(nodeId)))
             State.SelectNode(nodeId, args.ShiftKey || args.CtrlKey || args.MetaKey);
         pendingSource = null;
@@ -412,6 +417,7 @@ public partial class GraphCanvas : IAsyncDisposable
         if (drawingWire && wirePanStopped) return;
         var current = new CanvasPoint(args.ClientX, args.ClientY);
         CheckTapMovement(current);
+        TrackNodeTap(current);
         var delta = current.Subtract(lastClientPoint);
         lastClientPoint = current;
         if (marquee is { } selection)
@@ -507,11 +513,14 @@ public partial class GraphCanvas : IAsyncDisposable
             else if (panned) pendingSource = null;
             return;
         }
+        var backgroundTap = tapEligible;
+        FinishNodeTap(args);
         var note = notePreview;
         var originalGroup = groupStart;
         var group = groupPreview;
         var wasResizingGroup = resizingGroup;
         EndGesture();
+        if (backgroundTap) CollapseUnpinned();
         if (originalGroup is not null && group is not null)
         {
             await CommitGroupGestureAsync(originalGroup, group, wasResizingGroup);
@@ -543,6 +552,7 @@ public partial class GraphCanvas : IAsyncDisposable
     private void EndGesture()
     {
         ClearNavigationGesture();
+        pendingNodeTapId = null;
         ClearTouchWire();
         gesturePointer = null;
         draggedNode = null;
@@ -642,6 +652,11 @@ public partial class GraphCanvas : IAsyncDisposable
         if (disposed || !ReferenceEquals(state, State) || measurement is null ||
             MeasuredNodeBounds(nodeId) is not { IsValid: true } bounds || measurement.Width <= 0 || measurement.Height <= 0) return;
         State.SelectNode(nodeId);
+        if (Snapshot.Graph.Nodes.Any(node => node.Id == nodeId && CompactNodePresentation.IsExpandable(node)))
+        {
+            transientExpandedNodeId = nodeId;
+            visualizationGeometryGeneration++;
+        }
         State.FitToBounds(bounds, measurement.Width, measurement.Height, 32);
     }
 
