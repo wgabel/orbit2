@@ -138,6 +138,14 @@
                 </div>
                 @if (IsArticulated)
                 {
+                    @if (!HasOutputConnection("trigger-out") && !HasOutputConnection("gate-out"))
+                    {
+                        <p class="pitch-editor-help" role="status">Not ready to play: connect <strong>Trigger</strong> to a plucked instrument or <strong>Gate</strong> to a sustained instrument. Pitch alone changes tuning but cannot start a note.</p>
+                    }
+                    @if (!HasOutputConnection("pitch-out"))
+                    {
+                        <p class="pitch-editor-help" role="status">Connect the sequencer <strong>Pitch</strong> output to your instrument’s pitch input to follow the melody.</p>
+                    }
                     <p class="pitch-editor-help">Connect Pitch + Trigger to a plucked instrument, or Pitch + Gate to a sustained instrument. Tie extends a note, while Rest stops it.</p>
                 }
                 else
@@ -233,6 +241,7 @@
 
 @code {
     [Parameter, EditorRequired] public GraphNodeSnapshot Node { get; set; } = default!;
+    [Parameter] public GraphSnapshot? TargetGraph { get; set; }
     [Parameter] public string? TargetLabel { get; set; }
     [Parameter] public Guid PatchId { get; set; }
     [Parameter] public Guid GraphId { get; set; }
@@ -265,6 +274,7 @@
     private double KeyboardVelocity => IsNoteSource ? Value(NoteSourceGenerator.VelocityKey) : 1;
     private bool CanStartTake => armed && !EditingNotes && Offset is not null && Value(NoteSequencerGenerator.LoopKey) == 1;
     private bool IsArticulated => !IsNoteSource && Value(NoteSequencerGenerator.ArticulationKey) == 1;
+    private bool HasOutputConnection(string key) => TargetGraph is not null && Node.Outputs.Any(p => p.Key == key && TargetGraph.Connections.Any(edge => edge.Source.NodeId == Node.Id && edge.Source.PortId == p.Id));
     private readonly Dictionary<string, int> held = [];
     private int Reference => (int)Node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.ReferenceKey).BaseValue;
     private double Value(string key) => Node.Parameters.Single(p => p.Definition.Key == key).BaseValue;
