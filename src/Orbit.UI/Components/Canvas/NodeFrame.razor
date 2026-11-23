@@ -112,12 +112,14 @@
                 }
             </div>
         }
+        @* Manual trigger and manual gate controls must work even while compact. *@
+        <RhythmicActionPanel Node="@Node" PatchId="@PatchId" GraphId="@GraphId" />
         @if (RenderExpandedContent)
         {
             <div class="node-expanded-content @(Expanded ? "is-open" : "")" aria-hidden="@(!Expanded)">
                 <div class="node-expanded-inner">
                     <NodePresetSelector Node="@Node" Appearance="@Appearance" OnApply="OnPresetApply" OnManage="OnManagePresets" CatalogRevision="@PresetCatalogRevision" />
-                    <RhythmicActionPanel Node="@Node" PatchId="@PatchId" GraphId="@GraphId" />
+
         @if (Node.Parameters.Count > 0 && Node.TypeKey != NoteSequencerGenerator.NodeType)
         {
             <div class="node-parameters">
