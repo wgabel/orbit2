@@ -2,7 +2,7 @@
 
 [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
 
-Related: [dsp engine](dsp-engine.md) · [visualizations](../editor/visualizations.md) · [testing](../quality/testing.md) · [performance](../../performance.md).
+Related: [dsp engine](dsp-engine.md) · [visualizations](../editor/visualizations.md) · [testing](../quality/testing.md) · [performance](../quality/performance.md).
 
 For practical plot selection and troubleshooting, see [inspecting signals](../usage/patch-editor.md#4-inspect-and-troubleshoot-signals).
 

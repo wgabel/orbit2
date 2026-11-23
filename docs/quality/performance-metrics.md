@@ -2,7 +2,7 @@
 
 [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
 
-Related: [performance](../../performance.md) · [dsp engine](../audio/dsp-engine.md) · [testing](testing.md).
+Related: [performance](performance.md) · [dsp engine](../audio/dsp-engine.md) · [testing](testing.md).
 
 ## 2. Understand audio performance
 

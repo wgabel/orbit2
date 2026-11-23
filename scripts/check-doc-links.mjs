@@ -2,8 +2,8 @@
 // Validate local Markdown file targets without downloading dependencies.
 // Anchors are intentionally not checked: GitHub's heading algorithm, HTML anchors,
 // and duplicate generated slugs need a separate semantic review when headings move.
-import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
-import { resolve, dirname, extname, relative } from 'node:path';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { resolve, dirname, relative } from 'node:path';
 import process from 'node:process';
 
 const root = resolve(import.meta.dirname, '..');
@@ -26,7 +26,8 @@ for (const file of markdown) {
     let name = href.split('#')[0].split('?')[0];
     try { name = decodeURIComponent(name); } catch { broken.push([file, href, 'invalid URL escaping']); continue; }
     const dest = resolve(dirname(file), name);
-    if (!dest.startsWith(root + '/') && dest !== root) { broken.push([file, href, 'outside repository']); continue; }
+    const relToTarget = relative(root, dest);
+    if (relToTarget === '..' || relToTarget.startsWith('../') || relToTarget.startsWith('..\\')) { broken.push([file, href, 'outside repository']); continue; }
     if (!existsSync(dest)) broken.push([file, href, 'target not found']);
   }
 }
