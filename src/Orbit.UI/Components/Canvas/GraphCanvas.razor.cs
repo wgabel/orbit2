@@ -202,7 +202,7 @@ public partial class GraphCanvas : IAsyncDisposable
         if (ReferenceEquals(State, subscribedState)) return;
         subscription?.Dispose();
         subscribedState = State;
-        nodeExpansion.Collapse();
+        nodeExpansion.Reset();
         measurement = null;
         portOffsets.Clear();
         measuredRevision = -1;
@@ -552,7 +552,6 @@ public partial class GraphCanvas : IAsyncDisposable
         var tappedNode = nodeTapEligible && nodeTapId is Guid id &&
             new CanvasPoint(args.ClientX, args.ClientY).Subtract(nodeTapStart) is var shift &&
             shift.X * shift.X + shift.Y * shift.Y <= 8 * 8 ? nodeTapId : null;
-        var backgroundTapped = tapEligible && nodeTapId is null;
         var note = notePreview;
         var originalGroup = groupStart;
         var group = groupPreview;
@@ -570,8 +569,6 @@ public partial class GraphCanvas : IAsyncDisposable
         }
         if (tappedNode is Guid expandedNode)
             ExpandNodeOnTap(expandedNode);
-        else if (backgroundTapped && nodeExpansion.Collapse())
-            visualizationGeometryGeneration++;
     }
 
     private void CancelGesture(PointerEventArgs args)

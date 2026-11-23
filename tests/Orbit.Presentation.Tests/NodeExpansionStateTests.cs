@@ -12,7 +12,7 @@ public sealed class NodeExpansionStateTests
         new(Guid.NewGuid(), type, "Test", [], [], []);
 
     [Fact]
-    public void OnlyLeafNodesAreCompactable()
+    public void OnlyLeafNodesCanUseCompactView()
     {
         Assert.True(NodeExpansionState.IsEligible(Node()));
         Assert.False(NodeExpansionState.IsEligible(Node(InputRack.NodeType)));
@@ -25,33 +25,36 @@ public sealed class NodeExpansionStateTests
     }
 
     [Fact]
-    public void ActivationIsEphemeralAndExclusive()
+    public void ManualCollapseKeepsOtherControlsAvailable()
     {
         var first = Node();
         var second = Node();
         var state = new NodeExpansionState();
+        Assert.True(state.IsExpanded(first)); // S1 remains full by default.
+        Assert.True(state.IsExpanded(second));
+        Assert.True(state.Toggle(first.Id));
         Assert.False(state.IsExpanded(first));
+        Assert.True(state.IsExpanded(second));
         Assert.True(state.Expand(first.Id));
         Assert.True(state.IsExpanded(first));
         Assert.False(state.Expand(first.Id));
-        Assert.True(state.Expand(second.Id));
-        Assert.False(state.IsExpanded(first));
-        Assert.True(state.IsExpanded(second));
-        Assert.True(state.Toggle(second.Id));
-        Assert.False(state.IsExpanded(second));
-        Assert.False(state.Collapse());
+        Assert.False(state.Reset());
     }
 
     [Fact]
-    public void DeletedExpandedNodeIsPrunedWithoutChangingOtherNodes()
+    public void CollapsedViewIsLocalAndPrunedOnRemoval()
     {
         var first = Node();
         var second = Node();
         var state = new NodeExpansionState();
-        state.Expand(first.Id);
+        state.Toggle(first.Id);
+        state.Toggle(second.Id);
         Assert.False(state.Prune([first, second]));
         Assert.True(state.Prune([second]));
-        Assert.Null(state.ExpandedNodeId);
+        Assert.True(state.IsExpanded(first));
+        Assert.False(state.IsExpanded(second));
+        Assert.True(state.Reset());
+        Assert.True(state.IsExpanded(second));
         Assert.True(state.IsExpanded(Node(MasterOutput.NodeType)));
     }
 }
