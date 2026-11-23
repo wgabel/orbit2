@@ -13,8 +13,14 @@ class Target {
         this.listeners.set(type, (this.listeners.get(type) ?? []).filter(item => item !== fn));
     }
     emit(type, init = {}) {
-        const event = { preventDefault() {}, stopPropagation() {}, ...init };
+        const event = {
+            defaultPrevented: false, propagationStopped: false,
+            preventDefault() { this.defaultPrevented = true; },
+            stopPropagation() { this.propagationStopped = true; },
+            ...init
+        };
         for (const fn of this.listeners.get(type) ?? []) fn(event);
+        return event;
     }
 }
 
@@ -50,20 +56,48 @@ function fixture() {
         dispose() { adapter.dispose(); Object.assign(globalThis, original); } };
 }
 
-test("canvas-focused F fits instead of playing; piano-focused F plays and releases after focus changes", async () => {
+test("armed piano captures F even with canvas focus and releases after focus changes", async () => {
     const f = fixture();
     try {
         const canvas = new ElementStub();
         canvas.matches = selector => selector === ".canvas-viewport";
         canvas.closest = () => null;
-        f.window.emit("keydown", { code: "KeyF", key: "f", target: canvas });
-        f.window.emit("keyup", { code: "KeyF", key: "f", target: canvas });
+        const down = f.window.emit("keydown", { code: "KeyF", key: "f", target: canvas });
+        assert.equal(down.defaultPrevented, true);
+        assert.equal(down.propagationStopped, true); // Canvas Fit must not also run.
+        const repeat = f.window.emit("keydown", { code: "KeyF", key: "f", target: canvas, repeat: true });
+        assert.equal(repeat.propagationStopped, true); // Key-repeat must not trigger Fit.
+        const up = f.window.emit("keyup", { code: "KeyF", key: "f", target: f.root });
+        assert.equal(up.propagationStopped, true);
         await f.flush();
-        assert.deepEqual(f.calls, []);
+        assert.deepEqual(f.calls, [["PhysicalKey", "KeyF", true], ["PhysicalKey", "KeyF", false]]);
         f.window.emit("keydown", { code: "KeyF", key: "f", target: f.root });
         f.window.emit("keyup", { code: "KeyF", key: "f", target: canvas });
         await f.flush();
-        assert.deepEqual(f.calls, [["PhysicalKey", "KeyF", true], ["PhysicalKey", "KeyF", false]]);
+        assert.deepEqual(f.calls.slice(2), [["PhysicalKey", "KeyF", true], ["PhysicalKey", "KeyF", false]]);
+    } finally { f.dispose(); }
+});
+
+test("collapsed dock releases canvas Fit shortcut and typing/modifiers are never captured", async () => {
+    const f = fixture();
+    try {
+        const canvas = new ElementStub();
+        canvas.matches = selector => selector === ".canvas-viewport";
+        canvas.closest = () => null;
+        f.root.dataset.armed = "false";
+        const fit = f.window.emit("keydown", { code: "KeyF", key: "f", target: canvas });
+        assert.equal(fit.defaultPrevented, false);
+        assert.equal(fit.propagationStopped, false);
+        f.window.emit("keyup", { code: "KeyF", key: "f", target: canvas });
+        f.root.dataset.armed = "true";
+        const input = new ElementStub();
+        input.closest = selector => selector.includes('input') ? input : null;
+        const typing = f.window.emit("keydown", { code: "KeyF", key: "f", target: input });
+        const modifier = f.window.emit("keydown", { code: "KeyF", key: "f", ctrlKey: true, target: canvas });
+        assert.equal(typing.propagationStopped, false);
+        assert.equal(modifier.propagationStopped, false);
+        await f.flush();
+        assert.deepEqual(f.calls, []);
     } finally { f.dispose(); }
 });
 
