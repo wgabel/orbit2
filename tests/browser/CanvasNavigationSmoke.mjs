@@ -75,6 +75,9 @@ export async function tripleTapFit(page, touch = true) {
 }
 
 async function verifyCoveredNodePinch(page) {
+    // Compact nodes have no full sliders until explicitly opened.
+    const expandable = page.locator(".node-frame.node-compact .node-expand-toggle").first();
+    if (await expandable.count()) await expandable.evaluate(button => button.click());
     // Focus a parameter-rich node, then zoom around the viewport centre until
     // there is no exposed background to start a navigation gesture on.
     const id = await canvas(page).locator('article[data-node-id]').evaluateAll(nodes => nodes
