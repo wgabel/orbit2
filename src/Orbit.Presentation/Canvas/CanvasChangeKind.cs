@@ -10,6 +10,7 @@ public enum CanvasChangeKind
     GraphRemoved,
     ConnectionLabelsChanged,
     VisualizationChanged,
+    NodePresentationChanged,
     NotesChanged,
     DescriptionsChanged,
     GroupsChanged,
