@@ -78,7 +78,7 @@
                     <PortConnector NodeId="@Node.Id" Port="@port" HintText="@NodeHelpCatalog.PortHint(Node.TypeKey, port)" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
                                    WireCandidate="@(WireTargets?.Contains(new PortAddress(Node.Id, port.Id)))"
                                    OnOutputPointerDown="OnOutputPointerDown" OnInputPointerDown="OnInputPointerDown" />
-                    @if (Compactable && ModulatedInput(port.Id) is { } parameter)
+                    @if (Compactable && CompactModulationPortMap.ForInput(Node, port.Id) is { } parameter)
                     {
                         <CompactParameterValue @key="parameter.Id" ParameterId="@parameter.Id"
                                                Definition="@parameter.Definition" Value="@parameter.BaseValue"
@@ -89,7 +89,7 @@
             }
             @if (Compactable)
             {
-                @foreach (var parameter in UnmappedModulatable)
+                @foreach (var parameter in CompactModulationPortMap.WithoutInput(Node))
                 {
                     <div class="node-modulation-slot node-unmapped-parameter" @key="parameter.Id">
                         <span class="node-unmapped-parameter-label">@parameter.Definition.Name</span>
