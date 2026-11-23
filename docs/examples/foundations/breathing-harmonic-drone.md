@@ -1,6 +1,6 @@
 # Sound-design foundation 01 — breathing harmonic drone
 
-[Foundations catalogue](README.md) · [Voice quality and palette](../sound-quality-and-voice-design.md) · [Composition](../generative-ambient-composition.md) · [Theory](../music-theory-and-sound-design.md) · [Production analysis](../mixing-mastering-and-analysis.md) · [Genre techniques](../genres/orbit-techniques.md)
+[Foundations catalogue](catalogue.md) · [Voice quality and palette](../sound-quality-and-voice-design.md) · [Composition](../generative-ambient-composition.md) · [Theory](../music-theory-and-sound-design.md) · [Production analysis](../mixing-mastering-and-analysis.md) · [Genre techniques](../genres/orbit-techniques.md)
 
 Documentation provenance: [PR #33](https://github.com/wgabel/orbit2/pull/33) (listener-validated reference and analysis, not a shipped preset or new DSP implementation).
 

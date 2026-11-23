@@ -1,156 +1,73 @@
-# Orbit 2 — Modular audio engine and hierarchical graph architecture
+# Orbit 2 architecture — entry point
 
-**Status:** Living architecture, implemented contracts and implementation roadmap  
-**Implementation and usage audit:** 2026-11-22 · main through [`f66fe0a`](https://github.com/wgabel/orbit2/commit/f66fe0a) (PR #38)
-**Target repository:** [wgabel/orbit2](https://github.com/wgabel/orbit2)  
-**Original design date:** 2026-11-20
+[Project](README.md) · [Documentation map](docs/README.md) · [Roadmap](ROADMAP.md)
 
-This document consolidates the design discussions for Orbit 2: the original browser boilerplate, separation of responsibilities, signal generation, modulation, audio processing, clocks, hierarchical node canvases, exposed input/output racks, and event-driven editing. It is intended as a reference for implementing the next iterations, not a claim that every proposed system already exists. Earlier implementation sketches, design rationale, examples and acceptance criteria are preserved even when later implementation records supersede the initial wording. The README remains the practical build/run guide. [Performance monitoring and diagnostics](docs/quality/performance.md) is the dedicated specification for measuring audio reliability, latency, DSP load/headroom, editor responsiveness, compilation and benchmark regressions (Phase 7.3). The [performance targets and explainable health indicators](docs/quality/performance-metrics.md#31-suggested-health-thresholds) and [device-specific capacity benchmarks](docs/quality/dsp-profiling.md#94-device-specific-capacity-and-reference-compositions-planned) are planned extensions (7.3.7–7.3.8), with short visible reasons for statuses and device-scoped workload goals.
+The detailed [architecture overview](docs/architecture/overview.md) and [task-routing reference](docs/architecture/task-routing.md) are in `docs/architecture/`. This file remains a stable entry point for agents and existing links; it is **not** a duplicate specification.
 
 ## 1. Goals and current baseline
 
-### Motivation
-
-Orbit is a browser-based environment for designing synthesizers, drones, modulation systems and musical patches. The original React application provides inspiration for the graph editor, but Orbit 2 is intended to avoid tight coupling between the presentation, application state and real-time audio processing.
-
-The goal is a modular architecture in which new generators, processors, parameter types and composite modules can be added without rewriting the rest of the application.
-
-### Technology choices
-
-| Technology | Responsibility |
-|---|---|
-| Blazor WebAssembly / C# | Browser UI, graph model, editing, validation and application services |
-| Faust | Sample-level sound synthesis and DSP algorithms |
-| WebAssembly | Execution format for compiled Faust DSP |
-| Web Audio API / AudioWorklet | Real-time audio scheduling and output |
-| Minimal JavaScript modules | Browser audio integration and lifecycle; not application business logic |
-| GitHub Actions / Pages | Build, test and deployment of the static app |
-
-**Original baseline (historical, Phases 1–2).** The initial implementation included the independent Orbit.Domain graph model (Phase 1) and a continuously running, fixed two-sine modulation graph (Phase 2). The browser bridge, build-time Faust compilation and separated application/UI/infrastructure projects support this playback path. Existing infrastructure concepts include AudioEngine, AudioContextManager, AudioClock, FaustModuleLoader, FaustNodeFactory, AudioVoice, AudioOutput and AudioEnvelope.
-
-**Original next stage — now delivered in Phases 3–4:** validated commands and application events, then a reusable graph editor and general DSP compilation. The active modulation playback path and shared infrastructure provide the baseline.
-
-### Design principles
-
-1. Separation of concerns: UI, graph state, application commands and real-time DSP have different responsibilities.
-2. Composition over specialization: a drone is a reusable graph, not a special monolithic synth class.
-3. Depend on stable abstractions and use dependency injection at composition roots.
-4. Generators and processors must not know which node is connected before or after them.
-5. Modulation is a first-class feature of all appropriate continuous numerical parameters.
-6. Every signal uses the same authoritative audio timing reference.
-7. User-interface operations must not interrupt sound unnecessarily.
-8. A new node should normally require a definition, a DSP implementation and registration, not changes to the graph editor's core.
-9. Use descriptive names, small cohesive classes, and separate source files for independent objects.
-10. Validate graph changes, preserve consistent state and test foundational behavior before adding numerous node types.
+[Goals, technology choices and boundaries](docs/architecture/overview.md#1-goals-and-current-baseline).
 
 ## Find the context for your task
 
-For a complete cross-area directory, start at the [documentation map](docs/README.md). This architecture file remains the stable technical routing overview, not another roadmap.
-
-For hands-on workflows and concrete examples, start with the [user and agent usage guide](docs/usage/README.md). Each page links the authoritative feature contracts and actual implementation PRs; use it alongside the task routing below, not as a constraint on exploration.
-
-For creating, analyzing or refining music, start with the [music creation index](docs/examples/README.md): routes by task and production stage, including the [sound-design foundations catalogue](docs/examples/foundations/README.md) of reproducible references and evidence.
-
-Start here. Read the relevant module(s), source and tests; follow additional references as needed. This index is a discovery aid, not a limit on exploration. For projects spanning layers, combine the relevant modules. For a novel subsystem, inspect the existing architecture and code, make a reasonable design consistent with the principles above (or propose an explicit change), and create or extend documentation when the topic merits it. No matching document is required to begin work.
-
-Domain owns graph primitives and validation; Application owns commands, immutable snapshots and services; Presentation owns layout and editor projections; Audio owns Faust compilation and DSP; Infrastructure owns browser integrations; UI composes them. See [project structure](docs/core/project-structure.md) for dependency direction. Read [ROADMAP.md](ROADMAP.md) for current status and priority; the detailed modules preserve both implemented contracts and future designs.
-
-| Task | Suggested starting points |
-|---|---|
-| New code, bug fix, refactoring or code review | [Coding standards and implementation quality](docs/quality/coding-standards.md), [testing](docs/quality/testing.md), and the relevant feature contract |
-| New node, connection or parameter | [Graph model](docs/core/graph-model.md), [signals/ports](docs/core/signals-and-ports.md), [modulation](docs/core/parameters-and-modulation.md), [DSP](docs/audio/dsp-engine.md) |
-| Stereo routing, panning, oscillator unison | [Stereo audio, panning and oscillator unison](docs/audio/stereo-panning-and-unison.md) — planned Phase 7.5; prioritize the Phase 7.3 performance baseline first |
-| Playback, clicking, latency | [DSP engine](docs/audio/dsp-engine.md), [performance index](docs/quality/performance.md), [transport](docs/audio/transport-and-timing.md) |
-| Canvas, node frame or UI | [User interaction/gesture registry](docs/editor/user-interactions.md) (mandatory when changing inputs), [Canvas](docs/editor/canvas.md), [contextual canvas actions](docs/editor/canvas.md#contextual-canvas-actions), [design system](docs/editor/design-system.md), [canvas-first workspace and node library (6.21.1–6.21.3 implemented)](docs/roadmap/editor-and-effects.md#phase-621--canvas-first-workspace-and-node-library-planned), relevant feature module |
-| Composite routing | [Composite nodes](docs/editor/composite-nodes.md), [signals/ports](docs/core/signals-and-ports.md), [commands](docs/core/commands-and-events.md) |
-| Reusing patches, grouping nodes into composites, custom module library and macros | [Reusable modules](docs/editor/reusable-modules.md), [composite nodes](docs/editor/composite-nodes.md), [persistence](docs/editor/persistence-and-history.md) |
-| Plots and tap capacity | [Visualizations](docs/editor/visualizations.md), [signal observation](docs/audio/signal-observation.md) |
-| Keyboard, sequencing and instruments | [Note Sequencer](docs/instruments/note-sequencer.md), [pitch control](docs/instruments/pitch-control.md), [envelopes](docs/audio/envelopes.md), [transport](docs/audio/transport-and-timing.md) |
-| Generative music, ambient patches and whole-piece arrangement | [Generative ambient composition](docs/examples/generative-ambient-composition.md); for individual sounds also see [instrument recipes](docs/examples/instrument-recipes.md) and [effects](docs/audio/effects.md) |
-| Musical monotony, melody/groove changes, distinct choruses/drops and section development | [Compositional development](docs/examples/compositional-development.md) — micro/meso/macro, score-level contrast, evaluation and listener feedback |
-| Harmony, tuning, timbre, musical quality, perceived loudness and spatial depth | [Music theory and sound design](docs/examples/music-theory-and-sound-design.md); use with the relevant instrument/effect or composition guide |
-| Scales, chord construction, consonance, historical tuning and wolf intervals, functional harmony, modulation and voice leading | [Harmony, scales and temperament](docs/examples/harmony-scales-and-temperament.md) — research, interval math, chord/voicing and progression examples |
-| Melody writing, historically informed classical craft, contrapuntal and keyboard composition | [Classical composition and melody](docs/examples/classical-composition-and-melody.md) — Bach/Mozart repertoire study, partimenti, phrase forms, score development and Orbit realization |
-| Genre-specific music, electronic style, rhythm, sound palette and construction | [Electronic music genres](docs/examples/electronic-music-genres.md) routes to focused ambient, bass/breaks, dance and experimental families; [musical techniques](docs/examples/genres/orbit-techniques.md) connects style to current nodes |
-| Hollow/basic timbres, prominent raw noise, finished instruments and reusable sound palette | [Sound quality and voice design](docs/examples/sound-quality-and-voice-design.md); use with instrument recipes and the relevant node contracts |
-| Realistic acoustic/electromechanical instruments, Faust physical models, organs and rotary effect | [Faust instrument nodes](docs/instruments/faust-instrument-nodes.md) — actual new node contracts and examples; [Faust-first instrument design](docs/instruments/realistic-instrument-emulation.md) — model candidates, recipes, audit and roadmap |
-| Instrument and sound design, repeatable audition and A/B testing across genres | [Instrument and sound design — repeatable audition](docs/examples/instrument-design-and-audition.md) — Prism Rush listener feedback and measurements, [TEST Melody Driver v1](docs/examples/instrument-audition/reference.orbit2.json), adaptable test profiles, candidate palette, usage and Phase 7.6 |
-| Evolving sounds, emergent harmonics, interacting modulation and breathing voices | [Sound-design foundations](docs/examples/foundations/README.md) — reference graphs, analysis, listener feedback, evidence statuses and maintenance |
-| Mix balance, mastering, loudness measurements, audio render analysis and iteration | [Mixing, mastering and analysis](docs/examples/mixing-mastering-and-analysis.md); [signal observation](docs/audio/signal-observation.md) for native measurement contracts |
-| Relative instrument/voice levels, over-loud or masked melodies, volume automation and balance validation | [Contextual layer balance](docs/examples/contextual-layer-balance.md) — research, practical level rides, aligned windowed role analysis and measured case study |
-| Save/load, undo/redo, presets | [Persistence](docs/editor/persistence-and-history.md), [commands](docs/core/commands-and-events.md), [node presets](docs/editor/node-presets.md) |
-| Notes, aliases, visual groups, patch overview, documentation visibility or outline | [Patch annotations](docs/editor/patch-annotations.md), [canvas](docs/editor/canvas.md), [persistence](docs/editor/persistence-and-history.md) |
-| Roadmap or feature priority | [Roadmap](ROADMAP.md); open only the relevant milestone register if needed |
-
-<a id="contents"></a>
+[Find relevant technical contracts](docs/architecture/task-routing.md#find-the-context-for-your-task), then inspect the owning source and tests.
 
 ## Detailed documentation
 
-**Core model and boundaries**
+[Browse the linked feature contracts](docs/architecture/task-routing.md#detailed-documentation).
 
-- <a id="2-fundamental-concepts"></a>[graph model](docs/core/graph-model.md)
-- <a id="3-signals-and-node-contracts"></a><a id="5-ports-and-connections"></a>[signals and ports](docs/core/signals-and-ports.md)
-- <a id="4-parameters-and-modulation"></a>[parameters and modulation](docs/core/parameters-and-modulation.md)
-- <a id="9-commands-events-and-transaction-boundaries"></a>[commands and events](docs/core/commands-and-events.md)
-- <a id="11-project-organization-and-dependencies"></a>[project structure](docs/core/project-structure.md)
-- <a id="15-decisions-and-open-questions"></a><a id="to-decide-during-implementation"></a>[decisions](docs/core/decisions.md)
-- <a id="16-references-and-glossary"></a>[references and glossary](docs/core/references-and-glossary.md)
+## Compatibility anchors
 
-**Audio engine**
+Existing deep links into the former architecture file remain resolvable here. Use the [detailed routing page](docs/architecture/task-routing.md#detailed-documentation) to reach their subjects.
 
-- <a id="10-faust-and-real-time-execution"></a><a id="runtime-foundations-and-safety"></a>[dsp engine](docs/audio/dsp-engine.md)
-- <a id="6-audio-time-oscillator-phase-and-transport"></a>[transport and timing](docs/audio/transport-and-timing.md)
-- [oscillators and noise](docs/audio/oscillators-and-noise.md)
-- [stereo audio, panning and oscillator unison](docs/audio/stereo-panning-and-unison.md) — Phase 7.5 planned; mono unison, stereo channel routing, modulated pan, stereo voice width and effects; performance prerequisites
-- <a id="algorithmic-reverb-phase-614"></a><a id="audio-processors-and-effects"></a><a id="chorus-phase-615"></a><a id="feedback-delay-phase-613"></a><a id="parametric-eq-phase-612"></a>[effects](docs/audio/effects.md)
-- <a id="pitch-shifter-phase-620-planned"></a>[pitch shifter](docs/audio/pitch-shifter.md)
-- <a id="envelope-generators-and-rhythmic-triggers-planned-phase-71"></a><a id="musical-control-performance-and-instrument-synthesis"></a>[envelopes](docs/audio/envelopes.md)
-- <a id="signal-observation-and-analysis-phase-618"></a><a id="signal-observation-and-analysis-planned-phase-618"></a>[signal observation](docs/audio/signal-observation.md)
-- <a id="sample-based-synthesis-and-audio-assets-planned-phase-8"></a>[sample assets](docs/audio/sample-assets.md)
+<a id="contents"></a>
+<a id="2-fundamental-concepts"></a>
+<a id="3-signals-and-node-contracts"></a>
+<a id="5-ports-and-connections"></a>
+<a id="4-parameters-and-modulation"></a>
+<a id="9-commands-events-and-transaction-boundaries"></a>
+<a id="11-project-organization-and-dependencies"></a>
+<a id="15-decisions-and-open-questions"></a>
+<a id="to-decide-during-implementation"></a>
+<a id="16-references-and-glossary"></a>
+<a id="10-faust-and-real-time-execution"></a>
+<a id="runtime-foundations-and-safety"></a>
+<a id="6-audio-time-oscillator-phase-and-transport"></a>
+<a id="algorithmic-reverb-phase-614"></a>
+<a id="audio-processors-and-effects"></a>
+<a id="chorus-phase-615"></a>
+<a id="feedback-delay-phase-613"></a>
+<a id="parametric-eq-phase-612"></a>
+<a id="pitch-shifter-phase-620-planned"></a>
+<a id="envelope-generators-and-rhythmic-triggers-planned-phase-71"></a>
+<a id="musical-control-performance-and-instrument-synthesis"></a>
+<a id="signal-observation-and-analysis-phase-618"></a>
+<a id="signal-observation-and-analysis-planned-phase-618"></a>
+<a id="sample-based-synthesis-and-audio-assets-planned-phase-8"></a>
+<a id="7-hierarchical-signal-graphs-and-canvases"></a>
+<a id="8-input-and-output-racks"></a>
+<a id="shared-canvas-and-component-standards"></a>
+<a id="signal-analysis-and-visualization-planned-phase-618"></a>
+<a id="workspace-persistence-and-history-phases-68611"></a>
+<a id="node-mute-and-processor-bypass-phase-616"></a>
+<a id="connection-amount-badges-and-inline-editing-planned-phase-6195"></a>
+<a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>
+<a id="keyboard-performance-and-continuous-pitch-sequencer-phase-728--planned"></a>
+<a id="keyboard-performance-and-continuous-pitch-sequencer-planned-phase-728"></a>
+<a id="musical-instrument-synthesis-and-physical-modelling-planned-phase-72"></a>
+<a id="12-worked-patch-example"></a>
+<a id="14-testing-and-acceptance-criteria"></a>
+<a id="13-implementation-roadmap"></a>
+<a id="roadmap-at-a-glance"></a>
+<a id="reading-guide-and-current-implementation"></a>
+<a id="phase-1--domain-primitives-graph-ownership-and-tests"></a>
+<a id="phase-2--shared-timing-and-first-sample-rate-modulation"></a>
+<a id="phase-3--commands-and-event-dispatch"></a>
+<a id="phase-4--flat-canvas-and-dynamic-graph-compiler"></a>
+<a id="phase-5--composite-nodes-and-rack-interfaces"></a>
+<a id="phase-618--signal-analysis-and-visualization-planned"></a>
+<a id="phase-619--patch-documentation-and-canvas-organization-planned"></a>
+<a id="phase-7--advanced-functionality-and-performance"></a>
+<a id="phase-71--envelope-generators-and-rhythmic-triggers-planned"></a>
+<a id="phase-72--musical-instrument-synthesis-and-physical-modelling-planned"></a>
 
-**Editor and persistence**
-
-- [canvas](docs/editor/canvas.md)
-- [Canvas-first workspace and node library](docs/roadmap/editor-and-effects.md#phase-621--canvas-first-workspace-and-node-library-planned) — Phase 6.21.1 responsive mobile shell implemented ([PR #60](https://github.com/wgabel/orbit2/pull/60)); 6.21.2 contextual panels implemented ([PR #61](https://github.com/wgabel/orbit2/pull/61)); 6.21.3 categorized icon/color library implemented ([PR #62](https://github.com/wgabel/orbit2/pull/62)); 6.21.4 assisted cable dragging implemented ([PR #65](https://github.com/wgabel/orbit2/pull/65)), gesture-only navigation in review ([PR #69](https://github.com/wgabel/orbit2/pull/69)); remaining touch gestures and auto-expanding/pinnable compact nodes; measurable canvas-area/performance checks; fullscreen deferred
-- <a id="7-hierarchical-signal-graphs-and-canvases"></a><a id="8-input-and-output-racks"></a>[composite nodes](docs/editor/composite-nodes.md)
-- [reusable composite modules](docs/editor/reusable-modules.md) — selection-to-composite, single-level expansion, whole-patch conversion, custom module library, portable definitions and macro controls (Phase 7.4; selection and grouping implemented, ungrouping in review)
-- <a id="shared-canvas-and-component-standards"></a>[design system](docs/editor/design-system.md)
-- <a id="signal-analysis-and-visualization-planned-phase-618"></a>[visualizations](docs/editor/visualizations.md)
-- [node presets](docs/editor/node-presets.md)
-- <a id="workspace-persistence-and-history-phases-68611"></a>[persistence and history](docs/editor/persistence-and-history.md)
-- <a id="node-mute-and-processor-bypass-phase-616"></a>[audition](docs/editor/audition.md)
-- <a id="connection-amount-badges-and-inline-editing-planned-phase-6195"></a>[connection visualization](docs/editor/annotations-and-connections.md)
-- <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>[patch annotations](docs/editor/patch-annotations.md) — note cards, node/wire descriptions, visual groups, patch metadata and library search (6.19.1–6.19.4 implemented), annotation visibility and zoom detail (6.19.7 implemented), nested outline (6.19.8 implemented)
-
-**Instruments and examples**
-
-- [pitch control](docs/instruments/pitch-control.md)
-- <a id="keyboard-performance-and-continuous-pitch-sequencer-phase-728--planned"></a><a id="keyboard-performance-and-continuous-pitch-sequencer-planned-phase-728"></a>[note sequencer](docs/instruments/note-sequencer.md)
-- [note sequencer design](docs/instruments/note-sequencer-design.md)
-- [physical modelling](docs/instruments/physical-modelling.md)
-- [polyphony](docs/instruments/polyphony.md)
-- <a id="musical-instrument-synthesis-and-physical-modelling-planned-phase-72"></a>[instrument recipes](docs/examples/instrument-recipes.md)
-- <a id="12-worked-patch-example"></a>[drone](docs/examples/drone.md)
-- [generative ambient composition](docs/examples/generative-ambient-composition.md) — musical layers, long-form arrangement and a worked multi-voice patch
-- [compositional development](docs/examples/compositional-development.md) — development of musical material and form beyond changes to instrumentation; listener feedback case
-- [music theory and electronic sound design](docs/examples/music-theory-and-sound-design.md) — interval/scale/chord recipes, voice leading, articulation, psychoacoustics, mix/depth and quality checks
-- [electronic music genres](docs/examples/electronic-music-genres.md) — modular genre vocabulary, composition approaches and reusable Orbit 2 techniques
-- [classic synthesizer patch recipes](docs/examples/synthesizer-patch-recipes.md) — eight user-supplied reference voice designs; palette selection, translation and verification guidance
-- [sound quality and voice design](docs/examples/sound-quality-and-voice-design.md) — transform noise, develop richer tonal voices and audition candidate preset recipes
-- [music creation index](docs/examples/README.md) — task routing and end-to-end workflow for music
-- [sound-design foundations](docs/examples/foundations/README.md) — reusable, evidence-labeled reference graphs and maintenance; first entry: [breathing harmonic drone](docs/examples/foundations/breathing-harmonic-drone.md)
-- [mixing, mastering and analysis](docs/examples/mixing-mastering-and-analysis.md) — role balance, peak/LUFS/LRA interpretation, mastering limits, render–measure–refine and a worked feedback example
-- [contextual layer balance](docs/examples/contextual-layer-balance.md) — relative levels, masking, research-backed mixing decisions, paired A/B validation and the Submerged Relay case
-
-**Quality and delivery**
-
-- [coding standards and implementation quality](docs/quality/coding-standards.md)
-- <a id="14-testing-and-acceptance-criteria"></a>[testing](docs/quality/testing.md)
-- [performance](docs/quality/performance.md)
-- <a id="13-implementation-roadmap"></a><a id="roadmap-at-a-glance"></a><a id="reading-guide-and-current-implementation"></a>[ROADMAP](ROADMAP.md)
-
-**Detailed milestone registers**
-
-- <a id="phase-1--domain-primitives-graph-ownership-and-tests"></a><a id="phase-2--shared-timing-and-first-sample-rate-modulation"></a><a id="phase-3--commands-and-event-dispatch"></a><a id="phase-4--flat-canvas-and-dynamic-graph-compiler"></a><a id="phase-5--composite-nodes-and-rack-interfaces"></a>[foundation](docs/roadmap/foundation.md)
-- <a id="phase-618--signal-analysis-and-visualization-planned"></a><a id="phase-619--patch-documentation-and-canvas-organization-planned"></a>[editor and effects](docs/roadmap/editor-and-effects.md)
-- <a id="phase-7--advanced-functionality-and-performance"></a><a id="phase-71--envelope-generators-and-rhythmic-triggers-planned"></a><a id="phase-72--musical-instrument-synthesis-and-physical-modelling-planned"></a>[advanced](docs/roadmap/advanced.md)
