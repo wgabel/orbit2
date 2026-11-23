@@ -13,6 +13,7 @@ public partial class GraphCanvas
     private ElementReference helpCloseButton;
     private IJSObjectReference? portHintsController;
     private IJSObjectReference? helpFocusController;
+    private DotNetObjectReference<GraphCanvas>? helpReceiver;
 
     private GraphNodeSnapshot? HelpNode => helpNodeId is Guid id
         ? Snapshot.Graph.Nodes.FirstOrDefault(node => node.Id == id) : null;
@@ -37,6 +38,13 @@ public partial class GraphCanvas
 
     private Task HandleNodeHelpKeyDown(KeyboardEventArgs args) =>
         args.Key == "Escape" ? CloseNodeHelpAsync() : Task.CompletedTask;
+
+    [JSInvokable]
+    public Task DismissNodeHelpFromBackAsync() => InvokeAsync(async () =>
+    {
+        await CloseNodeHelpAsync();
+        StateHasChanged();
+    });
 
     private async Task RenderNodeHelpAsync()
     {
@@ -65,7 +73,8 @@ public partial class GraphCanvas
         }
         positionedHelpId = node.Id;
         await module.InvokeVoidAsync("positionNodeHelp", viewportElement, node.Id.ToString("D"));
-        helpFocusController = await module.InvokeAsync<IJSObjectReference>("trapNodeHelpFocus", viewportElement);
+        helpReceiver ??= DotNetObjectReference.Create(this);
+        helpFocusController = await module.InvokeAsync<IJSObjectReference>("trapNodeHelpFocus", viewportElement, helpReceiver);
         await helpCloseButton.FocusAsync(preventScroll: true);
     }
 
@@ -77,6 +86,8 @@ public partial class GraphCanvas
             await helpFocusController.DisposeAsync();
             helpFocusController = null;
         }
+        helpReceiver?.Dispose();
+        helpReceiver = null;
         if (portHintsController is not null)
         {
             await portHintsController.InvokeVoidAsync("dispose");
