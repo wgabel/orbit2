@@ -342,14 +342,15 @@ public partial class GraphCanvas : IAsyncDisposable
     private string? DraftRigidPath => DraftCable is { } cable ? RigidPath(cable, includeEnd: false) : null;
 
     private static string CablePath(PatchCable cable) => FormattableString.Invariant(
-        $"M {cable.Source.X} {cable.Source.Y} L {cable.Exit.X} {cable.Exit.Y} " +
-        $"C {cable.First.Control1.X} {cable.First.Control1.Y}, {cable.First.Control2.X} {cable.First.Control2.Y}, {cable.First.End.X} {cable.First.End.Y} " +
-        $"C {cable.Second.Control1.X} {cable.Second.Control1.Y}, {cable.Second.Control2.X} {cable.Second.Control2.Y}, {cable.Entry.X} {cable.Entry.Y} " +
-        $"L {cable.Target.X} {cable.Target.Y}");
+        $"M {cable.Source.X} {cable.Source.Y} L {cable.Exit.X} {cable.Exit.Y} C {cable.First.Control1.X} {cable.First.Control1.Y}, {cable.First.Control2.X} {cable.First.Control2.Y}, {cable.First.End.X} {cable.First.End.Y} C {cable.Second.Control1.X} {cable.Second.Control1.Y}, {cable.Second.Control2.X} {cable.Second.Control2.Y}, {cable.Entry.X} {cable.Entry.Y} L {cable.Target.X} {cable.Target.Y}");
 
-    private static string RigidPath(PatchCable cable, bool includeEnd = true) => FormattableString.Invariant(
-        $"M {cable.Source.X} {cable.Source.Y} L {cable.Exit.X} {cable.Exit.Y}" +
-        (includeEnd ? $" M {cable.Entry.X} {cable.Entry.Y} L {cable.Target.X} {cable.Target.Y}" : ""));
+    private static string RigidPath(PatchCable cable, bool includeEnd = true)
+    {
+        var source = FormattableString.Invariant($"M {cable.Source.X} {cable.Source.Y} L {cable.Exit.X} {cable.Exit.Y}");
+        return includeEnd
+            ? source + FormattableString.Invariant($" M {cable.Entry.X} {cable.Entry.Y} L {cable.Target.X} {cable.Target.Y}")
+            : source;
+    }
 
     private async Task BeginBackground(PointerEventArgs args)
     {
