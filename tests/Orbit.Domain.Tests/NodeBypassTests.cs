@@ -39,6 +39,8 @@ public sealed class NodeBypassTests
     [InlineData(OscillatorGenerator.NodeType)]
     [InlineData(PhysicalPluckGenerator.NodeType)]
     [InlineData(PhysicalMarimbaGenerator.NodeType)]
+    [InlineData(PhysicalSustainedGenerator.ClarinetType)]
+    [InlineData(PhysicalSustainedGenerator.FluteType)]
     [InlineData(DrawbarOrganGenerator.NodeType)]
     [InlineData(MixerProcessor.NodeType)]
     [InlineData(MasterOutput.NodeType)]

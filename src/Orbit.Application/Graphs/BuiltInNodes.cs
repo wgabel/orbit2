@@ -27,6 +27,8 @@ public static class BuiltInNodes
         registry.Register(NoiseGenerator.NodeType, id => new NoiseGenerator(id), "Noise");
         registry.Register(PhysicalPluckGenerator.NodeType, id => new PhysicalPluckGenerator(id), "Physical Pluck");
         registry.Register(PhysicalMarimbaGenerator.NodeType, id => new PhysicalMarimbaGenerator(id), "Physical Marimba");
+        foreach (var kind in Enum.GetValues<PhysicalSustainedKind>())
+            registry.Register(PhysicalSustainedGenerator.TypeFor(kind), id => new PhysicalSustainedGenerator(id, kind), PhysicalSustainedGenerator.NameFor(kind));
         registry.Register(DrawbarOrganGenerator.NodeType, id => new DrawbarOrganGenerator(id), "Drawbar Organ");
         registry.Register(GainProcessor.NodeType, id => new GainProcessor(id), "Gain");
         registry.Register(MixerProcessor.NodeType, id => new MixerProcessor(id), "Mixer");

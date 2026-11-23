@@ -16,6 +16,8 @@ public static class NodeAppearanceCatalog
         ["generator.noise"] = new(NodeCategory.Audio, "M2 12 5 5 8 19 11 8 14 16 17 3 20 15 22 12", "Random signal generator", "white pink noise"),
         ["generator.physical-pluck"] = new(NodeCategory.Audio, "M3 19L21 3 M4 13L11 20 M13 4L20 11", "Triggered resonating string from a physical waveguide", "guitar harp string instrument"),
         ["generator.physical-marimba"] = new(NodeCategory.Audio, "M3 7V20H6V7Z M9 5V18H12V5Z M15 3V15H18V3Z", "Triggered modal wooden bar with mallet and strike position controls", "marimba xylophone percussion instrument"),
+        ["generator.physical-clarinet"] = new(NodeCategory.Audio, "M10 2H14V16L18 22H6L10 16Z M10 7H14 M10 11H14", "Reed-driven physical air column", "clarinet wind reed instrument"),
+        ["generator.physical-flute"] = new(NodeCategory.Audio, "M3 17 17 3 21 7 7 21Z M9 15H10 M13 11H14 M17 7H18", "Air jet and resonant tube physical model", "flute wind breath instrument"),
         ["generator.drawbar-organ"] = new(NodeCategory.Audio, "M3 21V8H7V21 M10 21V3H14V21 M17 21V11H21V21", "Nine-drawbar tonewheel-style organ", "hammond organ instrument"),
         ["generator.pitch-control"] = new(NodeCategory.Modulation, "M5 19V5 M5 5 2 8 M5 5 8 8 M11 16H22 M11 8H22 M11 12H18", "Pitch and transposition control", "frequency semitone"),
         ["generator.envelope"] = new(NodeCategory.Modulation, "M2 20 7 3 11 10 17 10 22 20", "Shape attack, decay, sustain and release", "ADSR amplitude"),

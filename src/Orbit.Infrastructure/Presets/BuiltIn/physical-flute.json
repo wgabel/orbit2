@@ -1,0 +1,92 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "physical-flute-clear",
+    "nodeType": "generator.physical-flute",
+    "name": "Clear flute",
+    "group": "Tone",
+    "description": "Physical flute candidate, clear flute; use a held Gate and Pitch.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.8,
+      "character": 0.15,
+      "attack": 0.055,
+      "release": 0.1,
+      "vibrato-depth": 0,
+      "vibrato-rate": 5,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "physical-flute-airy",
+    "nodeType": "generator.physical-flute",
+    "name": "Airy flute",
+    "group": "Tone",
+    "description": "Physical flute candidate, airy flute; use a held Gate and Pitch.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.65,
+      "character": 1,
+      "attack": 0.075,
+      "release": 0.13,
+      "vibrato-depth": 0,
+      "vibrato-rate": 5,
+      "output-gain": 0.9
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "physical-flute-soft",
+    "nodeType": "generator.physical-flute",
+    "name": "Soft flute",
+    "group": "Tone",
+    "description": "Physical flute candidate, soft flute; use a held Gate and Pitch.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.4,
+      "character": 0.35,
+      "attack": 0.09,
+      "release": 0.16,
+      "vibrato-depth": 0,
+      "vibrato-rate": 5,
+      "output-gain": 0.9
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "physical-flute-vibrato",
+    "nodeType": "generator.physical-flute",
+    "name": "Lyrical vibrato",
+    "group": "Articulation",
+    "description": "Physical flute candidate, lyrical vibrato; use a held Gate and Pitch.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.8,
+      "character": 0.55,
+      "attack": 0.055,
+      "release": 0.12,
+      "vibrato-depth": 12,
+      "vibrato-rate": 5.4,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "physical-flute-short",
+    "nodeType": "generator.physical-flute",
+    "name": "Short flute phrase",
+    "group": "Articulation",
+    "description": "Physical flute candidate, short flute phrase; use a held Gate and Pitch.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.9,
+      "character": 0.45,
+      "attack": 0.025,
+      "release": 0.06,
+      "vibrato-depth": 0,
+      "vibrato-rate": 5,
+      "output-gain": 0.8
+    }
+  }
+]

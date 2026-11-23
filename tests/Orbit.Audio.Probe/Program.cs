@@ -366,6 +366,28 @@ File.WriteAllText(Path.Combine(args[0], "physical-instrument-cores.json"), JsonS
     rotary = $"import(\"stdfaust.lib\"); process(inX,inS,inA,inD,inM) = {FaustPhysicalInstruments.Rotary("inX","inS","inA","inD","inM")};"
 }));
 
+foreach (var kind in Enum.GetValues<PhysicalSustainedKind>())
+{
+    using var sustainedSession = new PatchSession(BuiltInNodes.CreateRegistry());
+    var sustainedRoot = sustainedSession.GraphId;
+    GraphNodeSnapshot AddSustained(string type) => sustainedSession.Execute(new AddNodeCommand(sustainedRoot, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+    void WireSustained(GraphNodeSnapshot from, string output, GraphNodeSnapshot to, string input) =>
+        sustainedSession.Execute(new ConnectNodesCommand(sustainedRoot, new(from.Id, from.Outputs.Single(p => p.Key == output).Id), new(to.Id, to.Inputs.Single(p => p.Key == input).Id)));
+    var source = AddSustained(NoteSourceGenerator.NodeType);
+    var voice = AddSustained(PhysicalSustainedGenerator.TypeFor(kind));
+    var output = AddSustained(MasterOutput.NodeType);
+    sustainedSession.Execute(new SetParameterValueCommand(sustainedRoot, Address(voice, "expression"), 0));
+    WireSustained(source, "pitch-out", voice, "pitch-modulation-in");
+    WireSustained(source, "gate-out", voice, "gate-in");
+    WireSustained(source, "velocity-out", voice, "expression-modulation-in");
+    WireSustained(voice, "audio-out", output, "audio-in");
+    var compiled = FaustGraphCompiler.CreateBuiltIn().Compile(sustainedSession.Snapshot);
+    File.WriteAllText(Path.Combine(args[0], PhysicalSustainedGenerator.TypeFor(kind) + ".json"), JsonSerializer.Serialize(new {
+        source = compiled.Source, values = compiled.InitialControlValues(), inputs = compiled.RhythmicInputs.Count,
+        direct = $"import(\"stdfaust.lib\"); process(pIn,gIn,eIn,cIn,aIn,rIn,vIn,vrIn,oIn) = {FaustSustainedInstruments.Emit(kind,"pIn","gIn","eIn","cIn","aIn","rIn","vIn","vrIn","oIn")};"
+    }));
+}
+
 using var filterSession = new PatchSession(BuiltInNodes.CreateRegistry());
 var filterRoot = filterSession.GraphId;
 var carrier = FilterAdd(OscillatorGenerator.NodeType);
