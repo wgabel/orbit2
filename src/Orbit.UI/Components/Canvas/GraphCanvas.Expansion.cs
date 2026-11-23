@@ -33,8 +33,9 @@ public partial class GraphCanvas
 
     private void TrackTapMovement(Orbit.Presentation.Canvas.CanvasPoint current)
     {
-        if (pendingNodeTap is not null && current.Subtract(nodeTapOrigin) is { } delta &&
-            delta.X * delta.X + delta.Y * delta.Y > 64)
+        if (pendingNodeTap is null) return;
+        var delta = current.Subtract(nodeTapOrigin);
+        if (delta.X * delta.X + delta.Y * delta.Y > 64)
             nodeTapMoved = true;
     }
 
@@ -88,7 +89,11 @@ public partial class GraphCanvas
             if (Guid.TryParse(raw, out var id) && eligible.Contains(id))
                 pinnedNodes.Add(id);
         pinsLoadedFor = key;
-        if (pinnedNodes.Count > 0) await InvokeAsync(StateHasChanged);
+        if (pinnedNodes.Count > 0)
+        {
+            visualizationGeometryGeneration++;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task SavePinsAsync()
