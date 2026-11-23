@@ -12,6 +12,7 @@ public partial class GraphCanvas
     private Guid? positionedHelpId;
     private ElementReference helpCloseButton;
     private IJSObjectReference? portHintsController;
+    private bool portHintsInitStarted;
     private IJSObjectReference? helpFocusController;
     private DotNetObjectReference<GraphCanvas>? helpReceiver;
 
@@ -51,7 +52,26 @@ public partial class GraphCanvas
         if (module is null || disposed) return;
 
         // One passive delegated hover/focus listener per active canvas, not one per port.
-        portHintsController ??= await module.InvokeAsync<IJSObjectReference>("mountPortHints", viewportElement);
+        if (!portHintsInitStarted)
+        {
+            portHintsInitStarted = true;
+            try
+            {
+                var controller = await module.InvokeAsync<IJSObjectReference>("mountPortHints", viewportElement);
+                if (disposed)
+                {
+                    await controller.InvokeVoidAsync("dispose");
+                    await controller.DisposeAsync();
+                    return;
+                }
+                portHintsController = controller;
+            }
+            catch (JSException)
+            {
+                // A later render may retry; the node ? button remains available.
+                portHintsInitStarted = false;
+            }
+        }
 
         if (HelpNode is not { } node)
         {
