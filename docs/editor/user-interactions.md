@@ -73,9 +73,9 @@ Sources: `GraphCanvas.razor.cs`, `canvasContext.js`, `PerformanceKeyboard.razor`
 - **Double-click / double-tap composite header to open:** `docs/usage/patch-editor.md` previously instructed double-click, and Phase 6.21 planning mentions double-tap, but the audited shared `NodeFrame.razor` does **not** bind `@ondblclick`, nor is a composite double-tap recognizer present in the reviewed canvas handlers. Use the explicit `Open` button/context action. Treat this as **planned/unverified**, not an available gesture; verify after relevant PRs merge.
 - **Compact-node click-to-expand:** Phase 6.21.5 is planned and may later claim normal node tap/click. Avoid adding a second competing interpretation of the same click; update this registry when implemented.
 
-## Proposed connector/node help interaction policy (NOT implemented)
+## Node and connector help (in review, PR #94)
 
-This is a reserved design decision for the simple help-popup feature, not a feature-completion claim.
+The interaction behavior below is implemented in the [feature PR #94](https://github.com/wgabel/orbit2/pull/94), **not yet confirmed merged into main**. Other gestures remain as audited. Review the PR and browser regressions before treating these changes as released.
 
 | Surface | Desktop | Mobile/touch | Reason |
 | --- | --- | --- | --- |
