@@ -388,6 +388,48 @@ foreach (var kind in Enum.GetValues<PhysicalSustainedKind>())
     }));
 }
 
+// New Faust physical candidates: real note graph plus direct production core for offline render checks.
+foreach (var kind in new[] { PhysicalViolinGenerator.NodeType, PhysicalBrassGenerator.NodeType, PhysicalElectricGuitarGenerator.NodeType })
+{
+    using var candidateSession = new PatchSession(BuiltInNodes.CreateRegistry());
+    var graph = candidateSession.GraphId;
+    GraphNodeSnapshot AddCandidate(string type) => candidateSession.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+    void WireCandidate(GraphNodeSnapshot from, string outputKey, GraphNodeSnapshot to, string inputKey) =>
+        candidateSession.Execute(new ConnectNodesCommand(graph, new(from.Id, from.Outputs.Single(p => p.Key == outputKey).Id),
+            new(to.Id, to.Inputs.Single(p => p.Key == inputKey).Id)));
+    var note = AddCandidate(NoteSourceGenerator.NodeType);
+    var instrument = AddCandidate(kind);
+    var master = AddCandidate(MasterOutput.NodeType);
+    WireCandidate(note, "pitch-out", instrument, "pitch-modulation-in");
+    if (kind == PhysicalElectricGuitarGenerator.NodeType)
+    {
+        candidateSession.Execute(new SetParameterValueCommand(graph, Address(instrument, "strength"), 0));
+        WireCandidate(note, "trigger-out", instrument, "trigger-in");
+        WireCandidate(note, "velocity-out", instrument, "strength-modulation-in");
+    }
+    else
+    {
+        candidateSession.Execute(new SetParameterValueCommand(graph, Address(instrument, "expression"), 0));
+        WireCandidate(note, "gate-out", instrument, "gate-in");
+        WireCandidate(note, "velocity-out", instrument, "expression-modulation-in");
+    }
+    WireCandidate(instrument, "audio-out", master, "audio-in");
+    var compiled = FaustGraphCompiler.CreateBuiltIn().Compile(candidateSession.Snapshot);
+    var direct = kind switch
+    {
+        PhysicalViolinGenerator.NodeType =>
+            $"import(\"stdfaust.lib\"); process(p,g,e,c,b,a,r,v,vr,o) = {FaustAdditionalPhysicalInstruments.Violin("p","g","e","c","b","a","r","v","vr","o")};",
+        PhysicalBrassGenerator.NodeType =>
+            $"import(\"stdfaust.lib\"); process(p,g,e,c,b,a,r,v,vr,o) = {FaustAdditionalPhysicalInstruments.Brass("p","g","e","c","b","a","r","v","vr","o")};",
+        _ =>
+            $"import(\"stdfaust.lib\"); process(p,t,v,pos,mute,o) = {FaustAdditionalPhysicalInstruments.ElectricGuitar("p","t","v","pos","mute","o")};"
+    };
+    File.WriteAllText(Path.Combine(args[0], kind + ".json"), JsonSerializer.Serialize(new
+    {
+        direct, source = compiled.Source, values = compiled.InitialControlValues(), inputs = compiled.RhythmicInputs.Count
+    }));
+}
+
 using var filterSession = new PatchSession(BuiltInNodes.CreateRegistry());
 var filterRoot = filterSession.GraphId;
 var carrier = FilterAdd(OscillatorGenerator.NodeType);

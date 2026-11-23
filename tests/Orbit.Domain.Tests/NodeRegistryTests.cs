@@ -18,12 +18,15 @@ public sealed class NodeRegistryTests
     {
         var registry = BuiltInNodes.CreateRegistry();
 
-        Assert.Equal(26, registry.RegisteredTypes.Count);
+        Assert.Equal(29, registry.RegisteredTypes.Count);
         foreach (var kind in Enum.GetValues<PhysicalSustainedKind>())
             Assert.IsType<PhysicalSustainedGenerator>(registry.Create(PhysicalSustainedGenerator.TypeFor(kind)));
         Assert.IsType<PhysicalPluckGenerator>(registry.Create(PhysicalPluckGenerator.NodeType));
         Assert.IsType<PhysicalMarimbaGenerator>(registry.Create(PhysicalMarimbaGenerator.NodeType));
         Assert.IsType<DrawbarOrganGenerator>(registry.Create(DrawbarOrganGenerator.NodeType));
+        Assert.IsType<PhysicalViolinGenerator>(registry.Create(PhysicalViolinGenerator.NodeType));
+        Assert.IsType<PhysicalBrassGenerator>(registry.Create(PhysicalBrassGenerator.NodeType));
+        Assert.IsType<PhysicalElectricGuitarGenerator>(registry.Create(PhysicalElectricGuitarGenerator.NodeType));
         Assert.IsType<RotarySpeakerProcessor>(registry.Create(RotarySpeakerProcessor.NodeType));
         Assert.IsType<NoteSourceGenerator>(registry.Create(NoteSourceGenerator.NodeType));
         Assert.IsType<ResonatorProcessor>(registry.Create(ResonatorProcessor.NodeType));
