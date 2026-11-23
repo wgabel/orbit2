@@ -9,6 +9,7 @@ import { verifyTouchWire } from "./TouchWireSmoke.mjs";
 import { verifyWireEdgePan } from "./WireEdgePanSmoke.mjs";
 import { fitCanvas, resetCanvas, zoomStep, tripleTapFit, verifyCanvasNavigation } from "./CanvasNavigationSmoke.mjs";
 import { verifyCanvasContext } from "./CanvasContextSmoke.mjs";
+import { verifyExpandableNodes } from "./ExpandableNodesSmoke.mjs";
 
 const { chromium } = await import(pathToFileURL(resolve(process.env.ORBIT_PLAYWRIGHT_DIR, "index.mjs")));
 const root = resolve("publish/wwwroot");
@@ -2192,6 +2193,7 @@ try {
     await mobilePage.close();
     await verifyTouchWire(browser, "http://127.0.0.1:" + server.address().port);
     await verifyWireEdgePan(browser, "http://127.0.0.1:" + server.address().port);
+    await verifyExpandableNodes(browser, "http://127.0.0.1:" + server.address().port);
     await verifyCanvasNavigation(browser, "http://127.0.0.1:" + server.address().port);
     await verifyCanvasContext(browser, "http://127.0.0.1:" + server.address().port);
     for (const file of ["canvasDom.js", "canvasContext.js", "workspacePanels.js", "nodeLibraryStorage.js", "performanceKeyboard.js",
