@@ -2,6 +2,7 @@
 
 ## Working with the repository
 
+- **For any implementation, fix or refactoring task**, apply the [coding standards and implementation quality guide](docs/quality/coding-standards.md). Inspect existing owners and tests before adding code; avoid duplicated policy and unnecessary abstractions, preserve contracts and lifecycle invariants, and validate relevant behavior. Scale effort to the change rather than imposing heavy process on trivial edits.
 - **For any user-input or UX interaction change** (click/tap, double tap, long-press, drag, hover/focus, mouse wheel, keyboard, touch/pen, context menus or shortcuts), **read and maintain the [user interaction and gesture registry](docs/editor/user-interactions.md)** before assigning or modifying gestures. Check existing owners, gesture precedence, collision surfaces and tests; update the registry in the same PR as the behavior change. Avoid claiming documented/planned actions are implemented without code/test verification. Do not reserve a gesture on a connector that already participates in cable creation.
 - Start with [ORBIT2-ARCHITECTURE.md](ORBIT2-ARCHITECTURE.md), the short overview and task routing index. Read relevant feature modules, source code, tests and any other material that helps solve the task. The routing table is advisory, not an allowlist or a limit on context; cross-cutting work can require several modules. Do not load every specification by default. Adjust the depth of investigation to the complexity and risk of the task.
 - Use [ROADMAP.md](ROADMAP.md) and its linked milestone registers when planning or changing implementation status. Use [README.md](README.md) for practical build/run instructions. The implementation and tests are the evidence for current behavior; reconcile stale documentation instead of assuming that every design proposal is implemented.
@@ -21,6 +22,18 @@
 - When balancing melody, accents or other competing roles in a substantial piece, consult [contextual layer balance](docs/examples/contextual-layer-balance.md). Where feasible, compare aligned post-voice-fader roles against their simultaneous backing in representative short windows (including sparse and dense sections), preserve intentional rests and dynamics, and validate targeted changes on comparable windows. The research and case study offer diagnostics, not mandatory dB targets, equal-loudness rules or a requirement for unavailable tools.
 - Respect established architectural boundaries and stable identifiers, while remaining free to propose and implement justified architectural improvements within the user's requested scope. Documentation guides decisions; it is not a substitute for engineering judgment.
 - A new task may have no matching document or roadmap entry. Explore adjacent contracts and the code, design the new capability, and continue within the authorized scope. Extend the closest module or create a new one when that makes the knowledge easier to find; add or revise the index and roadmap if relevant. Do not require a separate documentation PR, a previously assigned milestone, or a fixed directory/template before beginning work.
+
+## Implementation quality check (before handoff)
+
+For code changes, confirm proportionately that:
+
+1. Existing implementations, shared abstractions and relevant tests were checked; the change does not introduce a second source of truth.
+2. Responsibility, naming and complexity fit the existing architecture; stable IDs, error paths, resource cleanup and compatibility were considered.
+3. Important behavior and relevant edge cases have regression coverage; the final diff was reviewed for unrelated changes.
+4. Relevant builds/tests or browser/DSP checks were actually run, and failures or unverified claims are reported explicitly.
+5. Technical and usage documentation was updated if behavior or contracts changed. Documentation-only corrections need only proportionate consistency checks.
+
+See [coding standards](docs/quality/coding-standards.md) for the detailed guidance; do not replicate it in task-specific documents.
 
 ## Documentation and verification
 
