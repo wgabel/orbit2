@@ -385,8 +385,7 @@ public partial class GraphCanvas : IAsyncDisposable
         if (args.Button == 0 && (args.PointerType != "touch" || !Snapshot.SelectedNodeIds.Contains(nodeId)))
             State.SelectNode(nodeId, args.ShiftKey || args.CtrlKey || args.MetaKey);
         pendingSource = null;
-        await BeginGesture(args, args.Button == 0 ? nodeId : null, wire: false);
-        BeginNodeTap(nodeId, args);
+        await BeginGesture(args, args.Button == 0 ? nodeId : null, wire: false, tapNodeId: nodeId);
     }
 
     private void BeginNodeTap(Guid nodeId, PointerEventArgs args)
@@ -428,7 +427,7 @@ public partial class GraphCanvas : IAsyncDisposable
             await PrepareWireGestureAsync(start);
     }
 
-    private async Task BeginGesture(PointerEventArgs args, Guid? nodeId, bool wire, bool backgroundTap = false)
+    private async Task BeginGesture(PointerEventArgs args, Guid? nodeId, bool wire, bool backgroundTap = false, Guid? tapNodeId = null)
     {
         nodeTapId = null;
         nodeTapEligible = false;
@@ -437,6 +436,9 @@ public partial class GraphCanvas : IAsyncDisposable
         draggedNode = nodeId;
         drawingWire = wire;
         lastClientPoint = new CanvasPoint(args.ClientX, args.ClientY);
+        // Arm the tap synchronously. A short mobile touch can end before the
+        // asynchronous browser pointer-capture call returns.
+        if (tapNodeId is Guid candidate) BeginNodeTap(candidate, args);
         if (module is not null)
             await module.InvokeVoidAsync("capturePointer", viewportElement, args.PointerId);
     }
