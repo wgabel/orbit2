@@ -116,6 +116,32 @@ try {
     const status = page.locator(".playback-toolbar").getByRole("status");
     const play = page.getByRole("button", { name: "Play patch" });
     const articles = page.locator(".node-frame");
+    // New UX contract: all leaf nodes begin compact, retain all sockets and
+    // expose editable values without first opening the full parameter body.
+    const compactLeaf = articles.nth(1);
+    assert.equal(await compactLeaf.locator('.node-expand-toggle').getAttribute('aria-expanded'), 'false');
+    const markerPositions = () => compactLeaf.evaluate(frame => {
+        const box = frame.getBoundingClientRect();
+        return [...frame.querySelectorAll('[data-port-id]')].map(el => {
+            const rect = el.getBoundingClientRect();
+            return [el.dataset.portId,
+                Math.round((rect.left - box.left + rect.width / 2) * 100) / 100,
+                Math.round((rect.top - box.top + rect.height / 2) * 100) / 100];
+        });
+    });
+    const socketsCompact = await markerPositions();
+    assert.ok(socketsCompact.length > 0, 'All leaf-node ports are mounted in compact mode');
+    const compactFrequency = compactLeaf.getByRole('button', { name: 'Edit Frequency base value' });
+    assert.equal(await compactFrequency.count(), 1, 'Compact numeric values must be editable');
+    await compactFrequency.evaluate(element => element.click());
+    const numericDraft = compactLeaf.locator('.compact-value-input').first();
+    assert.equal(await numericDraft.inputValue(), '440');
+    await numericDraft.fill('777');
+    await numericDraft.press('Escape');
+    assert.equal(await compactFrequency.count(), 1, 'Escape cancels a compact numeric draft');
+    await expandAndPin(compactLeaf);
+    assert.deepEqual(await markerPositions(), socketsCompact,
+        'Header controls and expanding parameter content must not move cable anchors');
     await expandAndPinAll(page);
     const frequency = articles.nth(1).locator(".parameter-slider").filter({ has: page.getByRole("spinbutton", { name: "Frequency (Hz)" }) });
     const amplitude = articles.nth(1).locator(".parameter-slider").filter({ has: page.getByRole("spinbutton", { name: "Amplitude (normalized)" }) });
