@@ -2,7 +2,7 @@
 
 [Realistic instrument design](realistic-instrument-emulation.md) · [Physical Pluck calibration](faust-physical-pluck.md) · [Usage](../usage/sound-and-instruments.md#faust-instrument-nodes) · [Roadmap](../roadmap/advanced.md#phase-727--faust-first-physical-models-planned)
 
-**Status:** Physical Pluck, Physical Marimba, Drawbar Organ and Rotary Speaker merged in [PR #81](https://github.com/wgabel/orbit2/pull/81). Physical Clarinet and Physical Flute are in review ([PR #82](https://github.com/wgabel/orbit2/pull/82)); see [sustained physical models](faust-sustained-instruments.md). These are technically tested candidates, not listening-approved acoustic replicas. Existing presets and node IDs remain unchanged. The existing Faust compiler distribution-compliance work is explicitly deferred by project owner; no new dependency/version or copied upstream model source is introduced, and the [audit](faust-dependency-audit.md) remains open.
+**Status:** Physical Pluck, Physical Marimba, Drawbar Organ and Rotary Speaker merged in [PR #81](https://github.com/wgabel/orbit2/pull/81). Physical Clarinet and Physical Flute merged ([PR #82](https://github.com/wgabel/orbit2/pull/82)); see [sustained physical models](faust-sustained-instruments.md). These are technically tested candidates, not listening-approved acoustic replicas. Existing presets and node IDs remain unchanged. The existing Faust compiler distribution-compliance work is explicitly deferred by project owner; no new dependency/version or copied upstream model source is introduced, and the [audit](faust-dependency-audit.md) remains open.
 
 ## Play the instruments
 
@@ -32,6 +32,10 @@ Nine independently adjustable drawbars (0–8), with ratios .5, 1.5, 1, 2, 3, 4,
 ## Rotary Speaker (`processor.rotary-speaker`)
 
 Connect Drawbar Organ Audio → Rotary Speaker Audio → Master. It also works with any other audio source. A complementary first-order 800 Hz crossover computes bass by low-pass and treble as input minus bass, so stationary bands recombine without a crossover hole. Each band uses a separate rotor phase, amplitude pattern and bounded fractional delay; Doppler travel is up to ±0.9 ms bass / ±0.45 ms horn around 2 ms. Speed is continuously modulatable: 0 brake, 1 slow (.72/.77 Hz), 2 fast (6.4/6.9 Hz). Exponential acceleration/deceleration time constants are 2.0/1.17 s bass and .33/.27 s horn (about 95% transition in three time constants). Both start stationary and accelerate to target. Amplitude depth and Doppler depth are independent controls; wet mix 0 is exact dry, and normal Orbit bypass is supported. Brake freezes rotation rather than bypassing cabinet coloration. No stereo microphone simulation or cabinet EQ yet.
+
+## Additional candidate instruments
+
+[PR #86](https://github.com/wgabel/orbit2/pull/86) introduces Physical Violin (experimental), Physical Brass and Physical Electric Guitar. Their exact controls, validation state and routing are in [Faust violin, brass and electric guitar](faust-violin-brass-guitar.md). All remain candidates, not listener-validated replicas.
 
 ## Verification
 
