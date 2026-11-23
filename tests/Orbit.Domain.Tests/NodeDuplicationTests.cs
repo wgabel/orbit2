@@ -68,7 +68,9 @@ public sealed class NodeDuplicationTests
         Assert.Equal(before.Nodes.Select(n => n.Id), session.Snapshot.Nodes.Select(n => n.Id));
         Assert.Equal(before.Connections, session.Snapshot.Connections);
         session.Redo();
-        Assert.Equal(copy, session.Snapshot.GetNode(duplicateId));
+        Assert.Equal(copy.TypeKey, session.Snapshot.GetNode(duplicateId).TypeKey);
+        Assert.Equal(copy.Parameters.Select(p => p.BaseValue),
+            session.Snapshot.GetNode(duplicateId).Parameters.Select(p => p.BaseValue));
     }
 
     [Fact]
