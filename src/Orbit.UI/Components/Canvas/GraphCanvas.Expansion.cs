@@ -71,6 +71,9 @@ public partial class GraphCanvas
         TrackNodeTap(new CanvasPoint(args.ClientX, args.ClientY));
         if (pendingNodeTapId is null) return;
         if (!Snapshot.Graph.Nodes.Any(node => node.Id == nodeId && CompactNodePresentation.IsExpandable(node))) return;
+        // Touch header drags do not select on pointer-down. Select only once the
+        // release qualifies as a tap, preserving gesture and keyboard targeting.
+        State.SelectNode(nodeId, args.ShiftKey || args.CtrlKey || args.MetaKey);
         transientExpandedNodeId = nodeId;
         visualizationGeometryGeneration++;
         StateHasChanged();
