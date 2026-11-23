@@ -50,4 +50,4 @@
 /* The playback/transport menu is always actionable above the expanded dock editor.
    Keep this on the canvas caption stacking context, not on an individual
    button: desktop and mobile both render transport controls inside it. */
-.graph-workspace > .canvas-caption { position: relative; z-index: var(--component-workspace-overlay-layer); }
+.graph-workspace > .canvas-caption { position: relative; z-index: calc(var(--component-workspace-overlay-layer) + 1); }
