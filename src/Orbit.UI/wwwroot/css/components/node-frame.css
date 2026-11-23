@@ -200,3 +200,16 @@
 @media (prefers-reduced-motion: reduce) {
     .node-expanded-content { transition: none; }
 }
+
+@media (pointer: coarse) {
+    .node-frame-expandable .node-input-row,
+    .node-frame-expandable .node-compact-property,
+    .node-frame-expandable .compact-parameter-value {
+        min-height: var(--component-keyboard-tool-size);
+    }
+    .node-frame-expandable .compact-value-base,
+    .node-frame-expandable .compact-value-choice,
+    .node-frame-expandable .compact-value-input {
+        height: var(--component-keyboard-tool-size);
+    }
+}
