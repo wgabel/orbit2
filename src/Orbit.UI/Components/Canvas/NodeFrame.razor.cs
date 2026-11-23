@@ -76,6 +76,9 @@ public partial class NodeFrame
     private Task EditCompactAsync(Guid parameterId, double value) =>
         OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameterId), value));
 
+    private string EnvelopePoints => string.Join(" ", EnvelopePreview.Create(Node).Points.Select(point =>
+        FormattableString.Invariant($"{point.X * 120:0.##},{(1 - point.Level) * 32 + 1:0.##}")));
+
     private NodeAppearance Appearance => NodeAppearanceCatalog.Get(Node.TypeKey, Role);
     private string FrameClass => $"node-frame {Appearance.CssClass} node-role-{Role.ToString().ToLowerInvariant()}{(Selected ? " node-selected" : "")}{(Node.IsMuted ? " node-muted" : "")}{(Node.IsBypassed ? " node-bypassed" : "")}{(CanExpand ? (Expanded ? " node-expanded" : " node-compact") : "")}";
     private string PositionStyle => FormattableString.Invariant($"left:{Position.X}px;top:{Position.Y}px;");
