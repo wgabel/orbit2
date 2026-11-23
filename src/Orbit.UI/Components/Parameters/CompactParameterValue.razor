@@ -10,7 +10,17 @@
 <div class="compact-parameter-value" @onpointerdown:stopPropagation="true"
      @onclick:stopPropagation="true" @onkeydown:stopPropagation="true"
      @onwheel:stopPropagation="true">
-    @if (Parameter.Definition.Choices is { } choices)
+    @if (ReadOnly)
+    {
+        <span class="compact-value-static" title="@($"{Parameter.Definition.Name}: {FormatExact(Parameter.BaseValue)}")">
+            @(Parameter.Definition.Choices?.FirstOrDefault(choice => choice.Value == Parameter.BaseValue)?.Label ?? FormatShort(Parameter.BaseValue))
+            @if (Parameter.Definition.Choices is null)
+            {
+                <span class="compact-value-unit">@UnitLabel</span>
+            }
+        </span>
+    }
+    else if (Parameter.Definition.Choices is { } choices)
     {
         <select class="compact-value-choice" aria-label="@($"Compact {Parameter.Definition.Name}")"
                 value="@FormatExact(Parameter.BaseValue)" @onchange="EditChoiceAsync">
@@ -52,6 +62,7 @@
 
 @code {
     [Parameter, EditorRequired] public ParameterSnapshot Parameter { get; set; } = default!;
+    [Parameter] public bool ReadOnly { get; set; }
     [Parameter] public bool IsModulated { get; set; }
     [Parameter] public double? EffectiveValue { get; set; }
     [Parameter] public EventCallback<double> ValueChanged { get; set; }
