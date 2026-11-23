@@ -36,6 +36,26 @@ export async function verifyCanvasContext(browser, url) {
         await desktop.goto(url);
         await desktop.locator('article[data-node-id]').nth(3).waitFor();
         await fitCanvas(desktop);
+        // Help is intentionally separate from node selection, wiring and context actions.
+        const nodeCountBeforeHelp = await desktop.locator('article[data-node-id]').count();
+        await desktop.locator('.node-help-trigger').first().click();
+        const helpPanel = desktop.locator('.node-help-panel');
+        await helpPanel.waitFor();
+        assert.ok(await helpPanel.getByText('What it does').count());
+        assert.ok(await helpPanel.getByText('Try it').count());
+        assert.equal(await helpPanel.getByText('Related topics').count(), 0);
+        await helpPanel.getByRole('button', { name: 'Close node help' }).press('Escape');
+        await helpPanel.waitFor({ state: 'hidden' });
+        assert.equal(await desktop.locator('article[data-node-id]').count(), nodeCountBeforeHelp);
+        const hintPort = desktop.locator('.port-connector[data-port-help]').first();
+        await hintPort.hover();
+        const hint = desktop.locator('.port-help-tooltip:not([hidden])');
+        await hint.waitFor();
+        assert.ok((await hint.innerText()).length > 25);
+        await hintPort.focus();
+        await hint.waitFor();
+        await desktop.mouse.move(1, 1);
+
         await rightClickHeader(desktop, 'article[data-node-id] .node-header');
         await menu(desktop).getByRole('button', { name: 'Focus node', exact: true }).waitFor();
         const originalIds = await desktop.locator('article[data-node-id]').evaluateAll(nodes => nodes.map(node => node.dataset.nodeId));
@@ -71,6 +91,17 @@ export async function verifyCanvasContext(browser, url) {
         await mobile.goto(url);
         await mobile.locator('article[data-node-id]').nth(3).waitFor();
         await fitCanvas(mobile);
+        const beforeHelp = await mobile.locator('article[data-node-id]').count();
+        await mobile.locator('.node-help-trigger').first().tap();
+        const helpSheet = mobile.locator('.node-help-panel');
+        await helpSheet.waitFor();
+        assert.equal(await mobile.locator('.port-help-tooltip:not([hidden])').count(), 0,
+            'Touch should not open connector hover hints');
+        assert.ok(await helpSheet.getByText('Connectors').count());
+        await helpSheet.getByRole('button', { name: 'Close node help' }).tap();
+        await helpSheet.waitFor({ state: 'hidden' });
+        assert.equal(await mobile.locator('article[data-node-id]').count(), beforeHelp);
+
         const point = await emptyPoint(mobile);
         const start = () => cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...point, id: 1 }] });
         const end = () => cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
