@@ -82,7 +82,7 @@
                     <button type="button" class="secondary" aria-label="Show higher octave" @onclick="() => ShiftRoll(12)">↑ Octave</button>
                 </div>
                 <div class="pitch-roll-scroll" role="region" aria-label="Pitch and time grid" tabindex="0">
-                    <div class="pitch-roll-board" style="@(" --sequence-steps:" + StepCount)">
+                    <div class="pitch-roll-board" style="@($"grid-template-columns: var(--component-pitch-pattern-step-min-width) repeat({StepCount}, var(--component-keyboard-tool-size))")">
                         @for (var midi = RollHigh; midi >= RollLow; midi--)
                         {
                             var note = midi;
