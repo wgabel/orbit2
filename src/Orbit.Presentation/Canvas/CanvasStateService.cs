@@ -77,6 +77,7 @@ public sealed partial class CanvasStateService : ICanvasStateService
             ZoomAnnotationDetail = AnnotationDetailPolicy.Initial(viewport.Zoom),
             Visualizations = FreezeVisualizations(visualizations),
             ExpandedVisualizationNodeId = ValidExpandedNode(graph, saved?.ExpandedVisualizationNodeId),
+            PinnedNodeIds = Array.AsReadOnly((saved?.PinnedNodeIds ?? []).Where(id => graph.Nodes.Any(node => node.Id == id && CompactNodePresentation.IsExpandable(node))).Distinct().Order().ToArray()),
             Notes = Array.AsReadOnly(notes.ToArray()),
             NodeDescriptions = FreezeDescriptions((saved?.NodeDescriptions ?? []).Where(value => !value.IsEmpty).ToDictionary(value => value.NodeId)),
             ConnectionDescriptions = FreezeDescriptions((saved?.ConnectionDescriptions ?? []).Where(value => !value.IsEmpty).ToDictionary(value => value.ConnectionId)),
@@ -152,6 +153,19 @@ public sealed partial class CanvasStateService : ICanvasStateService
         var valid = ValidExpandedNode(snapshot.Graph, nodeId);
         if (valid == snapshot.ExpandedVisualizationNodeId) return NoChange();
         return CommitLayout(CanvasChangeKind.VisualizationChanged, snapshot with { ExpandedVisualizationNodeId = valid });
+    }
+
+    public CanvasChangeResult SetNodePinned(Guid nodeId, bool pinned)
+    {
+        EnsureEditable();
+        var node = snapshot.Graph.GetNode(nodeId);
+        if (!CompactNodePresentation.IsExpandable(node)) return NoChange();
+        var ids = snapshot.PinnedNodeIds.ToHashSet();
+        if (pinned ? !ids.Add(nodeId) : !ids.Remove(nodeId)) return NoChange();
+        return CommitLayout(CanvasChangeKind.NodePresentationChanged, snapshot with
+        {
+            PinnedNodeIds = Array.AsReadOnly(ids.Order().ToArray())
+        });
     }
 
     public CanvasChangeResult MoveNode(Guid nodeId, CanvasPoint worldPosition)
@@ -294,6 +308,7 @@ public sealed partial class CanvasStateService : ICanvasStateService
             if (snapshot.Visualizations.TryGetValue(node.Id, out var settings) || removedVisualizations.Remove(node.Id, out settings))
                 visualizations[node.Id] = NodeVisualizationCapabilities.Normalize(node, settings);
         var expanded = ValidExpandedNode(graph, snapshot.ExpandedVisualizationNodeId);
+        var pins = snapshot.PinnedNodeIds.Where(id => graph.Nodes.Any(node => node.Id == id && CompactNodePresentation.IsExpandable(node))).ToArray();
         var nodeDescriptions = ReconcileDescriptions(snapshot.NodeDescriptions, removedNodeDescriptions, nodeIds);
         var connectionDescriptions = ReconcileDescriptions(snapshot.ConnectionDescriptions, removedConnectionDescriptions, connectionIds);
         if (expansion is not null)
@@ -320,6 +335,7 @@ public sealed partial class CanvasStateService : ICanvasStateService
             selectedNodes.Length != snapshot.SelectedNodeIds.Count ||
             selectedConnections.Length != snapshot.SelectedConnectionIds.Count ||
             expanded != snapshot.ExpandedVisualizationNodeId ||
+            !pins.SequenceEqual(snapshot.PinnedNodeIds) ||
             !visualizations.OrderBy(pair => pair.Key).SequenceEqual(snapshot.Visualizations.OrderBy(pair => pair.Key)) ||
             !ReferenceEquals(nodeDescriptions, snapshot.NodeDescriptions) || !ReferenceEquals(connectionDescriptions, snapshot.ConnectionDescriptions);
 
@@ -332,6 +348,7 @@ public sealed partial class CanvasStateService : ICanvasStateService
             SelectedConnectionIds = Array.AsReadOnly(selectedConnections),
             Visualizations = FreezeVisualizations(visualizations),
             ExpandedVisualizationNodeId = expanded,
+            PinnedNodeIds = Array.AsReadOnly(pins),
             NodeDescriptions = nodeDescriptions,
             ConnectionDescriptions = connectionDescriptions
         });
