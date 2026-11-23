@@ -2,7 +2,7 @@
 
 [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
 
-Related: [composite nodes](composite-nodes.md) · [design system](design-system.md) · [patch annotations](patch-annotations.md) · [connection visualization](annotations-and-connections.md) · [persistence and history](persistence-and-history.md).
+Related: [user interaction and gesture registry](user-interactions.md) · [composite nodes](composite-nodes.md) · [design system](design-system.md) · [patch annotations](patch-annotations.md) · [connection visualization](annotations-and-connections.md) · [persistence and history](persistence-and-history.md).
 
 For hands-on navigation, connections, annotation controls and local/recursive counts, see the [patch editor guide](../usage/patch-editor.md).
 
