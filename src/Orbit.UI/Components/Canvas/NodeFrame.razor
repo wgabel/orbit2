@@ -23,6 +23,21 @@
             }
         </span>
         <div class="node-header-actions">
+        @if (CanExpand)
+        {
+            <button type="button" class="node-expand-toggle" aria-expanded="@Expanded"
+                    aria-label="@(Expanded ? "Collapse node" : "Expand node")"
+                    title="@(Expanded ? "Collapse node" : "Expand node")"
+                    @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true"
+                    @onclick="() => OnToggleExpanded.InvokeAsync(Node.Id)">@(Expanded ? "⌃" : "⌄")</button>
+            @if (Expanded)
+            {
+                <button type="button" class="node-pin-toggle" aria-pressed="@Pinned" aria-label="@(Pinned ? "Unpin node" : "Pin node open")"
+                        title="@(Pinned ? "Unpin node" : "Pin node open")"
+                        @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true"
+                        @onclick="() => OnTogglePinned.InvokeAsync(Node.Id)">@(Pinned ? "●" : "○")</button>
+            }
+        }
             @if (ShowSecondaryDocumentation && Documentation is { Description.Length: > 0 })
             {
                 <button type="button" class="node-description-toggle" disabled="@DocumentationEditDisabled"
@@ -50,19 +65,32 @@
     {
         <div class="node-boundary-description">From parent graph · exposed inputs</div>
     }
-    <NodePresetSelector Node="@Node" Appearance="@Appearance" OnApply="OnPresetApply" OnManage="OnManagePresets" CatalogRevision="@PresetCatalogRevision" />
-    @if (Node.TypeKey == NoteSequencerGenerator.NodeType)
+    @if (!CanExpand)
     {
-        <NoteSequencerNodeSummary Node="@Node" />
+        <NodePresetSelector Node="@Node" Appearance="@Appearance" OnApply="OnPresetApply" OnManage="OnManagePresets" CatalogRevision="@PresetCatalogRevision" />
+        @if (Node.TypeKey == NoteSequencerGenerator.NodeType)
+        {
+            <NoteSequencerNodeSummary Node="@Node" />
+        }
+        <RhythmicActionPanel Node="@Node" PatchId="@PatchId" GraphId="@GraphId" />
     }
-    <RhythmicActionPanel Node="@Node" PatchId="@PatchId" GraphId="@GraphId" />
     <div class="node-ports">
         <div class="node-inputs">
             @foreach (var port in Node.Inputs)
             {
-                <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
-                               WireCandidate="@(WireTargets?.Contains(new PortAddress(Node.Id, port.Id)))"
-                               OnOutputPointerDown="OnOutputPointerDown" OnInputPointerDown="OnInputPointerDown" />
+                <div @key="port.Id" class="node-port-parameter-row">
+                    <PortConnector NodeId="@Node.Id" Port="@port" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
+                                   WireCandidate="@(WireTargets?.Contains(new PortAddress(Node.Id, port.Id)))"
+                                   OnOutputPointerDown="OnOutputPointerDown" OnInputPointerDown="OnInputPointerDown" />
+                    @if (CanExpand && ParameterForPort(port.Id) is { } modulatedParameter)
+                    {
+                        <CompactParameterEditor @key="modulatedParameter.Id" Parameter="@modulatedParameter"
+                                                Active="@Node.IsParameterActive(modulatedParameter)"
+                                                Modulated="@IsModulated(modulatedParameter.Id)"
+                                                EffectiveValue="@GetEffective(modulatedParameter.Id)"
+                                                ValueChanged="@(value => EditCompactAsync(modulatedParameter.Id, value))" />
+                    }
+                </div>
             }
         </div>
         <div class="node-outputs">
@@ -74,6 +102,32 @@
             }
         </div>
     </div>
+    @if (CanExpand)
+    {
+        <div class="node-compact-settings">
+            @foreach (var parameter in CompactUnportedParameters)
+            {
+                <CompactParameterEditor @key="parameter.Id" Parameter="@parameter" ShowLabel="true"
+                                        Active="@Node.IsParameterActive(parameter)"
+                                        Modulated="@IsModulated(parameter.Id)"
+                                        EffectiveValue="@GetEffective(parameter.Id)"
+                                        ValueChanged="@(value => EditCompactAsync(parameter.Id, value))" />
+            }
+        </div>
+    }
+    @if (!CanExpand || Expanded)
+    {
+        @if (CanExpand)
+        {
+            <div class="node-expanded-body">
+                <NodePresetSelector Node="@Node" Appearance="@Appearance" OnApply="OnPresetApply" OnManage="OnManagePresets" CatalogRevision="@PresetCatalogRevision" />
+                @if (Node.TypeKey == NoteSequencerGenerator.NodeType)
+                {
+                    <NoteSequencerNodeSummary Node="@Node" />
+                }
+                <RhythmicActionPanel Node="@Node" PatchId="@PatchId" GraphId="@GraphId" />
+            </div>
+        }
     @if (Node.Composite is not null)
     {
         <div class="node-actions">
@@ -114,4 +168,5 @@
     <NodeVisualizationPanel PatchId="@PatchId" GraphId="@GraphId" Node="@Node" Settings="@Visualization"
                             BeatsPerMinute="@BeatsPerMinute" SampleRate="@SampleRate" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" Playhead="@Playhead"
                             ExpandedElsewhere="@VisualizationExpanded" SettingsChanged="OnVisualizationChange" OnExpand="OnExpandVisualization" />
+    }
 </article>
