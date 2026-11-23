@@ -20,6 +20,7 @@ visit(root);
 const checkAnchorsFor = new Set([
   'README.md', 'ORBIT2-ARCHITECTURE.md',
   'docs/architecture/overview.md', 'docs/architecture/task-routing.md',
+  'docs/usage/README.md', 'docs/usage/task-index.md', 'docs/usage/feature-history.md',
   'docs/examples/README.md', 'docs/examples/task-index.md',
   'docs/examples/production-workflow.md', 'docs/examples/foundations/catalogue.md',
   'docs/getting-started/installation.md', 'docs/getting-started/development.md',

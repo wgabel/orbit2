@@ -12,7 +12,7 @@
 | Test the app | [Development checks](getting-started/development.md) and [testing contracts](quality/testing.md) |
 | See the current implementation status or next work slice | [One central roadmap](../ROADMAP.md) and its owning milestone register |
 | Understand system architecture and source ownership | [Architecture overview](architecture/overview.md), [task routing](architecture/task-routing.md) and [project structure](core/project-structure.md) |
-| Edit a patch or use nodes | [Usage guide](usage/README.md), [patch editor](usage/patch-editor.md) and [sound/instruments](usage/sound-and-instruments.md) |
+| Edit a patch or use nodes | [Usage home](usage/README.md), [task index](usage/task-index.md), [patch editor](usage/patch-editor.md) and [sound/instruments](usage/sound-and-instruments.md) |
 | Create or refine a musical composition | [Music creation](examples/README.md), [genres](examples/electronic-music-genres.md) and [foundations](examples/foundations/catalogue.md) |
 | Add a feature or fix code | [Agent instructions](../AGENTS.md), [coding standards](quality/coding-standards.md), [work-slice protocol](agents/work-slices.md) |
 | Modify input, gesture or node behavior | [Interaction registry](editor/user-interactions.md), [canvas](editor/canvas.md), [node expansion](editor/expandable-nodes.md) |
