@@ -49,14 +49,15 @@ function anchorsFor(file) {
 const broken = [];
 for (const file of markdown) {
   const source = readFileSync(file, 'utf8');
-  // Markdown inline links and image links. Exclude external and fragment-only URLs.
+  // Markdown inline links and image links. External links are skipped;
+  // fragment-only links resolve to the referring Markdown file.
   for (const match of source.matchAll(/!?\[[^\]]*\]\(<?([^\s)]+)>?(?:\s+["'][^"']*["'])?\)/g)) {
     const href = match[1];
     if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(href)) continue;
     let name = href.split('#')[0].split('?')[0];
     if (!name) name = '.';
     try { name = decodeURIComponent(name); } catch { broken.push([file, href, 'invalid URL escaping']); continue; }
-    const dest = resolve(dirname(file), name);
+    const dest = name === '.' ? file : resolve(dirname(file), name);
     const relToTarget = relative(root, dest);
     if (relToTarget === '..' || relToTarget.startsWith('../') || relToTarget.startsWith('..\\')) { broken.push([file, href, 'outside repository']); continue; }
     if (!existsSync(dest)) broken.push([file, href, 'target not found']);
@@ -76,5 +77,5 @@ if (broken.length) {
   console.error(`Found ${broken.length} invalid local documentation link(s).`);
   process.exitCode = 1;
 } else {
-  console.log(`Checked local link destinations in ${markdown.length} Markdown files.`);
+  console.log(`Checked local link destinations and migrated anchors in ${markdown.length} Markdown files.`);
 }
