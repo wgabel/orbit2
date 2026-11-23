@@ -27,7 +27,7 @@
 .pitch-roll-cell[data-step="1"], .pitch-roll-cell[data-step="5"], .pitch-roll-cell[data-step="9"], .pitch-roll-cell[data-step="13"] { border-inline-start: var(--semantic-space-tight) solid var(--semantic-color-border); }
 .pitch-roll-cell:hover, .pitch-roll-cell:focus-visible { background: color-mix(in srgb, var(--semantic-color-modulation) 20%, transparent); }
 .pitch-roll-cell.pitch-roll-note { background: var(--semantic-color-modulation); border-radius: var(--semantic-space-tight); margin: var(--semantic-space-tight); }
-.pitch-roll-cell.pitch-roll-playing {  }
+.pitch-roll-cell.pitch-roll-playing { outline: var(--semantic-border-focus-width) solid var(--semantic-color-selected); outline-offset: calc(-1 * var(--semantic-border-focus-width)); }
 .pitch-step-strip { display: flex; gap: var(--semantic-space-tight); overflow-x: auto; padding-block: var(--semantic-space-tight); scrollbar-width: thin; }
 .pitch-step-strip button { display: grid; gap: var(--semantic-border-width); justify-items: center; flex: 0 0 var(--component-pitch-pattern-step-min-width); padding: var(--semantic-space-tight) var(--semantic-space-tight); min-width: 0; }
 .pitch-step-strip button small { font-size: var(--semantic-typography-caption); opacity: .8; }
@@ -41,8 +41,13 @@
 .pitch-record-view, .pitch-editor-settings { display: grid; gap: var(--semantic-space-compact); }
 .pitch-record-view p, .pitch-editor-settings p { margin: 0; font-size: var(--semantic-typography-caption); }
 .pitch-record-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--semantic-space-tight); }
-@media (max-width: var(--semantic-space-compact)) {
+@media (max-width: 700px) {
     .performance-keyboard > .pitch-pattern-editor { max-height: min(57dvh, var(--component-workspace-viewport-height)); padding: var(--semantic-space-tight); }
     
     .pitch-editor-primary label { flex-basis: 40%; }
 }
+
+/* The playback/transport menu is always actionable above the expanded dock editor.
+   Keep this on the canvas caption stacking context, not on an individual
+   button: desktop and mobile both render transport controls inside it. */
+.graph-workspace > .canvas-caption { position: relative; z-index: var(--component-workspace-overlay-layer); }
