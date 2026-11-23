@@ -85,6 +85,7 @@
     border-radius: var(--semantic-radius-input);
     cursor: pointer;
 }
+.node-header .node-pin-toggle:disabled { visibility: hidden; }
 .node-header .node-pin-toggle[aria-pressed="true"] { border-color: var(--semantic-color-selected); color: var(--semantic-color-selected); }
 .node-frame-expandable .node-compact-ports {
     /* Port centers are independent of the expanded parameter body. */
