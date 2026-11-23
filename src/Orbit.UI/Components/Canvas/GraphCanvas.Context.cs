@@ -15,6 +15,7 @@ public partial class GraphCanvas
     [Parameter] public EventCallback<bool> OnContextAddNode { get; set; }
     [Parameter] public EventCallback<bool> OnContextSelection { get; set; }
     [Parameter] public EventCallback OnContextDelete { get; set; }
+    [Parameter] public EventCallback<Guid> OnContextDuplicate { get; set; }
     [Parameter] public EventCallback OnContextUndo { get; set; }
     [Parameter] public EventCallback OnContextRedo { get; set; }
     [Parameter] public bool ContextCanUndo { get; set; }
@@ -96,6 +97,8 @@ public partial class GraphCanvas
                     break;
                 }
                 title = Snapshot.DisplayName(node.Id);
+                if (node.TypeKey is not (InputRack.NodeType or OutputRack.NodeType) && OnContextDuplicate.HasDelegate)
+                    Add("Duplicate node", () => OnContextDuplicate.InvokeAsync(node.Id));
                 if (node.Composite is not null && OnOpenComposite.HasDelegate) Add("Open composite", () => OnOpenComposite.InvokeAsync(node.Id));
                 if (SelectedComposite is not null && OnUngroupComposite.HasDelegate) Add("Ungroup composite…", SelectionActions);
                 if (node.TypeKey is (InputRack.NodeType or OutputRack.NodeType) && OnEditRack.HasDelegate) Add("Edit ports", () => OnEditRack.InvokeAsync(node.Id));
