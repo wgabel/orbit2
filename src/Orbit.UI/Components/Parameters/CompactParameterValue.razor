@@ -12,7 +12,7 @@
      @onwheel:stopPropagation="true">
     @if (Parameter.Definition.Choices is { } choices)
     {
-        <select class="compact-value-choice" aria-label="@Parameter.Definition.Name"
+        <select class="compact-value-choice" aria-label="@($"Compact {Parameter.Definition.Name}")"
                 value="@FormatExact(Parameter.BaseValue)" @onchange="EditChoiceAsync">
             @foreach (var choice in choices)
             {
