@@ -52,6 +52,41 @@ for(const [kind,sustained] of [['violin',true],['brass',true],['electric-guitar'
             }catch(error){console.log('violin minimal',label,'FAILED',String(error));}
         }
     }
+    // Narrow down which dynamic parameter(s) produce an unguarded feedback dependency.
+    const diagnosticExpressions={
+        violin:[
+            ['all-fixed','pm.violinModel(0.8,0.5,0.6,0.7)'],
+            ['length-only','pm.violinModel(340.0/f,0.5,0.6,0.7) with {f=440.0*pow(2.0,p/12.0);}'],
+            ['pressure-only','pm.violinModel(0.8,c,0.6,0.7)'],
+            ['speed-only','pm.violinModel(0.8,0.5,v,0.7)'],
+            ['position-only','pm.violinModel(0.8,0.5,0.6,b)'],
+            ['all-dynamic','pm.violinModel(340.0/f,c,v,b) with {f=440.0*pow(2.0,p/12.0);}'],
+            ['post-filter','pm.violinModel(0.8,0.5,0.6,0.7):fi.dcblocker']
+        ],
+        brass:[
+            ['all-fixed','pm.brassModel(0.8,0.5,0.5,0.6)'],
+            ['length-only','pm.brassModel(340.0/f,0.5,0.5,0.6) with {f=440.0*pow(2.0,p/12.0);}'],
+            ['tension-only','pm.brassModel(0.8,c,0.5,0.6)'],
+            ['mute-only','pm.brassModel(0.8,0.5,b,0.6)'],
+            ['pressure-only','pm.brassModel(0.8,0.5,0.5,v)'],
+            ['all-dynamic','pm.brassModel(340.0/f,c,b,v) with {f=440.0*pow(2.0,p/12.0);}']
+        ],
+        'electric-guitar':[
+            ['all-fixed','pm.elecGuitarModel(0.8,0.35,0.96,0.0)'],
+            ['length-only','pm.elecGuitarModel(340.0/f,0.35,0.96,0.0) with {f=440.0*pow(2.0,p/12.0);}'],
+            ['position-only','pm.elecGuitarModel(0.8,b,0.96,0.0)'],
+            ['mute-only','pm.elecGuitarModel(0.8,0.35,c,0.0)'],
+            ['excitation-only','pm.elecGuitarModel(0.8,0.35,0.96,v)'],
+            ['all-dynamic','pm.elecGuitarModel(340.0/f,b,c,v) with {f=440.0*pow(2.0,p/12.0);}']
+        ]
+    };
+    for(const [name,expression] of diagnosticExpressions[kind]){
+        try{
+            const f=await compiler.createMonoDSPFactory('check_'+kind.replaceAll('-','_')+'_'+name.replaceAll('-','_'),
+                'import("stdfaust.lib"); process(p,c,v,b) = '+expression+';','-single');
+            console.log('diagnostic',kind,name,'COMPILED',Boolean(f));
+        }catch(error){console.log('diagnostic',kind,name,'FAILED',String(error).split('\n')[0]);}
+    }
     let direct,graph;
     try{
         direct=await compiler.createMonoDSPFactory('phys_'+kind.replaceAll('-','_'),fixture.direct,'-single');
