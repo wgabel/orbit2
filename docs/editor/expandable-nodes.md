@@ -1,6 +1,6 @@
-# Phase 6.21.5 — Expandable node design contract (approved, not implemented)
+# Phase 6.21.5 — Expandable node design and implementation contract
 
-Status: design approved on 2026-11-23. **Documentation only**. Implementation and verification remain future work.
+Status: design approved on 2026-11-23. **Implementation in review in [PR #95](https://github.com/wgabel/orbit2/pull/95)**; runtime/browser verification is a merge gate, not presumed complete.
 
 This document supersedes the earlier Phase 6.21.5 proposal in [the editor roadmap](../roadmap/editor-and-effects.md). It describes the agreed target rather than claiming existing product behavior. Implementation must cross-check the actual registered node definitions and their active parameter/port rules.
 
@@ -84,4 +84,4 @@ Future leaf node registrations must add or verify their compact metadata; a safe
 6. Validate pointer and touch snapping at 25–400% zoom, edge panning, cable deletion/context menu, pan/pinch takeover, accessible keyboard focus, reduced motion, and no loss of drafts.
 7. Measure large patch rendering against the existing 7.3.3 responsiveness metrics and live tap budgets; do not claim performance gains without measured evidence.
 
-Implementation is intentionally out of scope for this specification. Update the usage guide and real status only when code and browser tests ship.
+Implementation is tracked in [PR #95](https://github.com/wgabel/orbit2/pull/95). The [patch editor usage guide](../usage/patch-editor.md) covers the proposed interaction. Keep the actual shipped status aligned with merge and browser verification results.
