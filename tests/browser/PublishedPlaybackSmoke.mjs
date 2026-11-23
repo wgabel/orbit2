@@ -98,6 +98,22 @@ async function expandAndPinAll(page) {
     for (let i = 0, count = await nodes.count(); i < count; i++)
         await expandAndPin(nodes.nth(i));
 }
+async function collapseAllLeafNodes(page) {
+    const nodes = page.locator('.canvas-viewport .node-frame-expandable');
+    for (let i = 0, count = await nodes.count(); i < count; i++) {
+        const node = nodes.nth(i);
+        const pin = node.locator('.node-pin-toggle[aria-pressed="true"]');
+        if (await pin.count()) {
+            await pin.evaluate(button => button.click());
+            await node.locator('.node-pin-toggle[aria-pressed="false"]').waitFor();
+        }
+        const expanded = node.locator('.node-expand-toggle[aria-expanded="true"]');
+        if (await expanded.count()) {
+            await expanded.evaluate(button => button.click());
+            await node.locator('.node-expand-toggle[aria-expanded="false"]').waitFor();
+        }
+    }
+}
 async function addNode(page, key) {
     const before = await page.locator('.node-frame[data-node-id]').evaluateAll(nodes => nodes.map(node => node.dataset.nodeId));
     await openNodeLibrary(page);
@@ -998,11 +1014,16 @@ try {
         await page.mouse.click(point.x, point.y);
         await target.locator("xpath=..").and(page.locator(".connection-selected")).waitFor({ state: "attached", timeout: 4000 });
     };
+    // Run cable hit-testing in the normal compact workspace rather than the
+    // deliberately all-pinned legacy full-editor test mode. Node frames may
+    // legitimately occlude wires when the user explicitly pins many open.
+    await collapseAllLeafNodes(page);
     // Remove the original LFO-to-frequency connection, then connect to amplitude.
     await selectVisibleWire(wire);
     await assertEditorFits();
     await clickWorkspaceTool(page, "edit", "Delete selected");
     await amountEditor.waitFor({ state: "detached" });
+    await expandAndPinAll(page); // resume full-editor checks after the cable test
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision + 3}$`) }).waitFor({ timeout: 15000 });
     assert.equal(await marker.count(), 0);
     assert.equal(await frequency.locator(".parameter-band").count(), 0);
