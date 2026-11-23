@@ -70,7 +70,7 @@
 .node-actions { display: grid; padding: var(--component-node-padding); border-top: var(--semantic-border-width) solid var(--semantic-color-border); }
 
 /* Phase 6.21.5: compact leaf nodes. Composite/rack/master styling is unchanged. */
-.node-frame-expandable { width: 360px; }
+.node-frame-expandable { width: calc(var(--component-node-min-width) * 1.5); }
 .node-frame-expandable.node-is-expanded { z-index: 2; }
 .node-header .node-expand-toggle, .node-header .node-pin-toggle {
     display: grid;
@@ -88,12 +88,12 @@
 .node-header .node-pin-toggle[aria-pressed="true"] { border-color: var(--semantic-color-selected); color: var(--semantic-color-selected); }
 .node-frame-expandable .node-compact-ports {
     /* Port centers are independent of the expanded parameter body. */
-    grid-template-columns: minmax(0, 1fr) 74px;
+    grid-template-columns: minmax(0, 1fr) calc(var(--component-node-min-width) / 3);
     gap: var(--semantic-space-tight);
 }
 .node-frame-expandable .node-input-row {
     display: grid;
-    grid-template-columns: minmax(0, 112px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, calc(var(--component-node-min-width) / 2)) minmax(0, 1fr);
     align-items: center;
     gap: var(--semantic-space-tight);
     min-width: 0;
@@ -127,7 +127,7 @@
 .compact-parameter-value {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: calc(var(--semantic-border-width) * 2);
     min-height: var(--component-port-hit-size);
     min-width: 0;
     position: relative;
@@ -137,8 +137,8 @@
 .compact-value-base, .compact-value-choice, .compact-value-input {
     flex: 1 1 0;
     min-width: 0;
-    height: calc(var(--component-port-hit-size) - 2px);
-    padding: 0 3px;
+    height: calc(var(--component-port-hit-size) - 2 * var(--semantic-border-width));
+    padding: 0 var(--semantic-space-tight);
     border: var(--semantic-border-width) solid var(--semantic-color-border);
     border-radius: var(--semantic-radius-input);
     background: var(--semantic-color-surface);
@@ -149,7 +149,7 @@
     display: flex;
     align-items: center;
     justify-content: end;
-    gap: 3px;
+    gap: var(--semantic-space-tight);
     white-space: nowrap;
     cursor: text;
 }
@@ -158,9 +158,9 @@
 .compact-value-unit { color: var(--semantic-color-muted); overflow: hidden; text-overflow: ellipsis; }
 .compact-value-effective {
     display: inline-flex;
-    flex: 0 1 60px;
+    flex: 0 1 calc(var(--component-node-min-width) / 4);
     justify-content: flex-end;
-    gap: 2px;
+    gap: calc(var(--semantic-border-width) * 2);
     min-width: 0;
     color: var(--semantic-color-modulation);
     overflow: hidden;
@@ -171,7 +171,7 @@
     z-index: 4;
     top: 100%;
     right: 0;
-    max-width: 230px;
+    max-width: var(--component-node-min-width);
     width: max-content;
     background: var(--semantic-color-surface);
     color: var(--semantic-color-error);
@@ -182,13 +182,13 @@
 .node-envelope-miniature {
     color: var(--component-node-accent);
     width: 100%;
-    height: 36px;
+    height: var(--component-node-header-height);
 }
 .node-expanded-content {
     display: grid;
     grid-template-rows: 0fr;
     opacity: 0;
-    transition: grid-template-rows 180ms ease-out, opacity 140ms ease-out;
+    transition: grid-template-rows calc(var(--component-touch-wire-target-duration) + var(--primitive-motion-fast)) ease-out, opacity var(--component-touch-wire-target-duration) ease-out;
 }
 .node-expanded-content.is-open { grid-template-rows: 1fr; opacity: 1; }
 .node-expanded-content:not(.is-open) { pointer-events: none; }
