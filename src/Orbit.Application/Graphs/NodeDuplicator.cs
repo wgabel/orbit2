@@ -3,6 +3,7 @@ using Orbit.Application.Persistence;
 using Orbit.Domain.Graphs;
 using Orbit.Domain.Nodes;
 using Orbit.Domain.Nodes.Composites;
+using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Ports;
 
 namespace Orbit.Application.Graphs;
@@ -20,7 +21,7 @@ internal static class NodeDuplicator
         ArgumentNullException.ThrowIfNull(registry);
         if (duplicateId == Guid.Empty || duplicateId == source.Id)
             throw new GraphValidationException("The duplicate needs a new node identity.");
-        if (source.TypeKey is InputRack.NodeType or OutputRack.NodeType)
+        if (source.TypeKey is InputRack.NodeType or OutputRack.NodeType or MasterOutput.NodeType)
             throw new GraphValidationException("Boundary racks cannot be duplicated independently.");
 
         var identities = new Dictionary<Guid, Guid> { [source.Id] = duplicateId };
