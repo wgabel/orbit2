@@ -13,6 +13,33 @@ namespace Orbit.Domain.Tests;
 public sealed class PitchPatternTests
 {
     [Fact]
+    public void ArticulationExtendsPortsWithoutChangingExistingPitchIdentity()
+    {
+        var registry = BuiltInNodes.CreateEditorRegistry();
+        using var session = new PatchSession(registry);
+        var id = session.GraphId;
+        var node = session.Execute(new AddNodeCommand(id, NoteSequencerGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        Assert.Equal(new[] { "pitch-out", "gate-out", "trigger-out", "velocity-out" }, node.Outputs.Select(p => p.Key));
+        var serializer = new PatchDocumentSerializer();
+        var document = serializer.Capture(session, 120, id, []);
+        var saved = document.RootGraph.Nodes.Single();
+        var removed = new[] { NoteSequencerGenerator.ArticulationKey, NoteSequencerGenerator.GateLengthKey, NoteSequencerGenerator.VelocityKey };
+        var legacy = saved with
+        {
+            Parameters = saved.Parameters.Where(p => !removed.Contains(p.Key)).ToArray(),
+            Ports = saved.Ports.Where(p => p.Key == "pitch-out").ToArray()
+        };
+        using var restored = serializer.Restore(document with { RootGraph = document.RootGraph with { Nodes = [legacy] } }, registry);
+        var migrated = restored.Snapshot.GetNode(node.Id);
+        Assert.Equal(node.Outputs.Single(p => p.Key == "pitch-out").Id, migrated.Outputs.Single(p => p.Key == "pitch-out").Id);
+        Assert.Equal(4, migrated.Outputs.Count);
+        Assert.Equal(0, migrated.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.ArticulationKey).BaseValue);
+        Assert.Equal(0.9, migrated.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.GateLengthKey).BaseValue);
+        Assert.Equal(0.8, migrated.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.VelocityKey).BaseValue);
+        Assert.Equal(64, PitchPattern.FromNode(migrated).Steps.Count);
+    }
+
+    [Fact]
     public void FixedSlotsMigratePreserveInactiveNotesAndUndoAtomically()
     {
         var registry = BuiltInNodes.CreateRegistry();
