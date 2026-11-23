@@ -70,7 +70,7 @@
                                        OnOutputPointerDown="OnOutputPointerDown" OnInputPointerDown="OnInputPointerDown" />
                         @if (CompactNodePresentation.ForInput(Node, port.Id) is { } parameter)
                         {
-                            <CompactParameterValue @key="parameter.Id" Parameter="@parameter" IsModulated="@IsModulated(parameter.Id)"
+                            <CompactParameterValue @key="parameter.Id" Parameter="@parameter" ReadOnly="@Expanded" IsModulated="@IsModulated(parameter.Id)"
                                                    EffectiveValue="@GetEffective(parameter.Id)"
                                                    ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))"
                                                    EditStateChanged="@(editing => OnCompactEditChanged.InvokeAsync((parameter.Id, editing)))" />
@@ -94,7 +94,7 @@
                 {
                     <div class="node-compact-property" @key="parameter.Id">
                         <span class="node-compact-property-name">@parameter.Definition.Name</span>
-                        <CompactParameterValue Parameter="@parameter" IsModulated="@IsModulated(parameter.Id)"
+                        <CompactParameterValue Parameter="@parameter" ReadOnly="@Expanded" IsModulated="@IsModulated(parameter.Id)"
                                                EffectiveValue="@GetEffective(parameter.Id)"
                                                ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))"
                                                EditStateChanged="@(editing => OnCompactEditChanged.InvokeAsync((parameter.Id, editing)))" />
