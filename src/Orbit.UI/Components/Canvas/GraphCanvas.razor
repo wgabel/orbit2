@@ -53,7 +53,7 @@
                            OnToggleExpanded="ToggleNodeExpandedAsync" OnTogglePinned="ToggleNodePinnedAsync" PendingSource="@pendingSource"
                            WireTargets="@(wireAim is not null ? wireTargetAddresses : null)"
                            OnHeaderPointerDown="@(args => BeginNode(node.Id, args))"
-                           OnBodyPointerDown="BeginNodeSurfaceAsync"
+                           OnBodyPointerDown="@(args => BeginNodeSurfaceAsync(node.Id, args))"
                            OnOutputPointerDown="BeginOutput" OnInputPointerDown="BeginInputNavigationAsync" OnPortActivate="ActivatePortAsync"
                            OnOpenComposite="OnOpenComposite"
                            OnEditRack="OnEditRack"
