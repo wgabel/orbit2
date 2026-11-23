@@ -95,6 +95,7 @@ export async function verifyCanvasContext(browser, url) {
         await mobile.locator('.node-help-trigger').first().tap();
         const helpSheet = mobile.locator('.node-help-panel');
         await helpSheet.waitFor();
+        await mobile.waitForFunction(() => Boolean(history.state?.orbitNodeHelp));
         assert.equal(await mobile.locator('.port-help-tooltip:not([hidden])').count(), 0,
             'Touch should not open connector hover hints');
         assert.ok(await helpSheet.getByText('Connectors').count());
@@ -104,6 +105,7 @@ export async function verifyCanvasContext(browser, url) {
         assert.equal(await mobile.locator('article[data-node-id]').count(), beforeHelp);
         await mobile.locator('.node-help-trigger').first().tap();
         await helpSheet.waitFor();
+        await mobile.waitForFunction(() => Boolean(history.state?.orbitNodeHelp));
         await mobile.goBack();
         await helpSheet.waitFor({ state: 'hidden' });
 
