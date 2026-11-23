@@ -85,6 +85,9 @@ Parameter controls use stable IDs and definition defaults in the source; edited 
 
 The graph compiler produces stable parameter addresses and metadata so the browser audio engine can update base controls. Validate names/escaping when generating Faust source; do not concatenate unchecked user labels into executable code. Cache compiled factories by a structural signature where appropriate.
 
+**Controls optimized away by Faust.** The C# graph control manifest describes the authored signal graph *before* Faust's dead-code optimization. A gated Physical Clarinet or Flute wired to Master with **no Gate input** still compiles as a valid, silent graph; Faust can omit Attack or other controls because the disconnected Gate is a constant zero. `getParams()` lists only the controls that survived in the generated AudioWorklet. During initial binding `FaustNodeFactory` applies the surviving controls and remembers the omitted manifest names for *that worklet only*. A later live edit to an omitted name is a no-op, not a crash. Unknown names, invalid numeric values and ambiguous paths still fail, and a batch is validated before any writes. Structural changes create a fresh worklet and re-resolve the controls, so connecting Gate restores its usable controls. Do not interpret silent playback as a sounding instrument: wire Note Source **Gate → Gate** and optionally **Pitch → Pitch**, then play notes. Test coverage: `tests/audio/FaustCompilerClient.test.mjs`.
+
+
 #### Updating without clicks
 
 | Change | Runtime operation |
