@@ -1,0 +1,92 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "physical-clarinet-mellow",
+    "nodeType": "generator.physical-clarinet",
+    "name": "Mellow reed",
+    "group": "Tone",
+    "description": "Physical clarinet candidate, mellow reed; use a held Gate and Pitch.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.65,
+      "character": 0.25,
+      "attack": 0.06,
+      "release": 0.12,
+      "vibrato-depth": 0,
+      "vibrato-rate": 5,
+      "output-gain": 0.85
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "physical-clarinet-bright",
+    "nodeType": "generator.physical-clarinet",
+    "name": "Bright reed",
+    "group": "Tone",
+    "description": "Physical clarinet candidate, bright reed; use a held Gate and Pitch.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.9,
+      "character": 0.7,
+      "attack": 0.04,
+      "release": 0.09,
+      "vibrato-depth": 0,
+      "vibrato-rate": 5,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "physical-clarinet-breathy",
+    "nodeType": "generator.physical-clarinet",
+    "name": "Gentle entry",
+    "group": "Articulation",
+    "description": "Physical clarinet candidate, gentle entry; use a held Gate and Pitch.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.4,
+      "character": 0.15,
+      "attack": 0.09,
+      "release": 0.15,
+      "vibrato-depth": 0,
+      "vibrato-rate": 5,
+      "output-gain": 0.9
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "physical-clarinet-expressive",
+    "nodeType": "generator.physical-clarinet",
+    "name": "Expressive reed",
+    "group": "Articulation",
+    "description": "Physical clarinet candidate, expressive reed; use a held Gate and Pitch.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.8,
+      "character": 0.5,
+      "attack": 0.055,
+      "release": 0.1,
+      "vibrato-depth": 10,
+      "vibrato-rate": 5.1,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "physical-clarinet-short",
+    "nodeType": "generator.physical-clarinet",
+    "name": "Short phrase",
+    "group": "Articulation",
+    "description": "Physical clarinet candidate, short phrase; use a held Gate and Pitch.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.85,
+      "character": 0.5,
+      "attack": 0.025,
+      "release": 0.045,
+      "vibrato-depth": 0,
+      "vibrato-rate": 5,
+      "output-gain": 0.8
+    }
+  }
+]

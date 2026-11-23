@@ -17,6 +17,8 @@ public sealed class PhysicalInstrumentTests
     [Theory]
     [InlineData(PhysicalPluckGenerator.NodeType)]
     [InlineData(PhysicalMarimbaGenerator.NodeType)]
+    [InlineData(PhysicalSustainedGenerator.ClarinetType)]
+    [InlineData(PhysicalSustainedGenerator.FluteType)]
     [InlineData(DrawbarOrganGenerator.NodeType)]
     [InlineData(RotarySpeakerProcessor.NodeType)]
     public void RegisteredNodesOwnIndependentPortsAndRoundTrip(string type)

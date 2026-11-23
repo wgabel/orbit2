@@ -2,18 +2,18 @@
 
 [Realistic instrument design](realistic-instrument-emulation.md) · [Physical Pluck calibration](faust-physical-pluck.md) · [Usage](../usage/sound-and-instruments.md#faust-instrument-nodes) · [Roadmap](../roadmap/advanced.md#phase-727--faust-first-physical-models-planned)
 
-**Status:** implementation in review, [PR #81](https://github.com/wgabel/orbit2/pull/81). Three new monophonic generator candidates and one reusable effect. These are technically tested candidates, not listening-approved acoustic replicas. Existing presets and node IDs remain unchanged. The existing Faust compiler distribution-compliance work is explicitly deferred by project owner; no new dependency/version or copied upstream model source is introduced, and the [audit](faust-dependency-audit.md) remains open.
+**Status:** Physical Pluck, Physical Marimba, Drawbar Organ and Rotary Speaker merged in [PR #81](https://github.com/wgabel/orbit2/pull/81). Physical Clarinet and Physical Flute are in review ([PR #82](https://github.com/wgabel/orbit2/pull/82)); see [sustained physical models](faust-sustained-instruments.md). These are technically tested candidates, not listening-approved acoustic replicas. Existing presets and node IDs remain unchanged. The existing Faust compiler distribution-compliance work is explicitly deferred by project owner; no new dependency/version or copied upstream model source is introduced, and the [audit](faust-dependency-audit.md) remains open.
 
 ## Play the instruments
 
-Add Note Source, choose reference A4 (MIDI 69), then an instrument and Master output. The three new generators live in Audio generators; Rotary Speaker lives in Effects. Start playback and arm the Note Source keyboard. All pitch offsets are semitones from A4, with base Pitch 0 and connection amount 1. Each generator is mono, as is the existing graph. More independent notes require multiple voices or future polyphony.
+Add Note Source, choose reference A4 (MIDI 69), then an instrument and Master output. The new generators live in Audio generators; Rotary Speaker lives in Effects. Start playback and arm the Note Source keyboard. All pitch offsets are semitones from A4, with base Pitch 0 and connection amount 1. Each generator is mono, as is the existing graph. More independent notes require multiple voices or future polyphony.
 
-| Note Source output | Physical Pluck / Physical Marimba | Drawbar Organ |
-| --- | --- | --- |
-| Pitch | Pitch (A4) | Pitch (A4) |
-| Trigger | Trigger | Trigger (optional for individual legato key contact) |
-| Gate | Not connected | Gate (required) |
-| Velocity | Strike strength (set base to **0**, amount 1) | Not connected; use Swell for expression |
+| Note Source output | Physical Pluck / Physical Marimba | Drawbar Organ | Physical Clarinet / Physical Flute |
+| --- | --- | --- | --- |
+| Pitch | Pitch (A4) | Pitch (A4) | Pitch (A4) |
+| Trigger | Trigger | Trigger (optional for individual legato key contact) | Not connected |
+| Gate | Not connected | Gate (required) | Gate (required) |
+| Velocity | Strike strength (set base to **0**, amount 1) | Not connected; use Swell for expression | Expression (optional; base **0**, amount 1) |
 
 Connect Audio to Master (or Gain/Mixer if layering). Use the corresponding node's preset menu to compare five starting points; with the velocity wire, reset the strike strength to zero after selecting a preset. With fixed pitch and strength, Manual Trigger or Clock can play either percussion voice without a Note Source. For auditioning, connect the same typed signals of [TEST Melody Driver v1](../examples/instrument-design-and-audition.md) and compare at matched level against the original instrument templates.
 
@@ -35,4 +35,4 @@ Connect Drawbar Organ Audio → Rotary Speaker Audio → Master. It also works w
 
 ## Verification
 
-All nodes use the normal registry, stable type/parameter keys, generic ports and Faust graph emitters; no new audio engine. `tests/compiler/PhysicalInstruments.test.mjs` compiles the exact shared production cores and ordinary Note Source graph fixtures at 44.1/48 kHz. All 14 tests passed locally with the pinned compiler; they check initial silence, pitch/velocity capture, damped ring, footage isolation/held tone/release, real note event playback, marimba pitch/velocity/hardness and rotary dry transparency/neutral crossover/bounded modulation. All 251 domain and 124 presentation tests passed, including registry, independent controls, persistence, live parameter updates, bypass policy and 20 new preset definitions. The pluck's 222-trial research baseline remains separately reproducible. No subjective realism or browser/mobile capacity claim is made: listen against the existing templates and refine before treating any as an approved instrument. The flute remains research-only due to lower-register tuning/mode failures; follow-up investigate stable wind model before naming a playable flute.
+All nodes use the normal registry, stable type/parameter keys, generic ports and Faust graph emitters; no new audio engine. `tests/compiler/PhysicalInstruments.test.mjs` compiles the exact shared production cores and ordinary Note Source graph fixtures at 44.1/48 kHz. All 14 tests passed locally with the pinned compiler for PR #81; they check initial silence, pitch/velocity capture, damped ring, footage isolation/held tone/release, real note event playback, marimba pitch/velocity/hardness and rotary dry transparency/neutral crossover/bounded modulation. All 251 domain and 124 presentation tests passed in that increment, including registry, independent controls, persistence, live parameter updates, bypass policy and 20 new preset definitions. The pluck's 222-trial research baseline remains separately reproducible. The [wind follow-up](faust-sustained-instruments.md) addresses the original flute register failures using a calibrated model. No subjective realism or browser/mobile capacity claim is made: listen against the existing templates and refine before treating any as an approved instrument.

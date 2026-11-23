@@ -14,11 +14,13 @@ namespace Orbit.Domain.Tests;
 public sealed class NodeRegistryTests
 {
     [Fact]
-    public void CreatesTwentyBuiltInNodeTypes()
+    public void CreatesRegisteredBuiltInNodeTypes()
     {
         var registry = BuiltInNodes.CreateRegistry();
 
-        Assert.Equal(24, registry.RegisteredTypes.Count);
+        Assert.Equal(26, registry.RegisteredTypes.Count);
+        foreach (var kind in Enum.GetValues<PhysicalSustainedKind>())
+            Assert.IsType<PhysicalSustainedGenerator>(registry.Create(PhysicalSustainedGenerator.TypeFor(kind)));
         Assert.IsType<PhysicalPluckGenerator>(registry.Create(PhysicalPluckGenerator.NodeType));
         Assert.IsType<PhysicalMarimbaGenerator>(registry.Create(PhysicalMarimbaGenerator.NodeType));
         Assert.IsType<DrawbarOrganGenerator>(registry.Create(DrawbarOrganGenerator.NodeType));
