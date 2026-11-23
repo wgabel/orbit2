@@ -5,6 +5,7 @@ export class FaustNodeFactory {
     #processors;
     #createGenerator;
     #compiler;
+    #optimizedAway = new WeakMap();
 
     constructor(moduleLoader, processors, createGenerator, compiler) {
         this.#moduleLoader = moduleLoader;
@@ -42,7 +43,15 @@ export class FaustNodeFactory {
 
         try {
             const bindingStarted = collecting() ? globalThis.performance.now() : null;
-            try { this.setParameters(node, parameters); }
+            try {
+                // Faust may prune controls which cannot affect the output, such
+                // as Attack when a physical instrument's Gate is disconnected.
+                // Keep the missing initial names for this worklet only; a new
+                // program gets its own parameter paths and omitted set.
+                const omitted = new Set();
+                this.#applyParameters(node, parameters, omitted, true);
+                this.#optimizedAway.set(node, omitted);
+            }
             finally { if (bindingStarted !== null && collecting()) timings.parameterBindingMs = globalThis.performance.now() - bindingStarted; }
             return node;
         } catch (error) {
@@ -55,13 +64,21 @@ export class FaustNodeFactory {
     // Shared by initialization and live edits. Resolve and validate the entire
     // batch before writing, so an unknown control cannot partially apply it.
     setParameters(node, parameters) {
+        this.#applyParameters(node, parameters, this.#optimizedAway.get(node));
+    }
+
+    #applyParameters(node, parameters, omitted, initializing = false) {
         const paths = node.getParams();
         const writes = Object.entries(parameters).map(([parameter, value]) => {
             if (!Number.isFinite(value)) throw new Error("Invalid parameter value: " + parameter);
             const matches = paths.filter(candidate => candidate.endsWith("/" + parameter));
+            if (matches.length === 0 && (initializing || omitted?.has(parameter))) {
+                if (initializing) omitted.add(parameter);
+                return null;
+            }
             if (matches.length !== 1) throw new Error("Unknown or ambiguous Faust parameter: " + parameter);
             return [matches[0], value];
         });
-        for (const [path, value] of writes) node.setParamValue(path, value);
+        for (const write of writes) if (write) node.setParamValue(...write);
     }
 }
