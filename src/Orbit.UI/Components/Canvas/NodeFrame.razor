@@ -102,6 +102,21 @@
             }
         </div>
     </div>
+    @if (CanExpand && Node.TypeKey == NoteSequencerGenerator.NodeType)
+    {
+        <NoteSequencerNodeSummary Node="@Node" />
+    }
+    @if (CanExpand && Node.TypeKey == EnvelopeGenerator.NodeType)
+    {
+        <svg class="node-compact-envelope-preview" viewBox="0 0 120 35" preserveAspectRatio="none"
+             role="img" aria-label="Configured envelope shape">
+            <polyline points="@EnvelopePoints" />
+        </svg>
+    }
+    @if (CanExpand)
+    {
+        <RhythmicActionPanel Node="@Node" PatchId="@PatchId" GraphId="@GraphId" />
+    }
     @if (CanExpand)
     {
         <div class="node-compact-settings">
@@ -117,17 +132,11 @@
     }
     @if (!CanExpand || Expanded)
     {
-        @if (CanExpand)
-        {
-            <div class="node-expanded-body">
+        <div class="@(CanExpand ? "node-expanded-body" : "node-legacy-body")">
+            @if (CanExpand)
+            {
                 <NodePresetSelector Node="@Node" Appearance="@Appearance" OnApply="OnPresetApply" OnManage="OnManagePresets" CatalogRevision="@PresetCatalogRevision" />
-                @if (Node.TypeKey == NoteSequencerGenerator.NodeType)
-                {
-                    <NoteSequencerNodeSummary Node="@Node" />
-                }
-                <RhythmicActionPanel Node="@Node" PatchId="@PatchId" GraphId="@GraphId" />
-            </div>
-        }
+            }
     @if (Node.Composite is not null)
     {
         <div class="node-actions">
@@ -168,5 +177,6 @@
     <NodeVisualizationPanel PatchId="@PatchId" GraphId="@GraphId" Node="@Node" Settings="@Visualization"
                             BeatsPerMinute="@BeatsPerMinute" SampleRate="@SampleRate" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" Playhead="@Playhead"
                             ExpandedElsewhere="@VisualizationExpanded" SettingsChanged="OnVisualizationChange" OnExpand="OnExpandVisualization" />
+        </div>
     }
 </article>
