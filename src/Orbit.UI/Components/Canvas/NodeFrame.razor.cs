@@ -11,7 +11,7 @@ using Orbit.Presentation.Canvas;
 namespace Orbit.UI.Components.Canvas;
 
 /// <summary>Reusable node shell; the owning canvas supplies graph data and coordinates.</summary>
-public partial class NodeFrame
+public partial class NodeFrame : IDisposable
 {
     [Parameter, EditorRequired] public GraphNodeSnapshot Node { get; set; } = default!;
     [Parameter] public Guid PatchId { get; set; }
@@ -30,6 +30,11 @@ public partial class NodeFrame
     [Parameter] public CanvasPoint Position { get; set; }
     [Parameter] public NodeVisualRole Role { get; set; }
     [Parameter] public bool Selected { get; set; }
+    [Parameter] public bool Expanded { get; set; }
+    [Parameter] public bool Pinned { get; set; }
+    [Parameter] public EventCallback OnToggleExpanded { get; set; }
+    [Parameter] public EventCallback OnTogglePin { get; set; }
+    [Parameter] public EventCallback<(Guid ParameterId, bool Editing)> OnCompactEditChanged { get; set; }
     [Parameter] public double BeatsPerMinute { get; set; } = MusicalTransport.DefaultTempo;
     [Parameter] public int? SampleRate { get; set; }
     [Parameter] public PortAddress? PendingSource { get; set; }
@@ -55,7 +60,52 @@ public partial class NodeFrame
     private ParameterRange? GetRange(Guid id) => ModulationRanges.GetValueOrDefault(new ParameterAddress(Node.Id, id));
     private double? GetEffective(Guid id) => EffectiveValues.TryGetValue(new ParameterAddress(Node.Id, id), out var value) ? value : null;
 
+    private bool IsExpandable => CompactNodePresentation.IsExpandable(Node);
+    private bool RenderExpandedContent { get; set; }
+    private CancellationTokenSource? collapseCancellation;
+
+    protected override void OnParametersSet()
+    {
+        if (!IsExpandable || Expanded)
+        {
+            collapseCancellation?.Cancel();
+            collapseCancellation?.Dispose();
+            collapseCancellation = null;
+            RenderExpandedContent = true;
+        }
+        else if (RenderExpandedContent && collapseCancellation is null)
+        {
+            var cancel = new CancellationTokenSource();
+            collapseCancellation = cancel;
+            _ = CollapseAfterAnimationAsync(cancel);
+        }
+    }
+
+    private async Task CollapseAfterAnimationAsync(CancellationTokenSource cancel)
+    {
+        try { await Task.Delay(170, cancel.Token); }
+        catch (OperationCanceledException) { return; }
+        await InvokeAsync(() =>
+        {
+            if (!ReferenceEquals(collapseCancellation, cancel) || Expanded) return;
+            RenderExpandedContent = false;
+            collapseCancellation = null;
+            cancel.Dispose();
+            StateHasChanged();
+        });
+    }
+
+    private string EnvelopeSvgPoints => Node.TypeKey != Orbit.Domain.Nodes.Generators.EnvelopeGenerator.NodeType
+        ? "" : string.Join(" ", EnvelopePreview.Create(Node).Points.Select(point =>
+            FormattableString.Invariant($"{4 + 112 * point.X:0.##},{32 - 26 * point.Level:0.##}")));
+
+    public void Dispose()
+    {
+        collapseCancellation?.Cancel();
+        collapseCancellation?.Dispose();
+    }
+
     private NodeAppearance Appearance => NodeAppearanceCatalog.Get(Node.TypeKey, Role);
-    private string FrameClass => $"node-frame {Appearance.CssClass} node-role-{Role.ToString().ToLowerInvariant()}{(Selected ? " node-selected" : "")}{(Node.IsMuted ? " node-muted" : "")}{(Node.IsBypassed ? " node-bypassed" : "")}";
+    private string FrameClass => $"node-frame{(IsExpandable ? " node-frame-expandable" : "")} {Appearance.CssClass} node-role-{Role.ToString().ToLowerInvariant()}{(Selected ? " node-selected" : "")}{(Node.IsMuted ? " node-muted" : "")}{(Node.IsBypassed ? " node-bypassed" : "")}";
     private string PositionStyle => FormattableString.Invariant($"left:{Position.X}px;top:{Position.Y}px;");
 }
