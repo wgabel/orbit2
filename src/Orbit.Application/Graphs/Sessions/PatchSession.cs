@@ -78,6 +78,13 @@ public sealed class PatchSession : IPatchSession
                     events = [new NodesGrouped(grouping.GraphId, grouped, Array.AsReadOnly(grouping.NodeIds.Distinct().ToArray())),
                         new NodeAdded(grouping.GraphId, grouped)];
                 }
+                else if (command is DuplicateNodeCommand duplicate)
+                {
+                    var candidate = NodeDuplication.Build(snapshot, duplicate, registry);
+                    var added = GraphNodeSnapshot.Capture(candidate.GetGraph(duplicate.GraphId).GetNode(duplicate.NewNodeId), nextRevision);
+                    graph = candidate;
+                    events = [new NodeAdded(duplicate.GraphId, added)];
+                }
                 else if (command is UngroupCompositeCommand ungrouping)
                 {
                     var candidate = CompositeUngrouping.Build(snapshot, ungrouping, registry);
