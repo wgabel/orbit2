@@ -2,6 +2,18 @@
 
 [Usage index](README.md) · [Canvas architecture](../editor/canvas.md) · [Persistence](../editor/persistence-and-history.md)
 
+## Compact and expandable nodes (in review, [PR #98](https://github.com/wgabel/orbit2/pull/98))
+
+Most generator and effect nodes start compact on desktop and mobile. **All nodes and all sockets remain visible**, whether a parameter or node is inactive or unconnected. Composite instruments, input/output racks and Master Output retain their established full appearance.
+
+- Click/tap a regular node header or noninteractive node body without dragging to open its full editor. The chevron explicitly opens/closes it. Dragging the header still moves the node; dragging noninteractive body space pans. Tap/click another node or empty canvas to close an unpinned editor.
+- Use the pin button in an expanded header to keep it open when selecting other nodes. More than one node can be pinned. Pin choices are browser-local to the patch and graph; opening a nested composite restores that graph's remembered pins.
+- Edit a **base parameter** directly in the compact numeric field or dropdown beside its corresponding modulation port. The separate arrow-and-value display is the **live effective value**, not an edit field; a dash means no valid live reading is available. Parameters and sockets that are currently inactive are dimmed but remain visible.
+- The full-size slider, preset controls and visualizations appear below the persistent port area when expanded, so existing cable attachment points do not move. The Note Sequencer retains its pattern summary and a compact Envelope retains its configured curve. Manual trigger/gate actions remain accessible in compact mode.
+- A composite node itself is not collapsed; use its existing Open button to navigate to its child graph.
+
+This is an in-review implementation; its released status depends on PR #98 passing CI and being merged.
+
 ## Responsive workspace
 
 Implemented ([PR #77](https://github.com/wgabel/orbit2/pull/77)): desktop and mobile share the same **Nodes**, **Outline**, **Edit**, **View** and **More** buttons. Desktop puts all five in the single top toolbar beside breadcrumbs and transport; mobile keeps them in its bottom bar. Desktop menus open as floating popovers below their trigger; click outside, press Escape or use Close to dismiss. On mobile, sheets keep their existing Close and Back handling. Neither layout resizes the canvas when a menu opens. The optional piano sits at the bottom on desktop and above navigation on mobile.
