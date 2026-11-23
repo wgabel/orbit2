@@ -1,0 +1,72 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "rotary-slow",
+    "nodeType": "processor.rotary-speaker",
+    "name": "Slow chorale",
+    "group": "Speeds",
+    "description": "Slow independent rotor movement.",
+    "parameters": {
+      "speed": 1,
+      "am-depth": 0.6,
+      "doppler-depth": 0.8,
+      "mix": 1
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "rotary-fast",
+    "nodeType": "processor.rotary-speaker",
+    "name": "Fast tremolo",
+    "group": "Speeds",
+    "description": "Fast rotating cabinet.",
+    "parameters": {
+      "speed": 2,
+      "am-depth": 0.65,
+      "doppler-depth": 0.8,
+      "mix": 1
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "rotary-brake",
+    "nodeType": "processor.rotary-speaker",
+    "name": "Stopped rotors",
+    "group": "Speeds",
+    "description": "Brake toward stopped rotors.",
+    "parameters": {
+      "speed": 0,
+      "am-depth": 0.6,
+      "doppler-depth": 0.8,
+      "mix": 1
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "rotary-subtle",
+    "nodeType": "processor.rotary-speaker",
+    "name": "Subtle motion",
+    "group": "Character",
+    "description": "Shallow movement mixed with dry sound.",
+    "parameters": {
+      "speed": 1,
+      "am-depth": 0.3,
+      "doppler-depth": 0.35,
+      "mix": 0.35
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "rotary-deep",
+    "nodeType": "processor.rotary-speaker",
+    "name": "Deep rotation",
+    "group": "Character",
+    "description": "Strong amplitude and Doppler movement.",
+    "parameters": {
+      "speed": 2,
+      "am-depth": 1,
+      "doppler-depth": 1,
+      "mix": 1
+    }
+  }
+]

@@ -1,0 +1,82 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "marimba-balanced",
+    "nodeType": "generator.physical-marimba",
+    "name": "Balanced mallet",
+    "group": "Mallets",
+    "description": "Moderate hardness and resonant bar.",
+    "parameters": {
+      "pitch": 0,
+      "strength": 0.8,
+      "hardness": 0.45,
+      "position": 2,
+      "decay": 0.55,
+      "output-gain": 0.9
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "marimba-soft",
+    "nodeType": "generator.physical-marimba",
+    "name": "Soft mallet",
+    "group": "Mallets",
+    "description": "Rounded softer attack.",
+    "parameters": {
+      "pitch": 0,
+      "strength": 0.8,
+      "hardness": 0.05,
+      "position": 2,
+      "decay": 0.65,
+      "output-gain": 1
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "marimba-hard",
+    "nodeType": "generator.physical-marimba",
+    "name": "Hard mallet",
+    "group": "Mallets",
+    "description": "Bright mallet attack.",
+    "parameters": {
+      "pitch": 0,
+      "strength": 0.8,
+      "hardness": 1,
+      "position": 2,
+      "decay": 0.45,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "marimba-edge",
+    "nodeType": "generator.physical-marimba",
+    "name": "Alternate strike position",
+    "group": "Articulation",
+    "description": "Excite a different modal gain profile.",
+    "parameters": {
+      "pitch": 0,
+      "strength": 0.8,
+      "hardness": 0.55,
+      "position": 4,
+      "decay": 0.65,
+      "output-gain": 1
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "marimba-long",
+    "nodeType": "generator.physical-marimba",
+    "name": "Long bar ring",
+    "group": "Articulation",
+    "description": "Longer modal decay.",
+    "parameters": {
+      "pitch": 0,
+      "strength": 0.65,
+      "hardness": 0.3,
+      "position": 1,
+      "decay": 1.3,
+      "output-gain": 0.9
+    }
+  }
+]

@@ -25,6 +25,9 @@ public static class BuiltInNodes
         registry.Register(GateGenerator.NodeType, id => new GateGenerator(id), "Gate");
         registry.Register(ClockGenerator.NodeType, id => new ClockGenerator(id), "Clock");
         registry.Register(NoiseGenerator.NodeType, id => new NoiseGenerator(id), "Noise");
+        registry.Register(PhysicalPluckGenerator.NodeType, id => new PhysicalPluckGenerator(id), "Physical Pluck");
+        registry.Register(PhysicalMarimbaGenerator.NodeType, id => new PhysicalMarimbaGenerator(id), "Physical Marimba");
+        registry.Register(DrawbarOrganGenerator.NodeType, id => new DrawbarOrganGenerator(id), "Drawbar Organ");
         registry.Register(GainProcessor.NodeType, id => new GainProcessor(id), "Gain");
         registry.Register(MixerProcessor.NodeType, id => new MixerProcessor(id), "Mixer");
         registry.Register(FilterProcessor.NodeType, id => new FilterProcessor(id), "Filter");
@@ -33,6 +36,7 @@ public static class BuiltInNodes
         registry.Register(ReverbProcessor.NodeType, id => new ReverbProcessor(id), "Reverb");
         registry.Register(ResonatorProcessor.NodeType, id => new ResonatorProcessor(id), "Resonator");
         registry.Register(ChorusProcessor.NodeType, id => new ChorusProcessor(id), "Chorus");
+        registry.Register(RotarySpeakerProcessor.NodeType, id => new RotarySpeakerProcessor(id), "Rotary Speaker");
         registry.Register(MasterOutput.NodeType, id => new MasterOutput(id), "Master output");
         return registry;
     }

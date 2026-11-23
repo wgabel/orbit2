@@ -1,0 +1,117 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "organ-jazz",
+    "nodeType": "generator.drawbar-organ",
+    "name": "Jazz 888000000",
+    "group": "Registrations",
+    "description": "Three low drawbars; classic jazz-style candidate.",
+    "parameters": {
+      "pitch": 0,
+      "swell": 0.8,
+      "key-click": 0.2,
+      "percussion": 0.15,
+      "drawbar-16": 8,
+      "drawbar-5-1-3": 8,
+      "drawbar-8": 8,
+      "drawbar-4": 0,
+      "drawbar-2-2-3": 0,
+      "drawbar-2": 0,
+      "drawbar-1-3-5": 0,
+      "drawbar-1-1-3": 0,
+      "drawbar-1": 0
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "organ-warm",
+    "nodeType": "generator.drawbar-organ",
+    "name": "Warm 808400000",
+    "group": "Registrations",
+    "description": "Fundamental, sub and octave.",
+    "parameters": {
+      "pitch": 0,
+      "swell": 0.8,
+      "key-click": 0.1,
+      "percussion": 0.05,
+      "drawbar-16": 8,
+      "drawbar-5-1-3": 0,
+      "drawbar-8": 8,
+      "drawbar-4": 4,
+      "drawbar-2-2-3": 0,
+      "drawbar-2": 0,
+      "drawbar-1-3-5": 0,
+      "drawbar-1-1-3": 0,
+      "drawbar-1": 0
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "organ-bright",
+    "nodeType": "generator.drawbar-organ",
+    "name": "Bright 888630000",
+    "group": "Registrations",
+    "description": "Adds upper drawbars for presence.",
+    "parameters": {
+      "pitch": 0,
+      "swell": 0.8,
+      "key-click": 0.2,
+      "percussion": 0.2,
+      "drawbar-16": 8,
+      "drawbar-5-1-3": 8,
+      "drawbar-8": 8,
+      "drawbar-4": 6,
+      "drawbar-2-2-3": 3,
+      "drawbar-2": 0,
+      "drawbar-1-3-5": 0,
+      "drawbar-1-1-3": 0,
+      "drawbar-1": 0
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "organ-full",
+    "nodeType": "generator.drawbar-organ",
+    "name": "Full 888888888",
+    "group": "Performance",
+    "description": "All nine drawbars open; lower swell for headroom.",
+    "parameters": {
+      "pitch": 0,
+      "swell": 0.65,
+      "key-click": 0.15,
+      "percussion": 0.1,
+      "drawbar-16": 8,
+      "drawbar-5-1-3": 8,
+      "drawbar-8": 8,
+      "drawbar-4": 8,
+      "drawbar-2-2-3": 8,
+      "drawbar-2": 8,
+      "drawbar-1-3-5": 8,
+      "drawbar-1-1-3": 8,
+      "drawbar-1": 8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "organ-pure",
+    "nodeType": "generator.drawbar-organ",
+    "name": "Pure 8 foot",
+    "group": "Performance",
+    "description": "Single fundamental without attack effects.",
+    "parameters": {
+      "pitch": 0,
+      "swell": 0.8,
+      "key-click": 0,
+      "percussion": 0,
+      "drawbar-16": 0,
+      "drawbar-5-1-3": 0,
+      "drawbar-8": 8,
+      "drawbar-4": 0,
+      "drawbar-2-2-3": 0,
+      "drawbar-2": 0,
+      "drawbar-1-3-5": 0,
+      "drawbar-1-1-3": 0,
+      "drawbar-1": 0
+    }
+  }
+]

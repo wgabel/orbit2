@@ -327,6 +327,45 @@ File.WriteAllText(Path.Combine(args[0], "note-source.json"), JsonSerializer.Seri
     inputs = noteProgram.RhythmicInputs.Count
 }));
 
+// Each instrument is wired to the real Note Source, with an independent graph and
+// shared direct-core fixtures for sample-level physics and effects regression tests.
+foreach (var instrumentType in new[] { PhysicalPluckGenerator.NodeType, PhysicalMarimbaGenerator.NodeType, DrawbarOrganGenerator.NodeType })
+{
+    using var instrumentSession = new PatchSession(BuiltInNodes.CreateRegistry());
+    var instrumentRoot = instrumentSession.GraphId;
+    GraphNodeSnapshot AddInstrument(string type) => instrumentSession.Execute(new AddNodeCommand(instrumentRoot, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+    void WireInstrument(GraphNodeSnapshot from, string output, GraphNodeSnapshot to, string input) =>
+        instrumentSession.Execute(new ConnectNodesCommand(instrumentRoot, new(from.Id, from.Outputs.Single(p => p.Key == output).Id), new(to.Id, to.Inputs.Single(p => p.Key == input).Id)));
+    var source = AddInstrument(NoteSourceGenerator.NodeType);
+    var instrument = AddInstrument(instrumentType);
+    var output = AddInstrument(MasterOutput.NodeType);
+    WireInstrument(source, "pitch-out", instrument, "pitch-modulation-in");
+    WireInstrument(source, "trigger-out", instrument, "trigger-in");
+    if (instrumentType != DrawbarOrganGenerator.NodeType)
+    {
+        instrumentSession.Execute(new SetParameterValueCommand(instrumentRoot, Address(instrument, "strength"), 0));
+        WireInstrument(source, "velocity-out", instrument, "strength-modulation-in");
+        WireInstrument(instrument, "audio-out", output, "audio-in");
+    }
+    else
+    {
+        WireInstrument(source, "gate-out", instrument, "gate-in");
+        var rotary = AddInstrument(RotarySpeakerProcessor.NodeType);
+        WireInstrument(instrument, "audio-out", rotary, "audio-in");
+        WireInstrument(rotary, "audio-out", output, "audio-in");
+    }
+    var compiled = FaustGraphCompiler.CreateBuiltIn().Compile(instrumentSession.Snapshot);
+    File.WriteAllText(Path.Combine(args[0], instrumentType + ".json"), JsonSerializer.Serialize(new {
+        source = compiled.Source, values = compiled.InitialControlValues(), inputs = compiled.RhythmicInputs.Count
+    }));
+}
+File.WriteAllText(Path.Combine(args[0], "physical-instrument-cores.json"), JsonSerializer.Serialize(new {
+    pluck = $"import(\"stdfaust.lib\"); process(inP,inT,inV,inD,inE,inG) = {FaustPhysicalInstruments.Pluck("inP","inT","inV","inD","inE","inG")};",
+    marimba = $"import(\"stdfaust.lib\"); process(inP,inT,inV,inH,inPos,inD,inG) = {FaustPhysicalInstruments.Marimba("inP","inT","inV","inH","inPos","inD","inG")};",
+    organ = $"import(\"stdfaust.lib\"); process(inP,inG,inT,inS,inC,inH,d0,d1,d2,d3,d4,d5,d6,d7,d8) = {FaustPhysicalInstruments.Organ("inP","inG","inT","inS","inC","inH",["d0","d1","d2","d3","d4","d5","d6","d7","d8"])};",
+    rotary = $"import(\"stdfaust.lib\"); process(inX,inS,inA,inD,inM) = {FaustPhysicalInstruments.Rotary("inX","inS","inA","inD","inM")};"
+}));
+
 using var filterSession = new PatchSession(BuiltInNodes.CreateRegistry());
 var filterRoot = filterSession.GraphId;
 var carrier = FilterAdd(OscillatorGenerator.NodeType);
