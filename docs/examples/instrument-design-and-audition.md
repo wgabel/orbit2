@@ -1,6 +1,6 @@
 # Instrument and sound design — repeatable audition
 
-[Music creation index](README.md) · [Voice design](sound-quality-and-voice-design.md) · [Instrument recipes](instrument-recipes.md) · [Roadmap](../../ROADMAP.md)
+[Music creation index](README.md) · [Voice design](sound-quality-and-voice-design.md) · [Instrument recipes](instrument-recipes.md) · [Roadmap](../roadmap/overview.md)
 
 **Status:** General-purpose sound design and listening workflow, with an editable audition reference patch using existing nodes. Additional test profiles, a reusable sound library, built-in fixture registration and future engine capabilities are planned. This is not a catalogue of approved presets.
 
@@ -177,4 +177,4 @@ The first fixture and candidate sound experiments are useful now with existing n
 - [P4] FINNEAS, *Birds of a Feather* writing/producing breakdown (2025). [Mix with the Masters release and course description](https://community.mwtm.com/t/new-video-release-finneas-writing-and-producing-birds-of-a-feather-by-billie-eilish/12550).
 - [P5] Billie Eilish and FINNEAS (2024). [Direct interview on production and artistic intent, NPR/VPM](https://www.vpm.org/npr-news/2024-05-17/billie-eilish-finally-remembers-who-she-is).
 
-Keep research evidence, actual patch measurements, hypotheses, and the user's feedback separate. The documentation maintenance workflow in [AGENTS.md](../../AGENTS.md) and the [music creation index](README.md) applies to this catalogue; add validated reference assets, versioned test records and actual PR provenance as experiments progress.
+Keep research evidence, actual patch measurements, hypotheses, and the user's feedback separate. The documentation maintenance workflow in [AGENTS.md](../agents/contributor-instructions.md) and the [music creation index](README.md) applies to this catalogue; add validated reference assets, versioned test records and actual PR provenance as experiments progress.

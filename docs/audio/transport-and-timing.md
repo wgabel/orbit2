@@ -1,6 +1,6 @@
 # Transport and audio timing
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [oscillators and noise](oscillators-and-noise.md) · [dsp engine](dsp-engine.md) · [note sequencer](../instruments/note-sequencer.md).
 

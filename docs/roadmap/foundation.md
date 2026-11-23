@@ -1,6 +1,6 @@
 # Milestone register: foundations
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](overview.md)
 
 Related: [graph model](../core/graph-model.md) · [signals and ports](../core/signals-and-ports.md) · [commands and events](../core/commands-and-events.md) · [transport and timing](../audio/transport-and-timing.md) · [oscillators and noise](../audio/oscillators-and-noise.md) · [effects](../audio/effects.md) · [persistence and history](../editor/persistence-and-history.md).
 

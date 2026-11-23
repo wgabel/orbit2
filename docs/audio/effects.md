@@ -1,6 +1,6 @@
 # Audio processors and effects
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [dsp engine](dsp-engine.md) · [parameters and modulation](../core/parameters-and-modulation.md) · [visualizations](../editor/visualizations.md).
 

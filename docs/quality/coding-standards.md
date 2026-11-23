@@ -1,6 +1,6 @@
 # Coding standards and implementation quality
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Agent instructions](../../AGENTS.md) · [Testing](testing.md) · [Project structure](../core/project-structure.md)
+[Architecture overview](../architecture/overview.md) · [Agent instructions](../agents/contributor-instructions.md) · [Testing](testing.md) · [Project structure](../core/project-structure.md)
 
 ## Purpose and scope
 
@@ -12,11 +12,11 @@ For small, low-risk changes, apply the principles proportionately. For DSP, pers
 
 ## Before writing code: understand and reuse
 
-1. Read the relevant sections of [the architecture index](../../ORBIT2-ARCHITECTURE.md), then inspect the actual call sites, implementations and tests for the affected behavior. Follow related contracts where the change crosses layers.
+1. Read the relevant sections of [the architecture index](../architecture/overview.md), then inspect the actual call sites, implementations and tests for the affected behavior. Follow related contracts where the change crosses layers.
 2. Search for an existing owner of the behavior: services, validators, converters, coordinate transforms, parameter mappings, UI controls, DSP utilities, state machines and lifecycle helpers. **Extend or reuse the authoritative implementation** when it can serve the new case coherently.
 3. Establish the invariants and observable behavior that must remain unchanged: port and parameter identities, graph revisions, command/undo boundaries, persistence, audio timing, rendering, accessibility and public interfaces as applicable.
 4. Identify affected normal, invalid and boundary cases before deciding where the change belongs. For nontrivial changes, state the smallest design that meets the requirement and any relevant trade-offs.
-5. When changing gestures or other user input, consult and update [the user interaction registry](../editor/user-interactions.md) as required by [AGENTS.md](../../AGENTS.md).
+5. When changing gestures or other user input, consult and update [the user interaction registry](../editor/user-interactions.md) as required by [AGENTS.md](../agents/contributor-instructions.md).
 
 **Avoid duplicate sources of truth.** In particular, do not independently implement the same conversion, validation rule, lifecycle policy, node geometry or audio-smoothing policy in multiple layers merely because it is convenient. Move truly shared policy to the correct existing owner; callers should consume that contract. Conversely, do not extract a generic helper or introduce a new interface merely because two small snippets look alike: the behavior must actually be the same and likely to evolve together.
 
@@ -61,7 +61,7 @@ Before handing off an implementation:
 2. Run the relevant existing tests and builds. The [GitHub Actions workflow](../../.github/workflows/build-and-deploy.yml) currently runs .NET domain/presentation tests, JavaScript UI/audio/compiler tests, Faust builds/probes, browser smoke tests and publication checks; choose local checks appropriate to the touched subsystem and review PR CI results when available.
 3. For audio changes, verify observable DSP behavior (not only compilation), including timing and relevant sample rates. For user interactions, test the actual input modes and zoom/viewport edge cases affected. For persistence, verify round-trip and rejection behavior.
 4. State which checks passed, failed or could not run. Do **not** claim live listening, browser/device verification or performance improvement without corresponding evidence.
-5. Update the closest authoritative documentation and usage guidance when contracts change. Keep implementation status and PR evidence accurate according to [AGENTS.md](../../AGENTS.md).
+5. Update the closest authoritative documentation and usage guidance when contracts change. Keep implementation status and PR evidence accurate according to [AGENTS.md](../agents/contributor-instructions.md).
 
 **Current automation versus aspiration:** build/tests and published smoke checks exist in CI. The workflow does not currently establish a repository-wide formatter, C# analyzer, JavaScript linter, duplicate-code threshold or blocking performance budget. Do not represent these as enforced checks; adding them would require separate tooling/configuration work.
 

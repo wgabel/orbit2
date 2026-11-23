@@ -1,6 +1,6 @@
 # Resonators and modal synthesis
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [envelopes](../audio/envelopes.md) · [pitch control](pitch-control.md) · [polyphony](polyphony.md) · [instrument recipes](../examples/instrument-recipes.md).
 

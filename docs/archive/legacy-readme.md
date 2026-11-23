@@ -2,7 +2,7 @@
 
 The original long README was archived on 2026-11-23 and divided into related implementation records. The original contents are preserved in these pages, but are **not** current architecture, instructions, or feature status.
 
-[Current project README](../../README.md) · [Documentation map](../README.md) · [Roadmap](../../ROADMAP.md) · [Architecture](../../ORBIT2-ARCHITECTURE.md)
+[Current project README](../README.md) · [Documentation map](../README.md) · [Roadmap](../roadmap/overview.md) · [Architecture](../architecture/overview.md)
 
 ## Historical sections
 

@@ -1,6 +1,6 @@
 # Granular agent work slices and restartable handoffs
 
-[Roadmap](../../ROADMAP.md) · [Agent instructions](../../AGENTS.md) · [Coding standards](../quality/coding-standards.md)
+[Roadmap](../roadmap/overview.md) · [Agent instructions](contributor-instructions.md) · [Coding standards](../quality/coding-standards.md)
 
 ## Default execution rule
 
@@ -17,7 +17,7 @@ This rule is for **shorter, recoverable sessions and lower repeated-context/toke
 
 ## Before implementing
 
-1. Read `AGENTS.md`, the architecture routing index and **only the relevant** feature/quality contracts and code. Locate the existing milestone in the appropriate `docs/roadmap/*.md` register, or add an entry near the related work.
+1. Read `docs/agents/contributor-instructions.md`, the architecture routing index and **only the relevant** feature/quality contracts and code. Locate the existing milestone in the appropriate `docs/roadmap/*.md` register, or add an entry near the related work.
 2. Decompose any oversized milestone into ordered **`<existing-milestone>-S1`, `-S2`, ...** slices. Preserve existing milestone IDs. Record only the next few actionable slices; elaborate later work when it becomes ready.
 3. Each slice needs **status, dependency (if any), one-sentence scope, acceptance check(s), and verification target**. Add the actual PR link once opened. Keep the detailed technical contract in its feature document, not copied into the roadmap.
 4. Select **one ready slice**; give a brief plan, then implement, test and review it. If the requested feature already fits, it is one slice and needs no contrived decomposition.
@@ -44,7 +44,7 @@ Use the repository's normal vocabulary: `Planned`, `In progress`, `In review`, `
 
 **Required green-CI closeout:** When all required implementation CI checks pass, update the authoritative `docs/roadmap/*.md` slice entry **in the same implementation PR before reporting the slice done**. Set `Implemented (CI verified; awaiting merge)` (or equivalent explicit wording), link the actual PR and successful run, state the verified acceptance outcomes, and name the next dependent slice. A passing build alone is not enough if required browser, interaction, or performance checks remain incomplete. If checks fail, leave `In progress`/`In review` and fix them instead. Once merged, the next roadmap edit may mark the entry `Merged` with the verified PR; never mark an open PR merged. The closeout documentation commit triggers CI again: ensure that final run passes too, but avoid repeatedly editing the register only to replace one passing CI run URL with another.
 
-Complete the existing `AGENTS.md` quality and documentation checks. Keep the handoff compact (normally **at most ~8 short lines**), containing:
+Complete the existing `docs/agents/contributor-instructions.md` quality and documentation checks. Keep the handoff compact (normally **at most ~8 short lines**), containing:
 
 1. Slice ID, current status and PR link/commit (if any).
 2. Observable result and important changed files/contracts.

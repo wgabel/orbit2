@@ -1,6 +1,6 @@
 # Mixing, mastering and analysis of electronic pieces
 
-[Music creation index](README.md) · [Architecture](../../ORBIT2-ARCHITECTURE.md) · [Musical theory and psychoacoustics](music-theory-and-sound-design.md) · [Voice design](sound-quality-and-voice-design.md) · [Genre reference](electronic-music-genres.md)
+[Music creation index](README.md) · [Architecture](../architecture/overview.md) · [Musical theory and psychoacoustics](music-theory-and-sound-design.md) · [Voice design](sound-quality-and-voice-design.md) · [Genre reference](electronic-music-genres.md)
 
 Documentation provenance: [PR #29](https://github.com/wgabel/orbit2/pull/29) (production guidance and measured case study, not new mastering DSP or native rendering implementation).
 
@@ -55,7 +55,7 @@ For competing musical parts, [contextual layer balance](contextual-layer-balance
 
 ### A practical graph layout
 
-Individual or composite voice output → optional local EQ/filter → voice trim/arrangement Gain → root Mixer → optional gentle corrective Parametric EQ → final Gain → Master output. A voice can have pre-effect excitation/arrangement gain and a post-effect trim to preserve tails while controlling wet balance. For an optional shared space return, route one Mixer feed directly and another into a 100% wet delay/reverb followed by a separate trim/filter, then sum at a downstream Mixer; keep the graph acyclic. Do not sum multiple duplicated dry paths accidentally. Current effects are mono. Do not claim stereo panning, dynamics processors, multiband EQ, authentic sidechain compression or limiter protection unless the current implementation explicitly provides them. Check [effects](../audio/effects.md), [musical techniques](genres/orbit-techniques.md) and [roadmap](../../ROADMAP.md).
+Individual or composite voice output → optional local EQ/filter → voice trim/arrangement Gain → root Mixer → optional gentle corrective Parametric EQ → final Gain → Master output. A voice can have pre-effect excitation/arrangement gain and a post-effect trim to preserve tails while controlling wet balance. For an optional shared space return, route one Mixer feed directly and another into a 100% wet delay/reverb followed by a separate trim/filter, then sum at a downstream Mixer; keep the graph acyclic. Do not sum multiple duplicated dry paths accidentally. Current effects are mono. Do not claim stereo panning, dynamics processors, multiband EQ, authentic sidechain compression or limiter protection unless the current implementation explicitly provides them. Check [effects](../audio/effects.md), [musical techniques](genres/orbit-techniques.md) and [roadmap](../roadmap/overview.md).
 
 ## 4. Mastering: the final pass, not a loudness contest
 
@@ -100,7 +100,7 @@ The [genre reference](electronic-music-genres.md) and [composition guide](genera
 
 **Reporting measurements correctly:** time-axis labels must correspond to actual window start/center/end; a normalized plot may use relative RMS amplitude (`RMS/max RMS`) or mean-square energy (`RMS²/max RMS²`), but label which one. Never call an RMS ratio a measured perceptual loudness or energy ratio. A mean over a minute is not proof that every second is safe; provide maxima and sections as appropriate. Peak dBFS is not dBTP; report encoded audio separately. Do not extrapolate an independent renderer's peak or CPU cost as proof of native runtime headroom, real-time performance or import success. See [performance](../quality/performance.md) for performance tests.
 
-Use a concise handoff structure: **observation → evidence → interpretation (including alternatives) → adjustment → re-test**. Report what was actually measured, what changed, whether it improved by measurable criteria, and remaining human-audition questions. The intent is iterative evaluation, not mandatory external tools or a large report for every tiny sound. Record docs consulted and discoverability as required by [AGENTS.md](../../AGENTS.md).
+Use a concise handoff structure: **observation → evidence → interpretation (including alternatives) → adjustment → re-test**. Report what was actually measured, what changed, whether it improved by measurable criteria, and remaining human-audition questions. The intent is iterative evaluation, not mandatory external tools or a large report for every tiny sound. Record docs consulted and discoverability as required by [AGENTS.md](../agents/contributor-instructions.md).
 
 ## 6. Worked feedback example: Event Horizon — A Signal Returns
 

@@ -1,6 +1,6 @@
 # Graph model and fundamental concepts
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [signals and ports](signals-and-ports.md) · [commands and events](commands-and-events.md) · [composite nodes](../editor/composite-nodes.md).
 

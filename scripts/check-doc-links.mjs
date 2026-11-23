@@ -16,6 +16,11 @@ const visit = (dir) => {
   }
 };
 visit(root);
+const rootMarkdown = readdirSync(root, { withFileTypes: true }).filter(item => item.isFile() && item.name.toLowerCase().endsWith('.md'));
+if (rootMarkdown.length) {
+  for (const file of rootMarkdown) console.error(`Root Markdown forbidden; move to docs/: ${file.name}`);
+  process.exitCode = 1;
+}
 
 const checkAnchorsFor = new Set([
   'README.md', 'ORBIT2-ARCHITECTURE.md',

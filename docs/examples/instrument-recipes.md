@@ -1,6 +1,6 @@
 # Musical instrument examples
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [pitch control](../instruments/pitch-control.md) · [envelopes](../audio/envelopes.md) · [physical modelling](../instruments/physical-modelling.md) · [composite nodes](../editor/composite-nodes.md).
 

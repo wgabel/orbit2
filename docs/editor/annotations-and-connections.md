@@ -1,6 +1,6 @@
 # Annotations and connection visualization
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [canvas](canvas.md) · [design system](design-system.md) · [commands and events](../core/commands-and-events.md) · [persistence and history](persistence-and-history.md).
 

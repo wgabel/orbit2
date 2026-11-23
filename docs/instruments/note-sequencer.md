@@ -1,6 +1,6 @@
 # Note Sequencer and keyboard performance
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [note sequencer design](note-sequencer-design.md) · [pitch control](pitch-control.md) · [transport and timing](../audio/transport-and-timing.md) · [envelopes](../audio/envelopes.md) · [commands and events](../core/commands-and-events.md) · [persistence and history](../editor/persistence-and-history.md).
 

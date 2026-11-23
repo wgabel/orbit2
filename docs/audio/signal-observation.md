@@ -1,6 +1,6 @@
 # Signal observation and analysis
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [dsp engine](dsp-engine.md) · [visualizations](../editor/visualizations.md) · [testing](../quality/testing.md) · [performance](../quality/performance.md).
 

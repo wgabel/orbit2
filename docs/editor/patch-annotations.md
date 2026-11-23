@@ -1,6 +1,6 @@
 # Patch documentation, annotations and canvas organization
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap, Phase 6.19](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-planned)
+[Architecture overview](../architecture/overview.md) · [Roadmap, Phase 6.19](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-planned)
 
 Related: [canvas](canvas.md) · [design system](design-system.md) · [persistence and history](persistence-and-history.md) · [commands and events](../core/commands-and-events.md) · [connection visualization](annotations-and-connections.md) · [composite nodes](composite-nodes.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
 

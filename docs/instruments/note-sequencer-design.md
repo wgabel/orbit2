@@ -1,6 +1,6 @@
 # Note Sequencer: full design, articulation and sequencing
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [note sequencer](note-sequencer.md) · [pitch control](pitch-control.md) · [transport and timing](../audio/transport-and-timing.md) · [envelopes](../audio/envelopes.md).
 

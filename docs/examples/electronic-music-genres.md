@@ -1,6 +1,6 @@
 # Electronic music genres — composition reference
 
-[Music creation index](README.md) · [Architecture](../../ORBIT2-ARCHITECTURE.md) · [Generative composition](generative-ambient-composition.md) · [Music theory and sound design](music-theory-and-sound-design.md)
+[Music creation index](README.md) · [Architecture](../architecture/overview.md) · [Generative composition](generative-ambient-composition.md) · [Music theory and sound design](music-theory-and-sound-design.md)
 
 Documentation provenance: [PR #26](https://github.com/wgabel/orbit2/pull/26) introduces the genre reference, technique bridge and agent routing (documentation only; not evidence of new engine capabilities).
 
@@ -42,9 +42,9 @@ Start with just the relevant family and selected technique sections. Cross genre
 | How can I approximate the sound or rhythm using current nodes? | [Musical techniques](genres/orbit-techniques.md) + [instrument recipes](instrument-recipes.md) |
 | How do I avoid basic or hollow voices and exposed noise? | [Voice design](sound-quality-and-voice-design.md) |
 | How do I refine the mix, check the master and measure improvement? | [Mixing, mastering and analysis](mixing-mastering-and-analysis.md) |
-| What can the engine really do, what are valid inputs, and what is planned? | [Architecture/router](../../ORBIT2-ARCHITECTURE.md), [roadmap](../../ROADMAP.md), actual contracts, source and tests |
+| What can the engine really do, what are valid inputs, and what is planned? | [Architecture/router](../architecture/overview.md), [roadmap](../roadmap/overview.md), actual contracts, source and tests |
 
-Use this information as a decision aid, not a mandatory checklist or a restriction on experimentation. Do not invent unsupported sequencing, sampling, nonlinear processing or stereo capabilities. An approximation can still make excellent music: if the defining feature cannot be reproduced, describe the tradeoff, find a musically useful substitute or propose a future feature separately from the composition. Agent handoffs follow [AGENTS.md](../../AGENTS.md), including documentation consulted and discoverability feedback.
+Use this information as a decision aid, not a mandatory checklist or a restriction on experimentation. Do not invent unsupported sequencing, sampling, nonlinear processing or stereo capabilities. An approximation can still make excellent music: if the defining feature cannot be reproduced, describe the tradeoff, find a musically useful substitute or propose a future feature separately from the composition. Agent handoffs follow [AGENTS.md](../agents/contributor-instructions.md), including documentation consulted and discoverability feedback.
 
 ## Reading the genre tables
 

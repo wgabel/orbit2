@@ -1,6 +1,6 @@
 # Historical implementation record — setup and workspace
 
-> Superseded 2026-11-23 README implementation notes, regrouped without changing their technical claims. These are **historical**, not current feature status. Go to the [archive index](legacy-readme.md), [roadmap](../../ROADMAP.md) and [feature contracts](../README.md) before implementing.
+> Superseded 2026-11-23 README implementation notes, regrouped without changing their technical claims. These are **historical**, not current feature status. Go to the [archive index](legacy-readme.md), [roadmap](../roadmap/overview.md) and [feature contracts](../README.md) before implementing.
 
 # Orbit 2
 
@@ -12,7 +12,7 @@ A browser-based modular synthesizer built with independent C# application logic,
 
 **Creating music:** start with the [music creation guide](../examples/README.md) for composition, sound design, analysis and refinement. Before choosing generators, consult the [implemented instrument selection table](../examples/instrument-recipes.md#choose-an-instrument-for-the-musical-role) (physical models, composites, synthetic alternatives) and [actual pitch/articulation wiring](../usage/sound-and-instruments.md#faust-instrument-nodes); the new Faust models are musical candidates rather than automatic acoustic replicas. Browse the [sound-design foundations](../examples/foundations/catalogue.md) for reference patch downloads, musical character, analysis and validation status.
 
-The long-term modular synthesizer design is documented in [ORBIT2-ARCHITECTURE.md](../../ORBIT2-ARCHITECTURE.md). Phase 1 adds the independent signal graph model. Phase 2 executes a fixed modulation graph using Faust and exposes the shared audio clock. Phase 3 adds a session-owned command and committed event system plus the framework-neutral canvas presentation state. Phase 4 connects the editable graph to a runtime Faust compiler and AudioWorklet playback. Phase 5 begins with composite nodes and immutable nested graph snapshots.
+The long-term modular synthesizer design is documented in [ORBIT2-ARCHITECTURE.md](../architecture/overview.md). Phase 1 adds the independent signal graph model. Phase 2 executes a fixed modulation graph using Faust and exposes the shared audio clock. Phase 3 adds a session-owned command and committed event system plus the framework-neutral canvas presentation state. Phase 4 connects the editable graph to a runtime Faust compiler and AudioWorklet playback. Phase 5 begins with composite nodes and immutable nested graph snapshots.
 
 ## Requirements and local execution
 

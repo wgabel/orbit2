@@ -1,6 +1,6 @@
 # Mute and bypass
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [dsp engine](../audio/dsp-engine.md) · [commands and events](../core/commands-and-events.md) · [signals and ports](../core/signals-and-ports.md).
 

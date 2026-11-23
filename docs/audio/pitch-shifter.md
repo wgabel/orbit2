@@ -1,6 +1,6 @@
 # Post-mixer pitch shifting
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [effects](effects.md) · [dsp engine](dsp-engine.md) · [pitch control](../instruments/pitch-control.md).
 

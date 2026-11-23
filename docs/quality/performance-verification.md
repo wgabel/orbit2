@@ -1,6 +1,6 @@
 # Performance verification, roadmap and glossary
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [performance](performance.md) · [dsp engine](../audio/dsp-engine.md) · [testing](testing.md).
 
@@ -156,5 +156,5 @@ Prefer primary specifications and official browser documentation. Recheck browse
 - [Long Tasks API specification](https://w3c.github.io/longtasks/) — optional main-thread measurements.
 - [HTML animation frame processing](https://html.spec.whatwg.org/multipage/imagebitmap-and-animations.html#animation-frames) — rendering callbacks.
 - [Faust documentation](https://faustdoc.grame.fr/) and pinned [faustwasm project](https://github.com/grame-cncm/faustwasm) — inspect the actual supported worklet integration before profiling.
-- [Orbit 2 architecture](../../ORBIT2-ARCHITECTURE.md) — layers, real-time requirements, signal graph and transport contracts.
-- [Orbit 2 README](../../README.md) — build, existing features, local execution and test workflows.
+- [Orbit 2 architecture](../architecture/overview.md) — layers, real-time requirements, signal graph and transport contracts.
+- [Orbit 2 README](../README.md) — build, existing features, local execution and test workflows.

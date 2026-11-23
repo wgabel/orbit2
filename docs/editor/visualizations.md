@@ -1,6 +1,6 @@
 # Node visualizations
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [signal observation](../audio/signal-observation.md) · [canvas](canvas.md) · [design system](design-system.md).
 

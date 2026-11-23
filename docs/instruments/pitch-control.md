@@ -1,6 +1,6 @@
 # Musical pitch and note control
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [oscillators and noise](../audio/oscillators-and-noise.md) · [envelopes](../audio/envelopes.md) · [note sequencer](note-sequencer.md).
 

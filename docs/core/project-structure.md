@@ -1,6 +1,6 @@
 # Project organization and dependencies
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [graph model](graph-model.md) · [commands and events](commands-and-events.md) · [dsp engine](../audio/dsp-engine.md) · [canvas](../editor/canvas.md).
 

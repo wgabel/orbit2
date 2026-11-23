@@ -1,6 +1,6 @@
 # Envelope generators and rhythmic triggers
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [signals and ports](../core/signals-and-ports.md) · [transport and timing](transport-and-timing.md) · [dsp engine](dsp-engine.md) · [note sequencer](../instruments/note-sequencer.md).
 
