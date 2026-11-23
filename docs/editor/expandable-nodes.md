@@ -1,6 +1,6 @@
 # Phase 6.21.5 — Expandable node design contract (approved; staged implementation)
 
-Status: design approved on 2026-11-23. **6.21.5-S1 merged in [PR #100](https://github.com/wgabel/orbit2/pull/100); S2 implemented and [CI-verified](https://github.com/wgabel/orbit2/actions/runs/45272066496) in [PR #101](https://github.com/wgabel/orbit2/pull/101) (awaiting merge)**. S2 implements persistent directly editable modulation base values beside ports, with separate read-only live values when actually modulated; the full target remains compact by default, but detailed views remain the temporary default until S4. S3–S4 remain planned; PR #95 is not the implementation source. Track slice status in [the editor roadmap](../roadmap/editor-and-effects.md).
+Status: revised design approved; S1 and S2 merged ([PR #100](https://github.com/wgabel/orbit2/pull/100), [PR #101](https://github.com/wgabel/orbit2/pull/101)). Their compact-specific value editors are superseded by the planned refactor. Track implementation and verification in [the editor roadmap](../roadmap/editor-and-effects.md).
 
 This document supersedes the earlier Phase 6.21.5 proposal in [the editor roadmap](../roadmap/editor-and-effects.md). It describes the agreed target rather than claiming existing product behavior. Implementation must cross-check the actual registered node definitions and their active parameter/port rules.
 
@@ -9,30 +9,30 @@ This document supersedes the earlier Phase 6.21.5 proposal in [the editor roadma
 - Use the same **compact-by-default, click/tap-to-expand** node behavior on desktop and mobile. Do not introduce a separate inspector.
 - **All nodes remain visible on the canvas at all times. No inactive-node visibility filtering, hiding or collapsing entire nodes.**
 - **Every input and output port remains individually visible in both states**, whether connected, disconnected, active or inactive. Do not collapse, aggregate, dynamically hide or substitute a port with an ambiguous anchor.
-- **Every parameter with a modulation capability remains visible in the compact node** even without a cable or when the parameter is temporarily inactive. Display its base value, unit and label; visually distinguish inactive state without removing the corresponding port.
-- **Compact base values are directly editable**, with an appropriate numeric editor or choice control. The editor should be reachable by clicking/tapping the value itself, without opening the expanded body. Live effective values are read-only.
+- **Every parameter with a modulation capability remains visible in the compact node** even without a cable or when the parameter is temporarily inactive. Keep its original property editor, base value, unit and label; visually distinguish inactive state without removing the corresponding port.
+- **Compact base values are directly editable**, with an appropriate numeric editor or choice control. Use the original editor directly without expanding the node. Live effective values are read-only.
 - For a parameter receiving modulation, show **base → effective** when a valid live effective value is available. Keep the base visible if playback is stopped, telemetry is absent/stale, or the effective value is unavailable; never invent a live value. Optionally expose predicted range on demand rather than as mandatory extra rows.
 - Show essential non-modulatable type-specific information in compact nodes, as enumerated below.
 - **Composite nodes are exempt from the redesign.** Preserve their existing appearance, controls, port labels, exposed ports and Open action in both nominal presentation states. Do not collapse any composite content. Preset instrument templates that instantiate a composite follow this rule. Likewise do not needlessly redesign Input/Output Rack or Master Output shells in this milestone.
-- The ports and compact readouts form a persistent section. Place the expandable editing content **after** that section so port anchor positions do not shift merely because the node opens.
+- All sockets and labels form a persistent top section, separate from property editors. Natural node height changes and endpoint movement are permitted; measure actual socket geometry.
 
 ## 2. Visual hierarchy and compact editing
 
-One shared NodeFrame renderer presents: (1) header with icon/name, mute/bypass where supported, expansion toggle and pin; (2) persistent port and property rows; (3) optional short type-specific summary; (4) an expanded-only body containing the existing full parameter widgets, presets, rhythmic actions and visualization controls. Existing full controls remain reachable.
+One shared NodeFrame renderer presents (1) icon/name title row, (2) buttons-only action row, (3) persistent top port section, and (4) the original property editors in their existing order. Folded and expanded states share a single renderer and property state.
 
-- A modulation input row shows its real socket and name, editable base value and, if available, a visually distinct live effective value. Reuse parameter-to-port identity from the node snapshot; do not join by display name. Audio/event inputs and output sockets retain their own individual labels and targets. A parameter without a modulation socket appears in the compact type-specific summary when required.
-- The compact node is **not** a miniature collection of full sliders. Base-value readouts are compact; a tap/click, Enter or Space on the editable value opens its inline field/picker. Selectable choice values (waveform, filter mode, timing, etc.) use a small accessible choice editor. Direct editing must use the existing parameter command, validation, gesture/history grouping and audio update flow, not a second mutable parameter state.
-- Numeric editors show units and validation errors. Enter commits a valid value; Escape cancels/reverts; focus loss commits only a valid completed edit (invalid drafts remain actionable). Editing, tapping a port, dragging a wire or moving a node never toggles expansion. Touch targets remain usable and do not overlap nearby sockets. The selected value stays legible at zoomed-out scales through existing zoom/navigation behavior; no invisible actions.
-- The **base** value is not relabeled as the live value. Display unit conversions through existing readout/formatting services where appropriate, and display a bounded placeholder if an effective value is missing. Readouts should have stable widths to avoid moving the node as telemetry changes.
-- Keep categories, node names, icons, activation states and important mute/bypass flags recognizable. Compact rows are always readable rather than relying on color alone.
+- Folded visibility is driven by per-property importance metadata or modulation capability. Hide only less important original controls; never create duplicate base-value boxes, compact-specific editors or alternate summaries of existing controls. Preserve appropriate existing previews, presets and actions.
+- Show base and read-only live effective values on the original editor when applicable; retain existing units, validation, undo/redo, draft protection, audio updates and inactive styling. Resolve port identity by stable IDs, not labels. Missing telemetry must not invent live values.
+- Remove category text from the header; strengthen existing shared category accents by approximately 5%, retaining semantic port/cable colors. Preserve accessible action labels and existing button behavior.
+- Remove the duplicate icon and visible Preset label from the preset selector; give the dropdown the recovered width, retain accessible naming and management actions, and move no-match explanatory text into the menu.
+- Remove replaced code as each slice lands. A mandatory post-refactor audit removes obsolete compact renderers, flags, components, bindings, event handlers, CSS, geometry calculations and stale tests/docs. Retain fallback code only with documented justification; preserve regression coverage and a single source of truth.
 
-## 3. Per-node compact inventory (in addition to all routable port rows)
+## 3. Per-node compact inventory (original editors to retain in addition to all routable ports)
 
-The definitive source for modulatable parameters is each node's ParameterDefinition and associated ModulationPortId; **all of those values must be shown regardless of the shorter extra-summary column below**. Rows already displaying a property must not be duplicated unnecessarily.
+The definitive source for modulatable parameters is each node's ParameterDefinition and associated ModulationPortId; **all of those values must be shown regardless of the essential-settings column below**. Each property editor must appear exactly once.
 
 | Registered leaf node(s) | Additional essential compact information |
 | --- | --- |
-| Oscillator | Waveform; free/synchronized timing mode; division in sync mode; pitch-tracking mode. All input parameters (frequency, amplitude, phase, pulse width, pitch) retain ports/readouts; inactive ones are dimmed, not removed. |
+| Oscillator | Waveform; free/synchronized timing mode; division in sync mode; pitch-tracking mode. All input parameters (frequency, amplitude, phase, pulse width, pitch) retain ports and original editors; inactive ones are dimmed, not removed. |
 | Noise | Noise color; amplitude input/value. |
 | Pitch Control | Transposition in semitones and fine tune in cents (has no modulation input ports). |
 | Note Source | Reference note, keyboard velocity and clear selected performance-keyboard target indication when applicable. |
@@ -68,20 +68,20 @@ Future leaf node registrations must add or verify their compact metadata; a safe
 
 - All eligible non-composite nodes start compact on both desktop and mobile. Clicking/tapping a noninteractive node surface opens it. Activating a different eligible node collapses the previous **unpinned** one. Clicking/tapping empty canvas closes all unpinned expanded nodes. Multiple nodes may stay open via explicit pinning.
 - Use an obvious chevron for explicit expansion/collapse, including keyboard activation. Pin is a separate action with a clear pressed/selected state. Selection alone, port gestures, inline-value editing, slider drags, touch pinches, long presses and composite navigation must not toggle expansion inadvertently. Honor protected drafts; don't destroy a pending edit when outside-click or selecting another node.
-- Use short easing (~180 ms open/~140 ms close) with reduced-motion fallback. Keep the header and persistent ports fixed. Expanded controls appear **below** the port/property rows; render above overlapping nodes where needed without moving other nodes or changing their world coordinates.
+- Use short easing (~180 ms open/~140 ms close) with reduced-motion fallback. Keep the header and persistent ports fixed. Additional original controls appear **below** the persistent port section in their original order; render above overlapping nodes where needed without moving other nodes or changing their world coordinates.
 - Retain existing responsive Blazor canvas, shared NodeFrame, parameter editors, node registry, graph commands and signal telemetry. Do not build a distinct mobile editor or a parallel parameter-state system. Expansion/pinning is presentation-only and must never cause DSP recompilation, history entries or playback interruption.
 - Persist graph/node-qualified pin state in compatible presentation state, including nested canvases; restore without assuming deleted node IDs exist. Do **not** persist ephemeral auto-expanded selection. Composite/rack visual appearance is unaffected by this preference. Detailed/all-expanded workspace mode and inspector mode are **not required** for this increment.
-- Preserve stable cable anchors on expansion. On legitimate parameter/port activation changes, measure from the real DOM and use existing snapping and connection-validation behavior. Never temporarily remove DOM sockets while animating. Current cable-edge panning, touch magnetic snapping and desktop pointer behavior must continue to work.
+- Allow natural endpoint movement on expansion or folding; measure from the real DOM after layout changes and use existing snapping and connection-validation behavior. Never temporarily remove DOM sockets while animating. Current cable-edge panning, touch magnetic snapping and desktop pointer behavior must continue to work.
 - Keep hidden expanded visualizations from consuming unnecessary telemetry/scope taps, while always-visible live effective readings are throttled and render efficiently without jitter; no change to DSP calculations is implied.
 
 ## 5. Acceptance criteria and regression coverage (before merging implementation)
 
-1. Every leaf type in BuiltInNodes/CreateEditorRegistry has deliberate compact metadata or an explicit safe fallback. Tests compare visible compact sockets to snapshot inputs/outputs and compact modulation-capable parameter rows to actual parameter definitions, including inactive and unconnected ones.
+1. Every leaf type in BuiltInNodes/CreateEditorRegistry has deliberate compact metadata or an explicit safe fallback. Tests compare visible compact sockets to snapshot inputs/outputs and visible original modulation-capable property editors to actual parameter definitions, including inactive and unconnected ones.
 2. All composite presets, arbitrary composite nodes, Input/Output Rack and Master Output keep their current controls and routing appearance; no hidden ports or actions. Composite child-graph editing and parent boundary mapping remain intact.
 3. Desktop Chromium and mobile/touch tests prove compact numeric/choice edits, invalid-value handling, Enter/Escape/blur, graph history undo/redo, live audio update, and that inline editor/port interaction does not open/collapse/move a node.
-4. Validate node-selection transition, outside click, multiple pin states, reload and nested navigation. Assert expansion does not move port marker centers and does not alter graph revisions, audio runtime or other node positions.
+4. Validate node-selection transition, outside click, multiple pin states, reload and nested navigation. Assert cable endpoints track real port marker centers through layout changes and expansion does not alter graph revisions, audio runtime or other node positions.
 5. Cover both active modulation (base + effective correctly distinguished) and stopped/stale/unavailable telemetry (base still shown; no false live value), plus dim inactive inputs. Check stable readout width under fast modulation.
 6. Validate pointer and touch snapping at 25–400% zoom, edge panning, cable deletion/context menu, pan/pinch takeover, accessible keyboard focus, reduced motion, and no loss of drafts.
 7. Measure large patch rendering against the existing 7.3.3 responsiveness metrics and live tap budgets; do not claim performance gains without measured evidence.
 
-Implementation is intentionally out of scope for this specification. Update the usage guide and real status only when code and browser tests ship.
+Before final acceptance, verify one original editor per property in either state, removal of obsolete compact code, and consistent header/preset presentation. Implementation is intentionally out of scope for this specification. Update the usage guide and real status only when code and browser tests ship.
