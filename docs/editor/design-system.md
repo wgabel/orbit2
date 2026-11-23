@@ -104,6 +104,7 @@ Keep layout structure in CSS and markup, with numeric styling constants in JSON.
 | PatchOverviewEditor / PatchOverviewSummary | Patch-wide protected metadata draft and read-only summary, reused by PatchManager for active and saved documents (6.19.4, implemented) |
 | AnnotationMarker / AnnotationDetailPolicy | Shared screen-scaled title/marker detail and per-canvas visibility, with selection reveal and stable authored geometry (6.19.7, implemented) |
 | PatchOutlinePanel / PatchOutline | Searchable, bounded hierarchy of committed graph-qualified targets, with explicit locate/open actions (6.19.8, implemented) |
+| Node help | Presentation-only `NodeHelpCatalog`, one delegated unscaled port hint per canvas, an explicit header `?` trigger and viewport popup/mobile sheet. Keep typed ports and cable gestures unchanged; separate built-in help from authored node descriptions ([PR #94](https://github.com/wgabel/orbit2/pull/94), in review). |
 | PortConnector | Render shape, label, typed endpoint, hit area and connection gesture |
 | ConnectionLayer / ConnectionPath | Render and hit-test Bézier connections using shared port geometry |
 | ParameterSlider | Name, unit, editable numeric base value, min/max, range slider, inline error, modulation band and effective marker |

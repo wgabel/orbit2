@@ -225,3 +225,167 @@ export function mountConnectionEditor(editor) {
         }
     };
 }
+
+
+// One unscaled connector hint overlay per canvas. Delegation avoids listeners,
+// DOM overlays and Blazor rerenders on every individual port or pointer move.
+export function portHelpPosition(anchor, bounds, size, gap) {
+    const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
+    const left = clamp(anchor.left, gap, Math.max(gap, bounds.width - size.width - gap));
+    const below = anchor.bottom + gap;
+    const above = anchor.top - size.height - gap;
+    const top = below + size.height <= bounds.height - gap
+        ? below : clamp(above, gap, Math.max(gap, bounds.height - size.height - gap));
+    return { left, top };
+}
+
+const portHintInstances = new WeakMap();
+
+export function mountPortHints(viewport) {
+    const existing = portHintInstances.get(viewport);
+    if (existing) return existing;
+    const tooltip = viewport.ownerDocument.createElement("div");
+    tooltip.className = "port-help-tooltip";
+    tooltip.setAttribute("role", "tooltip");
+    const heading = viewport.ownerDocument.createElement("strong");
+    const description = viewport.ownerDocument.createElement("span");
+    tooltip.append(heading, description);
+    tooltip.hidden = true;
+    viewport.append(tooltip);
+    let active = null, originalTitle = null;
+    const hide = () => {
+        if (active && originalTitle !== null) active.setAttribute("title", originalTitle);
+        active = null;
+        originalTitle = null;
+        tooltip.hidden = true;
+    };
+    const show = button => {
+        if (button === active || !button?.isConnected || !button.dataset.portHelp ||
+            viewport.dataset.portHintsSuppressed === "true" ||
+            viewport.querySelector(".node-help-overlay, .canvas-context-overlay")) return;
+        hide();
+        active = button;
+        originalTitle = button.getAttribute("title");
+        if (originalTitle !== null) button.removeAttribute("title"); // prevent duplicate native tooltip
+        heading.textContent = button.dataset.portTitle ?? "Connector";
+        description.textContent = button.dataset.portHelp; // text only: no parsed HTML
+        tooltip.hidden = false;
+        const bounds = viewportBounds(viewport);
+        const rect = button.getBoundingClientRect();
+        const gap = parseFloat(getComputedStyle(tooltip).paddingTop) || 0;
+        const point = portHelpPosition({
+            left: rect.left - bounds.left,
+            top: rect.top - bounds.top,
+            bottom: rect.bottom - bounds.top
+        }, bounds, { width: tooltip.offsetWidth, height: tooltip.offsetHeight }, gap);
+        tooltip.style.left = `${point.left}px`;
+        tooltip.style.top = `${point.top}px`;
+    };
+    const buttonFor = element => element?.closest?.(".port-connector[data-port-help]") ?? null;
+    const over = event => {
+        if (event.pointerType !== "touch") show(buttonFor(event.target));
+    };
+    const out = event => {
+        if (active && active.contains(event.target) &&
+            (!event.relatedTarget || !active.contains(event.relatedTarget))) hide();
+    };
+    const focus = event => {
+        const button = buttonFor(event.target);
+        if (button?.matches(":focus-visible")) show(button);
+    };
+    const blur = event => { if (active?.contains(event.target)) hide(); };
+    const events = [
+        ["pointerover", over], ["pointerout", out], ["focusin", focus], ["focusout", blur],
+        ["pointerdown", hide], ["wheel", hide]
+    ];
+    for (const [name, handler] of events) viewport.addEventListener(name, handler, true);
+    window.addEventListener("resize", hide);
+    window.addEventListener("scroll", hide, true);
+    const controller = {
+        dispose() {
+            if (portHintInstances.get(viewport) !== controller) return;
+            portHintInstances.delete(viewport);
+            hide();
+            tooltip.remove();
+            for (const [name, handler] of events) viewport.removeEventListener(name, handler, true);
+            window.removeEventListener("resize", hide);
+            window.removeEventListener("scroll", hide, true);
+        }
+    };
+    portHintInstances.set(viewport, controller);
+    return controller;
+}
+
+// Position the node popup next to its ? trigger in unscaled CSS pixels.
+// Narrow/coarse viewports use the CSS bottom sheet instead.
+export function positionNodeHelp(viewport, nodeId) {
+    const panel = viewport.querySelector(".node-help-panel");
+    const trigger = [...viewport.querySelectorAll(".node-help-trigger")]
+        .find(button => button.dataset.helpNodeId === nodeId);
+    if (!panel || !trigger) return;
+    if (matchMedia("(max-width: 768px), (max-height: 480px) and (pointer: coarse)").matches) return;
+    const bounds = viewportBounds(viewport);
+    const rect = trigger.getBoundingClientRect();
+    const gap = parseFloat(getComputedStyle(panel).paddingTop) || 0;
+    const width = panel.offsetWidth, height = panel.offsetHeight;
+    const rightSide = rect.right - bounds.left + gap;
+    const leftSide = rect.left - bounds.left - width - gap;
+    const left = rightSide + width < bounds.width - gap ? rightSide
+        : leftSide >= gap ? leftSide : Math.max(gap, bounds.width - width - gap);
+    const top = Math.max(gap, Math.min(rect.top - bounds.top, bounds.height - height - gap));
+    panel.style.right = "auto";
+    panel.style.left = `${left}px`;
+    panel.style.top = `${top}px`;
+}
+
+export function focusNodeHelpTrigger(viewport, nodeId) {
+    [...viewport.querySelectorAll(".node-help-trigger")]
+        .find(button => button.dataset.helpNodeId === nodeId)?.focus({ preventScroll: true });
+}
+
+// Modal help is an ordinary local DOM overlay. Trap Tab, leaving Escape/Close
+// and all graph commands under their established C# event ownership.
+export function trapNodeHelpFocus(viewport, receiver) {
+    const panel = viewport.querySelector(".node-help-panel");
+    if (!panel) return { dispose() {} };
+    const mobile = matchMedia("(max-width: 768px), (max-height: 480px) and (pointer: coarse)");
+    const marker = "orbitNodeHelp";
+    const token = crypto.randomUUID?.() ?? String(Math.random());
+    const ownsEntry = () => history.state?.[marker] === token;
+    let backClosing = false, disposed = false;
+    if (mobile.matches) {
+        try { history.pushState({ ...history.state, [marker]: token }, ""); }
+        catch { /* Close/Escape remain available if history is restricted. */ }
+    }
+
+    function onKey(event) {
+        if (event.key !== "Tab") return;
+        const controls = [...panel.querySelectorAll("button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])")];
+        if (!controls.length) return;
+        const first = controls[0], last = controls.at(-1);
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus({ preventScroll: true });
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus({ preventScroll: true });
+        }
+    }
+    function onBack() {
+        if (!mobile.matches || ownsEntry()) return;
+        backClosing = true;
+        void receiver.invokeMethodAsync("DismissNodeHelpFromBackAsync").catch(() => {});
+    }
+    panel.addEventListener("keydown", onKey, true);
+    window.addEventListener("popstate", onBack);
+    return {
+        dispose() {
+            if (disposed) return;
+            disposed = true;
+            panel.removeEventListener("keydown", onKey, true);
+            window.removeEventListener("popstate", onBack);
+            // Explicit Close/Escape consumes our transient entry, not the preceding page.
+            if (!backClosing && ownsEntry()) history.back();
+        }
+    };
+}

@@ -73,16 +73,16 @@ Sources: `GraphCanvas.razor.cs`, `canvasContext.js`, `PerformanceKeyboard.razor`
 - **Double-click / double-tap composite header to open:** `docs/usage/patch-editor.md` previously instructed double-click, and Phase 6.21 planning mentions double-tap, but the audited shared `NodeFrame.razor` does **not** bind `@ondblclick`, nor is a composite double-tap recognizer present in the reviewed canvas handlers. Use the explicit `Open` button/context action. Treat this as **planned/unverified**, not an available gesture; verify after relevant PRs merge.
 - **Compact-node click-to-expand:** Phase 6.21.5 is planned and may later claim normal node tap/click. Avoid adding a second competing interpretation of the same click; update this registry when implemented.
 
-## Proposed connector/node help interaction policy (NOT implemented)
+## Node and connector help (in review, PR #94)
 
-This is a reserved design decision for the simple help-popup feature, not a feature-completion claim.
+The interaction behavior below is implemented in the [feature PR #94](https://github.com/wgabel/orbit2/pull/94), **not yet confirmed merged into main**. Other gestures remain as audited. Review the PR and browser regressions before treating these changes as released.
 
 | Surface | Desktop | Mobile/touch | Reason |
 | --- | --- | --- | --- |
 | Connector | Noninteractive short explanation on hover and keyboard focus; preserve click/drag | **No long-press or ordinary tap for help**; explanations available inside node `?` popup | Connector hold conflicts with output wire preparation/drag and existing touch priorities; tap already selects/creates connections. Hover is unavailable on touch |
 | Node `?` control | Click / Enter / Space opens a small accessible anchored popup | Tap opens a dismissible, screen-space popup/sheet | A distinct button does not steal node selection, move, context or connector gestures |
 | Node help content | Brief node purpose, connector meanings, two or three practical wiring examples | Same information in mobile layout | No Related Topics, document-link browsing, or topic navigation feature |
-| Exit | Close, Escape, outside click; focus returns to trigger | Close, Back or outside tap where safe; pinch remains available on the canvas | Consistent with existing overlay contract |
+| Exit | Close, Escape or backdrop; focus returns to trigger | Close, browser/Android Back, Escape or backdrop; pinch remains available on the canvas after dismissal | A temporary mobile history entry closes the sheet without leaving the patch |
 
 Requirements for implementation: use the shared node/connector components, keep help UI **outside the transformed world** so it remains readable at low zoom, prevent pointer-down propagation from `?`, ensure no accidental node move or wire activation, close on navigation/removal, keep focus management and reduced-motion behavior accessible, and do not mutate graph state or trigger audio compilation. Tests must exercise real desktop hover/focus and mobile `?` tapping alongside existing long-press, wire drag, pinch, triple-fit, context actions, selection and overlays.
 

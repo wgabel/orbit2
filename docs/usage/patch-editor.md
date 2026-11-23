@@ -17,6 +17,12 @@ Implemented ([PR #77](https://github.com/wgabel/orbit2/pull/77)): desktop and mo
 
 With [PR #61](https://github.com/wgabel/orbit2/pull/61), close a tool via its Close button, the active bottom tab, Escape or browser/Android Back; changing tools dismisses the previous one. Apply/cancel a protected overview draft before leaving it. The color-coded Node Library ([PR #62](https://github.com/wgabel/orbit2/pull/62), implemented) replaces the old dropdown. Automatic node expansion/pinning remains planned; fullscreen is deferred. Resizing the browser retains the same active graph and playback controller.
 
+### Inline node and connector help
+
+In review ([PR #94](https://github.com/wgabel/orbit2/pull/94)): every node has a small **?** button in its header. On desktop click it (or focus it and press Enter/Space); on mobile tap it. A viewport-sized popup/sheet describes the node, its actual input/output connectors and two practical wiring examples. Close with **Close**, Escape, browser/Android Back (on mobile), or tap/click outside; closing restores focus to the same help button when available. This built-in help is separate from the existing user-authored **ⓘ** description. Help does not edit the patch or change sound.
+
+On desktop hover over a connector, or focus it with the keyboard, to see a short purpose hint. The popup remains readable regardless of graph zoom. On touch, connector tap and drag still begin/complete connections; do **not** long-press ports for help. Use the node **?** to read their descriptions. There are no Related Topics, documentation links or help navigation.
+
 ### Gesture-only canvas navigation (6.21.4)
 
 Implemented: [PR #69](https://github.com/wgabel/orbit2/pull/69).
