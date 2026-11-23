@@ -95,7 +95,7 @@
                                 <button type="button" class="pitch-roll-cell @(code == note + 1 ? "pitch-roll-note" : "") @(Playhead == slot + 1 ? "pitch-roll-playing" : "")"
                                         style="@("grid-row:" + row + ";grid-column:" + (slot + 2))"
                                         data-step="@(slot + 1)" data-midi-note="@note" aria-label="@("Step " + (slot + 1) + ", " + MusicalPitch.NoteName(note) + (code == note + 1 ? ", filled" : ""))"
-                                        aria-pressed="@(code == note + 1)" disabled="@RecordingLocked" @onclick="() => PlaceNoteAsync(slot, note)"></button>
+                                        aria-pressed="@((code == note + 1).ToString().ToLowerInvariant())" disabled="@RecordingLocked" @onclick="() => PlaceNoteAsync(slot, note)"></button>
                             }
                         }
                     </div>
@@ -105,7 +105,7 @@
                     {
                         var slot = i;
                         <button type="button" class="secondary @(Playhead == slot + 1 ? "pitch-step-playing" : "")"
-                                aria-pressed="@(selectedStep == slot)" data-step="@(slot + 1)"
+                                aria-pressed="@((selectedStep == slot).ToString().ToLowerInvariant())" data-step="@(slot + 1)"
                                 aria-label="@("Select step " + (slot + 1) + ": " + StepLabel(StepCode(slot)))" @onclick="() => selectedStep = slot">
                             <small>@(slot + 1)</small><span>@StepLabel(StepCode(slot))</span>
                         </button>
@@ -317,8 +317,10 @@
     {
         if (RecordingLocked) return;
         var p = Node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.StepKey(selectedStep));
-        await Edit.InvokeAsync(new(new ParameterAddress(Node.Id, p.Id), code));
+        // Advance before publishing the graph edit so the parameter-change render
+        // observes the cursor move rather than racing a second render.
         if (move) selectedStep = (selectedStep + advance) % StepCount;
+        await Edit.InvokeAsync(new(new ParameterAddress(Node.Id, p.Id), code));
     }
     private async Task EnterNoteAsync(int note)
     {
