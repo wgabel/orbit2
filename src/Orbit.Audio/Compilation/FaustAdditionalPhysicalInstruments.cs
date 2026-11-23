@@ -14,7 +14,7 @@ public static class FaustAdditionalPhysicalInstruments
             target = max(-21.0,min(15.0,{{pitch}}));
             pitchState(prev) = select2(held & held',target,prev+(target-prev)*(1.0-exp(-1.0/(0.005*ma.SR))));
             f = 440.0*pow(2.0,max(-21.0,min(15.0,trackedSemitones+os.osc({{vibratoRate}})*({{vibratoDepth}})*0.01))/12.0);
-            bowSpeed = env*(0.1+0.6*expr);
+            bowSpeed = env*(0.035+0.12*expr);
             bowPress = max(0.1,min(0.9,{{pressure}}));
             bowPos = max(0.1,min(0.9,{{position}}));
             raw = pm.violinModel(340.0/f,bowPress,bowSpeed,bowPos) : fi.dcblocker;
@@ -32,7 +32,7 @@ public static class FaustAdditionalPhysicalInstruments
             target = max(-21.0,min(15.0,{{pitch}}));
             pitchState(prev) = select2(held & held',target,prev+(target-prev)*(1.0-exp(-1.0/(0.005*ma.SR))));
             f = 440.0*pow(2.0,max(-21.0,min(15.0,trackedSemitones+os.osc({{vibratoRate}})*({{vibratoDepth}})*0.01))/12.0);
-            air = env*(0.45+0.2*expr)*(1.0+0.004*no.noise);
+            air = env*(0.68+0.23*expr)*(1.0+0.004*no.noise);
             raw = pm.brassModel(340.0/f,max(0.25,min(0.75,{{tension}})),max(0.2,min(0.85,{{mute}})),air) : fi.dcblocker;
         }
         """;

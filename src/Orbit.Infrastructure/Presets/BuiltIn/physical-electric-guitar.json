@@ -10,7 +10,7 @@
       "pitch": 0,
       "strength": 0.8,
       "pluck-position": 0.35,
-      "mute": 0.96,
+      "mute": 0.999,
       "output-gain": 0.8
     }
   },
@@ -25,7 +25,7 @@
       "pitch": 0,
       "strength": 0.45,
       "pluck-position": 0.25,
-      "mute": 0.96,
+      "mute": 0.999,
       "output-gain": 0.8
     }
   },
@@ -40,7 +40,7 @@
       "pitch": 0,
       "strength": 0.9,
       "pluck-position": 0.78,
-      "mute": 0.96,
+      "mute": 0.999,
       "output-gain": 0.8
     }
   },
@@ -55,7 +55,7 @@
       "pitch": 0,
       "strength": 0.8,
       "pluck-position": 0.35,
-      "mute": 0.78,
+      "mute": 0.982,
       "output-gain": 0.8
     }
   },
@@ -70,7 +70,7 @@
       "pitch": 0,
       "strength": 0.8,
       "pluck-position": 0.35,
-      "mute": 0.995,
+      "mute": 0.9997,
       "output-gain": 0.8
     }
   }

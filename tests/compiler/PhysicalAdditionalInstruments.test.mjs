@@ -61,6 +61,7 @@ for(const [kind,sustained] of [['violin',true],['brass',true],['electric-guitar'
                 results.push({note:semitones,rms:+active.toFixed(6),cents:estimate?+cents(estimate,f).toFixed(1):null});
                 // A silent or octave-jumping model is not a validated instrument. Log measured deviations for model fitting.
                 assert.ok(Number.isFinite(active));
+                if(kind==='electric-guitar') assert.ok(active>0.0001,'guitar voice must not disappear before 0.55s');
                 if(sustained) assert.ok(peak(y.subarray(count(rate,1.8)))<.000001,'release must end');
             }
             console.log(kind,rate,JSON.stringify(results));

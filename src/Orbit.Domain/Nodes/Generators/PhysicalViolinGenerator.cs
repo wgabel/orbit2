@@ -11,8 +11,8 @@ public sealed class PhysicalViolinGenerator : SignalNode, IGenerator
     [
         new("pitch", "Pitch (A4)", 0, -21, 15, ParameterUnit.Semitones, ParameterScale.Linear, true, ParameterSmoothing.Pitch),
         new("expression", "Bow expression", .8, 0, 1, ParameterUnit.Normalized, ParameterScale.Linear, true, ParameterSmoothing.Amplitude),
-        new("bow-pressure", "Bow pressure", .5, .1, .9, ParameterUnit.Normalized, ParameterScale.Linear, true, ParameterSmoothing.Shape),
-        new("bow-position", "Bow position", .7, .1, .9, ParameterUnit.Normalized, ParameterScale.Linear, true, ParameterSmoothing.Shape),
+        new("bow-pressure", "Bow pressure", .4, .1, .9, ParameterUnit.Normalized, ParameterScale.Linear, true, ParameterSmoothing.Shape),
+        new("bow-position", "Bow position", .15, .1, .9, ParameterUnit.Normalized, ParameterScale.Linear, true, ParameterSmoothing.Shape),
         new("attack", "Bow attack", .06, .015, .5, ParameterUnit.Seconds, ParameterScale.Linear, true, ParameterSmoothing.Timing),
         new("release", "Bow release", .12, .02, .5, ParameterUnit.Seconds, ParameterScale.Linear, true, ParameterSmoothing.Timing),
         new("vibrato-depth", "Vibrato depth", 0, 0, 30, ParameterUnit.Cents, ParameterScale.Linear, true, ParameterSmoothing.Shape),
