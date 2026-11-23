@@ -106,6 +106,6 @@ public partial class NodeFrame : IDisposable
     }
 
     private NodeAppearance Appearance => NodeAppearanceCatalog.Get(Node.TypeKey, Role);
-    private string FrameClass => $"node-frame{(IsExpandable ? " node-frame-expandable" : "")} {Appearance.CssClass} node-role-{Role.ToString().ToLowerInvariant()}{(Selected ? " node-selected" : "")}{(Node.IsMuted ? " node-muted" : "")}{(Node.IsBypassed ? " node-bypassed" : "")}";
+    private string FrameClass => $"node-frame{(IsExpandable ? " node-frame-expandable" : "")}{(IsExpandable && Expanded ? " node-is-expanded" : "")} {Appearance.CssClass} node-role-{Role.ToString().ToLowerInvariant()}{(Selected ? " node-selected" : "")}{(Node.IsMuted ? " node-muted" : "")}{(Node.IsBypassed ? " node-bypassed" : "")}";
     private string PositionStyle => FormattableString.Invariant($"left:{Position.X}px;top:{Position.Y}px;");
 }
