@@ -4,6 +4,7 @@ using Microsoft.JSInterop;
 using Orbit.Application.Presets;
 using Orbit.Domain.Nodes;
 using Orbit.Domain.Nodes.Composites;
+using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Ports;
 using Orbit.Presentation.Canvas;
 
@@ -15,6 +16,7 @@ public partial class GraphCanvas
     [Parameter] public EventCallback<bool> OnContextAddNode { get; set; }
     [Parameter] public EventCallback<bool> OnContextSelection { get; set; }
     [Parameter] public EventCallback OnContextDelete { get; set; }
+    [Parameter] public EventCallback<Guid> OnContextDuplicateNode { get; set; }
     [Parameter] public EventCallback OnContextUndo { get; set; }
     [Parameter] public EventCallback OnContextRedo { get; set; }
     [Parameter] public bool ContextCanUndo { get; set; }
@@ -107,6 +109,8 @@ public partial class GraphCanvas
                     Change(settings.Visible ? "Hide node plot" : "Show node plot", () => State.SetVisualization(node.Id, settings with { Visible = !settings.Visible }));
                     Change(Snapshot.ExpandedVisualizationNodeId == node.Id ? "Close scope" : "Open scope", () => State.SetExpandedVisualization(Snapshot.ExpandedVisualizationNodeId == node.Id ? null : node.Id));
                 }
+                if (OnContextDuplicateNode.HasDelegate && node.TypeKey is not (InputRack.NodeType or OutputRack.NodeType or MasterOutput.NodeType))
+                    Add("Duplicate node", () => OnContextDuplicateNode.InvokeAsync(node.Id));
                 if (OnManagePresets.HasDelegate && ContextPresets.Supports(node.TypeKey)) Add("Manage presets…", () => OnManagePresets.InvokeAsync(node.Id));
                 Add("Describe / rename…", EditSelectedDescriptionAsync);
                 Add("Focus node", () => FocusNodeAsync(node.Id));
