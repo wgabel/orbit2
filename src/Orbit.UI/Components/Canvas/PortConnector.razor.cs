@@ -20,7 +20,8 @@ public partial class PortConnector
     private PortAddress Address => new(NodeId, Port.Id);
     private string ConnectorClass => $"port-connector port-{Port.Direction.ToString().ToLowerInvariant()}{(Active ? " port-active" : "")}{(Dormant ? " port-dormant" : "")}{(WireCandidate == true ? " port-wire-candidate" : WireCandidate == false ? " port-wire-incompatible" : "")}";
     private string MarkerClass => $"port-marker port-kind-{Port.SignalType.ToString().ToLowerInvariant()}";
-    private string Description => $"{Port.Direction}: {Port.Name} ({Port.SignalType}){(Dormant ? " — inactive in current mode" : "")}. {HintText}";
+    private string Description => $"{Port.Direction}: {Port.Name} ({Port.SignalType}){(Dormant ? " — inactive in current mode" : "")}";
+    private string Tooltip => $"{Description}. {HintText}";
 
     private Task PointerDown(PointerEventArgs args) =>
         Port.Direction == PortDirection.Output && args.Button == 0
