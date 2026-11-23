@@ -25,6 +25,7 @@ public sealed record CanvasStateSnapshot(
     public IReadOnlyDictionary<Guid, NodeVisualizationSettings> Visualizations { get; init; } =
         new ReadOnlyDictionary<Guid, NodeVisualizationSettings>(new Dictionary<Guid, NodeVisualizationSettings>());
     public Guid? ExpandedVisualizationNodeId { get; init; }
+    public IReadOnlyList<Guid> PinnedNodeIds { get; init; } = [];
     public IReadOnlyList<SavedNote> Notes { get; init; } = [];
     public Guid? SelectedNoteId { get; init; }
     public IReadOnlyList<SavedVisualGroup> VisualGroups { get; init; } = [];
