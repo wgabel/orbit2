@@ -23,7 +23,7 @@ Implemented: [PR #69](https://github.com/wgabel/orbit2/pull/69).
 
 - On touchscreens, drag empty space to pan. Put two fingers on the canvas and spread/pinch to zoom around their midpoint; move both together to pan. Lift one finger to continue panning without a jump.
 - On desktop, drag the background to pan and use the mouse wheel to zoom around the pointer.
-- To fit the current graph, quickly tap or click the same empty canvas area three times. Fit eases to the new viewport (instant with reduced motion). On desktop, focus the canvas and press `F` to fit, `+`/`-` to zoom, or `0` to reset to 100%.
+- To fit the current graph, quickly tap or click the same empty canvas area three times. Fit eases to the new viewport (instant with reduced motion). On desktop, focus the canvas and press `F` to fit **when the performance piano is collapsed/inactive**; when the piano is expanded and armed, `F` plays a note instead, even with canvas focus. `+`/`-` zoom and `0` resets to 100%.
 - Header drags still move nodes, and parameter controls keep their own interactions. Adding a second finger to a canvas drag takes over for navigation and cancels any unfinished cable or node movement. Zoom stays within 25–400%; the viewport remains independent of audio and saved per graph.
 - The former zoom toolbar, percentage, reset and Fit buttons are removed on both layouts. Annotation-specific Fit signals and Outline locate actions remain available.
 
