@@ -552,6 +552,24 @@ public partial class GraphWorkspace : IAsyncDisposable
             session.CompleteHistoryGesture(gestureId);
     }
 
+    private void DuplicateNode(Guid sourceNodeId)
+    {
+        if (switchingWorkspace || !CheckAnnotationDraft()) return;
+        var canvas = Canvas;
+        var before = canvas.Snapshot;
+        if (!before.NodePositions.TryGetValue(sourceNodeId, out var sourcePosition)) return;
+        var duplicateId = Guid.NewGuid();
+        if (!Execute(new DuplicateNodeCommand(before.GraphId, sourceNodeId, duplicateId))) return;
+
+        // World-space separation keeps both frames draggable at any zoom level.
+        canvas.MoveNode(duplicateId, new CanvasPoint(sourcePosition.X + 320, sourcePosition.Y + 32));
+        if (before.Visualizations.TryGetValue(sourceNodeId, out var visualization))
+            canvas.SetVisualization(duplicateId, visualization);
+        if (before.NodeDescriptions.TryGetValue(sourceNodeId, out var description))
+            canvas.SetNodeDescription(description with { NodeId = duplicateId });
+        canvas.SelectNode(duplicateId);
+    }
+
     private void DeleteSelection()
     {
         if (!CheckAnnotationDraft()) return;
