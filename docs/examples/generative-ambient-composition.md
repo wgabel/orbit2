@@ -60,6 +60,10 @@ Make changes at the correct level: oscillator/envelope/filter edits change the v
 
 As the [patch annotation features](../editor/patch-annotations.md) become available, use a patch overview for musical intent and these kinds of performance instructions, named groups/aliases for voice roles, and a few note cards to explain non-obvious tuning or modulation. Keep technical identifiers valid and do not export hypothetical annotation fields before the schema supports them.
 
+### Consider new instrument voices for the arrangement
+
+Before implementing every voice in the following legacy oscillator-based example, consider the [currently available instrument palette](instrument-recipes.md#choose-an-instrument-for-the-musical-role). A triggered Physical Pluck or Marimba may suit sparse melodic events, Physical Flute/Clarinet can give a held melody with Gate-based breath, and Drawbar Organ → optional Rotary Speaker can replace one *harmonic color*, not the whole arrangement. Physical Violin is experimental; polyphonic chords still need independent voices. This suggestion is an **unverified alternative orchestration**, not a modification to the historical patch or evidence that the new sounds are better. Compare the same phrase and level in isolation and in the mix using the [audition method](instrument-design-and-audition.md).
+
 ## 3. Worked piece: The Sleeping Mountains
 
 An original, slowly evolving ambient sketch for a roughly one-hour performance using only synthesis. The recipe uses nodes available on main at the time of writing (through [PR #21](https://github.com/wgabel/orbit2/pull/21)). It is a construction guide, not an exported patch or an assertion of a listening-tested preset. Parameters are starting values; audition each layer and adjust by ear.
@@ -114,7 +118,7 @@ Enter `A3 C4 E4 G4 E4 D4 C4` in the pattern. Connect Pitch to oscillator Pitch a
 
 At 72 BPM each step lasts 1.667 s; the full phrase is 14 beats or 11.67 s. The Clock and step timing share the transport. The Clock does not emit a startup/reset pulse: the first strike comes at the first crossed boundary, and the first slot may not be heard until wrap. Dotted-quarter echoes (1.25 s) provide a different rhythmic subdivision from the notes. Use a shorter decay or less feedback when the phrase becomes washed out.
 
-**Current limitation:** Note Sequencer emits a continuous pitch offset only; Hold sustains pitch and is not a rest. A separate Clock still strikes on a Hold step, and a live keyboard key does not itself trigger the envelope. For a fixed audible gap, shorten decay, slow the rhythm, or fade/mute the voice. For independently articulated notes, future Note-mode Trigger/Gate support is needed. See [current sequencer behavior](../instruments/note-sequencer.md), [planned note articulation](../instruments/note-sequencer-design.md) and [envelopes and clocks](../audio/envelopes.md).
+**Sequencing update (PR #87):** Note Sequencer now offers **Pitch only** (continuous pitch/latch) and **Notes (gate + trigger)**. In Notes mode an explicit Rest ends a held Gate, while Hold ties it; connect Pitch plus Trigger for plucked models or Pitch plus Gate for sustained models. The older Pitch-only + separate Clock approach used by this historical worked example still works: Hold sustains pitch and is not a rest in that mode. A separate Clock still strikes on a Hold step, and a live keyboard key does not itself trigger the envelope. For a fixed audible gap, shorten decay, slow the rhythm, or fade/mute the voice. For independently articulated notes, future Note-mode Trigger/Gate support is needed. See [current sequencer behavior](../instruments/note-sequencer.md), [planned note articulation](../instruments/note-sequencer-design.md) and [envelopes and clocks](../audio/envelopes.md).
 
 ### Layer C — sparse bell accents
 
