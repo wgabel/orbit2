@@ -336,6 +336,19 @@ public sealed class CanvasStateServiceTests
     }
 
     [Fact]
+    public void PinOnDeletedNodeRestoresWhenUndoRestoresTheSameIdentity()
+    {
+        using var session = NewSession();
+        var oscillator = AddNode(session, OscillatorGenerator.NodeType);
+        using var canvas = new CanvasStateService(session);
+        canvas.SetNodePinned(oscillator.Id, true);
+        session.Execute(new RemoveNodeCommand(session.GraphId, oscillator.Id));
+        Assert.Empty(canvas.Snapshot.PinnedNodeIds);
+        session.Undo();
+        Assert.Equal(new[] { oscillator.Id }, canvas.Snapshot.PinnedNodeIds);
+    }
+
+    [Fact]
     public void RestoringPinnedNodesDiscardsMissingAndNonExpandableIds()
     {
         using var session = NewSession();
