@@ -352,7 +352,7 @@ export function trapNodeHelpFocus(viewport, receiver) {
     const marker = "orbitNodeHelp";
     const token = crypto.randomUUID?.() ?? String(Math.random());
     const ownsEntry = () => history.state?.[marker] === token;
-    let backClosing = false;
+    let backClosing = false, disposed = false;
     if (mobile.matches) {
         try { history.pushState({ ...history.state, [marker]: token }, ""); }
         catch { /* Close/Escape remain available if history is restricted. */ }
@@ -380,6 +380,8 @@ export function trapNodeHelpFocus(viewport, receiver) {
     window.addEventListener("popstate", onBack);
     return {
         dispose() {
+            if (disposed) return;
+            disposed = true;
             panel.removeEventListener("keydown", onKey, true);
             window.removeEventListener("popstate", onBack);
             // Explicit Close/Escape consumes our transient entry, not the preceding page.
