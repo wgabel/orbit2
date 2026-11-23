@@ -1,0 +1,97 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "phys-violin-1",
+    "nodeType": "generator.physical-violin",
+    "name": "Legato bow",
+    "group": "Bowing",
+    "description": "Experimental violin waveguide with a connected held Gate.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.8,
+      "bow-pressure": 0.4,
+      "bow-position": 0.15,
+      "attack": 0.06,
+      "release": 0.12,
+      "vibrato-depth": 0,
+      "vibrato-rate": 5,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "phys-violin-2",
+    "nodeType": "generator.physical-violin",
+    "name": "Soft bow",
+    "group": "Bowing",
+    "description": "Gentle slow attack; explore expressive phrasing.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.45,
+      "bow-pressure": 0.35,
+      "bow-position": 0.15,
+      "attack": 0.15,
+      "release": 0.12,
+      "vibrato-depth": 0,
+      "vibrato-rate": 5,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "phys-violin-3",
+    "nodeType": "generator.physical-violin",
+    "name": "Brighter bow",
+    "group": "Bowing",
+    "description": "More forceful bow pressure and faster attack.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 1,
+      "bow-pressure": 0.65,
+      "bow-position": 0.15,
+      "attack": 0.035,
+      "release": 0.12,
+      "vibrato-depth": 0,
+      "vibrato-rate": 5,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "phys-violin-4",
+    "nodeType": "generator.physical-violin",
+    "name": "Near bridge",
+    "group": "Tone",
+    "description": "Bow near the bridge; note that mode jumps are still under study.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.8,
+      "bow-pressure": 0.4,
+      "bow-position": 0.6,
+      "attack": 0.06,
+      "release": 0.12,
+      "vibrato-depth": 0,
+      "vibrato-rate": 5,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "phys-violin-5",
+    "nodeType": "generator.physical-violin",
+    "name": "Lyrical vibrato",
+    "group": "Articulation",
+    "description": "Moderate independent vibrato.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.8,
+      "bow-pressure": 0.4,
+      "bow-position": 0.15,
+      "attack": 0.06,
+      "release": 0.12,
+      "vibrato-depth": 14,
+      "vibrato-rate": 5.4,
+      "output-gain": 0.8
+    }
+  }
+]

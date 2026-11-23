@@ -30,6 +30,9 @@ public static class BuiltInNodes
         foreach (var kind in Enum.GetValues<PhysicalSustainedKind>())
             registry.Register(PhysicalSustainedGenerator.TypeFor(kind), id => new PhysicalSustainedGenerator(id, kind), PhysicalSustainedGenerator.NameFor(kind));
         registry.Register(DrawbarOrganGenerator.NodeType, id => new DrawbarOrganGenerator(id), "Drawbar Organ");
+        registry.Register(PhysicalViolinGenerator.NodeType, id => new PhysicalViolinGenerator(id), "Physical Violin (experimental)");
+        registry.Register(PhysicalBrassGenerator.NodeType, id => new PhysicalBrassGenerator(id), "Physical Brass");
+        registry.Register(PhysicalElectricGuitarGenerator.NodeType, id => new PhysicalElectricGuitarGenerator(id), "Physical Electric Guitar");
         registry.Register(GainProcessor.NodeType, id => new GainProcessor(id), "Gain");
         registry.Register(MixerProcessor.NodeType, id => new MixerProcessor(id), "Mixer");
         registry.Register(FilterProcessor.NodeType, id => new FilterProcessor(id), "Filter");

@@ -1,0 +1,77 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "phys-electric-guitar-1",
+    "nodeType": "generator.physical-electric-guitar",
+    "name": "Picked clean",
+    "group": "Pickup",
+    "description": "An unprocessed electric guitar waveguide; needs a Trigger.",
+    "parameters": {
+      "pitch": 0,
+      "strength": 0.8,
+      "pluck-position": 0.35,
+      "mute": 0.999,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "phys-electric-guitar-2",
+    "nodeType": "generator.physical-electric-guitar",
+    "name": "Warm finger",
+    "group": "Pickup",
+    "description": "Soft picking farther from the bridge.",
+    "parameters": {
+      "pitch": 0,
+      "strength": 0.45,
+      "pluck-position": 0.25,
+      "mute": 0.999,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "phys-electric-guitar-3",
+    "nodeType": "generator.physical-electric-guitar",
+    "name": "Bright bridge",
+    "group": "Pickup",
+    "description": "Brighter pluck toward the bridge.",
+    "parameters": {
+      "pitch": 0,
+      "strength": 0.9,
+      "pluck-position": 0.78,
+      "mute": 0.999,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "phys-electric-guitar-4",
+    "nodeType": "generator.physical-electric-guitar",
+    "name": "Palm muted",
+    "group": "Damping",
+    "description": "Shorter decay using string loss.",
+    "parameters": {
+      "pitch": 0,
+      "strength": 0.8,
+      "pluck-position": 0.35,
+      "mute": 0.982,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "phys-electric-guitar-5",
+    "nodeType": "generator.physical-electric-guitar",
+    "name": "Sustained",
+    "group": "Damping",
+    "description": "Long ring with minimal string damping.",
+    "parameters": {
+      "pitch": 0,
+      "strength": 0.8,
+      "pluck-position": 0.35,
+      "mute": 0.9997,
+      "output-gain": 0.8
+    }
+  }
+]
