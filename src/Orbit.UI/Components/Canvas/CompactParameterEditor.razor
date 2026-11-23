@@ -4,6 +4,7 @@
 @using Microsoft.AspNetCore.Components.Web
 @using Orbit.Application.Graphs.Snapshots
 @using Orbit.Domain.Parameters
+@using Orbit.Presentation.Parameters
 
 @* Compact values use exactly the same validated parameter command as the expanded editor.
    Live effective values are read-only and never written back as a base value. *@
@@ -29,6 +30,10 @@
                value="@draft" min="@Format(Parameter.Definition.Minimum)" max="@Format(Parameter.Definition.Maximum)"
                step="any" disabled="@(!Active)" aria-invalid="@(error is not null)"
                @onchange="EditNumberAsync" @onkeydown="HandleKeyDownAsync" />
+    }
+    @if (Parameter.Definition.Choices is null)
+    {
+        <span class="node-compact-unit">@ParameterUnitLabel.Format(Parameter.Definition.Unit)</span>
     }
     @if (Modulated)
     {
