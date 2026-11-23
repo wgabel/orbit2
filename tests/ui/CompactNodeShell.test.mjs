@@ -19,7 +19,7 @@ test("compact node keeps all real ports mounted outside the expandable controls"
 
 test("expansion has a dedicated accessible button and preserves native connector activation", () => {
     assert.match(component, /class="node-expand-toggle"/);
-    assert.match(component, /aria-expanded="@(Expanded/);
+    assert.match(component, /aria-expanded="@\(Expanded/);
     assert.match(component, /@onclick:stopPropagation="true"/);
     assert.match(component, /OnToggleExpand\.InvokeAsync\(Node.Id\)/);
 });
