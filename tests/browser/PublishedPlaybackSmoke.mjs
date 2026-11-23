@@ -82,11 +82,16 @@ async function closeNodeLibrary(page) {
 async function expandAndPin(node) {
     const toggle = node.locator('.node-expand-toggle');
     if (!await toggle.count()) return; // composite, rack or master: unchanged
-    if (await toggle.getAttribute('aria-expanded') === 'false')
+    if (await toggle.getAttribute('aria-expanded') === 'false') {
         await toggle.evaluate(button => button.click());
+        await node.locator('.node-expand-toggle[aria-expanded="true"]').waitFor();
+    }
     const pin = node.locator('.node-pin-toggle');
-    if (await pin.count() && await pin.getAttribute('aria-pressed') === 'false')
+    await pin.waitFor({ state: 'visible' }); // Blazor may render pin after the click
+    if (await pin.getAttribute('aria-pressed') === 'false') {
         await pin.evaluate(button => button.click());
+        await node.locator('.node-pin-toggle[aria-pressed="true"]').waitFor();
+    }
 }
 async function expandAndPinAll(page) {
     const nodes = page.locator('.canvas-viewport .node-frame-expandable');
