@@ -4,6 +4,7 @@ using Microsoft.JSInterop;
 using Orbit.Application.Presets;
 using Orbit.Domain.Nodes;
 using Orbit.Domain.Nodes.Composites;
+using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Ports;
 using Orbit.Presentation.Canvas;
 
@@ -97,7 +98,7 @@ public partial class GraphCanvas
                     break;
                 }
                 title = Snapshot.DisplayName(node.Id);
-                if (node.TypeKey is not (InputRack.NodeType or OutputRack.NodeType) && OnContextDuplicate.HasDelegate)
+                if (node.TypeKey is not (InputRack.NodeType or OutputRack.NodeType or MasterOutput.NodeType) && OnContextDuplicate.HasDelegate)
                     Add("Duplicate node", () => OnContextDuplicate.InvokeAsync(node.Id));
                 if (node.Composite is not null && OnOpenComposite.HasDelegate) Add("Open composite", () => OnOpenComposite.InvokeAsync(node.Id));
                 if (SelectedComposite is not null && OnUngroupComposite.HasDelegate) Add("Ungroup composite…", SelectionActions);
