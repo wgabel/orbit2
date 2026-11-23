@@ -82,11 +82,13 @@ public partial class GraphCanvas
     private async Task BeginNodeSurfaceAsync(Guid nodeId, PointerEventArgs args)
     {
         fitTaps.Reset();
-        if (args.PointerType != "touch" || module is null || args.Button != 0 ||
+        if (module is null || args.Button != 0 ||
             !await module.InvokeAsync<bool>("isNodeNavigationSurface", viewportElement, args.ClientX, args.ClientY)) return;
         if (universalNavigating || await TakeOverNavigationAsync(args)) return;
         State.SelectNode(nodeId);
         TrackNodeTap(nodeId, args);
+        // Noninteractive node bodies pan on drag; a short release expands the node.
+        // Native value inputs and port buttons never reach this handler.
         await BeginGesture(args, null, wire: false);
     }
 
