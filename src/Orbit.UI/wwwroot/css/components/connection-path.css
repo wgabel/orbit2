@@ -14,6 +14,9 @@
 .connection-gate .connection-line { stroke: var(--semantic-color-composite); }
 .connection-dormant .connection-line { stroke: var(--semantic-color-muted); stroke-dasharray: var(--component-connection-draft-dash); }
 .connection-selected .connection-line { stroke: var(--semantic-color-selected); stroke-width: var(--component-connection-selected-width); }
+/* Same-color thicker cable sleeves: no separate metallic jack or extra hit target. */
+.connection-path .connection-rigid, .connection-rigid.connection-draft { stroke-width: var(--component-connection-rigid-width); }
+.connection-selected .connection-rigid { stroke-width: var(--component-connection-rigid-selected-width); }
 .connection-draft { stroke: var(--semantic-color-selected); stroke-dasharray: var(--component-connection-draft-dash); }
 
 /* Badge lives above its wire but below later-painted node frames; inverse scaling keeps text readable. */

@@ -153,10 +153,12 @@
     --component-note-action-gap: var(--semantic-space-tight);
     --component-note-padding: var(--semantic-space-compact);
     --component-note-layer: 2;
-    --component-connection-width: 2px;
+    --component-connection-width: 3px;
     --component-connection-hit-width: 12px;
     --component-connection-touch-hit-width: 24px;
-    --component-connection-selected-width: 3px;
+    --component-connection-selected-width: 4px;
+    --component-connection-rigid-width: 5px;
+    --component-connection-rigid-selected-width: 6px;
     --component-connection-draft-dash: 6px;
     --component-connection-badge-max-width: 12rem;
     --component-connection-label-select-max-width: 7rem;
