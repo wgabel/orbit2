@@ -100,7 +100,12 @@ export async function verifyCanvasContext(browser, url) {
         assert.ok(await helpSheet.getByText('Connectors').count());
         await helpSheet.getByRole('button', { name: 'Close node help' }).tap();
         await helpSheet.waitFor({ state: 'hidden' });
+        await mobile.waitForFunction(() => !history.state?.orbitNodeHelp);
         assert.equal(await mobile.locator('article[data-node-id]').count(), beforeHelp);
+        await mobile.locator('.node-help-trigger').first().tap();
+        await helpSheet.waitFor();
+        await mobile.goBack();
+        await helpSheet.waitFor({ state: 'hidden' });
 
         const point = await emptyPoint(mobile);
         const start = () => cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...point, id: 1 }] });
