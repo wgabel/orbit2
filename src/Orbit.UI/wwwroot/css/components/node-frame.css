@@ -70,8 +70,8 @@
 .node-actions { display: grid; padding: var(--component-node-padding); border-top: var(--semantic-border-width) solid var(--semantic-color-border); }
 
 /* Phase 6.21.5: compact leaf nodes. Composite/rack/master styling is unchanged. */
-/* Match the existing 320-unit grid column to avoid overlapping default placements. */
-.node-frame-expandable { width: calc(var(--component-node-min-width) * 4 / 3); }
+/* Keep a routable cable corridor between neighboring default-grid nodes. */
+.node-frame-expandable { width: calc(var(--component-node-min-width) * 7 / 6); }
 .node-frame-expandable.node-is-expanded { z-index: 2; }
 .node-header .node-expand-toggle, .node-header .node-pin-toggle {
     display: grid;
@@ -155,9 +155,21 @@
     white-space: nowrap;
     cursor: text;
 }
+.compact-value-modulated { flex-direction: column; align-items: stretch; gap: 0; }
+.compact-value-modulated .compact-value-base,
+.compact-value-modulated .compact-value-static,
+.compact-value-modulated .compact-value-input { flex: 0 0 auto; width: 100%; }
+.compact-value-modulated .compact-value-effective {
+    flex: 0 0 auto;
+    width: 100%;
+    justify-content: flex-end;
+    min-height: var(--semantic-typography-caption);
+}
 .compact-value-choice { text-overflow: ellipsis; cursor: pointer; }
 .compact-value-static {
     display: inline-flex;
+    align-items: center;
+    min-height: calc(var(--component-port-hit-size) - 2 * var(--semantic-border-width));
     min-width: 0;
     flex: 1 1 0;
     justify-content: flex-end;
