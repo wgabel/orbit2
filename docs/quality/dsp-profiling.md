@@ -4,7 +4,7 @@
 
 Related: [performance](../../performance.md) · [dsp engine](../audio/dsp-engine.md) · [testing](testing.md).
 
-## Phase 7.3.4 — Benchmark baseline (in review)
+## Phase 7.3.4 — Benchmark baseline (implemented)
 
 [PR #58](https://github.com/wgabel/orbit2/pull/58). These are **developer/test workflows**, not an ordinary audio meter or automatically loaded stress patch.
 

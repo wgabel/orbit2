@@ -4,7 +4,7 @@
 
 Related: [canvas](canvas.md) · [design system](design-system.md) · [commands and events](../core/commands-and-events.md) · [persistence and history](persistence-and-history.md).
 
-### Flexible patch-cable appearance (implemented [PR #90](https://github.com/wgabel/orbit2/pull/90); single-cubic refinement in review [PR #93](https://github.com/wgabel/orbit2/pull/93))
+### Flexible patch-cable appearance (implemented [PR #90](https://github.com/wgabel/orbit2/pull/90); single-cubic refinement merged [PR #93](https://github.com/wgabel/orbit2/pull/93))
 
 The shared connection geometry has a short **rigid section** extending right from the output marker and left into the input marker (maximum 20 world units, reduced when ports are close). The remaining cable is **one smoothly sagging cubic Bézier** joining the two rigid ends, without an explicit central join or midpoint constraint. The previous paired cubics introduced a noticeable shape transition for distant nodes; [PR #93](https://github.com/wgabel/orbit2/pull/93) removes that intermediate anchor and adjusts only the two cubic handles near the rigid ends. For level ports a downward sag with one cubic requires slightly angled departure/arrival tangents; perfectly horizontal tangents at both ends would force a flat curve.
 

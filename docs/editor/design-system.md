@@ -23,7 +23,7 @@ Non-signal note cards, group frames, authored labels and planned responsive visi
 
 Contextual actions are a shared canvas dialog ([PR #71](https://github.com/wgabel/orbit2/pull/71)): a cursor-positioned popup for desktop and a touch-sized bottom sheet for long press. Use semantic surface, border, spacing, radius and error tokens, existing button variants, and an unscaled viewport overlay rather than node/world-relative controls. Show only applicable actions; explicit Close, Escape and backdrop dismissal are available. See [canvas context contract](canvas.md#contextual-canvas-actions).
 
-All nodes have a filled background and a category-specific accent from shared semantic theme tokens. [PR #62](https://github.com/wgabel/orbit2/pull/62) (6.21.3, in review) introduces the presentation-owned `NodeAppearanceCatalog` and shared `NodeAppearanceIcon`. The library, node frames, outline, preset selector and composite breadcrumbs reuse this catalog. Category colors have their own theme keys; the existing role colors and signal/port semantics are unchanged.
+All nodes have a filled background and a category-specific accent from shared semantic theme tokens. [PR #62](https://github.com/wgabel/orbit2/pull/62) (6.21.3, merged) introduces the presentation-owned `NodeAppearanceCatalog` and shared `NodeAppearanceIcon`. The library, node frames, outline, preset selector and composite breadcrumbs reuse this catalog. Category colors have their own theme keys; the existing role colors and signal/port semantics are unchanged.
 
 | Node category | Accent |
 | --- | --- |
@@ -47,7 +47,7 @@ A sine used as an LFO remains the same generator implementation: its displayed c
 
 Map these presentation shapes to the existing domain port kinds; introduce future kinds only when their domain semantics exist. Audio channel count is a label, not a separate signal kind.
 
-The [piano dock](../instruments/pitch-control.md#phase-723--note-source-in-review) is a shared presentation component ([PR #70](https://github.com/wgabel/orbit2/pull/70), in review). Tokenized compact and tall key heights, fixed-width pitch meter, compact target/control row, piano-specific color tokens and responsive one-/two-octave geometry preserve stationary key targets. The mobile dock reserves a row above the bottom navigation instead of covering the canvas.
+The [piano dock](../instruments/pitch-control.md#phase-723--note-source-in-review) is a shared presentation component ([PR #70](https://github.com/wgabel/orbit2/pull/70), merged). Tokenized compact and tall key heights, fixed-width pitch meter, compact target/control row, piano-specific color tokens and responsive one-/two-octave geometry preserve stationary key targets. The mobile dock reserves a row above the bottom navigation instead of covering the canvas.
 
 #### Design token and theme system
 
@@ -96,7 +96,7 @@ Keep layout structure in CSS and markup, with numeric styling constants in JSON.
 | GraphCanvas | Compose viewport, graph nodes, connections and local interaction state for any graph |
 | CanvasViewport | Coordinate conversion, pan, zoom and viewport state |
 | GraphCanvas | Shared pointer gestures, viewport transform and keyboard navigation |
-| PerformanceMonitor | Shared passive toolbar indicator and expandable diagnostics; token-based panel, local reset; independent of graph/canvas state (7.3.1 in review, [PR #53](https://github.com/wgabel/orbit2/pull/53)) |
+| PerformanceMonitor | Shared passive toolbar indicator and expandable diagnostics; token-based panel, local reset; independent of graph/canvas state (7.3.1 implemented, [PR #53](https://github.com/wgabel/orbit2/pull/53)) |
 | NodeFrame | Shared node background, category accent, header, input/output layout and content slot |
 | NoteCard / NoteEditor | Presentation-only text, semantic accent, header, resize, collapse and isolated unscaled text draft (6.19.1, implemented) |
 | DescriptionEditor | Unscaled node alias/description or cable label editor, shared annotation draft lifecycle (6.19.2, implemented) |

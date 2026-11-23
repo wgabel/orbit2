@@ -4,6 +4,10 @@
 
 In bass-oriented music the low end is often the main musical actor. Separate the stable, largely clean low fundamental from the much more animated audible mid-bass harmonics. Rhythm emerges from the relationship between short drums, bass gestures and silence. A convincing heavy piece need not be clipping, continuously loud or indiscriminately distorted. Design a strong sparse rhythm and bass phrase before adding complexity. UK and Jamaican sound-system cultures, hip-hop, jungle, dubstep and other scenes have different roots; shared production vocabulary does not make them interchangeable.
 
+## Where new instruments can serve a bass arrangement
+
+Keep the sub as a deliberately clean independent oscillator when that is the musical requirement; the new physical-model nodes are **not** a substitute for controlled deep sub. Add a triggered **Physical Marimba** for syncopated higher-register punctuation or **Physical Pluck/Electric Guitar** for answering riffs, and audition a gated **Physical Brass** line for a horn-like break. **Drawbar Organ → Rotary Speaker** can introduce moving midrange color in dub passages without replacing the dry bass. Trigger or Gate must be routed alongside Pitch; ordinary pitch modulation alone is silent on note-articulated voices. Use matched-level A/B against intentionally synthetic alternatives and avoid masking kick/sub with sustained mid-bass. See the [current instrument roles](../instrument-recipes.md#choose-an-instrument-for-the-musical-role).
+
 ## Styles and construction
 
 | Style | Typical grid and materials | Construction and evolution |
