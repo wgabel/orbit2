@@ -96,9 +96,30 @@ async function verifyManualCompactShell(page, touch) {
     await node.locator('.node-expand-toggle[aria-expanded="false"]').waitFor();
     assert.deepEqual(await anchors(), before, "Collapsing must not move any connector anchor");
     assert.ok(await node.evaluate(element => element.getBoundingClientRect().height) < expandedHeight);
-    if (touch) await node.locator(".node-display-name").tap();
-    else await node.locator(".node-display-name").click();
-    await node.locator('.node-expand-toggle[aria-expanded="true"]').waitFor();
+    if (touch) {
+        await node.evaluate(element => {
+            window.__compactTapDebug = [];
+            for (const type of ["pointerdown", "pointermove", "pointerup", "pointercancel", "lostpointercapture", "click"]) {
+                document.addEventListener(type, event => {
+                    if (type === "pointermove" && window.__compactTapDebug.length > 20) return;
+                    const target = event.target;
+                    window.__compactTapDebug.push({ type, button: event.button, pointerId: event.pointerId,
+                        pointerType: event.pointerType, target: target?.className?.baseVal ?? target?.className,
+                        nodeId: target?.closest?.("[data-node-id]")?.dataset.nodeId,
+                        expanded: element.querySelector(".node-expand-toggle")?.getAttribute("aria-expanded") });
+                }, { capture: true, once: false });
+            }
+        });
+        await node.locator(".node-display-name").tap();
+    } else {
+        await node.locator(".node-display-name").click();
+    }
+    try {
+        await node.locator('.node-expand-toggle[aria-expanded="true"]').waitFor({ timeout: touch ? 5000 : 30000 });
+    } catch (error) {
+        if (touch) console.error("Compact tap event trace:", JSON.stringify(await page.evaluate(() => window.__compactTapDebug)));
+        throw error;
+    }
     assert.deepEqual(await anchors(), before, "Reopening must not move connector anchors");
 }
 
