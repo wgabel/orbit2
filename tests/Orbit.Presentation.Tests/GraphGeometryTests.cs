@@ -39,6 +39,54 @@ public sealed class GraphGeometryTests
     }
 
     [Fact]
+    public void PatchCableHasStraightRigidSleevesAndSoftSaggingMiddle()
+    {
+        var source = new CanvasPoint(10, 60);
+        var target = new CanvasPoint(310, 60);
+        var cable = PatchCable.Between(source, target);
+
+        Assert.Equal(source, cable.Source);
+        Assert.Equal(target, cable.Target);
+        Assert.Equal(source.X + PatchCable.MaximumRigidLength, cable.Exit.X);
+        Assert.Equal(target.X - PatchCable.MaximumRigidLength, cable.Entry.X);
+        Assert.Equal(source.Y, cable.Exit.Y);
+        Assert.Equal(target.Y, cable.Entry.Y);
+        Assert.Equal(cable.Exit, cable.First.Start);
+        Assert.Equal(cable.First.End, cable.Second.Start);
+        Assert.Equal(cable.Entry, cable.Second.End);
+        Assert.Equal(cable.First.Start.Y, cable.First.Control1.Y);
+        Assert.Equal(cable.Second.End.Y, cable.Second.Control2.Y);
+        Assert.Equal(cable.First.Control2.Y, cable.Second.Control1.Y);
+        Assert.Equal(cable.First.End.Y, cable.First.Control2.Y);
+        Assert.True(cable.At(0.5).Y > source.Y, "the flexible middle should hang below level ports");
+        Assert.Equal(source, cable.At(0));
+        Assert.Equal(target, cable.At(1));
+    }
+
+    [Theory]
+    [InlineData(114, 60)]
+    [InlineData(100, 220)]
+    [InlineData(-80, 90)]
+    [InlineData(100, 60)]
+    public void PatchCableKeepsBothEndpointsAndAvoidsOversizedSleeves(double endX, double endY)
+    {
+        var source = new CanvasPoint(100, 60);
+        var target = new CanvasPoint(endX, endY);
+        var cable = PatchCable.Between(source, target);
+        Assert.Equal(source, cable.At(0));
+        Assert.Equal(target, cable.At(1));
+        Assert.True(cable.Exit.X >= source.X);
+        Assert.True(cable.Entry.X <= target.X);
+        Assert.True(cable.Exit.X - source.X <= PatchCable.MaximumRigidLength);
+        Assert.Equal(cable.Exit.X - source.X, target.X - cable.Entry.X, 8);
+        if (endX > source.X)
+            Assert.True((cable.Exit.X - source.X) * 3 <= endX - source.X + 0.0001);
+        Assert.True(double.IsFinite(cable.At(0.5).X));
+        Assert.True(double.IsFinite(cable.At(0.5).Y));
+        Assert.Throws<ArgumentOutOfRangeException>(() => cable.At(1.01));
+    }
+
+    [Fact]
     public void FitCentersBoundsWithScreenPaddingAndClampedZoom()
     {
         var bounds = new CanvasBounds(-50, -100, 350, 100);

@@ -319,28 +319,37 @@ public partial class GraphCanvas : IAsyncDisposable
                 var destination = Snapshot.Graph.GetNode(edge.Destination.NodeId);
                 var kind = destination.Inputs
                     .Single(port => port.Id == edge.Destination.PortId).SignalType;
-                var curve = BezierConnection.Between(start, end);
-                var center = curve.At(0.5);
-                result.Add(new ConnectionVisual(edge.Id, PathBetween(start, end), kind,
+                var cable = PatchCable.Between(start, end);
+                var center = cable.At(0.5);
+                result.Add(new ConnectionVisual(edge.Id, CablePath(cable), kind,
                     Snapshot.SelectedConnectionIds.Contains(edge.Id),
                     !destination.IsInputActive(edge.Destination.PortId), edge.Amount,
                     ConnectionBadgeText.Format(Snapshot.Graph, edge),
                     ConnectionBadgeText.Describe(Snapshot.Graph, edge), center.X, center.Y,
-                    Snapshot.ConnectionDescriptions.GetValueOrDefault(edge.Id)?.Label ?? ""));
+                    Snapshot.ConnectionDescriptions.GetValueOrDefault(edge.Id)?.Label ?? "",
+                    RigidPath(cable)));
             }
             return result;
         }
     }
 
-    private string? DraftPath => pendingSource is PortAddress address &&
+    private PatchCable? DraftCable => pendingSource is PortAddress address &&
         PortPoint(address) is CanvasPoint start && draftEnd is CanvasPoint end
-        ? PathBetween(start, end) : null;
+        ? PatchCable.Between(start, end) : null;
 
-    private static string PathBetween(CanvasPoint start, CanvasPoint end)
-    {
-        var curve = BezierConnection.Between(start, end);
-        return FormattableString.Invariant($"M {start.X} {start.Y} C {curve.Control1.X} {curve.Control1.Y}, {curve.Control2.X} {curve.Control2.Y}, {end.X} {end.Y}");
-    }
+    private string? DraftPath => DraftCable is { } cable ? CablePath(cable) : null;
+    // The floating end has no jack yet; show only the rigid section at the source.
+    private string? DraftRigidPath => DraftCable is { } cable ? RigidPath(cable, includeEnd: false) : null;
+
+    private static string CablePath(PatchCable cable) => FormattableString.Invariant(
+        $"M {cable.Source.X} {cable.Source.Y} L {cable.Exit.X} {cable.Exit.Y} " +
+        $"C {cable.First.Control1.X} {cable.First.Control1.Y}, {cable.First.Control2.X} {cable.First.Control2.Y}, {cable.First.End.X} {cable.First.End.Y} " +
+        $"C {cable.Second.Control1.X} {cable.Second.Control1.Y}, {cable.Second.Control2.X} {cable.Second.Control2.Y}, {cable.Entry.X} {cable.Entry.Y} " +
+        $"L {cable.Target.X} {cable.Target.Y}");
+
+    private static string RigidPath(PatchCable cable, bool includeEnd = true) => FormattableString.Invariant(
+        $"M {cable.Source.X} {cable.Source.Y} L {cable.Exit.X} {cable.Exit.Y}" +
+        (includeEnd ? $" M {cable.Entry.X} {cable.Entry.Y} L {cable.Target.X} {cable.Target.Y}" : ""));
 
     private async Task BeginBackground(PointerEventArgs args)
     {
