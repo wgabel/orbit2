@@ -1,0 +1,135 @@
+@namespace Orbit.UI.Components.Parameters
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Web
+@using Orbit.Application.Graphs.Snapshots
+@using Orbit.Domain.Parameters
+@using Orbit.Presentation.Parameters
+
+@* Compact base value is an independent editor; the effective value is passive telemetry.
+   Interactions do not bubble into the node's drag, expand or canvas gestures. *@
+<div class="compact-parameter-value" @onpointerdown:stopPropagation="true"
+     @onclick:stopPropagation="true" @onkeydown:stopPropagation="true"
+     @onwheel:stopPropagation="true">
+    @if (Parameter.Definition.Choices is { } choices)
+    {
+        <select class="compact-value-choice" aria-label="@Parameter.Definition.Name"
+                value="@FormatExact(Parameter.BaseValue)" @onchange="EditChoiceAsync">
+            @foreach (var choice in choices)
+            {
+                <option value="@FormatExact(choice.Value)">@choice.Label</option>
+            }
+        </select>
+    }
+    else if (editing)
+    {
+        <input class="compact-value-input" type="text" inputmode="decimal" @ref="editInput"
+               value="@draft" @oninput="UpdateDraft" @onkeydown="HandleKeyAsync" @onblur="CommitAsync"
+               aria-label="@Parameter.Definition.Name"
+               aria-invalid="@(error is not null ? "true" : "false")" />
+    }
+    else
+    {
+        <button type="button" class="compact-value-base" @onclick="BeginEditAsync"
+                title="@($"{Parameter.Definition.Name}: {FormatExact(Parameter.BaseValue)} {UnitLabel}. Edit base value.")"
+                aria-label="@($"Edit {Parameter.Definition.Name} base value")">
+            @FormatShort(Parameter.BaseValue)<span class="compact-value-unit">@UnitLabel</span>
+        </button>
+    }
+    @if (IsModulated)
+    {
+        <output class="compact-value-effective" aria-live="off"
+                title="Live effective value after modulation"
+                aria-label="@($"Live effective {Parameter.Definition.Name}")">
+            <span aria-hidden="true">→</span>
+            @(EffectiveValue is double live && double.IsFinite(live) ? FormatShort(live) : "—")
+        </output>
+    }
+    @if (error is not null)
+    {
+        <span class="compact-value-error" role="alert">@error</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ParameterSnapshot Parameter { get; set; } = default!;
+    [Parameter] public bool IsModulated { get; set; }
+    [Parameter] public double? EffectiveValue { get; set; }
+    [Parameter] public EventCallback<double> ValueChanged { get; set; }
+    [Parameter] public EventCallback<bool> EditStateChanged { get; set; }
+
+    private ElementReference editInput;
+    private bool editing;
+    private bool focusEdit;
+    private string draft = "";
+    private string? error;
+    private string UnitLabel => ParameterUnitLabel.Format(Parameter.Definition.Unit);
+    private static string FormatExact(double value) => value.ToString("G", CultureInfo.InvariantCulture);
+    private static string FormatShort(double value) => value.ToString("G5", CultureInfo.InvariantCulture);
+
+    protected override void OnParametersSet()
+    {
+        if (!editing) draft = FormatExact(Parameter.BaseValue);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusEdit)
+        {
+            focusEdit = false;
+            await editInput.FocusAsync(preventScroll: true);
+        }
+    }
+
+    private async Task BeginEditAsync()
+    {
+        draft = FormatExact(Parameter.BaseValue);
+        error = null;
+        editing = true;
+        focusEdit = true;
+        await EditStateChanged.InvokeAsync(true);
+    }
+
+    private void UpdateDraft(ChangeEventArgs args)
+    {
+        draft = args.Value?.ToString() ?? "";
+        error = null;
+    }
+
+    private async Task HandleKeyAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+        {
+            editing = false;
+            error = null;
+            await EditStateChanged.InvokeAsync(false);
+        }
+        else if (args.Key == "Enter") await CommitAsync();
+    }
+
+    private async Task CommitAsync()
+    {
+        if (!editing) return;
+        if (!double.TryParse(draft, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) ||
+            !Parameter.Definition.IsValidBaseValue(value))
+        {
+            error = $"Enter {FormatExact(Parameter.Definition.Minimum)}–{FormatExact(Parameter.Definition.Maximum)} {UnitLabel}.";
+            return;
+        }
+        if (value != Parameter.BaseValue) await ValueChanged.InvokeAsync(value);
+        editing = false;
+        error = null;
+        await EditStateChanged.InvokeAsync(false);
+    }
+
+    private async Task EditChoiceAsync(ChangeEventArgs args)
+    {
+        if (!double.TryParse(args.Value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var value) ||
+            !Parameter.Definition.IsValidBaseValue(value))
+        {
+            error = "Choose a valid option.";
+            return;
+        }
+        error = null;
+        if (value != Parameter.BaseValue) await ValueChanged.InvokeAsync(value);
+    }
+}
