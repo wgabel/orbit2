@@ -105,7 +105,7 @@ async function collapseAllLeafNodes(page) {
         const pin = node.locator('.node-pin-toggle[aria-pressed="true"]');
         if (await pin.count()) {
             await pin.evaluate(button => button.click());
-            await node.locator('.node-pin-toggle[aria-pressed="false"]').waitFor();
+            await node.locator('.node-pin-toggle[aria-pressed="false"]').waitFor({ state: 'attached' });
         }
         const expanded = node.locator('.node-expand-toggle[aria-expanded="true"]');
         if (await expanded.count()) {
