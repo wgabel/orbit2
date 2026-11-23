@@ -60,7 +60,11 @@ For AD driven by a continuous oscillator, select **Continuous signal** and use S
 
 ## 3. Built-in instruments and resonators
 
-For a more realistic organ experiment, follow the [Hammond and pipe-rank recipes](../instruments/realistic-instrument-emulation.md#3-organ-design-with-existing-nodes) or [step-by-step rotary speaker wiring](../instruments/realistic-instrument-emulation.md#32-rotary-speaker-approximation--hands-on-existing-node-patch): independent LFOs modulate Gain and Delay after low/high filters. These use existing nodes, not a shipped Rotary Speaker or acoustic model.
+For a more realistic organ experiment, use the new Drawbar Organ and Rotary Speaker nodes below, or the [Hammond and pipe-rank recipes](../instruments/realistic-instrument-emulation.md#3-organ-design-with-existing-nodes) for editable primitive-node alternatives.
+
+### Faust instrument nodes
+
+In review ([PR #81](https://github.com/wgabel/orbit2/pull/81)). Add **Note Source**, leave its reference at A4, and add **Physical Pluck**, **Physical Marimba** or **Drawbar Organ** from Audio generators. Connect Pitch → Pitch (A4), Trigger → Trigger, and Audio → Master output. For the pluck/marimba set Strike strength to 0 and connect Velocity → Strike strength at unity; for organ connect Gate → Gate instead and adjust Swell. Select Play patch, select Note Source, then play the keyboard. The pluck and marimba ring after releasing a key; organ sustains until key release. Try the built-in presets and reset strength to zero after selecting one if using velocity. Add **Rotary Speaker** between organ and master: use Speed 1 (slow) or 2 (fast), 0 to brake. For real-time speed changes adjust the slider or modulate it. See the [exact controls, limits and example routings](../instruments/faust-instrument-nodes.md). These are monophonic candidate instruments, not listening-approved replicas.
 
 ### Sustained instruments
 

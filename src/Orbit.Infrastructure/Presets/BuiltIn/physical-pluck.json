@@ -1,0 +1,72 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "string-balanced",
+    "nodeType": "generator.physical-pluck",
+    "name": "Balanced string",
+    "group": "Strings",
+    "description": "A clear, ringing neutral string.",
+    "parameters": {
+      "pitch": 0,
+      "strength": 0.8,
+      "decay": 1,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "string-soft",
+    "nodeType": "generator.physical-pluck",
+    "name": "Soft pluck",
+    "group": "Strings",
+    "description": "Gentle excitation and shorter ringing.",
+    "parameters": {
+      "pitch": 0,
+      "strength": 0.35,
+      "decay": 0.65,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "string-long",
+    "nodeType": "generator.physical-pluck",
+    "name": "Long ringing string",
+    "group": "Strings",
+    "description": "A long decay for harp-like layers.",
+    "parameters": {
+      "pitch": 0,
+      "strength": 0.8,
+      "decay": 2,
+      "output-gain": 0.75
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "string-muted",
+    "nodeType": "generator.physical-pluck",
+    "name": "Muted string",
+    "group": "Articulation",
+    "description": "Short, damped pluck.",
+    "parameters": {
+      "pitch": 0,
+      "strength": 0.85,
+      "decay": 0.3,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "string-external",
+    "nodeType": "generator.physical-pluck",
+    "name": "External string",
+    "group": "Articulation",
+    "description": "No internal strike; use the Excitation input.",
+    "parameters": {
+      "pitch": 0,
+      "strength": 0,
+      "decay": 1.5,
+      "output-gain": 0.9
+    }
+  }
+]

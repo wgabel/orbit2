@@ -14,6 +14,9 @@ public static class NodeAppearanceCatalog
     {
         ["generator.oscillator"] = new(NodeCategory.Audio, "M2 12 C5 12 5 4 8 4 S11 20 14 20 S17 12 22 12", "Periodic waveform generator", "tone sine wave LFO"),
         ["generator.noise"] = new(NodeCategory.Audio, "M2 12 5 5 8 19 11 8 14 16 17 3 20 15 22 12", "Random signal generator", "white pink noise"),
+        ["generator.physical-pluck"] = new(NodeCategory.Audio, "M3 19L21 3 M4 13L11 20 M13 4L20 11", "Triggered resonating string from a physical waveguide", "guitar harp string instrument"),
+        ["generator.physical-marimba"] = new(NodeCategory.Audio, "M3 7V20H6V7Z M9 5V18H12V5Z M15 3V15H18V3Z", "Triggered modal wooden bar with mallet and strike position controls", "marimba xylophone percussion instrument"),
+        ["generator.drawbar-organ"] = new(NodeCategory.Audio, "M3 21V8H7V21 M10 21V3H14V21 M17 21V11H21V21", "Nine-drawbar tonewheel-style organ", "hammond organ instrument"),
         ["generator.pitch-control"] = new(NodeCategory.Modulation, "M5 19V5 M5 5 2 8 M5 5 8 8 M11 16H22 M11 8H22 M11 12H18", "Pitch and transposition control", "frequency semitone"),
         ["generator.envelope"] = new(NodeCategory.Modulation, "M2 20 7 3 11 10 17 10 22 20", "Shape attack, decay, sustain and release", "ADSR amplitude"),
         ["generator.signal-to-trigger"] = new(NodeCategory.Sequencing, "M2 14H9V4H11V14H22 M16 8 20 12 16 16", "Convert a signal to trigger events", "edge threshold"),
@@ -31,6 +34,7 @@ public static class NodeAppearanceCatalog
         ["processor.reverb"] = new(NodeCategory.Effects, "M2 12H5 M7 5V19 M11 8V16 M15 10V14 M19 11V13 M22 12H23", "Add space and reverberation", "room decay"),
         ["processor.resonator"] = new(NodeCategory.Effects, "M2 12 5 4 8 20 11 8 14 16 17 10 20 14 22 12", "Resonate at tuned frequencies", "modal ring"),
         ["processor.chorus"] = new(NodeCategory.Effects, "M2 9Q7 1 12 9T22 9 M2 15Q7 7 12 15T22 15", "Layer modulated copies of a signal", "detune width"),
+        ["processor.rotary-speaker"] = new(NodeCategory.Effects, "M12 3A9 9 0 1 1 3 12 M3 7V12H8 M12 7V17 M8 12H16", "Dual rotor amplitude and Doppler modulation", "leslie rotary organ speaker"),
         ["output.master"] = new(NodeCategory.Routing, "M3 9H7L13 4V20L7 15H3Z M16 8Q21 12 16 16 M19 5Q26 12 19 19", "Final audio output", "speaker master"),
         ["rack.input"] = new(NodeCategory.Routing, "M12 3H21V21H12 M2 12H17 M13 8 17 12 13 16", "Composite input boundary"),
         ["rack.output"] = new(NodeCategory.Routing, "M3 3H12V21H3 M7 12H22 M18 8 22 12 18 16", "Composite output boundary"),

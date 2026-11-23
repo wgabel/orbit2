@@ -2,7 +2,7 @@
 
 [Faust-first design](realistic-instrument-emulation.md) · [Initial sound probes](faust-physical-model-probes.md) · [Dependency audit](faust-dependency-audit.md) · [Physical modelling primitives](physical-modelling.md)
 
-**Status:** Phase 7.2.7b extended local research / proposed 7.2.7c interface (PR #81). No new graph type is registered, no preset or generated WASM is shipped, and no user listening approval or final release-license clearance is claimed.
+**Status:** Phase 7.2.7b research and calibrated prototype; production node integration in review in [PR #81](https://github.com/wgabel/orbit2/pull/81). See [actual graph implementation and usage](faust-instrument-nodes.md). The historical research results below remain useful; no user listening approval or final compiler-distribution compliance is claimed.
 
 ## 1. Why this wrapper
 
@@ -82,9 +82,11 @@ The final factory includes the six libraries from the minimal `pm.ks` audit plus
 | basics.lib | 1.23.1 | `aca388dc7a461883d3c9afe0bf49988672758753b34758130e74efe76f4d0029` | `countup`, `sAndH` in GRAME section 2; file LGPL-2.1-or-later with generated-code exception, `sAndH` credited to Romain Michon. Mixed-license file; no other symbol license overrides reported for these calls. |
 | noises.lib | 1.6.0 | `f1499112361800cd6689b7cc99e602d354aa4aeade78bd489cee327b92a8eb76` | `noise` and internal noise environment in GRAME section; LGPL-2.1-or-later with generated-code exception. |
 
-Factory JSON reports the two extra libraries and author metadata; no STK filter dependency or sample assets in this wrapper. The generator source files are not redistributed here. The [compiler and library distribution obligations](faust-dependency-audit.md) still require resolution; this is not authorization to ship either the new node or its compiled code.
+Factory JSON reports the two extra libraries and author metadata; no STK filter dependency or sample assets in this wrapper. The generator source files are not redistributed here. The [compiler and library distribution obligations](faust-dependency-audit.md) remain open as a deferred owner-directed follow-up; this research is not a legal clearance claim.
 
-## 4. Proposed graph integration, after release gate
+## 4. Historical graph integration proposal
+
+The implementation now follows this proposal with the actual stable keys documented in [Faust instrument nodes](faust-instrument-nodes.md); the compiler release compliance follow-up is deferred separately by the owner. The following describes the historical proposal rather than current UI.
 
 Follow existing node architecture, not a separate audio engine. A future `PhysicalPluckGenerator : SignalNode, IGenerator` should use a stable type key (proposed `generator.physical-pluck`), typed Trigger (ordinary direct Trigger/Clock connection, no Schmitt detector for typed pulses), an optional Audio excitation input, and single Audio output. The nearby [EnvelopeGenerator](../../src/Orbit.Domain/Nodes/Generators/EnvelopeGenerator.cs) demonstrates event input; [NoiseGenerator](../../src/Orbit.Domain/Nodes/Generators/NoiseGenerator.cs) demonstrates audio-output generator style; [ResonatorFaustEmitter](../../src/Orbit.Audio/Compilation/Emitters/ResonatorFaustEmitter.cs) demonstrates an ordinary parameterized physical emitter. Register once in BuiltInNodes and BuiltInFaustEmitters; do not expose a processor bypass-through by default because excitation is not a dry signal. Ordinary mute uses the graph compiler's existing mute contract. All feedback/delay state remains private to this DSP, with no illegal graph cycle.
 
@@ -92,4 +94,4 @@ Use normal parameter definitions and stable parameter IDs: semitones -21 to +15,
 
 Example **after implementation** (not available in current UI): set Note Source reference A4, connect Pitch → Pitch offset (unity), Trigger → Trigger, Velocity → Strike strength (unity with strength base 0), Audio → Mixer/Master. For Manual Trigger or Clock use fixed strength .8 and a fixed pitch or Pitch Control. A separate Resonator/Modal composite after the pluck is the next body/cabinet experiment; use measured or deliberately labelled candidate mode frequencies, decays and weights, not a claimed acoustic-guitar replica. Keep a dry component for direct string radiation, compare filtered body-processed variants at matched level and preserve all previous preset identities.
 
-Before registering in production, resolve release compliance; add actual C# domain/persistence/registry/parameter/mute/range tests, generated-graph WASM fixtures with actual Note Source events (including fallback and release), exact dry reference graph A/B, 7.3.4 benchmarking and user audition. Research wrapper tests prove the DSP contract, not these application integrations. Multi-voice allocation is separate 7.2.6c.
+The first integration adds actual domain/persistence/registry/parameter tests and generated-graph WASM fixtures with actual Note Source events. Further work includes fallback-specific integration coverage, exact dry reference graph A/B, 7.3.4 benchmarking and user audition. Research wrapper tests prove the DSP contract, not all application integrations. Multi-voice allocation is separate 7.2.6c.

@@ -27,6 +27,7 @@ public sealed class NodeBypassTests
     [InlineData(ReverbProcessor.NodeType)]
     [InlineData(ResonatorProcessor.NodeType)]
     [InlineData(ChorusProcessor.NodeType)]
+    [InlineData(RotarySpeakerProcessor.NodeType)]
     public void EffectsDeclareAnExplicitDryPath(string type)
     {
         var node = BuiltInNodes.CreateRegistry().Create(type);
@@ -36,6 +37,9 @@ public sealed class NodeBypassTests
 
     [Theory]
     [InlineData(OscillatorGenerator.NodeType)]
+    [InlineData(PhysicalPluckGenerator.NodeType)]
+    [InlineData(PhysicalMarimbaGenerator.NodeType)]
+    [InlineData(DrawbarOrganGenerator.NodeType)]
     [InlineData(MixerProcessor.NodeType)]
     [InlineData(MasterOutput.NodeType)]
     public void NonEffectsRejectBypassWithoutRevision(string type)
