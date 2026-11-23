@@ -12,6 +12,9 @@ test("compact node keeps all real ports mounted outside the expandable controls"
     assert.match(component, /@foreach \(var port in Node.Inputs\)/);
     assert.match(component, /@foreach \(var port in Node.Outputs\)/);
     assert.match(component, /ShowFullControls/);
+    assert.match(styling, /grid-template-areas: "icon name" "actions actions"/);
+    assert.match(styling, /\.node-display-name \{ grid-area: name;/);
+    assert.match(styling, /\.node-header-actions \{[\s\S]*?grid-area: actions;/);
     assert.match(styling, /> \.node-ports \{ order: 1; \}/);
     assert.match(styling, /> :not\(\.node-header\):not\(\.node-ports\) \{ order: 2; \}/);
     assert.match(canvas, /Expanded="@nodeExpansion\.IsExpanded\(node\)"/);
