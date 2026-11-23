@@ -5,7 +5,7 @@ public static class FaustAdditionalPhysicalInstruments
 {
     public static string Violin(string pitch, string gate, string expression, string pressure, string position,
         string attack, string release, string vibratoDepth, string vibratoRate, string gain) => $$"""
-        (0.65 * raw/sqrt(1.0+raw*raw) * env * expr * ({{gain}})) with {
+        (0.65 * ma.tanh(raw) * env * expr * ({{gain}})) with {
             held = ({{gate}})>0.5;
             expr = max(0.0,min(1.0,{{expression}}));
             env = state ~ _;
@@ -23,7 +23,7 @@ public static class FaustAdditionalPhysicalInstruments
 
     public static string Brass(string pitch, string gate, string expression, string tension, string mute,
         string attack, string release, string vibratoDepth, string vibratoRate, string gain) => $$"""
-        (0.65 * raw/sqrt(1.0+raw*raw) * env * expr * ({{gain}})) with {
+        (0.65 * ma.tanh(raw) * env * expr * ({{gain}})) with {
             held = ({{gate}})>0.5;
             expr = max(0.0,min(1.0,{{expression}}));
             env = state ~ _;
@@ -38,7 +38,7 @@ public static class FaustAdditionalPhysicalInstruments
         """;
 
     public static string ElectricGuitar(string pitch, string trigger, string strength, string position, string mute, string gain) => $$"""
-        (0.65*raw/sqrt(1.0+raw*raw)*({{gain}})) with {
+        (0.65*ma.tanh(raw)*({{gain}})) with {
             event = ({{trigger}})>0;
             first = 1-1';
             f = 440.0*pow(2.0,max(-21.0,min(15.0,({{pitch}}):ba.sAndH(event|first)))/12.0);
