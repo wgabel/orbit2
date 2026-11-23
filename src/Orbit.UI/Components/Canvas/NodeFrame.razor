@@ -87,9 +87,13 @@
                 }
             </div>
         </div>
-        @if (CompactNodePresentation.AdditionalParameters(Node).Count > 0 || Node.TypeKey is NoteSequencerGenerator.NodeType or EnvelopeGenerator.NodeType)
+        @if ((!Expanded && CompactNodePresentation.AdditionalParameters(Node).Count > 0) ||
+             Node.TypeKey == NoteSequencerGenerator.NodeType ||
+             (!Expanded && Node.TypeKey == EnvelopeGenerator.NodeType))
         {
             <div class="node-compact-summary">
+                @if (!Expanded || Node.TypeKey == NoteSequencerGenerator.NodeType)
+                {
                 @foreach (var parameter in CompactNodePresentation.AdditionalParameters(Node))
                 {
                     <div class="node-compact-property" @key="parameter.Id">
@@ -99,6 +103,7 @@
                                                ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))"
                                                EditStateChanged="@(editing => OnCompactEditChanged.InvokeAsync((parameter.Id, editing)))" />
                     </div>
+                }
                 }
                 @if (Node.TypeKey == NoteSequencerGenerator.NodeType)
                 {
