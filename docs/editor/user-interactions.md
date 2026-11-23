@@ -71,7 +71,7 @@ Sources: `GraphCanvas.razor.cs`, `canvasContext.js`, `PerformanceKeyboard.razor`
 ## Documented but not confirmed in main
 
 - **Double-click / double-tap composite header to open:** `docs/usage/patch-editor.md` previously instructed double-click, and Phase 6.21 planning mentions double-tap, but the audited shared `NodeFrame.razor` does **not** bind `@ondblclick`, nor is a composite double-tap recognizer present in the reviewed canvas handlers. Use the explicit `Open` button/context action. Treat this as **planned/unverified**, not an available gesture; verify after relevant PRs merge.
-- **Compact-node click-to-expand:** Phase 6.21.5 is planned and may later claim normal node tap/click. Avoid adding a second competing interpretation of the same click; update this registry when implemented.
+- **Compact-node click-to-expand:** Phase 6.21.5-S1 introduces a compact leaf-node shell (in review, not yet merged). A stationary primary header click/tap or noninteractive body tap opens its controls; a chevron button explicitly toggles. Drag movement over 8 CSS px, modified selection, connectors, native editing controls and two-finger pinch do not open a node. Empty-canvas tap collapses an unpinned expanded node; composite/rack/master nodes remain fully visible. Pinning and inline compact value editing are still planned (S2–S3). Check the new browser regression before marking this implemented on main.
 
 ## Node and connector help (in review, PR #94)
 

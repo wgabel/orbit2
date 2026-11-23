@@ -36,7 +36,7 @@
 .node-role { color: var(--component-node-accent); font-size: var(--semantic-typography-caption); font-weight: normal; }
 .node-boundary-description { padding: var(--component-node-padding); color: var(--semantic-color-muted); font-size: var(--semantic-typography-caption); border-bottom: var(--semantic-border-width) solid var(--semantic-color-border); }
 .node-header-actions { display: flex; align-items: center; gap: var(--semantic-space-tight); flex-shrink: 0; }
-.node-header .node-audition-toggle, .node-header .node-description-toggle, .node-header .node-help-trigger {
+.node-header .node-audition-toggle, .node-header .node-description-toggle, .node-header .node-help-trigger, .node-header .node-expand-toggle {
     display: grid;
     place-items: center;
     width: var(--component-node-audition-size);
@@ -68,3 +68,11 @@
 .node-parameters .parameter-heading input { min-width: 0; max-width: 45%; }
 .node-parameters .parameter-heading label { min-width: 0; overflow-wrap: anywhere; }
 .node-actions { display: grid; padding: var(--component-node-padding); border-top: var(--semantic-border-width) solid var(--semantic-color-border); }
+
+/* Compact leaf nodes keep the real sockets directly beneath the fixed header.
+   The detailed controls reorder below them without altering cable anchors. */
+.node-frame.node-compactable { display: flex; flex-direction: column; }
+.node-frame.node-compactable > .node-header { order: 0; }
+.node-frame.node-compactable > .node-ports { order: 1; }
+.node-frame.node-compactable > :not(.node-header):not(.node-ports) { order: 2; }
+.node-frame.node-compactable.node-expanded { z-index: 1; }

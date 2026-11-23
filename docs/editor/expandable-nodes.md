@@ -1,6 +1,6 @@
 # Phase 6.21.5 — Expandable node design contract (approved, not implemented)
 
-Status: design approved on 2026-11-23. **Documentation only**. Implementation and verification remain future work.
+Status: design approved on 2026-11-23. **Implementation restart in review (6.21.5-S1)**; this document remains the full target contract, not a claim that S2–S4 already work. The earlier PR #95 is explicitly not the implementation source.
 
 This document supersedes the earlier Phase 6.21.5 proposal in [the editor roadmap](../roadmap/editor-and-effects.md). It describes the agreed target rather than claiming existing product behavior. Implementation must cross-check the actual registered node definitions and their active parameter/port rules.
 
