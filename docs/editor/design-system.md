@@ -16,14 +16,14 @@ Non-signal note cards, group frames, authored labels and planned responsive visi
 - Unified workspace shell (6.21.2 follow-up, [PR #77](https://github.com/wgabel/orbit2/pull/77)): one compact desktop top bar, split mobile top/bottom bars. Reuse the same icon-and-label navigation, tempo/playback buttons, panel state and existing components. Desktop popovers anchor to the selected toolbar action and clamp to the available workspace; mobile panels become sheets. Do not introduce a persistent desktop bottom toolbar or duplicate commands. Use tokenized spacing, height, colors and focus states; the piano dock alone may reserve an optional desktop bottom row. See [canvas contract](canvas.md#canvas-first-responsive-workspace-62116213-implemented).
 - Show the running editor's compact build number next to Orbit 2 in the shared header; the full commit is available in its tooltip/accessibility label. Keep the existing two mobile header lines and use semantic caption styling. See [release identity and cache invalidation](../../README.md#browser-release-identity-and-cache-invalidation) ([PR #72](https://github.com/wgabel/orbit2/pull/72)).
 - Store viewport pan and zoom separately for each graph. Preserve them when navigating between root and child canvases. Use a single world-to-screen transform shared by nodes, ports, connections and hit testing: screen = world × zoom + pan.
-- Render patch cables using short same-color rigid sleeves at the actual port anchors and a softly sagging pair of joined cubic Bézier spans (see [connection geometry](annotations-and-connections.md#flexible-patch-cable-appearance-in-review-pr-90) and [PR #90](https://github.com/wgabel/orbit2/pull/90)). Use the shared path and hit geometry for draft, connected and selected wires; keep endpoints attached during node movement, pan and zoom. Sleeves are thicker cable sections, not silver plug caps.
+- Render patch cables using short same-color rigid sleeves at the actual port anchors and a **single gently sagging cubic Bézier** between the cap ends, without a separate midpoint join (implemented sleeves in [PR #90](https://github.com/wgabel/orbit2/pull/90), continuous-cubic refinement in [PR #93](https://github.com/wgabel/orbit2/pull/93); see [connection geometry](annotations-and-connections.md)). Use the shared path and hit geometry for draft, connected and selected wires; keep endpoints attached during node movement, pan and zoom. Sleeves are thicker cable sections, not silver plug caps.
 - Input ports appear on the left, outputs on the right, with accessible names and adequate hit targets. The port shape encodes signal type, not direction. Use both labels and shapes so color is never the only distinction.
 
 #### Visual vocabulary
 
 Contextual actions are a shared canvas dialog ([PR #71](https://github.com/wgabel/orbit2/pull/71)): a cursor-positioned popup for desktop and a touch-sized bottom sheet for long press. Use semantic surface, border, spacing, radius and error tokens, existing button variants, and an unscaled viewport overlay rather than node/world-relative controls. Show only applicable actions; explicit Close, Escape and backdrop dismissal are available. See [canvas context contract](canvas.md#contextual-canvas-actions).
 
-All nodes have a filled background and a category-specific accent from shared semantic theme tokens. [PR #62](https://github.com/wgabel/orbit2/pull/62) (6.21.3, in review) introduces the presentation-owned `NodeAppearanceCatalog` and shared `NodeAppearanceIcon`. The library, node frames, outline, preset selector and composite breadcrumbs reuse this catalog. Category colors have their own theme keys; the existing role colors and signal/port semantics are unchanged.
+All nodes have a filled background and a category-specific accent from shared semantic theme tokens. [PR #62](https://github.com/wgabel/orbit2/pull/62) (6.21.3, merged) introduces the presentation-owned `NodeAppearanceCatalog` and shared `NodeAppearanceIcon`. The library, node frames, outline, preset selector and composite breadcrumbs reuse this catalog. Category colors have their own theme keys; the existing role colors and signal/port semantics are unchanged.
 
 | Node category | Accent |
 | --- | --- |
@@ -47,7 +47,7 @@ A sine used as an LFO remains the same generator implementation: its displayed c
 
 Map these presentation shapes to the existing domain port kinds; introduce future kinds only when their domain semantics exist. Audio channel count is a label, not a separate signal kind.
 
-The [piano dock](../instruments/pitch-control.md#phase-723--note-source-in-review) is a shared presentation component ([PR #70](https://github.com/wgabel/orbit2/pull/70), in review). Tokenized compact and tall key heights, fixed-width pitch meter, compact target/control row, piano-specific color tokens and responsive one-/two-octave geometry preserve stationary key targets. The mobile dock reserves a row above the bottom navigation instead of covering the canvas.
+The [piano dock](../instruments/pitch-control.md#phase-723--note-source-in-review) is a shared presentation component ([PR #70](https://github.com/wgabel/orbit2/pull/70), merged). Tokenized compact and tall key heights, fixed-width pitch meter, compact target/control row, piano-specific color tokens and responsive one-/two-octave geometry preserve stationary key targets. The mobile dock reserves a row above the bottom navigation instead of covering the canvas.
 
 #### Design token and theme system
 
@@ -96,7 +96,7 @@ Keep layout structure in CSS and markup, with numeric styling constants in JSON.
 | GraphCanvas | Compose viewport, graph nodes, connections and local interaction state for any graph |
 | CanvasViewport | Coordinate conversion, pan, zoom and viewport state |
 | GraphCanvas | Shared pointer gestures, viewport transform and keyboard navigation |
-| PerformanceMonitor | Shared passive toolbar indicator and expandable diagnostics; token-based panel, local reset; independent of graph/canvas state (7.3.1 in review, [PR #53](https://github.com/wgabel/orbit2/pull/53)) |
+| PerformanceMonitor | Shared passive toolbar indicator and expandable diagnostics; token-based panel, local reset; independent of graph/canvas state (7.3.1 implemented, [PR #53](https://github.com/wgabel/orbit2/pull/53)) |
 | NodeFrame | Shared node background, category accent, header, input/output layout and content slot |
 | NoteCard / NoteEditor | Presentation-only text, semantic accent, header, resize, collapse and isolated unscaled text draft (6.19.1, implemented) |
 | DescriptionEditor | Unscaled node alias/description or cable label editor, shared annotation draft lifecycle (6.19.2, implemented) |
@@ -104,6 +104,7 @@ Keep layout structure in CSS and markup, with numeric styling constants in JSON.
 | PatchOverviewEditor / PatchOverviewSummary | Patch-wide protected metadata draft and read-only summary, reused by PatchManager for active and saved documents (6.19.4, implemented) |
 | AnnotationMarker / AnnotationDetailPolicy | Shared screen-scaled title/marker detail and per-canvas visibility, with selection reveal and stable authored geometry (6.19.7, implemented) |
 | PatchOutlinePanel / PatchOutline | Searchable, bounded hierarchy of committed graph-qualified targets, with explicit locate/open actions (6.19.8, implemented) |
+| Node help | Presentation-only `NodeHelpCatalog`, one delegated unscaled port hint per canvas, an explicit header `?` trigger and viewport popup/mobile sheet. Keep typed ports and cable gestures unchanged; separate built-in help from authored node descriptions ([PR #94](https://github.com/wgabel/orbit2/pull/94), in review). |
 | PortConnector | Render shape, label, typed endpoint, hit area and connection gesture |
 | ConnectionLayer / ConnectionPath | Render and hit-test Bézier connections using shared port geometry |
 | ParameterSlider | Name, unit, editable numeric base value, min/max, range slider, inline error, modulation band and effective marker |

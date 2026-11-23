@@ -31,6 +31,10 @@ For sound design and comparison across genres, use the [12 candidate role design
 
 Technical starting points: [oscillators and noise](../audio/oscillators-and-noise.md), [effects](../audio/effects.md), [envelopes](../audio/envelopes.md), [parameters and modulation](../core/parameters-and-modulation.md), [pitch control](../instruments/pitch-control.md), [Note Sequencer](../instruments/note-sequencer.md) and [instrument usage](../usage/sound-and-instruments.md).
 
+## Compare synthetic recipes against currently available instruments
+
+These eight recipes remain valuable for deliberate electronic sounds. Before choosing one as the *only* sound source for a new pitched voice, consult the [current physical/composite/synthetic role matrix](instrument-recipes.md#choose-an-instrument-for-the-musical-role): Physical Pluck/Marimba/Electric Guitar for triggered attacks, Flute/Clarinet/Brass/experimental Violin for gated phrases, Drawbar Organ for sustained keyboard color, and Rotary Speaker as an optional mono effect. Use the same actual melody and articulation, level-match and audition. A classic synth brass lead may be preferable to the preliminary Physical Brass model, or a Juno-like pad may work better than an organ: the intended identity and evidence decide. Do not call a patch recipe a deployed preset or a physical model a validated replica.
+
 ## Original user-supplied recipe text
 
 Source: `synthesizer-patch-recipes.txt` (verbatim, SHA-256 `38bb3c4d1d6386c60f9d375ebfce703dc899fd331cb3bb1b5f42413eec8bb56f`).

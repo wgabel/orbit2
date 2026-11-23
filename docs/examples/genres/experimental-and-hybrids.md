@@ -4,6 +4,10 @@
 
 Experimentation can happen at the level of timbre, tuning, processing, rhythm, form or even the composition process itself. Choose an audible idea and make its development meaningful; unusual sounds or randomization do not by themselves create a compelling piece. A stable recurring element can make experimental variation more intelligible. Conversely, an intentionally non-tonal composition can be organized by texture, rhythmic gestures and dynamic contrast instead of chords.
 
+## Physical and synthetic source contrast
+
+Make the *contrast* deliberate: a gated **Physical Clarinet/Flute** line against unstable synthetic modulation, a triggered **Physical Marimba** transient against continuous noise, or a **Physical Electric Guitar/Pluck** riff passing through filters, delay and resonators. **Drawbar Organ → Rotary Speaker** supplies periodic motion; it remains a mono effect, not a stereo scene. **Physical Violin** can be explored only as an explicitly experimental source because register jumps have not been ruled out. No model is mandatory, automatically organic, or a replacement for intentional chiptune/noise aesthetics. When using the models as real pitches, check tuning/retriggering and use [the current candidate/port table](../instrument-recipes.md#choose-an-instrument-for-the-musical-role).
+
 ## Experimental approaches
 
 | Style or approach | Typical materials and pulse | Construction and evolution |

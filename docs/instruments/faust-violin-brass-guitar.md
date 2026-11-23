@@ -2,7 +2,9 @@
 
 [Instrument nodes](faust-instrument-nodes.md) · [Faust-first design](realistic-instrument-emulation.md) · [Usage](../usage/sound-and-instruments.md#new-bowed-brass-and-electric-guitar-candidates-pr-86) · [Roadmap](../roadmap/advanced.md#phase-727--faust-first-physical-models-planned)
 
-**Status:** [PR #86](https://github.com/wgabel/orbit2/pull/86) in review. Faust model integration using the existing pinned compiler. The Physical Violin is **experimental**, because prior investigation found octave/register jumps. These candidate models have not been approved as realistic instruments by listening. Compiler distribution compliance remains deferred by owner decision.
+**Status:** [PR #86](https://github.com/wgabel/orbit2/pull/86) **merged**. Faust model integration using the existing pinned compiler. The Physical Violin is **experimental**, because prior investigation found octave/register jumps. These candidate models have not been approved as realistic instruments by listening. Compiler distribution compliance remains deferred by owner decision.
+
+For composing with these models and alternatives, consult the [instrument selection by musical role](../examples/instrument-recipes.md#choose-an-instrument-for-the-musical-role) and [instrument audition protocol](../examples/instrument-design-and-audition.md#select-and-test-the-current-physical-instrument-candidates). Availability does not imply pitch accuracy, performance headroom or listener approval.
 
 ## Models and patch wiring
 

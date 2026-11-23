@@ -23,6 +23,9 @@
             }
         </span>
         <div class="node-header-actions">
+            <button type="button" class="node-help-trigger" data-help-node-id="@Node.Id" aria-label="@($"Help for {DisplayName}")"
+                    aria-expanded="@HelpOpen" @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true"
+                    @onclick="() => OnHelp.InvokeAsync(Node.Id)">?</button>
             @if (ShowSecondaryDocumentation && Documentation is { Description.Length: > 0 })
             {
                 <button type="button" class="node-description-toggle" disabled="@DocumentationEditDisabled"
@@ -65,7 +68,7 @@
                 @foreach (var port in Node.Inputs)
                 {
                     <div class="node-input-row" @key="port.Id">
-                        <PortConnector NodeId="@Node.Id" Port="@port" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
+                        <PortConnector NodeId="@Node.Id" Port="@port" HintText="@NodeHelpCatalog.PortHint(Node.TypeKey, port)" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
                                        WireCandidate="@(WireTargets?.Contains(new PortAddress(Node.Id, port.Id)))"
                                        OnOutputPointerDown="OnOutputPointerDown" OnInputPointerDown="OnInputPointerDown" />
                         @if (CompactNodePresentation.ForInput(Node, port.Id) is { } parameter)
@@ -81,7 +84,7 @@
             <div class="node-outputs">
                 @foreach (var port in Node.Outputs)
                 {
-                    <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port"
+                    <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port" HintText="@NodeHelpCatalog.PortHint(Node.TypeKey, port)"
                                    Active="@(PendingSource == new PortAddress(Node.Id, port.Id))"
                                    OnActivate="OnPortActivate" OnOutputPointerDown="OnOutputPointerDown" />
                 }
@@ -170,7 +173,7 @@
             <div class="node-inputs">
                 @foreach (var port in Node.Inputs)
                 {
-                    <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
+                    <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port" HintText="@NodeHelpCatalog.PortHint(Node.TypeKey, port)" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
                                    WireCandidate="@(WireTargets?.Contains(new PortAddress(Node.Id, port.Id)))"
                                    OnOutputPointerDown="OnOutputPointerDown" OnInputPointerDown="OnInputPointerDown" />
                 }
@@ -178,7 +181,7 @@
             <div class="node-outputs">
                 @foreach (var port in Node.Outputs)
                 {
-                    <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port"
+                    <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port" HintText="@NodeHelpCatalog.PortHint(Node.TypeKey, port)"
                                    Active="@(PendingSource == new PortAddress(Node.Id, port.Id))"
                                    OnActivate="OnPortActivate" OnOutputPointerDown="OnOutputPointerDown" />
                 }

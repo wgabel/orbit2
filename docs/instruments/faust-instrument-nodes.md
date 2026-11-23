@@ -4,6 +4,8 @@
 
 **Status:** Physical Pluck, Physical Marimba, Drawbar Organ and Rotary Speaker merged in [PR #81](https://github.com/wgabel/orbit2/pull/81). Physical Clarinet and Physical Flute merged ([PR #82](https://github.com/wgabel/orbit2/pull/82)); see [sustained physical models](faust-sustained-instruments.md). These are technically tested candidates, not listening-approved acoustic replicas. Existing presets and node IDs remain unchanged. The existing Faust compiler distribution-compliance work is explicitly deferred by project owner; no new dependency/version or copied upstream model source is introduced, and the [audit](faust-dependency-audit.md) remains open.
 
+For roles, composition examples and comparisons against synthetic voices, see [instrument selection and arrangement recipes](../examples/instrument-recipes.md#choose-an-instrument-for-the-musical-role). For new music the agent must consider the current catalogue, then choose according to articulation, pitch stability and desired sound—not require physical models.
+
 ## Play the instruments
 
 Add Note Source, choose reference A4 (MIDI 69), then an instrument and Master output. The new generators live in Audio generators; Rotary Speaker lives in Effects. Start playback and arm the Note Source keyboard. All pitch offsets are semitones from A4, with base Pitch 0 and connection amount 1. Each generator is mono, as is the existing graph. More independent notes require multiple voices or future polyphony.

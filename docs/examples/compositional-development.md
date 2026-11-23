@@ -41,6 +41,10 @@ These are alternative musical ideas, not a prescribed genre structure or a teste
 
 For a continuous ambient piece the equivalent might be a slow shift in tonal center, a newly emerging melodic contour, long silence followed by a new call, or a sustained change in harmonic density. No verse/drop/chorus vocabulary is required.
 
+### Orchestrate the approved score with current instruments
+
+After writing the melody, harmony and phrase contrasts, consult the [current instrument selection matrix](instrument-recipes.md#choose-an-instrument-for-the-musical-role). For instance, replace a generic repeated oscillator pluck with a triggered Physical Pluck for an *A/B test*, or give a distinct answer phrase to a gated Physical Clarinet while retaining the original bass and chords. The most effective change may still be composition (different note contour/rests), not a new instrument. Keep the same notes, durations, section timing and comparable level when attributing improvements to sound design. The new physical instruments are monophonic candidates, not automatic realistic replacements; the violin in particular is experimental. Use [instrument audition](instrument-design-and-audition.md#select-and-test-the-current-physical-instrument-candidates) to compare sound before changing an already approved passage.
+
 ## 3. Translate the score into Orbit 2
 
 Consult current [Note Sequencer/pitch pattern contracts](../instruments/note-sequencer.md), [transport](../audio/transport-and-timing.md) and [musical techniques T3/T9](genres/orbit-techniques.md) before implementing. Use actual node definitions and verify limits; this guide introduces no new node.

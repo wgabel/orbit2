@@ -4,6 +4,10 @@
 
 Dance music often derives its identity from timing, repetition, physical energy and the evolution of a few rhythmic cells. A strong kick/bass relationship and compelling groove matter more than a large patch. Start with a recognizable one- or two-bar pattern, then design phrase-level variations, changes in density and sections. For a DJ-oriented piece, an intro/outro with stable pulse may be useful; for a shorter narrative piece, a different structure may work better.
 
+## Musical instruments within a dance groove
+
+Consider **Drawbar Organ** for short organ stabs or a gated keyboard bed (optionally → **Rotary Speaker** for moving, mono organ color); **Physical Pluck/Electric Guitar** for contrasting picked hooks; **Physical Marimba** for melodic percussion; or **Physical Brass/Flute** for a melodic break. Test retriggering and tails against kick/snare boundaries. These are monophonic candidates, not drop-in polyphonic piano/brass patches; separate instances or editable composite voices must produce simultaneous chord tones. Keep a plain oscillator bass/kick where its clean electronic tone serves the piece better. For exact note-vs-strike routing and audition limits use [instrument selection](../instrument-recipes.md#choose-an-instrument-for-the-musical-role).
+
 ## House and disco descendants
 
 | Style | Typical grid and materials | Construction and evolution |

@@ -17,6 +17,8 @@ public partial class NodeFrame : IDisposable
     [Parameter] public Guid PatchId { get; set; }
     [Parameter] public Guid GraphId { get; set; }
     [Parameter] public SavedNodeDescription? Documentation { get; set; }
+    [Parameter] public EventCallback<Guid> OnHelp { get; set; }
+    [Parameter] public bool HelpOpen { get; set; }
     [Parameter] public EventCallback OnEditDescription { get; set; }
     [Parameter] public bool DocumentationEditDisabled { get; set; }
     [Parameter] public bool ShowSecondaryDocumentation { get; set; } = true;
