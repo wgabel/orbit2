@@ -2,7 +2,7 @@
 
 [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
 
-Related: [envelopes](../audio/envelopes.md) · [pitch control](../instruments/pitch-control.md) · [note sequencer](../instruments/note-sequencer.md) · [physical modelling](../instruments/physical-modelling.md) · [polyphony](../instruments/polyphony.md) · [sample assets](../audio/sample-assets.md) · [performance](../../performance.md).
+Related: [envelopes](../audio/envelopes.md) · [pitch control](../instruments/pitch-control.md) · [note sequencer](../instruments/note-sequencer.md) · [physical modelling](../instruments/physical-modelling.md) · [polyphony](../instruments/polyphony.md) · [sample assets](../audio/sample-assets.md) · [performance](../quality/performance.md).
 
 <a id="phase-7--advanced-functionality-and-performance"></a>
 
@@ -66,7 +66,7 @@ User feedback: existing instrument timbres lack realism. Prioritize the [Faust-f
 
 #### Phase 7.3 — Performance monitoring, profiling and diagnostics (7.3.1–7.3.3 implemented; 7.3.4 benchmark baseline implemented)
 
-The detailed implementation and usage contract lives in [performance.md](../../performance.md), not in this roadmap. The monitor distinguishes measured/estimated/unsupported metrics, stays read-only and measures audio reliability separately from UI and signal quality.
+The detailed implementation and usage contract lives in [performance.md](../quality/performance.md), not in this roadmap. The monitor distinguishes measured/estimated/unsupported metrics, stays read-only and measures audio reliability separately from UI and signal quality.
 
 **7.3.1–7.3.3 follow-up — on-demand monitoring ([PR #76](https://github.com/wgabel/orbit2/pull/76), merged):** disable sampling, FPS/long-task observers, operation timing and diagnostic aggregates when the panel is closed; opening starts a fresh session without affecting playback. [Lifecycle and regression contract](../quality/performance-implementation.md#on-demand-collection).
 

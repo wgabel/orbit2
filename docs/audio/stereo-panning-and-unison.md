@@ -1,7 +1,7 @@
 # Stereo audio, panning and oscillator unison
 
 **Status:** Planned design · Phase 7.5. No new runtime capabilities or presets are implemented by this document.
-**Recommended prerequisite:** Phase 7.3.1, 7.3.2 and the benchmark baseline of 7.3.4 (see [performance specification](../../performance.md)).
+**Recommended prerequisite:** Phase 7.3.1, 7.3.2 and the benchmark baseline of 7.3.4 (see [performance specification](../quality/performance.md)).
 
 [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md) · [Milestone register](../roadmap/advanced.md#phase-75--stereo-audio-panning-and-unison-planned)
 

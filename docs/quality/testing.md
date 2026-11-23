@@ -2,7 +2,7 @@
 
 [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
 
-Related: [coding standards](coding-standards.md) · [graph model](../core/graph-model.md) · [dsp engine](../audio/dsp-engine.md) · [commands and events](../core/commands-and-events.md) · [performance](../../performance.md).
+Related: [coding standards](coding-standards.md) · [graph model](../core/graph-model.md) · [dsp engine](../audio/dsp-engine.md) · [commands and events](../core/commands-and-events.md) · [performance](performance.md).
 
 ## 14. Testing and acceptance criteria
 
@@ -45,7 +45,7 @@ The core model should be independently unit testable without a browser or Faust.
 | Composite ungrouping (7.4.2b — in review) | Current edited boundary coefficient products, event adapter passthrough/fan-out, dormant wires, single-level ownership, rejection of sum/one-sided/muted/stale and metadata-loss cases, one revision/history entry, edited child layout and descriptions, descendant navigation, save/load, deterministic compiled comparisons at 44.1/48 kHz and published-editor expand/undo/redo. |
 | Connection visualization (Phase 6.19.5 — implemented core) | Badge units and signs match committed receiving-port semantics; zero/dormant states remain distinct; labels follow cable midpoints behind nodes and obey visibility preferences; the editor clamps to usable canvas geometry; display changes leave graph and playback unchanged, while explicit Apply commits one amount change and undo/redo restores its badge. |
 | Output safety | Controlled master gain, no unexpected discontinuity when changing base values. |
-| Performance and diagnostics (7.3 — planned) | Feature-detected metrics with explicit scope/availability, no monitoring-induced graph/audio changes, session/generation correctness, bounded resources and reproducible throughput/real-time comparisons; see [performance.md](../../performance.md). |
+| Performance and diagnostics (7.3 — planned) | Feature-detected metrics with explicit scope/availability, no monitoring-induced graph/audio changes, session/generation correctness, bounded resources and reproducible throughput/real-time comparisons; see [performance.md](performance.md). |
 | Persistence | Save/load nested graph and layout with stable IDs and equivalent connectivity. |
 | Audio assets (planned) | Import and reload binary recordings, share immutable data across nodes, preserve IDs through undo/redo, handle quota and missing assets without corrupting patches. |
 | Sample playback (planned) | Verify pitch/rate at 44.1/48 kHz, independent playheads, interpolation, loop bounds/crossfades, reverse and one-shot termination; reject stale asset loads during live replacement. |

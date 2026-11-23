@@ -5,7 +5,7 @@
 **Target repository:** [wgabel/orbit2](https://github.com/wgabel/orbit2)  
 **Original design date:** 2026-11-20
 
-This document consolidates the design discussions for Orbit 2: the original browser boilerplate, separation of responsibilities, signal generation, modulation, audio processing, clocks, hierarchical node canvases, exposed input/output racks, and event-driven editing. It is intended as a reference for implementing the next iterations, not a claim that every proposed system already exists. Earlier implementation sketches, design rationale, examples and acceptance criteria are preserved even when later implementation records supersede the initial wording. The README remains the practical build/run guide. [Performance monitoring and diagnostics](performance.md) is the dedicated specification for measuring audio reliability, latency, DSP load/headroom, editor responsiveness, compilation and benchmark regressions (Phase 7.3). The [performance targets and explainable health indicators](docs/quality/performance-metrics.md#31-suggested-health-thresholds) and [device-specific capacity benchmarks](docs/quality/dsp-profiling.md#94-device-specific-capacity-and-reference-compositions-planned) are planned extensions (7.3.7–7.3.8), with short visible reasons for statuses and device-scoped workload goals.
+This document consolidates the design discussions for Orbit 2: the original browser boilerplate, separation of responsibilities, signal generation, modulation, audio processing, clocks, hierarchical node canvases, exposed input/output racks, and event-driven editing. It is intended as a reference for implementing the next iterations, not a claim that every proposed system already exists. Earlier implementation sketches, design rationale, examples and acceptance criteria are preserved even when later implementation records supersede the initial wording. The README remains the practical build/run guide. [Performance monitoring and diagnostics](docs/quality/performance.md) is the dedicated specification for measuring audio reliability, latency, DSP load/headroom, editor responsiveness, compilation and benchmark regressions (Phase 7.3). The [performance targets and explainable health indicators](docs/quality/performance-metrics.md#31-suggested-health-thresholds) and [device-specific capacity benchmarks](docs/quality/dsp-profiling.md#94-device-specific-capacity-and-reference-compositions-planned) are planned extensions (7.3.7–7.3.8), with short visible reasons for statuses and device-scoped workload goals.
 
 ## 1. Goals and current baseline
 
@@ -45,6 +45,8 @@ The goal is a modular architecture in which new generators, processors, paramete
 
 ## Find the context for your task
 
+For a complete cross-area directory, start at the [documentation map](docs/README.md). This architecture file remains the stable technical routing overview, not another roadmap.
+
 For hands-on workflows and concrete examples, start with the [user and agent usage guide](docs/usage/README.md). Each page links the authoritative feature contracts and actual implementation PRs; use it alongside the task routing below, not as a constraint on exploration.
 
 For creating, analyzing or refining music, start with the [music creation index](docs/examples/README.md): routes by task and production stage, including the [sound-design foundations catalogue](docs/examples/foundations/README.md) of reproducible references and evidence.
@@ -58,7 +60,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 | New code, bug fix, refactoring or code review | [Coding standards and implementation quality](docs/quality/coding-standards.md), [testing](docs/quality/testing.md), and the relevant feature contract |
 | New node, connection or parameter | [Graph model](docs/core/graph-model.md), [signals/ports](docs/core/signals-and-ports.md), [modulation](docs/core/parameters-and-modulation.md), [DSP](docs/audio/dsp-engine.md) |
 | Stereo routing, panning, oscillator unison | [Stereo audio, panning and oscillator unison](docs/audio/stereo-panning-and-unison.md) — planned Phase 7.5; prioritize the Phase 7.3 performance baseline first |
-| Playback, clicking, latency | [DSP engine](docs/audio/dsp-engine.md), [performance index](performance.md), [transport](docs/audio/transport-and-timing.md) |
+| Playback, clicking, latency | [DSP engine](docs/audio/dsp-engine.md), [performance index](docs/quality/performance.md), [transport](docs/audio/transport-and-timing.md) |
 | Canvas, node frame or UI | [User interaction/gesture registry](docs/editor/user-interactions.md) (mandatory when changing inputs), [Canvas](docs/editor/canvas.md), [contextual canvas actions](docs/editor/canvas.md#contextual-canvas-actions), [design system](docs/editor/design-system.md), [canvas-first workspace and node library (6.21.1–6.21.3 implemented)](docs/roadmap/editor-and-effects.md#phase-621--canvas-first-workspace-and-node-library-planned), relevant feature module |
 | Composite routing | [Composite nodes](docs/editor/composite-nodes.md), [signals/ports](docs/core/signals-and-ports.md), [commands](docs/core/commands-and-events.md) |
 | Reusing patches, grouping nodes into composites, custom module library and macros | [Reusable modules](docs/editor/reusable-modules.md), [composite nodes](docs/editor/composite-nodes.md), [persistence](docs/editor/persistence-and-history.md) |
@@ -144,7 +146,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 
 - [coding standards and implementation quality](docs/quality/coding-standards.md)
 - <a id="14-testing-and-acceptance-criteria"></a>[testing](docs/quality/testing.md)
-- [performance](performance.md)
+- [performance](docs/quality/performance.md)
 - <a id="13-implementation-roadmap"></a><a id="roadmap-at-a-glance"></a><a id="reading-guide-and-current-implementation"></a>[ROADMAP](ROADMAP.md)
 
 **Detailed milestone registers**
