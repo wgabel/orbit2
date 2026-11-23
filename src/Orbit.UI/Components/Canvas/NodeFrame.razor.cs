@@ -55,6 +55,14 @@ public partial class NodeFrame
     [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();
     [Parameter] public Orbit.Application.Models.EnvelopePlayhead? Playhead { get; set; }
 
+    // Match by stable parameter/port IDs, never user-facing labels. Keep a safe
+    // fallback for future modulatable definitions without a matching socket.
+    private Orbit.Application.Graphs.Snapshots.ParameterSnapshot? ModulatedInput(Guid portId) =>
+        Node.Parameters.FirstOrDefault(parameter => parameter.Definition.CanModulate && parameter.ModulationPortId == portId);
+    private IEnumerable<Orbit.Application.Graphs.Snapshots.ParameterSnapshot> UnmappedModulatable =>
+        Node.Parameters.Where(parameter => parameter.Definition.CanModulate &&
+            (parameter.ModulationPortId is not Guid portId || Node.Inputs.All(port => port.Id != portId)));
+
     private bool IsModulated(Guid id) => ModulationRanges.ContainsKey(new ParameterAddress(Node.Id, id));
     private ParameterRange? GetRange(Guid id) => ModulationRanges.GetValueOrDefault(new ParameterAddress(Node.Id, id));
     private double? GetEffective(Guid id) => EffectiveValues.TryGetValue(new ParameterAddress(Node.Id, id), out var value) ? value : null;
