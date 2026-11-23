@@ -308,6 +308,47 @@ public sealed class CanvasStateServiceTests
         Assert.Single(canvas.Snapshot.NodePositions);
     }
 
+    [Fact]
+    public void ExpandedPinsArePresentationOnlyAndPersistThroughCanvasLayouts()
+    {
+        using var session = NewSession();
+        var oscillator = AddNode(session, OscillatorGenerator.NodeType);
+        var output = AddNode(session, MasterOutput.NodeType);
+        using var navigation = new CanvasNavigationService(session);
+        var canvas = navigation.ActiveCanvas;
+        var originalGraph = session.Snapshot;
+        var originalRevision = originalGraph.Revision;
+
+        canvas.SetNodePinned(oscillator.Id, true);
+        canvas.SetNodePinned(oscillator.Id, true);
+        canvas.SetNodePinned(output.Id, true); // master output is not expandable
+        Assert.Equal(new[] { oscillator.Id }, canvas.Snapshot.PinnedNodeIds);
+        Assert.Same(originalGraph, session.Snapshot);
+        Assert.Equal(originalRevision, session.Snapshot.Revision);
+
+        var layout = Assert.Single(navigation.CaptureLayouts());
+        Assert.Equal(new[] { oscillator.Id }, layout.PinnedNodeIds);
+        using var reloaded = new CanvasStateService(session, session.GraphId, saved: layout);
+        Assert.Equal(new[] { oscillator.Id }, reloaded.Snapshot.PinnedNodeIds);
+
+        reloaded.SetNodePinned(oscillator.Id, false);
+        Assert.Empty(reloaded.Snapshot.PinnedNodeIds);
+    }
+
+    [Fact]
+    public void RestoringPinnedNodesDiscardsMissingAndNonExpandableIds()
+    {
+        using var session = NewSession();
+        var node = AddNode(session, OscillatorGenerator.NodeType);
+        var output = AddNode(session, MasterOutput.NodeType);
+        var saved = new SavedCanvas(session.GraphId, 0, 0, 1, [])
+        {
+            PinnedNodeIds = [node.Id, node.Id, output.Id, Guid.NewGuid()]
+        };
+        using var canvas = new CanvasStateService(session, session.GraphId, saved: saved);
+        Assert.Equal(new[] { node.Id }, canvas.Snapshot.PinnedNodeIds);
+    }
+
     private static PatchSession NewSession() => new(BuiltInNodes.CreateRegistry());
 
     private static GraphNodeSnapshot AddNode(IPatchSession session, string type) =>
