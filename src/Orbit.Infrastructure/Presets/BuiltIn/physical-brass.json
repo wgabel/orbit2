@@ -1,0 +1,97 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "phys-brass-1",
+    "nodeType": "generator.physical-brass",
+    "name": "Open brass",
+    "group": "Tone",
+    "description": "Default physical lip/tube resonance.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.8,
+      "lip-tension": 0.5,
+      "mute-opening": 0.5,
+      "attack": 0.045,
+      "release": 0.12,
+      "vibrato-depth": 0,
+      "vibrato-rate": 5,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "phys-brass-2",
+    "nodeType": "generator.physical-brass",
+    "name": "Soft entry",
+    "group": "Articulation",
+    "description": "Gentle entrance with reduced breath.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.5,
+      "lip-tension": 0.5,
+      "mute-opening": 0.5,
+      "attack": 0.12,
+      "release": 0.12,
+      "vibrato-depth": 0,
+      "vibrato-rate": 5,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "phys-brass-3",
+    "nodeType": "generator.physical-brass",
+    "name": "Bright attack",
+    "group": "Articulation",
+    "description": "Strong air and short attack.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 1,
+      "lip-tension": 0.5,
+      "mute-opening": 0.5,
+      "attack": 0.02,
+      "release": 0.12,
+      "vibrato-depth": 0,
+      "vibrato-rate": 5,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "phys-brass-4",
+    "nodeType": "generator.physical-brass",
+    "name": "Muted brass",
+    "group": "Tone",
+    "description": "Narrower bell opening to color the tone.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.8,
+      "lip-tension": 0.5,
+      "mute-opening": 0.3,
+      "attack": 0.045,
+      "release": 0.12,
+      "vibrato-depth": 0,
+      "vibrato-rate": 5,
+      "output-gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "phys-brass-5",
+    "nodeType": "generator.physical-brass",
+    "name": "Brass vibrato",
+    "group": "Articulation",
+    "description": "Wide lyrical brass vibrato.",
+    "parameters": {
+      "pitch": 0,
+      "expression": 0.8,
+      "lip-tension": 0.5,
+      "mute-opening": 0.5,
+      "attack": 0.045,
+      "release": 0.12,
+      "vibrato-depth": 10,
+      "vibrato-rate": 5.4,
+      "output-gain": 0.8
+    }
+  }
+]

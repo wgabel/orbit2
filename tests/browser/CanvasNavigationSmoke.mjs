@@ -12,6 +12,13 @@ const waitZoom = (page, target) => page.waitForFunction(expected => {
 const waitFit = (page, sequence) => page.waitForFunction(previous =>
     document.querySelector(".canvas-viewport").dataset.fitSequence !== previous, sequence);
 export async function fitCanvas(page) {
+    // The armed performance keyboard owns F, even when the canvas has focus.
+    // Keep the canvas shortcut covered when unarmed and use the pointer gesture
+    // while performing, without collapsing the dock or releasing held notes.
+    if (await page.locator('.performance-keyboard[data-armed="true"]').count()) {
+        await tripleTapFit(page, false);
+        return;
+    }
     const sequence = await canvas(page).getAttribute("data-fit-sequence");
     await canvas(page).press("f");
     await waitFit(page, sequence);

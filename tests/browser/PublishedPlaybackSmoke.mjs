@@ -1615,7 +1615,16 @@ try {
     await responsePage.getByRole("button", { name: "Play patch" }).click();
     await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
     const noteRevision = await responseStatus.innerText();
+    // Regression: F must play the Note Source even when the canvas itself is focused.
+    // It must not trigger the old Fit shortcut or change the viewport.
+    const canvasViewport = responsePage.locator(".canvas-viewport");
+    const fitSequenceBeforeF = await canvasViewport.getAttribute("data-fit-sequence");
+    await canvasViewport.press("f");
+    await performance.locator('[data-live-pitch-offset="-4"]').waitFor();
+    assert.equal(await canvasViewport.getAttribute("data-fit-sequence"), fitSequenceBeforeF,
+        "Armed piano F must not trigger canvas Fit");
     // Ordinary node selection must not discard the keyboard target.
+    // Fit uses triple-click while F is reserved for musical input.
     await fitCanvas(responsePage);
     await handpan.locator(".node-header > span").click();
     assert.equal(await performance.getAttribute("data-target-node"), await noteSource.getAttribute("data-node-id"));
