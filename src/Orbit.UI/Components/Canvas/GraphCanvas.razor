@@ -2,6 +2,7 @@
 @using Microsoft.AspNetCore.Components.Web
 @using Orbit.Presentation.Canvas
 @using Orbit.Domain.Nodes.Composites
+@using Orbit.Domain.Ports
 
 @* Root and nested editors use the same canvas, with no dependencies on the DSP runtime. *@
 @{ var wires = Wires; }
@@ -45,6 +46,7 @@
                            Documentation="@Snapshot.NodeDescriptions.GetValueOrDefault(node.Id)"
                            ShowSecondaryDocumentation="@(Snapshot.ShowSecondaryAnnotations || Snapshot.SelectedNodeIds.Contains(node.Id))"
                            OnEditDescription="@(() => EditNodeDescriptionAsync(node.Id))" DocumentationEditDisabled="@(HasAnnotationDraft || AnnotationActionsDisabled)"
+                           OnHelp="ShowNodeHelp" HelpOpen="@(helpNodeId == node.Id)"
                            Visualization="@Snapshot.VisualizationFor(node.Id)" VisualizationExpanded="@(Snapshot.ExpandedVisualizationNodeId == node.Id)"
                            OnVisualizationChange="@(settings => { State.SetVisualization(node.Id, settings); })"
                            OnExpandVisualization="@(() => { State.SetExpandedVisualization(Snapshot.ExpandedVisualizationNodeId == node.Id ? null : node.Id); })"
@@ -219,6 +221,52 @@
             && !Snapshot.VisualGroups.Any(group => Snapshot.GroupDetail(group.Id) != AnnotationDetail.Hidden))
         {
             <div class="canvas-empty">Add a node to start building your graph.</div>
+        }
+        @if (HelpNode is { } helpNode)
+        {
+            var help = NodeHelpCatalog.Get(helpNode.TypeKey);
+            <div class="node-help-overlay" @onpointerdown:stopPropagation="true" @onpointermove:stopPropagation="true"
+                 @onpointerup:stopPropagation="true" @onwheel:stopPropagation="true"
+                 @onkeydown="HandleNodeHelpKeyDown" @onkeydown:stopPropagation="true">
+                <div class="node-help-backdrop" aria-hidden="true" @onclick="CloseNodeHelpAsync"></div>
+                <section class="node-help-panel" role="dialog" aria-modal="true" data-help-popup-node="@helpNode.Id"
+                         aria-label="@($"{helpNode.Name} help")">
+                    <header class="node-help-heading">
+                        <strong>@Snapshot.DisplayName(helpNode.Id)</strong>
+                        <button type="button" class="secondary" @ref="helpCloseButton" aria-label="Close node help"
+                                @onclick="CloseNodeHelpAsync">Close</button>
+                    </header>
+                    <h2>What it does</h2>
+                    <p>@help.Summary</p>
+                    @if (helpNode.Inputs.Count + helpNode.Outputs.Count > 0)
+                    {
+                        <h2>Connectors</h2>
+                        <div class="node-help-ports">
+                            @foreach (var port in helpNode.Inputs.Concat(helpNode.Outputs))
+                            {
+                                <div class="node-help-port" @key="port.Id">
+                                    <div class="node-help-port-title">
+                                        <strong>@port.Name</strong>
+                                        <small>@port.Direction · @port.SignalType</small>
+                                        @if (port.Direction == PortDirection.Input && !helpNode.IsInputActive(port.Id))
+                                        {
+                                            <small>Inactive in this mode</small>
+                                        }
+                                    </div>
+                                    <p>@NodeHelpCatalog.PortHint(helpNode.TypeKey, port)</p>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <h2>Try it</h2>
+                    <ul class="node-help-examples">
+                        @foreach (var example in help.UseCases)
+                        {
+                            <li>@example</li>
+                        }
+                    </ul>
+                </section>
+            </div>
         }
         @if (contextMenu is { } menu)
         {
