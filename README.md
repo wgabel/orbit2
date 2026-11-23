@@ -4,12 +4,16 @@ A browser-based modular synthesizer with a **Blazor WebAssembly/C#** editor, ind
 
 **[Launch Orbit 2](https://wgabel.github.io/orbit2/)**
 
+<a id="start-here"></a>
+
 ## Navigate
 
 - [Install and run locally](docs/getting-started/installation.md) · [Development and tests](docs/getting-started/development.md)
 - [User guide](docs/usage/README.md) · [Music creation](docs/examples/README.md)
 - [Documentation directory](docs/README.md) · [Architecture](ORBIT2-ARCHITECTURE.md)
 - [One canonical roadmap](ROADMAP.md) · [Agent/contributor rules](AGENTS.md)
+
+<a id="run-locally"></a>
 
 ## Requirements
 
@@ -22,6 +26,8 @@ See [development commands](docs/getting-started/development.md) and [automated v
 ### Browser release identity and cache invalidation
 
 See [deployment and cache diagnosis](docs/getting-started/deployment.md#browser-release-identity-and-cache-invalidation). **Never clear browser site data as a cache workaround without first protecting saved patches.**
+
+<a id="historical-implementation-detail"></a>
 
 ## Repository
 

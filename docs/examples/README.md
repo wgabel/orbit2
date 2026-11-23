@@ -4,6 +4,8 @@
 
 A short entry point for composing, building instruments, analyzing patches and refining music. Guidance can be adapted to any genre; verify the actual patch and node contracts.
 
+<a id="find-your-task"></a>
+
 ## Choose a path
 
 - **[Find a guide for your task](task-index.md)** — instrument choice, effects, melody, harmony, mixing, genre and feedback.
