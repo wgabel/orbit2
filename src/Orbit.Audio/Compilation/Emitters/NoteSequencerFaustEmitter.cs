@@ -35,7 +35,7 @@ public sealed class NoteSequencerFaustEmitter : IFaustMultiOutputEmitter
                 held = (select2(valid | (code == 129), _, select2(code == 129, code, 0))) ~ _;
                 target = max(-60.0, min(60.0, select2(held > 0, {{initial}}, held - 1 - {{reference}})));
                 offset = ramp(target, {{glide}});
-                measured = offset : hbargraph("{{meter}}", -60, 60);
+                measured = attach(offset : hbargraph("{{meter}}", -60, 60), step : hbargraph("{{stepMeter}}", 0, 64));
                 gateState = (select2(valid | release, _, valid)) ~ _;
                 gate = gateState * {{notes}};
                 trigger = valid * {{notes}};
