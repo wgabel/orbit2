@@ -46,6 +46,7 @@ export async function verifyCanvasContext(browser, url) {
             nodes.map(node => node.dataset.nodeId).find(id => !original.includes(id)), originalIds);
         assert.ok(duplicatedId, 'A fresh graph node was created');
         await desktop.locator(`article[data-node-id="${duplicatedId}"].node-selected`).waitFor();
+        await fitCanvas(desktop);
         await rightClickHeader(desktop, `article[data-node-id="${duplicatedId}"] .node-header`);
         await menu(desktop).getByRole('button', { name: 'Duplicate node', exact: true }).waitFor();
         await menu(desktop).getByRole('button', { name: 'Close contextual actions' }).press('Escape');
