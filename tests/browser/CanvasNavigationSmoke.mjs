@@ -85,7 +85,21 @@ async function verifyCoveredNodePinch(page) {
     const node = canvas(page).locator(`[data-node-id="${id}"]`);
     await node.locator('.node-alias').click({ button: 'right' });
     await page.locator('.canvas-context-menu').getByRole('button', { name: 'Focus node', exact: true }).click();
-    for (let i = 0; i < 20 && (await currentViewport(page)).zoom < 4; i++) await zoomStep(page, 1);
+    // Wheel-zoom here rather than depending on a keyboard shortcut while the
+    // context menu is returning focus. Keyboard zoom has independent coverage.
+    const corner = await canvas(page).evaluate(element => {
+        const rect = element.getBoundingClientRect();
+        return { x: Math.round(rect.left + 8), y: Math.round(rect.top + 8) };
+    });
+    await page.mouse.move(corner.x, corner.y);
+    for (let i = 0; i < 30 && (await currentViewport(page)).zoom < 4; i++) {
+        const before = (await currentViewport(page)).zoom;
+        await page.mouse.wheel(0, -180);
+        await page.waitForFunction(previous => {
+            const m = new DOMMatrix(getComputedStyle(document.querySelector(".canvas-world")).transform);
+            return m.a > previous + 0.00001 || m.a >= 4;
+        }, before);
+    }
     await waitZoom(page, 4);
     const target = await node.evaluate(node => {
         const viewport = node.closest('.canvas-viewport').getBoundingClientRect();
