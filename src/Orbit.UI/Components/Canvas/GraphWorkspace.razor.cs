@@ -437,7 +437,7 @@ public partial class GraphWorkspace : IAsyncDisposable
         if (!Execute(new DuplicateNodeCommand(graphId, nodeId, duplicateId))) return;
 
         // Keep the copy close to its source while making both headers visible.
-        Canvas.MoveNode(duplicateId, position.Add(new CanvasPoint(64, 56)));
+        Canvas.MoveNode(duplicateId, position.Add(new CanvasPoint(320, 32)));
         if (description is not null) Canvas.SetNodeDescription(description with { NodeId = duplicateId });
         if (visualization is not null) Canvas.SetVisualization(duplicateId, visualization);
         Canvas.SelectNode(duplicateId);
