@@ -47,7 +47,12 @@
     .pitch-editor-primary label { flex-basis: 40%; }
 }
 
-/* The playback/transport menu is always actionable above the expanded dock editor.
-   Keep this on the canvas caption stacking context, not on an individual
-   button: desktop and mobile both render transport controls inside it. */
-.graph-workspace > .canvas-caption { position: relative; z-index: calc(var(--component-workspace-overlay-layer) + 1); }
+/* Responsive Orbit uses display: contents on .canvas-caption, so that wrapper
+   cannot create a stacking context. Raise the positioned tools themselves when
+   an editor is expanded, preserving access to transport and other menus.
+   Higher specificity beats the responsive rules imported after this file. */
+.graph-workspace:has(> .performance-keyboard > .pitch-pattern-editor)
+    :is(.workspace-transport-tools, .workspace-edit-tools, .workspace-nodes-tools,
+        .workspace-more-tools, .canvas-view-tools, .patch-outline-panel, .workspace-library-panel) {
+    z-index: calc(var(--component-workspace-overlay-layer) + 1);
+}
