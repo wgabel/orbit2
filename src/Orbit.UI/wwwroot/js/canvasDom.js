@@ -257,7 +257,7 @@ export function mountPortHints(viewport) {
     };
     const show = button => {
         if (button === active || !button?.isConnected || !button.dataset.portHelp ||
-            viewport.dataset.portHintsSuppressed === "True" ||
+            viewport.dataset.portHintsSuppressed === "true" ||
             viewport.querySelector(".node-help-overlay, .canvas-context-overlay")) return;
         hide();
         active = button;
