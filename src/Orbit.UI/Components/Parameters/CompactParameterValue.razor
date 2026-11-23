@@ -7,7 +7,7 @@
 
 @* Compact base value is an independent editor; the effective value is passive telemetry.
    Interactions do not bubble into the node's drag, expand or canvas gestures. *@
-<div class="compact-parameter-value" @onpointerdown:stopPropagation="true"
+<div class="compact-parameter-value @(IsModulated ? "compact-value-modulated" : "")" @onpointerdown:stopPropagation="true"
      @onclick:stopPropagation="true" @onkeydown:stopPropagation="true"
      @onwheel:stopPropagation="true">
     @if (ReadOnly)
