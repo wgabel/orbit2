@@ -198,6 +198,7 @@ public partial class GraphCanvas : IAsyncDisposable
         if (ReferenceEquals(State, subscribedState)) return;
         subscription?.Dispose();
         subscribedState = State;
+        ResetExpansionForCanvas();
         measurement = null;
         portOffsets.Clear();
         measuredRevision = -1;
@@ -245,6 +246,7 @@ public partial class GraphCanvas : IAsyncDisposable
         if (disposed) return;
         if (module is null)
             module = await JavaScript.InvokeAsync<IJSObjectReference>("import", BrowserBuild.ModulePath("canvasDom.js"));
+        await LoadPinsAsync();
 
         // Node offsets are invariant under pan and zoom. Re-measure after a
         // committed graph edit, or explicitly before fitting measured bounds.
@@ -364,6 +366,11 @@ public partial class GraphCanvas : IAsyncDisposable
         {
             State.ClearSelection();
             pendingSource = null;
+            if (expandedNodeId is not null)
+            {
+                expandedNodeId = null;
+                visualizationGeometryGeneration++;
+            }
         }
         await BeginGesture(args, null, wire: false,
             backgroundTap: args.Button == 0 && !args.ShiftKey && !args.CtrlKey && !args.MetaKey && !args.AltKey);
@@ -374,6 +381,8 @@ public partial class GraphCanvas : IAsyncDisposable
         if (await TakeOverNavigationAsync(args) || args.Button is not (0 or 1)) return;
         if (args.Button == 0 && (args.PointerType != "touch" || !Snapshot.SelectedNodeIds.Contains(nodeId)))
             State.SelectNode(nodeId, args.ShiftKey || args.CtrlKey || args.MetaKey);
+        if (args.Button == 0 && !args.ShiftKey && !args.CtrlKey && !args.MetaKey)
+            TrackNodeTap(nodeId, args);
         pendingSource = null;
         await BeginGesture(args, args.Button == 0 ? nodeId : null, wire: false);
     }
@@ -411,6 +420,7 @@ public partial class GraphCanvas : IAsyncDisposable
         if (gesturePointer != args.PointerId) return;
         if (drawingWire && wirePanStopped) return;
         var current = new CanvasPoint(args.ClientX, args.ClientY);
+        TrackTapMovement(current);
         CheckTapMovement(current);
         var delta = current.Subtract(lastClientPoint);
         lastClientPoint = current;
@@ -511,6 +521,7 @@ public partial class GraphCanvas : IAsyncDisposable
         var originalGroup = groupStart;
         var group = groupPreview;
         var wasResizingGroup = resizingGroup;
+        FinishNodeTap();
         EndGesture();
         if (originalGroup is not null && group is not null)
         {
@@ -545,6 +556,8 @@ public partial class GraphCanvas : IAsyncDisposable
         ClearNavigationGesture();
         ClearTouchWire();
         gesturePointer = null;
+        pendingNodeTap = null;
+        nodeTapMoved = false;
         draggedNode = null;
         drawingWire = false;
         draftEnd = null;
@@ -642,6 +655,11 @@ public partial class GraphCanvas : IAsyncDisposable
         if (disposed || !ReferenceEquals(state, State) || measurement is null ||
             MeasuredNodeBounds(nodeId) is not { IsValid: true } bounds || measurement.Width <= 0 || measurement.Height <= 0) return;
         State.SelectNode(nodeId);
+        if (Snapshot.Graph.Nodes.Any(node => node.Id == nodeId && SupportsExpansion(node)))
+        {
+            expandedNodeId = nodeId;
+            visualizationGeometryGeneration++;
+        }
         State.FitToBounds(bounds, measurement.Width, measurement.Height, 32);
     }
 
@@ -726,6 +744,7 @@ public partial class GraphCanvas : IAsyncDisposable
         if (watcher is not null) await DisposeTouchWireWatcherAsync(watcher);
         touchWireReference?.Dispose();
         await DisposeContextAsync();
+        if (presentationModule is not null) await presentationModule.DisposeAsync();
         if (module is not null)
         {
             if (draftWarningActive) await module.InvokeVoidAsync("setAnnotationDraftWarning", false);
