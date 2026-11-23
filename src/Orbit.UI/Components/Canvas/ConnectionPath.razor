@@ -1,7 +1,7 @@
 @namespace Orbit.UI.Components.Canvas
 @using Microsoft.AspNetCore.Components.Web
 
-@* A wide transparent hit path and a visible Bézier path share identical geometry. *@
+@* A wide transparent hit path and the colored cable share identical geometry. Rigid sleeves overlay the same cable color. *@
 <g class="@WireClass">
     @if (Wire.Dormant)
     {
@@ -12,4 +12,5 @@
           @onpointerdown="Select" @onpointerdown:stopPropagation="true"
           @onclick="SelectClick" @onclick:stopPropagation="true" @onkeydown="SelectKey" />
     <path class="connection-line" d="@Wire.Path" />
+    <path class="connection-line connection-rigid" d="@Wire.RigidPath" />
 </g>

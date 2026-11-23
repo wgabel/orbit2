@@ -7,5 +7,6 @@ public partial class ConnectionLayer
 {
     [Parameter, EditorRequired] public IReadOnlyList<ConnectionVisual> Wires { get; set; } = Array.Empty<ConnectionVisual>();
     [Parameter] public string? DraftPath { get; set; }
+    [Parameter] public string? DraftRigidPath { get; set; }
     [Parameter] public EventCallback<Guid> OnSelect { get; set; }
 }

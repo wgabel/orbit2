@@ -23,7 +23,7 @@
                                   OnEdit="@(() => BeginGroupEditAsync(group))" OnDelete="@(() => NoteAction(() => State.DeleteGroup(group.Id)))"
                                   OnUpdate="@(updated => NoteAction(() => State.UpdateGroup(updated)))" />
             }
-            <ConnectionLayer Wires="@wires" DraftPath="@DraftPath" OnSelect="SelectConnection" />
+            <ConnectionLayer Wires="@wires" DraftPath="@DraftPath" DraftRigidPath="@DraftRigidPath" OnSelect="SelectConnection" />
             @foreach (var wire in wires.Where(ShowBadge))
             {
                 <ConnectionAmountBadge @key="wire.Id" Wire="@wire" Zoom="@Snapshot.Viewport.Zoom" OnSelect="SelectConnection"
