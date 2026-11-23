@@ -98,9 +98,8 @@
    panel cannot move socket centers or hide inactive controls. */
 .node-modulation-slot { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; align-content: start; }
 .node-compact-value {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     min-width: 0;
     gap: var(--semantic-space-tight);
     padding-inline-start: var(--component-node-port-gap);
@@ -108,6 +107,8 @@
     font-size: var(--semantic-typography-caption);
     font-variant-numeric: tabular-nums;
 }
+.node-compact-base { display: flex; align-items: center; flex-wrap: wrap; min-width: 0; gap: var(--semantic-space-tight); }
+.node-compact-live { display: flex; align-items: center; gap: var(--semantic-space-tight); min-width: 0; overflow: hidden; }
 .node-compact-value input {
     width: var(--component-slider-input-width);
     min-width: 0;
@@ -121,8 +122,8 @@
     touch-action: manipulation;
 }
 .node-compact-value input[aria-invalid="true"] { border-color: var(--semantic-color-error); }
-.node-compact-value .parameter-error { flex-basis: 100%; }
-.node-compact-effective { color: var(--component-slider-modulation-color); white-space: nowrap; }
+.node-compact-value .parameter-error { min-width: 0; }
+.node-compact-effective { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--component-slider-modulation-color); white-space: nowrap; }
 .node-compact-arrow, .node-compact-unit { color: var(--semantic-color-muted); }
 .node-unmapped-parameter { padding-inline-start: var(--component-node-padding); }
 .node-unmapped-parameter-label { color: var(--semantic-color-text); font-size: var(--semantic-typography-caption); }
