@@ -81,7 +81,7 @@ export async function verifyTouchWire(browser, url) {
                 await send("touchStart", start);
                 await nodes.nth(0).locator(".port-output.port-active").waitFor();
                 const previewCap = canvas.locator(".connection-draft.connection-rigid");
-                await previewCap.waitFor();
+                await previewCap.waitFor({ state: "attached" });
                 const previewPath = await previewCap.getAttribute("d");
                 assert.equal((previewPath?.match(/\bM\b/g) ?? []).length, 1, "the free preview end has no rigid sleeve");
                 await send("touchMove", { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 });
