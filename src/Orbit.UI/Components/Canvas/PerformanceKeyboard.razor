@@ -294,7 +294,7 @@
         {
             var notes = Enumerable.Range(0, StepCount).Select(StepCode).Where(n => n >= 1 && n <= 128).ToArray();
             var highest = notes.Length > 0 ? notes.Max() - 1 : Reference;
-            return Math.Clamp(highest + 2 + rollShift, 12, 127);
+            return Math.Clamp(highest + 1 + rollShift, 12, 127); // Include the lowest note of a one-octave melody.
         }
     }
     private int RollLow => RollHigh - 12;
