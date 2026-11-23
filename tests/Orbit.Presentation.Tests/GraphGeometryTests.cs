@@ -39,7 +39,7 @@ public sealed class GraphGeometryTests
     }
 
     [Fact]
-    public void PatchCableHasStraightRigidSleevesAndSoftSaggingMiddle()
+    public void PatchCableHasStraightRigidSleevesAndOneSoftSaggingCubic()
     {
         var source = new CanvasPoint(10, 60);
         var target = new CanvasPoint(310, 60);
@@ -51,16 +51,33 @@ public sealed class GraphGeometryTests
         Assert.Equal(target.X - PatchCable.MaximumRigidLength, cable.Entry.X);
         Assert.Equal(source.Y, cable.Exit.Y);
         Assert.Equal(target.Y, cable.Entry.Y);
-        Assert.Equal(cable.Exit, cable.First.Start);
-        Assert.Equal(cable.First.End, cable.Second.Start);
-        Assert.Equal(cable.Entry, cable.Second.End);
-        Assert.Equal(cable.First.Start.Y, cable.First.Control1.Y);
-        Assert.Equal(cable.Second.End.Y, cable.Second.Control2.Y);
-        Assert.Equal(cable.First.Control2.Y, cable.Second.Control1.Y);
-        Assert.Equal(cable.First.End.Y, cable.First.Control2.Y);
-        Assert.True(cable.At(0.5).Y > source.Y, "the flexible middle should hang below level ports");
+        Assert.Equal(cable.Exit, cable.Flexible.Start);
+        Assert.Equal(cable.Entry, cable.Flexible.End);
+        Assert.True(cable.Flexible.Control1.X > cable.Exit.X);
+        Assert.True(cable.Flexible.Control2.X < cable.Entry.X);
+        Assert.True(cable.Flexible.Control1.Y > cable.Exit.Y);
+        Assert.True(cable.Flexible.Control2.Y > cable.Entry.Y);
+        Assert.Equal(24, cable.At(0.5).Y - source.Y, 8);
+        Assert.Equal(cable.Flexible.At(0.5), cable.At(0.5));
         Assert.Equal(source, cable.At(0));
         Assert.Equal(target, cable.At(1));
+    }
+
+    [Fact]
+    public void LongCableSagsSmoothlyWithoutAnExplicitMiddleAnchor()
+    {
+        var cable = PatchCable.Between(new CanvasPoint(0, 100), new CanvasPoint(1400, 100));
+        var left = cable.At(0.49);
+        var center = cable.At(0.5);
+        var right = cable.At(0.51);
+
+        // The arc is one continuous cubic, with no junction at t = 0.5.
+        Assert.Equal(124, center.Y, 8);
+        Assert.True(left.Y < center.Y);
+        Assert.True(right.Y < center.Y);
+        Assert.Equal(center.Y - left.Y, center.Y - right.Y, 8);
+        Assert.Equal(cable.Exit, cable.Flexible.At(0));
+        Assert.Equal(cable.Entry, cable.Flexible.At(1));
     }
 
     [Theory]
