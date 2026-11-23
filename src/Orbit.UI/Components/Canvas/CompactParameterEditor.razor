@@ -1,0 +1,113 @@
+@namespace Orbit.UI.Components.Canvas
+@using System.Globalization
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using Orbit.Application.Graphs.Snapshots
+@using Orbit.Domain.Parameters
+
+@* Compact values use exactly the same validated parameter command as the expanded editor.
+   Live effective values are read-only and never written back as a base value. *@
+<div class="node-compact-parameter @(Active ? "" : "node-compact-inactive")" @onpointerdown:stopPropagation="true"
+     @onkeydown:stopPropagation="true">
+    @if (ShowLabel)
+    {
+        <label for="@inputId" title="@Parameter.Definition.Name">@Parameter.Definition.Name</label>
+    }
+    @if (Parameter.Definition.Choices is { } choices)
+    {
+        <select id="@inputId" aria-label="@Parameter.Definition.Name" value="@Format(Parameter.BaseValue)"
+                disabled="@(!Active)" @onchange="EditChoiceAsync">
+            @foreach (var choice in choices)
+            {
+                <option value="@Format(choice.Value)">@choice.Label</option>
+            }
+        </select>
+    }
+    else
+    {
+        <input id="@inputId" type="number" inputmode="decimal" aria-label="@Parameter.Definition.Name"
+               value="@draft" min="@Format(Parameter.Definition.Minimum)" max="@Format(Parameter.Definition.Maximum)"
+               step="any" disabled="@(!Active)" aria-invalid="@(error is not null)"
+               @onchange="EditNumberAsync" @onkeydown="HandleKeyDownAsync" />
+    }
+    @if (Modulated)
+    {
+        <span class="node-compact-live" aria-label="Live effective value" title="Live effective value after modulation">
+            → @(EffectiveValue is double live && double.IsFinite(live) ? Format(live) : "—")
+        </span>
+    }
+    @if (error is not null)
+    {
+        <span class="node-compact-error" role="alert">@error</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ParameterSnapshot Parameter { get; set; } = default!;
+    [Parameter] public bool Active { get; set; } = true;
+    [Parameter] public bool ShowLabel { get; set; }
+    [Parameter] public bool Modulated { get; set; }
+    [Parameter] public double? EffectiveValue { get; set; }
+    [Parameter] public EventCallback<double> ValueChanged { get; set; }
+
+    private readonly string inputId = $"compact-parameter-{Guid.NewGuid():N}";
+    private double? lastBase;
+    private string draft = "";
+    private string? error;
+
+    protected override void OnParametersSet()
+    {
+        // Do not discard a temporary invalid draft during an unrelated telemetry render.
+        if (lastBase != Parameter.BaseValue)
+        {
+            lastBase = Parameter.BaseValue;
+            draft = Format(Parameter.BaseValue);
+            error = null;
+        }
+    }
+
+    private static string Format(double value) => value.ToString("G", CultureInfo.InvariantCulture);
+
+    private async Task EditChoiceAsync(ChangeEventArgs args)
+    {
+        if (!TryValidate(args.Value?.ToString(), out var value)) return;
+        await CommitAsync(value);
+    }
+
+    private async Task EditNumberAsync(ChangeEventArgs args)
+    {
+        draft = args.Value?.ToString() ?? "";
+        if (!TryValidate(draft, out var value)) return;
+        await CommitAsync(value);
+    }
+
+    private bool TryValidate(string? input, out double value)
+    {
+        if (!double.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture, out value) ||
+            !double.IsFinite(value) || !Parameter.Definition.IsValidBaseValue(value))
+        {
+            error = $"Enter a value from {Format(Parameter.Definition.Minimum)} to {Format(Parameter.Definition.Maximum)}.";
+            return false;
+        }
+        error = null;
+        return true;
+    }
+
+    private async Task CommitAsync(double value)
+    {
+        if (Parameter.BaseValue == value) return;
+        lastBase = value;
+        draft = Format(value);
+        await ValueChanged.InvokeAsync(value);
+    }
+
+    private Task HandleKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+        {
+            draft = Format(Parameter.BaseValue);
+            error = null;
+        }
+        return Task.CompletedTask;
+    }
+}
