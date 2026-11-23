@@ -207,6 +207,7 @@ public partial class GraphCanvas : IAsyncDisposable
         finderTarget = "";
         selectionPanelOpen = marqueeMode = false;
         contextMenu = positionedContext = null;
+        helpNodeId = positionedHelpId = null;
         selectionCandidate = "";
         previousSecondaryDetail = Snapshot.ShowSecondaryAnnotations;
         previousSelectedNodes = Snapshot.SelectedNodeIds;
@@ -217,6 +218,8 @@ public partial class GraphCanvas : IAsyncDisposable
         {
             if (contextMenu is { } openContext && !ReferenceEquals(openContext.Snapshot, change.Snapshot))
                 contextMenu = positionedContext = null;
+            if (helpNodeId is Guid openHelp && change.Snapshot.Graph.Nodes.All(node => node.Id != openHelp))
+                helpNodeId = positionedHelpId = null;
             if (change.Kind is CanvasChangeKind.VisualizationChanged or CanvasChangeKind.DescriptionsChanged) visualizationGeometryGeneration++;
             if (previousSecondaryDetail != change.Snapshot.ShowSecondaryAnnotations ||
                 (!change.Snapshot.ShowSecondaryAnnotations && !previousSelectedNodes.SequenceEqual(change.Snapshot.SelectedNodeIds)))
@@ -260,6 +263,7 @@ public partial class GraphCanvas : IAsyncDisposable
         }
         await ApplyOutlineFocusAsync();
         await RenderContextAsync();
+        await RenderNodeHelpAsync();
         await RefreshPannedWireAfterRenderAsync();
     }
 
@@ -726,6 +730,7 @@ public partial class GraphCanvas : IAsyncDisposable
         if (watcher is not null) await DisposeTouchWireWatcherAsync(watcher);
         touchWireReference?.Dispose();
         await DisposeContextAsync();
+        await DisposeNodeHelpAsync();
         if (module is not null)
         {
             if (draftWarningActive) await module.InvokeVoidAsync("setAnnotationDraftWarning", false);
