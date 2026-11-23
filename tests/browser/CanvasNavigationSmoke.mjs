@@ -109,6 +109,56 @@ async function verifyManualCompactShell(page, touch) {
     assert.deepEqual(await anchors(), before, "Reopening must not move connector anchors");
 }
 
+async function verifyCompactModulationValueEdit(page, touch) {
+    // The default patch contains an oscillator with an editable Frequency socket.
+    // Exercise the real command path, not only the numeric field's local draft.
+    const node = canvas(page).locator("article.node-compactable:has(.node-compact-value)").first();
+    const toggle = node.locator(".node-expand-toggle");
+    const base = node.locator(".node-compact-value input[type='number']").first();
+    await base.waitFor();
+    const anchors = () => node.evaluate(element => {
+        const rect = element.getBoundingClientRect();
+        return [...element.querySelectorAll("[data-port-id]")].map(port => {
+            const bounds = port.getBoundingClientRect();
+            return [port.dataset.portId, Math.round((bounds.left + bounds.width / 2 - rect.left) * 10) / 10,
+                Math.round((bounds.top + bounds.height / 2 - rect.top) * 10) / 10];
+        });
+    });
+    const startAnchors = await anchors();
+    const original = Number(await base.inputValue());
+    const min = Number(await base.getAttribute("min"));
+    const max = Number(await base.getAttribute("max"));
+    assert.ok(Number.isFinite(original) && Number.isFinite(min) && Number.isFinite(max) && max > min);
+    const candidate = original === min ? max : min;
+
+    if (touch) await toggle.tap();
+    else await toggle.click();
+    await node.locator('.node-expand-toggle[aria-expanded="false"]').waitFor();
+    assert.equal(await base.isVisible(), true, "Compact values must survive detail collapse");
+    await base.fill(String(candidate));
+    await base.press("Enter");
+    await node.locator('.node-compact-value input[aria-invalid="false"]').first().waitFor();
+    assert.equal(Number(await base.inputValue()), candidate);
+    assert.equal(await toggle.getAttribute("aria-expanded"), "false", "Inline edits must not expand the node");
+    assert.deepEqual(await anchors(), startAnchors, "Editing the base value must not move sockets");
+
+    const invalid = max + Math.max(1, Math.abs(max));
+    await base.fill(String(invalid));
+    await base.press("Enter");
+    assert.equal(await base.getAttribute("aria-invalid"), "true");
+    await base.press("Escape");
+    assert.equal(Number(await base.inputValue()), candidate);
+    assert.equal(await base.getAttribute("aria-invalid"), "false");
+
+    if (touch) await toggle.tap();
+    else await toggle.click();
+    await node.locator('.node-expand-toggle[aria-expanded="true"]').waitFor();
+    assert.deepEqual(await anchors(), startAnchors, "Opening details must not move sockets");
+    assert.ok(await node.locator(".node-parameters input[type='number']").evaluateAll(
+        (inputs, expected) => inputs.some(input => Number(input.value) === expected), candidate
+    ), "The full parameter editor must display the compact edit's committed base value");
+}
+
 async function verifyCoveredNodePinch(page) {
     // Focus a parameter-rich node, then zoom around the viewport centre until
     // there is no exposed background to start a navigation gesture on.
@@ -168,6 +218,7 @@ export async function verifyCanvasNavigation(browser, url) {
         await canvas(desktop).locator("article[data-node-id]").nth(3).waitFor();
         await fitCanvas(desktop);
         await verifyManualCompactShell(desktop, false);
+        await verifyCompactModulationValueEdit(desktop, false);
         const fitted = await currentViewport(desktop);
         const [point] = await emptyPoints(desktop);
         await desktop.mouse.move(point.x, point.y);
@@ -187,6 +238,7 @@ export async function verifyCanvasNavigation(browser, url) {
             await canvas(page).locator("article[data-node-id]").nth(3).waitFor();
             await fitCanvas(page);
             await verifyManualCompactShell(page, true);
+            await verifyCompactModulationValueEdit(page, true);
             const fitted = await currentViewport(page);
             const positions = () => canvas(page).locator("article[data-node-id]").evaluateAll(nodes =>
                 nodes.map(node => [node.dataset.nodeId, node.getAttribute("style")]));
