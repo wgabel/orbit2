@@ -44,10 +44,7 @@ public static class FaustAdditionalPhysicalInstruments
             f = 440.0*pow(2.0,max(-21.0,min(15.0,({{pitch}}):ba.sAndH(event|first)))/12.0);
             pluckPos = max(0.05,min(0.95,({{position}}):ba.sAndH(event|first)));
             strikeVelocity = max(0.0,min(1.0,({{strength}}):ba.sAndH(event)));
-            count = max(1,int(0.006*ma.SR));
-            phase = float(ba.countup(count,event))/count;
-            strike = no.noise * 0.12 * strikeVelocity * sin(ma.PI*phase) * (phase<1.0);
-            raw = pm.elecGuitarModel(340.0/f,pluckPos,max(0.6,min(1.0,{{mute}})),strike) : fi.dcblocker;
+            raw = pm.elecGuitar(340.0/f,pluckPos,max(0.95,min(1.0,{{mute}})),strikeVelocity,event) : fi.dcblocker;
         }
         """;
 }
