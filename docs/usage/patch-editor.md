@@ -38,10 +38,12 @@ On Android or another touchscreen, touch and hold for about half a second. On de
 | Hold or right-click | Available actions (when applicable) |
 | --- | --- |
 | Empty canvas | Add node/note, create visual group, marquee select, select all module nodes, undo/redo and annotation history |
-| Node header or noninteractive surface | Mute/bypass, show/hide plot, scope, presets, describe/rename, focus, open/ungroup composite, rack ports, grouping and delete |
+| Node header or noninteractive surface | Duplicate node, mute/bypass, show/hide plot, scope, presets, describe/rename, focus, open/ungroup composite, rack ports, grouping and delete |
 | Selected nodes | Create composite or visual group, delete selection, clear selection |
 | Cable or amount badge | Edit amount, describe, focus either endpoint, delete connection |
 | Note or visual group header/marker | Edit, delete; notes also allow collapse/expand, duplicate and visual grouping |
+
+**Duplicate a node ([PR #89](https://github.com/wgabel/orbit2/pull/89), in review):** right-click its header (or touch and hold it), then choose **Duplicate node**. The new node is selected and placed 320 canvas units right and 32 down from the original; move it as desired. Its type, parameter values, mute/bypass settings, description/alias and plot preference are copied. Composites also copy their contained nodes, connections and boundary ports with new IDs; connections outside the composite are not copied. Connect the duplicate yourself. Master output and child input/output racks cannot be duplicated. Undo removes the copied graph node in one step. This works on root and nested canvases; multi-selections use selection actions instead.
 
 Regular buttons, port sockets, parameter inputs, plots and note body text keep their current interactions. The menu supplements the existing controls for now; composite creation still uses its name and boundary-preview workflow. Add node opens the Node Library and uses its existing placement behavior.
 
