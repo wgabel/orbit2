@@ -18,6 +18,7 @@
 .connection-path .connection-rigid, .connection-rigid.connection-draft { stroke-width: var(--component-connection-rigid-width); }
 .connection-selected .connection-rigid { stroke-width: var(--component-connection-rigid-selected-width); }
 .connection-draft { stroke: var(--semantic-color-selected); stroke-dasharray: var(--component-connection-draft-dash); }
+.connection-rigid.connection-draft { stroke-dasharray: none; }
 
 /* Badge lives above its wire but below later-painted node frames; inverse scaling keeps text readable. */
 .connection-amount-badge {

@@ -37,6 +37,16 @@ export async function verifyTouchWire(browser, url) {
                     return hit?.closest(".port-connector") === marker.closest(".port-connector");
                 }) && viewport.querySelectorAll(".connection-hit").length === 3;
             });
+            // A committed cable has two integrated, thicker rigid ends.
+            // Verify the rendered SVG and token widths, not only presentation math.
+            const committedCaps = canvas.locator(".connection-path .connection-rigid");
+            assert.equal(await committedCaps.count(), 3);
+            const capPath = await committedCaps.first().getAttribute("d");
+            assert.equal((capPath?.match(/\\bM\\b/g) ?? []).length, 2);
+            assert.equal((capPath?.match(/\\bL\\b/g) ?? []).length, 2);
+            assert.equal(await committedCaps.first().evaluate(element => getComputedStyle(element).strokeWidth), "5px");
+            assert.equal(await canvas.locator(".connection-path .connection-line:not(.connection-rigid)").first()
+                .evaluate(element => getComputedStyle(element).strokeWidth), "3px");
             const center = async locator => {
                 const rect = await locator.boundingBox();
                 assert.ok(rect);
@@ -70,6 +80,10 @@ export async function verifyTouchWire(browser, url) {
             async function aim() {
                 await send("touchStart", start);
                 await nodes.nth(0).locator(".port-output.port-active").waitFor();
+                const previewCap = canvas.locator(".connection-draft.connection-rigid");
+                await previewCap.waitFor();
+                const previewPath = await previewCap.getAttribute("d");
+                assert.equal((previewPath?.match(/\\bM\\b/g) ?? []).length, 1, "the free preview end has no rigid sleeve");
                 await send("touchMove", { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 });
                 await send("touchMove", end);
                 await label.filter({ hasText: /→ Amplitude/ }).waitFor();
@@ -110,6 +124,7 @@ export async function verifyTouchWire(browser, url) {
             await send("touchEnd");
             await label.waitFor({ state: "detached" });
             await page.waitForFunction(() => document.querySelectorAll(".canvas-viewport .connection-hit").length === 4);
+            assert.equal(await committedCaps.count(), 4, "the connected cable gets two rigid sleeves");
             assert.ok((await canvas.locator(".connection-amount-badge").all()).length === 4);
             assert.ok((await canvas.locator(".connection-amount-badge").evaluateAll(badges =>
                 badges.some(badge => badge.getAttribute("aria-label").includes("Amplitude")))));
