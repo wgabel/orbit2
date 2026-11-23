@@ -181,20 +181,37 @@ async function verifyCompactModulationValueEdit(page, touch) {
 async function verifyCoveredNodePinch(page) {
     // Focus a parameter-rich node, then zoom around the viewport centre until
     // there is no exposed background to start a navigation gesture on.
-    const id = await canvas(page).locator('article[data-node-id]').evaluateAll(nodes => {
-        const viewport = document.querySelector('.canvas-viewport').getBoundingClientRect();
-        // An instrument with many persistent modulation rows can be so tall
-        // that all its sliders sit outside the 400% viewport. Select the
-        // smallest parameter-rich node that will still fully cover that view.
-        const eligible = nodes.filter(node => node.querySelector('input[type="range"]') &&
-            node.offsetWidth * 4 > viewport.width + 2 && node.offsetHeight * 4 > viewport.height + 2);
-        if (!eligible.length) throw new Error("No node can cover the viewport at 400% with a slider");
-        return eligible.sort((a, b) => a.offsetHeight - b.offsetHeight)[0].dataset.nodeId;
-    });
+    const id = await canvas(page).locator('article[data-node-id]').evaluateAll(nodes => nodes
+        .filter(node => node.querySelector('input[type="range"]'))
+        .sort((a, b) => b.offsetHeight - a.offsetHeight)[0].dataset.nodeId);
     const node = canvas(page).locator(`[data-node-id="${id}"]`);
     await node.locator('.node-alias').click({ button: 'right' });
     await page.locator('.canvas-context-menu').getByRole('button', { name: 'Focus node', exact: true }).click();
-    for (let i = 0; i < 20 && (await currentViewport(page)).zoom < 4; i++) await zoomStep(page, 1);
+
+    // Zoom around a REAL range control, not the viewport center: on large
+    // nodes, persistent compact rows push all sliders far below that center.
+    // The test still asserts that the node covers the viewport at 400% and
+    // then starts a genuine two-finger gesture on that slider.
+    const anchor = await node.evaluate(element => {
+        const viewport = element.closest('.canvas-viewport').getBoundingClientRect();
+        const bounds = element.getBoundingClientRect();
+        const visible = [...element.querySelectorAll('input[type="range"]')]
+            .map(slider => slider.getBoundingClientRect())
+            .filter(rect => rect.top >= viewport.top && rect.bottom <= viewport.bottom);
+        if (!visible.length) throw new Error('Focus node did not expose a slider for anchored zoom');
+        const center = bounds.top + bounds.height / 2;
+        const rect = visible.sort((a, b) =>
+            Math.abs(a.top + a.height / 2 - center) - Math.abs(b.top + b.height / 2 - center))[0];
+        return { x: (rect.left + rect.right) / 2, y: (rect.top + rect.bottom) / 2 };
+    });
+    await page.mouse.move(anchor.x, anchor.y);
+    for (let i = 0; i < 12; i++) {
+        const current = (await currentViewport(page)).zoom;
+        if (current >= 4 - 1e-5) break;
+        const next = Math.min(4, current * 1.8);
+        await page.mouse.wheel(0, -Math.log(next / current) / 0.0015);
+        await waitZoom(page, next);
+    }
     await waitZoom(page, 4);
     const target = await node.evaluate(node => {
         const viewport = node.closest('.canvas-viewport').getBoundingClientRect();
