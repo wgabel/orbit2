@@ -37,64 +37,8 @@ function pitchEstimate(y,rate,expected,start,end){
 }
 for(const [kind,sustained] of [['violin',true],['brass',true],['electric-guitar',false]]){
     const fixture=JSON.parse(await readFile(join(dir,'generator.physical-'+kind+'.json'),'utf8'));
-    if(kind==='violin') {
-        const forms=[
-            ['constant','pm.violinModel(0.8,0.5,0.6,0.7)'],
-            ['length','pm.violinModel(pm.f2l(440),0.5,0.6,0.7)'],
-            ['dynamic','pm.violinModel(pm.f2l(f),0.5,0.6,0.7) with {f=440;}'],
-            ['expression','pm.violinModel(pm.f2l(440),0.5,vel,0.7) with {vel=0.1+0.5*e;}']
-        ];
-        for(const [label,expression] of forms){
-            try {
-                const snippet='import("stdfaust.lib"); process(e) = '+expression+';';
-                const factory=await compiler.createMonoDSPFactory('violin_diagnostic_'+label,snippet,'-single');
-                console.log('violin minimal',label,'COMPILED',Boolean(factory));
-            }catch(error){console.log('violin minimal',label,'FAILED',String(error));}
-        }
-    }
-    // Narrow down which dynamic parameter(s) produce an unguarded feedback dependency.
-    const diagnosticExpressions={
-        violin:[
-            ['all-fixed','pm.violinModel(0.8,0.5,0.6,0.7)'],
-            ['length-only','pm.violinModel(340.0/f,0.5,0.6,0.7) with {f=440.0*pow(2.0,p/12.0);}'],
-            ['pressure-only','pm.violinModel(0.8,c,0.6,0.7)'],
-            ['speed-only','pm.violinModel(0.8,0.5,v,0.7)'],
-            ['position-only','pm.violinModel(0.8,0.5,0.6,b)'],
-            ['all-dynamic','pm.violinModel(340.0/f,c,v,b) with {f=440.0*pow(2.0,p/12.0);}'],
-            ['post-filter','pm.violinModel(0.8,0.5,0.6,0.7):fi.dcblocker']
-        ],
-        brass:[
-            ['all-fixed','pm.brassModel(0.8,0.5,0.5,0.6)'],
-            ['length-only','pm.brassModel(340.0/f,0.5,0.5,0.6) with {f=440.0*pow(2.0,p/12.0);}'],
-            ['tension-only','pm.brassModel(0.8,c,0.5,0.6)'],
-            ['mute-only','pm.brassModel(0.8,0.5,b,0.6)'],
-            ['pressure-only','pm.brassModel(0.8,0.5,0.5,v)'],
-            ['all-dynamic','pm.brassModel(340.0/f,c,b,v) with {f=440.0*pow(2.0,p/12.0);}']
-        ],
-        'electric-guitar':[
-            ['all-fixed','pm.elecGuitarModel(0.8,0.35,0.96,0.0)'],
-            ['length-only','pm.elecGuitarModel(340.0/f,0.35,0.96,0.0) with {f=440.0*pow(2.0,p/12.0);}'],
-            ['position-only','pm.elecGuitarModel(0.8,b,0.96,0.0)'],
-            ['mute-only','pm.elecGuitarModel(0.8,0.35,c,0.0)'],
-            ['excitation-only','pm.elecGuitarModel(0.8,0.35,0.96,v)'],
-            ['all-dynamic','pm.elecGuitarModel(340.0/f,b,c,v) with {f=440.0*pow(2.0,p/12.0);}']
-        ]
-    };
-    for(const [name,expression] of diagnosticExpressions[kind]){
-        try{
-            const f=await compiler.createMonoDSPFactory('check_'+kind.replaceAll('-','_')+'_'+name.replaceAll('-','_'),
-                'import("stdfaust.lib"); process(p,c,v,b) = '+expression+';','-single');
-            console.log('diagnostic',kind,name,'COMPILED',Boolean(f));
-        }catch(error){console.log('diagnostic',kind,name,'FAILED',String(error).split('\n')[0]);}
-    }
-    let direct,graph;
-    try{
-        direct=await compiler.createMonoDSPFactory('phys_'+kind.replaceAll('-','_'),fixture.direct,'-single');
-        graph=await compiler.createMonoDSPFactory('graph_'+kind.replaceAll('-','_'),fixture.source,'-single');
-    }catch(error){
-        test(kind+' native model and graph compilation',()=>{throw error;});
-        continue;
-    }
+    const direct=await compiler.createMonoDSPFactory('phys_'+kind.replaceAll('-','_'),fixture.direct,'-single');
+    const graph=await compiler.createMonoDSPFactory('graph_'+kind.replaceAll('-','_'),fixture.source,'-single');
     for(const rate of [44100,48000]){
         test(kind+' direct note, safety, tuning diagnostics @'+rate,async()=>{
             const duration=2.5, n=count(rate,duration), first=count(rate,.1), last=count(rate,1.4);
