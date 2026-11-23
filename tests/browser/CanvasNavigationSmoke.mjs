@@ -157,6 +157,25 @@ async function verifyCompactModulationValueEdit(page, touch) {
     assert.ok(await node.locator(".node-parameters input[type='number']").evaluateAll(
         (inputs, expected) => inputs.some(input => Number(input.value) === expected), candidate
     ), "The full parameter editor must display the compact edit's committed base value");
+
+    // Native compact edits must share graph undo/redo, not a presentation-only copy.
+    const editPanel = page.locator('[data-mobile-trigger="edit"]');
+    const history = async action => {
+        await editPanel.click();
+        await page.locator('.workspace-edit-tools').getByRole('button', { name: action, exact: true }).click();
+        if (await page.locator('.graph-workspace').getAttribute('data-mobile-active-panel') === 'edit')
+            await editPanel.click();
+    };
+    await history("Undo");
+    await page.waitForFunction(({ id, expected }) => {
+        const node = document.querySelector(`article[data-node-id="${id}"]`);
+        return node && Number(node.querySelector('.node-compact-value input').value) === expected;
+    }, { id: await node.getAttribute("data-node-id"), expected: original });
+    await history("Redo");
+    await page.waitForFunction(({ id, expected }) => {
+        const node = document.querySelector(`article[data-node-id="${id}"]`);
+        return node && Number(node.querySelector('.node-compact-value input').value) === expected;
+    }, { id: await node.getAttribute("data-node-id"), expected: candidate });
 }
 
 async function verifyCoveredNodePinch(page) {
