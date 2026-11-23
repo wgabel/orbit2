@@ -336,9 +336,19 @@ export function focusNodeHelpTrigger(viewport, nodeId) {
 
 // Modal help is an ordinary local DOM overlay. Trap Tab, leaving Escape/Close
 // and all graph commands under their established C# event ownership.
-export function trapNodeHelpFocus(viewport) {
+export function trapNodeHelpFocus(viewport, receiver) {
     const panel = viewport.querySelector(".node-help-panel");
     if (!panel) return { dispose() {} };
+    const mobile = matchMedia("(max-width: 768px), (max-height: 480px) and (pointer: coarse)");
+    const marker = "orbitNodeHelp";
+    const token = crypto.randomUUID?.() ?? String(Math.random());
+    const ownsEntry = () => history.state?.[marker] === token;
+    let backClosing = false;
+    if (mobile.matches) {
+        try { history.pushState({ ...history.state, [marker]: token }, ""); }
+        catch { /* Close/Escape remain available if history is restricted. */ }
+    }
+
     function onKey(event) {
         if (event.key !== "Tab") return;
         const controls = [...panel.querySelectorAll("button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])")];
@@ -352,6 +362,19 @@ export function trapNodeHelpFocus(viewport) {
             first.focus({ preventScroll: true });
         }
     }
+    function onBack() {
+        if (!mobile.matches || ownsEntry()) return;
+        backClosing = true;
+        void receiver.invokeMethodAsync("DismissNodeHelpFromBackAsync").catch(() => {});
+    }
     panel.addEventListener("keydown", onKey, true);
-    return { dispose() { panel.removeEventListener("keydown", onKey, true); } };
+    window.addEventListener("popstate", onBack);
+    return {
+        dispose() {
+            panel.removeEventListener("keydown", onKey, true);
+            window.removeEventListener("popstate", onBack);
+            // Explicit Close/Escape consumes our transient entry, not the preceding page.
+            if (!backClosing && ownsEntry()) history.back();
+        }
+    };
 }
