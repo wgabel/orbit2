@@ -1532,7 +1532,7 @@ try {
     await steps.locator('[data-step="2"][aria-pressed="true"]').waitFor();
     await pattern.getByRole("combobox", { name: "Selected step note" }).selectOption("70");
     await pattern.getByRole("combobox", { name: "Pattern playback" }).selectOption("1");
-    await responseStatus.filter({ hasText: /^Playing revision \\d+$/ }).waitFor({ timeout: 30000 });
+    await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
     await clickWorkspaceTool(responsePage, "transport", "Reset transport");
     await pattern.locator('[data-sequence-playhead="1"]').waitFor();
     await performance.locator('[data-live-pitch-offset="12"]').waitFor();
@@ -1556,14 +1556,14 @@ try {
     await pattern.getByRole("button", { name: "Record", exact: true }).click();
     await recording.getByRole("button", { name: "Commit take" }).click();
     await recording.getByText("Take committed.", { exact: true }).waitFor();
-    await responseStatus.filter({ hasText: /^Playing revision \\d+$/, hasNotText: takeRevision }).waitFor();
+    await responseStatus.filter({ hasText: /^Playing revision \d+$/, hasNotText: takeRevision }).waitFor();
     await pattern.getByRole("button", { name: "Edit notes", exact: true }).click();
     await editButton(responsePage, "Undo").click();
     await steps.getByRole("button", { name: "Select step 1: A5", exact: true }).waitFor();
     await steps.getByRole("button", { name: "Select step 2: A4", exact: true }).waitFor();
     await editButton(responsePage, "Redo").click();
     await steps.getByRole("button", { name: "Select step 1: C5", exact: true }).waitFor();
-    await responseStatus.filter({ hasText: /^Playing revision \\d+$/ }).waitFor();
+    await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor();
     const cancelRevision = await responseStatus.innerText();
     await pattern.getByRole("button", { name: "Record", exact: true }).click();
     await recording.getByRole("combobox", { name: "Take mode" }).selectOption("1");
