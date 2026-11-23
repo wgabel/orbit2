@@ -201,10 +201,12 @@
       "layer": "2"
     },
     "connection": {
-      "width": "2px",
+      "width": "3px",
       "hit-width": "12px",
       "touch-hit-width": "24px",
-      "selected-width": "3px",
+      "selected-width": "4px",
+      "rigid-width": "5px",
+      "rigid-selected-width": "6px",
       "draft-dash": "6px",
       "badge-max-width": "12rem",
       "label-select-max-width": "7rem",

@@ -7,14 +7,19 @@
     .connection-hit { stroke-width: var(--component-connection-touch-hit-width); vector-effect: non-scaling-stroke; touch-action: none; }
 }
 .connection-hit:focus-visible { stroke: var(--semantic-color-selected); stroke-opacity: var(--semantic-opacity-disabled); }
-.connection-line { fill: none; stroke: var(--semantic-color-routing); stroke-width: var(--component-connection-width); stroke-linecap: round; vector-effect: non-scaling-stroke; pointer-events: none; }
-.connection-audio .connection-line { stroke: var(--semantic-color-generator); }
-.connection-modulation .connection-line { stroke: var(--semantic-color-modulation); }
-.connection-trigger .connection-line { stroke: var(--semantic-color-processor); }
-.connection-gate .connection-line { stroke: var(--semantic-color-composite); }
-.connection-dormant .connection-line { stroke: var(--semantic-color-muted); stroke-dasharray: var(--component-connection-draft-dash); }
+.connection-line, .connection-rigid { fill: none; stroke: var(--semantic-color-routing); stroke-linecap: round; vector-effect: non-scaling-stroke; pointer-events: none; }
+.connection-line { stroke-width: var(--component-connection-width); }
+.connection-rigid { stroke-width: var(--component-connection-rigid-width); }
+.connection-audio .connection-line, .connection-audio .connection-rigid { stroke: var(--semantic-color-generator); }
+.connection-modulation .connection-line, .connection-modulation .connection-rigid { stroke: var(--semantic-color-modulation); }
+.connection-trigger .connection-line, .connection-trigger .connection-rigid { stroke: var(--semantic-color-processor); }
+.connection-gate .connection-line, .connection-gate .connection-rigid { stroke: var(--semantic-color-composite); }
+.connection-dormant .connection-line, .connection-dormant .connection-rigid { stroke: var(--semantic-color-muted); stroke-dasharray: var(--component-connection-draft-dash); }
 .connection-selected .connection-line { stroke: var(--semantic-color-selected); stroke-width: var(--component-connection-selected-width); }
+/* Separate class preserves one .connection-line per wire for existing editor selectors. */
+.connection-selected .connection-rigid { stroke: var(--semantic-color-selected); stroke-width: var(--component-connection-rigid-selected-width); }
 .connection-draft { stroke: var(--semantic-color-selected); stroke-dasharray: var(--component-connection-draft-dash); }
+.connection-rigid.connection-draft { stroke-dasharray: none; }
 
 /* Badge lives above its wire but below later-painted node frames; inverse scaling keeps text readable. */
 .connection-amount-badge {
@@ -52,7 +57,7 @@
     font-size: var(--semantic-typography-caption);
 }
 .connection-label-control select { max-width: var(--component-connection-label-select-max-width); }
-.connection-path.connection-zero .connection-line { opacity: var(--semantic-opacity-disabled); }
+.connection-path.connection-zero .connection-line, .connection-path.connection-zero .connection-rigid { opacity: var(--semantic-opacity-disabled); }
 
 /* Only the editor floats above nodes; the badge stays in the world transform. */
 .connection-amount-editor {

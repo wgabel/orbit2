@@ -4,6 +4,12 @@
 
 Related: [canvas](canvas.md) · [design system](design-system.md) · [commands and events](../core/commands-and-events.md) · [persistence and history](persistence-and-history.md).
 
+### Flexible patch-cable appearance (in review, [PR #90](https://github.com/wgabel/orbit2/pull/90))
+
+The shared connection geometry now has a short **rigid section** extending right from the output marker and left into the input marker (maximum 20 world units, reduced when ports are close), followed by a **soft, gently sagging cable** rendered as two smoothly joined cubic Bézier spans. Rigid sections are **thicker parts of the same colored cable**—not metallic or separate jack hardware. Normal wires use 3 px strokes and 5 px sleeves; selected wires use 4 px strokes and 6 px sleeves. The source sleeve is also shown during a drag; the unconnected free end is not thickened.
+
+`PatchCable.Between` owns world-space geometry for root and nested canvases. Both SVG wire and transparent hit path use the same centerline; selection, dormant/zero styles, wire colors, endpoint snapping, canvas pan/zoom and DSP graph are unchanged. Amount badges use the flexible midpoint, so they stay attached to the revised shape. The existing 12 px mouse and 24 px touch hit strokes remain independently sized. Validation: `GraphGeometryTests` covers horizontal tangency, positive sag, forward short gaps, backward/vertical and coincident anchors. See [PR #90](https://github.com/wgabel/orbit2/pull/90).
+
 <a id="patch-documentation-and-canvas-annotations-planned-phase-619"></a>
 
 ### Patch documentation and canvas annotations
