@@ -55,6 +55,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 
 | Task | Suggested starting points |
 |---|---|
+| New code, bug fix, refactoring or code review | [Coding standards and implementation quality](docs/quality/coding-standards.md), [testing](docs/quality/testing.md), and the relevant feature contract |
 | New node, connection or parameter | [Graph model](docs/core/graph-model.md), [signals/ports](docs/core/signals-and-ports.md), [modulation](docs/core/parameters-and-modulation.md), [DSP](docs/audio/dsp-engine.md) |
 | Stereo routing, panning, oscillator unison | [Stereo audio, panning and oscillator unison](docs/audio/stereo-panning-and-unison.md) — planned Phase 7.5; prioritize the Phase 7.3 performance baseline first |
 | Playback, clicking, latency | [DSP engine](docs/audio/dsp-engine.md), [performance index](performance.md), [transport](docs/audio/transport-and-timing.md) |
@@ -141,6 +142,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 
 **Quality and delivery**
 
+- [coding standards and implementation quality](docs/quality/coding-standards.md)
 - <a id="14-testing-and-acceptance-criteria"></a>[testing](docs/quality/testing.md)
 - [performance](performance.md)
 - <a id="13-implementation-roadmap"></a><a id="roadmap-at-a-glance"></a><a id="reading-guide-and-current-implementation"></a>[ROADMAP](ROADMAP.md)

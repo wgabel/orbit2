@@ -4,6 +4,10 @@
 
 Ambient does not require a static drone, an absence of melody, or relaxation. Its architecture often emphasizes sustained environments, musical negative space, slow shifts in attention, and the interaction of short events with long tails. A motif, changing harmonies, rhythmic undercurrent, and occasional intense accents can give a piece direction without turning it into dance music. Choose a few distinct foreground/background roles rather than filling every register with sustained voices.
 
+## Instrument choices that preserve space
+
+For an original ambient arrangement, audition one **gated Physical Flute or Clarinet** as a sparse sustained melody, **triggered Physical Pluck or Marimba** for isolated notes with natural ringing, or a **Drawbar Organ** with optional mono **Rotary Speaker** for harmonic motion. A slow **Physical Brass** swell can be a contrasting event; **Physical Violin is experimental** and must be checked for register jumps before relying on a pitch-specific phrase. Multiple independent instances are needed for chords; a single physical node does not voice several notes simultaneously. Keep quiet dry space and test the effect of long tails against the intended silence. These are choices, not requirements or proven acoustic replicas. Use the [selection matrix](../instrument-recipes.md#choose-an-instrument-for-the-musical-role) and [Gate/Trigger wiring](../../usage/sound-and-instruments.md#faust-instrument-nodes).
+
 ## Ambient families
 
 | Style | Typical pulse and materials | Construction and evolution |

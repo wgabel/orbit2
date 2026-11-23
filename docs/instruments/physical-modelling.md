@@ -63,7 +63,7 @@ All four expose typed Trigger (accepts Clock), Pitch (st), Strength offset and E
 
 Graph tests verify independent instances, typed clock routing, mode tuning, editable state and JSON round trips. Compiled Faust/WASM tests at 44.1/48 kHz exercise manual strikes, silence before excitation, repeated hits, decay, strength scaling, actual spectral ring plus octave tracking of every mode, external audio and finite output. Default tested strike peaks span about .043–.150 of full scale; these are conservative synthetic starting points, not measured acoustic models or listening-validated timbres. Use the existing scope/spectrum on individual modes or summed output to inspect the ring.
 
-### Phase 7.2.6b — Playable modal instruments (in review)
+### Phase 7.2.6b — Playable modal instruments (implemented)
 
 Implementation: [PR #46](https://github.com/wgabel/orbit2/pull/46).
 

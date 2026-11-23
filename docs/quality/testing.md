@@ -2,7 +2,7 @@
 
 [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
 
-Related: [graph model](../core/graph-model.md) · [dsp engine](../audio/dsp-engine.md) · [commands and events](../core/commands-and-events.md) · [performance](../../performance.md).
+Related: [coding standards](coding-standards.md) · [graph model](../core/graph-model.md) · [dsp engine](../audio/dsp-engine.md) · [commands and events](../core/commands-and-events.md) · [performance](../../performance.md).
 
 ## 14. Testing and acceptance criteria
 

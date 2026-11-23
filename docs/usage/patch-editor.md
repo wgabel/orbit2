@@ -4,7 +4,7 @@
 
 ## Responsive workspace
 
-In review ([PR #77](https://github.com/wgabel/orbit2/pull/77)): desktop and mobile share the same **Nodes**, **Outline**, **Edit**, **View** and **More** buttons. Desktop puts all five in the single top toolbar beside breadcrumbs and transport; mobile keeps them in its bottom bar. Desktop menus open as floating popovers below their trigger; click outside, press Escape or use Close to dismiss. On mobile, sheets keep their existing Close and Back handling. Neither layout resizes the canvas when a menu opens. The optional piano sits at the bottom on desktop and above navigation on mobile.
+Implemented ([PR #77](https://github.com/wgabel/orbit2/pull/77)): desktop and mobile share the same **Nodes**, **Outline**, **Edit**, **View** and **More** buttons. Desktop puts all five in the single top toolbar beside breadcrumbs and transport; mobile keeps them in its bottom bar. Desktop menus open as floating popovers below their trigger; click outside, press Escape or use Close to dismiss. On mobile, sheets keep their existing Close and Back handling. Neither layout resizes the canvas when a menu opens. The optional piano sits at the bottom on desktop and above navigation on mobile.
 
 [PR #60](https://github.com/wgabel/orbit2/pull/60) introduces a canvas-first layout on phones and short touch landscape screens. Use the top BPM button to edit tempo or reset the transport; Play and Stop remain immediately available. The bottom toolbar opens existing controls without reducing the canvas rectangle:
 
@@ -53,7 +53,7 @@ Regular buttons, port sockets, parameter inputs, plots and note body text keep t
 
 ### Duplicate a node
 
-In review ([PR #88](https://github.com/wgabel/orbit2/pull/88)). On desktop, right-click a node; on mobile, long-press its header or noninteractive body. Choose **Duplicate node**. The new node appears slightly down and right of its source and becomes selected, ready to drag or connect. Its parameters, mute/bypass state, alias/description and node plot preference are copied. Cables connecting the source to other nodes **are not copied**—connect the new node as needed. A duplicated composite retains its nested nodes and internal cables with new identities; the new internal canvas starts with normal layout defaults. Input and Output Rack nodes and the Master Output cannot be duplicated. The graph copy is one Undo/Redo step; descriptions still use annotation history.
+Implemented ([PR #88](https://github.com/wgabel/orbit2/pull/88)). On desktop, right-click a node; on mobile, long-press its header or noninteractive body. Choose **Duplicate node**. The new node appears slightly down and right of its source and becomes selected, ready to drag or connect. Its parameters, mute/bypass state, alias/description and node plot preference are copied. Cables connecting the source to other nodes **are not copied**—connect the new node as needed. A duplicated composite retains its nested nodes and internal cables with new identities; the new internal canvas starts with normal layout defaults. Input and Output Rack nodes and the Master Output cannot be duplicated. The graph copy is one Undo/Redo step; descriptions still use annotation history.
 
 ### Delete a connection on mobile
 
@@ -86,7 +86,7 @@ For individual node settings, use the Preset selector and its adjacent **…** m
 
 Implemented ([PR #65](https://github.com/wgabel/orbit2/pull/65)). On a touchscreen, touch and hold an output port, then drag. Aim with the small cursor above your finger, not the fingertip itself. Compatible input sockets show rings even when zoomed out; invalid or already connected destinations dim. Move until the larger ring and floating label name the intended parameter, for example **Oscillator → Amplitude**. Release to connect. Move away from all highlighted ports (or cancel the gesture) to abandon it without adding a cable. Closely spaced sockets switch as you aim directly at the next one; near the lower edge the offset reduces. The cursor and magnetic radius are screen-sized at every zoom. No extra picker or node expansion is necessary. Touch vibration is optional. On desktop, drag with the mouse as usual: the same highlighted sockets and magnetic snapping work directly at the pointer, without the upward offset. Keyboard and click-output then click-input activation are unchanged. If a port is covered, reposition the view or nodes; drag toward the canvas edge to reach off-screen ports. Undo removes a successful connection as usual.
 
-The alignment and desktop snapping follow-up (in review, [PR #74](https://github.com/wgabel/orbit2/pull/74)) keeps rings centered on the actual compatible sockets even if the browser scrolls or the node layout changes during the gesture. Release uses the latest measured target, not a stale highlight.
+The alignment and desktop snapping follow-up (merged, [PR #74](https://github.com/wgabel/orbit2/pull/74)) keeps rings centered on the actual compatible sockets even if the browser scrolls or the node layout changes during the gesture. Release uses the latest measured target, not a stale highlight.
 
 ### Drag a cable to an off-screen node
 
@@ -94,7 +94,7 @@ Implemented ([PR #73](https://github.com/wgabel/orbit2/pull/73)): on Android/tou
 
 ## 2. Interpret and edit connections
 
-**Cable appearance (in review, [PR #90](https://github.com/wgabel/orbit2/pull/90)).** Each connection leaves its output socket through a short, thicker, straight section, bends into a slightly thicker-than-before soft cable that hangs gently, and enters the receiving socket through a matching straight section. The connectors are part of the same colored cable, with no metallic caps. Dragging a new cable only thickens the anchored source end until a connection is made. Selection, amounts, existing colors, and canvas zoom/pan work as before. This is a presentation-only change; no sound or routing settings are needed.
+**Cable appearance ([PR #90](https://github.com/wgabel/orbit2/pull/90); smooth-cubic refinement [PR #93](https://github.com/wgabel/orbit2/pull/93), merged).** Each connection leaves the output socket through a short, thicker, straight section, follows a single softly sagging Bézier curve with no forced midpoint, then enters the input socket through another straight section. Both handles belong to the curve's ends, near the rigid caps. The caps share the cable's signal color and have no metallic pieces. A new dragged cable thickens only its source end. Selection, amounts, hit targets, pan/zoom and sounds behave as before; no settings need changing.
 
 - Audio links carry sound. Modulation values add a contribution in the receiving parameter's unit. Pitch expects relative semitones; Frequency expects Hz. A unit-amplitude bipolar 0.5 Hz sine into a 440 Hz carrier's Frequency at +100 gives 340–540 Hz before constraints. A Pitch Control +12 into a semitone-tracked Pitch at unity doubles the base frequency; connecting it to Frequency instead adds 12 Hz.
 - Click the wire or its numeric badge. Edit the amount in the anchored popover and **Apply** (or Cancel). For audio paths ×0.5 halves amplitude (about −6 dB); for a modulation connection, the amount is depth, not necessarily a fader. Typed Trigger/Gate/Clock links use unity; transform continuous signals through explicit adapters. Zero amount and dormant/inactive link are different: zero is a configured contribution of zero, dormant means the current node mode does not use that port. Neither deletes the cable.
@@ -154,7 +154,7 @@ For example, select a carrier oscillator and gain processor while leaving the ex
 
 **Undo** immediately reverses the structural operation and **Redo** restores it. You can save/reload the resulting patch normally. If grouping is unavailable, exclude master/rack nodes and cables, or remove selected nodes from visual groups first. If the selection surrounds an unselected intervening processor and produces a cycle, include that processor. Grouping is within the current patch; the cross-patch Module Library is still planned. See the [grouping implementation](../editor/reusable-modules.md#implementation-create-composite-742a-implemented).
 
-### Ungroup an edited composite (7.4.2b, in review)
+### Ungroup an edited composite (7.4.2b, implemented)
 
 Implementation: [PR #48](https://github.com/wgabel/orbit2/pull/48).
 

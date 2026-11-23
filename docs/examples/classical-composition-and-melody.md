@@ -170,6 +170,10 @@ Repp's analysis of 115 recordings of Chopin's E-major Étude [C18] documents var
 
 For an electronic keyboard-style result, choose an envelope shape for each role. Preserve a stable pitch on sustained notes, soften bass attacks if they obscure chord transitions, use a quieter accompaniment, add restrained room/reflection and test dry first. Use a separate amplitude/brightness accent schedule where possible; do not make every note a full attack at maximum level. Piano realism is a separate acoustics problem (stretched partials, strike transients, decay, sympathetic resonance, pedal and true polyphony); a triangle plus a pluck envelope is only a stylized approximation. See [sound and instrument usage](../usage/sound-and-instruments.md) and [instrument recipes](instrument-recipes.md) for actual available instruments.
 
+### Orchestrate the same score with available instruments
+
+After reducing the piece to independent melodic/harmonic lines, consult the [current instrument selection table](instrument-recipes.md#choose-an-instrument-for-the-musical-role): gated Clarinet or Flute for a sustained counterline, triggered Physical Pluck/Marimba for broken-chord figures, Drawbar Organ for pedal color and optional Rotary Speaker movement. Compare each with the synthetic instrument/composite alternative at equivalent loudness; do not change the notes merely to make a candidate model seem better. For chords, route independent monophonic voices, and do not trust the experimental Physical Violin for strict counterpoint until octave/register tests and listening support it. These choices are orchestrations of an original score, not recreations of historic instrumental performance.
+
 ## 7. From an idea to a three-minute arrangement
 
 Here is one adaptable structure at 96 BPM, 4/4, 72 bars (180 seconds). It is a composition exercise, not an automatic form template. All material should develop the same identifiable motif or thematic relationships.
@@ -188,7 +192,7 @@ Keep score-level contrast and rhythm meaningful, whether using piano-like sounds
 
 ## 8. Technical translation: independently sequenced keyboard-like parts
 
-The [Note Sequencer](../instruments/note-sequencer.md) is pitch-only. [Note Source](../instruments/pitch-control.md#phase-723--note-source-in-review) has keyboard pitch, gate, trigger and velocity but is monophonic. True score polyphony, automatic note durations, MIDI score import and tempo expression are not prerequisites for experiments; check current capabilities rather than assuming a feature from the musical analogy.
+The [Note Sequencer](../instruments/note-sequencer.md) now supports **Pitch only** and **Notes (Gate + Trigger)** modes ([PR #87](https://github.com/wgabel/orbit2/pull/87)); Notes mode has pattern-wide length/velocity but not independent per-note velocity, arbitrary note durations or polyphony. [Note Source](../instruments/pitch-control.md#phase-723--note-source-in-review) has keyboard pitch, gate, trigger and velocity but is monophonic. True score polyphony, automatic note durations, MIDI score import and tempo expression are not prerequisites for experiments; check current capabilities rather than assuming a feature from the musical analogy.
 
 **Example realization of section 5, eight-bar period:**
 

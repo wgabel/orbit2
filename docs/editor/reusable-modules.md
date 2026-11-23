@@ -2,7 +2,7 @@
 
 [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap, Phase 7.4](../roadmap/advanced.md#phase-74--reusable-composite-modules-planned)
 
-**Status:** Phase 7.4.1 multi-node selection and actions and 7.4.2a grouping implemented; 7.4.2b conservative ungrouping in review. Library, portability and macros remain planned. This is the design contract and implementation record for general-purpose reusable graphs. Existing composite graphs, boundary racks, built-in drone/impact factories and individual node presets are already implemented; see [composite nodes](composite-nodes.md) and [node presets](node-presets.md).
+**Status:** Phase 7.4.1 multi-node selection and actions and 7.4.2a grouping implemented; 7.4.2b conservative ungrouping implemented. Library, portability and macros remain planned. This is the design contract and implementation record for general-purpose reusable graphs. Existing composite graphs, boundary racks, built-in drone/impact factories and individual node presets are already implemented; see [composite nodes](composite-nodes.md) and [node presets](node-presets.md).
 
 Related: [canvas](canvas.md) · [persistence and history](persistence-and-history.md) · [signals and ports](../core/signals-and-ports.md) · [commands and events](../core/commands-and-events.md) · [annotations](annotations-and-connections.md) · [generative ambient composition](../examples/generative-ambient-composition.md).
 
@@ -56,7 +56,7 @@ Open **Selection**, select 1–512 eligible nodes, enter a composite name and ex
 
 `CanvasNavigationService` creates a child layout with translated relative positions, rack placement, node/edge descriptions and visualization preferences; existing descendant canvases are retained. The parent layout keeps unrelated positions. One graph Undo restores the nodes and retained parent metadata; Redo restores the composite and retained child layout using existing bounded history caches. Grouping requires the normal structural recompile/crossfade, not guaranteed uninterrupted oscillator phase. Undo is not a general ungroup action: use the explicit expansion below for a composite's current edited routing. The independent Module Library is 7.4.3.
 
-### Implementation: ungroup composite (7.4.2b, in review)
+### Implementation: ungroup composite (7.4.2b, implemented)
 
 Implementation: [PR #48](https://github.com/wgabel/orbit2/pull/48).
 
