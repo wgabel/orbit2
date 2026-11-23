@@ -155,6 +155,18 @@
     cursor: text;
 }
 .compact-value-choice { text-overflow: ellipsis; cursor: pointer; }
+.compact-value-static {
+    display: inline-flex;
+    min-width: 0;
+    flex: 1 1 0;
+    justify-content: flex-end;
+    gap: var(--semantic-space-tight);
+    color: var(--semantic-color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
 .compact-value-input { text-align: right; }
 .compact-value-unit { color: var(--semantic-color-muted); overflow: hidden; text-overflow: ellipsis; }
 .compact-value-effective {
