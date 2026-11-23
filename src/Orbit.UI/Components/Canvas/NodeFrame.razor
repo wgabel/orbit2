@@ -40,78 +40,188 @@
                 <NodeAuditionToggle NodeId="@Node.Id" NodeName="@Node.Name" Kind="NodeAuditionKind.Bypass"
                                     Active="@Node.IsBypassed" OnToggle="OnAudition" />
             }
+            @if (IsExpandable)
+            {
+                @if (Expanded)
+                {
+                    <button type="button" class="node-pin-toggle" aria-pressed="@Pinned"
+                            aria-label="@(Pinned ? "Unpin expanded node" : "Pin node expanded")"
+                            title="@(Pinned ? "Unpin node" : "Keep this node expanded")"
+                            @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true"
+                            @onclick="OnTogglePin">@(Pinned ? "◆" : "◇")</button>
+                }
+                <button type="button" class="node-expand-toggle" aria-expanded="@Expanded"
+                        aria-label="@(Expanded ? "Collapse node" : "Expand node")"
+                        title="@(Expanded ? "Collapse node" : "Expand node")"
+                        @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true"
+                        @onclick="OnToggleExpanded">@(Expanded ? "▴" : "▾")</button>
+            }
         </div>
     </header>
-    @if (Node.TypeKey == OutputRack.NodeType)
+    @if (IsExpandable)
     {
-        <div class="node-boundary-description">To parent graph · exposed outputs</div>
-    }
-    else if (Node.TypeKey == InputRack.NodeType)
-    {
-        <div class="node-boundary-description">From parent graph · exposed inputs</div>
-    }
-    <NodePresetSelector Node="@Node" Appearance="@Appearance" OnApply="OnPresetApply" OnManage="OnManagePresets" CatalogRevision="@PresetCatalogRevision" />
-    @if (Node.TypeKey == NoteSequencerGenerator.NodeType)
-    {
-        <NoteSequencerNodeSummary Node="@Node" />
-    }
-    <RhythmicActionPanel Node="@Node" PatchId="@PatchId" GraphId="@GraphId" />
-    <div class="node-ports">
-        <div class="node-inputs">
-            @foreach (var port in Node.Inputs)
-            {
-                <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
-                               WireCandidate="@(WireTargets?.Contains(new PortAddress(Node.Id, port.Id)))"
-                               OnOutputPointerDown="OnOutputPointerDown" OnInputPointerDown="OnInputPointerDown" />
-            }
-        </div>
-        <div class="node-outputs">
-            @foreach (var port in Node.Outputs)
-            {
-                <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port"
-                               Active="@(PendingSource == new PortAddress(Node.Id, port.Id))"
-                               OnActivate="OnPortActivate" OnOutputPointerDown="OnOutputPointerDown" />
-            }
-        </div>
-    </div>
-    @if (Node.Composite is not null)
-    {
-        <div class="node-actions">
-            <button type="button" class="secondary" @onpointerdown:stopPropagation="true"
-                    @onclick="() => OnOpenComposite.InvokeAsync(Node.Id)">Open @Node.Name</button>
-        </div>
-    }
-    @if (Node.TypeKey is InputRack.NodeType or OutputRack.NodeType)
-    {
-        <div class="node-actions">
-            <button type="button" class="secondary" @onpointerdown:stopPropagation="true"
-                    @onclick="() => OnEditRack.InvokeAsync(Node.Id)">Edit ports</button>
-        </div>
-    }
-    @if (Node.Parameters.Count > 0 && Node.TypeKey != NoteSequencerGenerator.NodeType)
-    {
-        <div class="node-parameters">
-            @foreach (var parameter in Node.Parameters.Where(Node.IsParameterActive).Where(p => Node.TypeKey != NoteSequencerGenerator.NodeType || !NoteSequencerGenerator.IsPatternParameter(p.Definition.Key)).OrderByDescending(parameter => parameter.Definition.Choices is not null))
-            {
-                @if (parameter.Definition.Choices is not null)
+        @* Stable port rows and compact readouts; never unmount these on expansion. *@
+        <div class="node-ports node-compact-ports">
+            <div class="node-inputs">
+                @foreach (var port in Node.Inputs)
                 {
-                    <ParameterChoiceEditor @key="parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue"
-                          Readout="@ParameterReadout.ForChoice(Node, parameter, BeatsPerMinute)"
-                          Timing="@CycleTiming.ForParameter(Node, parameter, BeatsPerMinute)"
-                          ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))" />
+                    <div class="node-input-row" @key="port.Id">
+                        <PortConnector NodeId="@Node.Id" Port="@port" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
+                                       WireCandidate="@(WireTargets?.Contains(new PortAddress(Node.Id, port.Id)))"
+                                       OnOutputPointerDown="OnOutputPointerDown" OnInputPointerDown="OnInputPointerDown" />
+                        @if (CompactNodePresentation.ForInput(Node, port.Id) is { } parameter)
+                        {
+                            <CompactParameterValue @key="parameter.Id" Parameter="@parameter" IsModulated="@IsModulated(parameter.Id)"
+                                                   EffectiveValue="@GetEffective(parameter.Id)"
+                                                   ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))"
+                                                   EditStateChanged="@(editing => OnCompactEditChanged.InvokeAsync((parameter.Id, editing)))" />
+                        }
+                    </div>
                 }
-                else
+            </div>
+            <div class="node-outputs">
+                @foreach (var port in Node.Outputs)
                 {
-                    <ParameterSlider @key="parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue" Step="0.01"
-                                 IsModulated="@IsModulated(parameter.Id)" ModulationRange="@GetRange(parameter.Id)" EffectiveValue="@GetEffective(parameter.Id)"
-                                 Timing="@CycleTiming.ForParameter(Node, parameter, BeatsPerMinute)"
-                                 ValueChanged="@(edit => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), edit.Value, edit.GestureId)))"
-                                 GestureEnded="OnParameterGestureEnded" />
+                    <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port"
+                                   Active="@(PendingSource == new PortAddress(Node.Id, port.Id))"
+                                   OnActivate="OnPortActivate" OnOutputPointerDown="OnOutputPointerDown" />
                 }
-            }
+            </div>
         </div>
+        @if (CompactNodePresentation.AdditionalParameters(Node).Count > 0 || Node.TypeKey is NoteSequencerGenerator.NodeType or EnvelopeGenerator.NodeType)
+        {
+            <div class="node-compact-summary">
+                @foreach (var parameter in CompactNodePresentation.AdditionalParameters(Node))
+                {
+                    <div class="node-compact-property" @key="parameter.Id">
+                        <span class="node-compact-property-name">@parameter.Definition.Name</span>
+                        <CompactParameterValue Parameter="@parameter" IsModulated="@IsModulated(parameter.Id)"
+                                               EffectiveValue="@GetEffective(parameter.Id)"
+                                               ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))"
+                                               EditStateChanged="@(editing => OnCompactEditChanged.InvokeAsync((parameter.Id, editing)))" />
+                    </div>
+                }
+                @if (Node.TypeKey == NoteSequencerGenerator.NodeType)
+                {
+                    <NoteSequencerNodeSummary Node="@Node" />
+                }
+                @if (Node.TypeKey == EnvelopeGenerator.NodeType)
+                {
+                    <svg class="node-envelope-miniature" viewBox="0 0 120 36" role="img" aria-label="Configured envelope shape" focusable="false">
+                        <polyline fill="none" stroke="currentColor" stroke-width="1.5" points="@EnvelopeSvgPoints" />
+                    </svg>
+                }
+            </div>
+        }
+        @if (RenderExpandedContent)
+        {
+            <div class="node-expanded-content @(Expanded ? "is-open" : "")" aria-hidden="@(!Expanded)">
+                <div class="node-expanded-inner">
+                    <NodePresetSelector Node="@Node" Appearance="@Appearance" OnApply="OnPresetApply" OnManage="OnManagePresets" CatalogRevision="@PresetCatalogRevision" />
+                    <RhythmicActionPanel Node="@Node" PatchId="@PatchId" GraphId="@GraphId" />
+        @if (Node.Parameters.Count > 0 && Node.TypeKey != NoteSequencerGenerator.NodeType)
+        {
+            <div class="node-parameters">
+                @foreach (var parameter in Node.Parameters.Where(Node.IsParameterActive).Where(p => Node.TypeKey != NoteSequencerGenerator.NodeType || !NoteSequencerGenerator.IsPatternParameter(p.Definition.Key)).OrderByDescending(parameter => parameter.Definition.Choices is not null))
+                {
+                    @if (parameter.Definition.Choices is not null)
+                    {
+                        <ParameterChoiceEditor @key="parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue"
+                              Readout="@ParameterReadout.ForChoice(Node, parameter, BeatsPerMinute)"
+                              Timing="@CycleTiming.ForParameter(Node, parameter, BeatsPerMinute)"
+                              ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))" />
+                    }
+                    else
+                    {
+                        <ParameterSlider @key="parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue" Step="0.01"
+                                     IsModulated="@IsModulated(parameter.Id)" ModulationRange="@GetRange(parameter.Id)" EffectiveValue="@GetEffective(parameter.Id)"
+                                     Timing="@CycleTiming.ForParameter(Node, parameter, BeatsPerMinute)"
+                                     ValueChanged="@(edit => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), edit.Value, edit.GestureId)))"
+                                     GestureEnded="OnParameterGestureEnded" />
+                    }
+                }
+            </div>
+        }
+        <NodeVisualizationPanel PatchId="@PatchId" GraphId="@GraphId" Node="@Node" Settings="@Visualization"
+                                BeatsPerMinute="@BeatsPerMinute" SampleRate="@SampleRate" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" Playhead="@Playhead"
+                                ExpandedElsewhere="@VisualizationExpanded" SettingsChanged="OnVisualizationChange" OnExpand="OnExpandVisualization" />
+                </div>
+            </div>
+        }
     }
-    <NodeVisualizationPanel PatchId="@PatchId" GraphId="@GraphId" Node="@Node" Settings="@Visualization"
-                            BeatsPerMinute="@BeatsPerMinute" SampleRate="@SampleRate" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" Playhead="@Playhead"
-                            ExpandedElsewhere="@VisualizationExpanded" SettingsChanged="OnVisualizationChange" OnExpand="OnExpandVisualization" />
+    else
+    {
+        @if (Node.TypeKey == OutputRack.NodeType)
+        {
+            <div class="node-boundary-description">To parent graph · exposed outputs</div>
+        }
+        else if (Node.TypeKey == InputRack.NodeType)
+        {
+            <div class="node-boundary-description">From parent graph · exposed inputs</div>
+        }
+        <NodePresetSelector Node="@Node" Appearance="@Appearance" OnApply="OnPresetApply" OnManage="OnManagePresets" CatalogRevision="@PresetCatalogRevision" />
+        @if (Node.TypeKey == NoteSequencerGenerator.NodeType)
+        {
+            <NoteSequencerNodeSummary Node="@Node" />
+        }
+        <RhythmicActionPanel Node="@Node" PatchId="@PatchId" GraphId="@GraphId" />
+        <div class="node-ports">
+            <div class="node-inputs">
+                @foreach (var port in Node.Inputs)
+                {
+                    <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
+                                   WireCandidate="@(WireTargets?.Contains(new PortAddress(Node.Id, port.Id)))"
+                                   OnOutputPointerDown="OnOutputPointerDown" OnInputPointerDown="OnInputPointerDown" />
+                }
+            </div>
+            <div class="node-outputs">
+                @foreach (var port in Node.Outputs)
+                {
+                    <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port"
+                                   Active="@(PendingSource == new PortAddress(Node.Id, port.Id))"
+                                   OnActivate="OnPortActivate" OnOutputPointerDown="OnOutputPointerDown" />
+                }
+            </div>
+        </div>
+        @if (Node.Composite is not null)
+        {
+            <div class="node-actions">
+                <button type="button" class="secondary" @onpointerdown:stopPropagation="true"
+                        @onclick="() => OnOpenComposite.InvokeAsync(Node.Id)">Open @Node.Name</button>
+            </div>
+        }
+        @if (Node.TypeKey is InputRack.NodeType or OutputRack.NodeType)
+        {
+            <div class="node-actions">
+                <button type="button" class="secondary" @onpointerdown:stopPropagation="true"
+                        @onclick="() => OnEditRack.InvokeAsync(Node.Id)">Edit ports</button>
+            </div>
+        }
+        @if (Node.Parameters.Count > 0 && Node.TypeKey != NoteSequencerGenerator.NodeType)
+        {
+            <div class="node-parameters">
+                @foreach (var parameter in Node.Parameters.Where(Node.IsParameterActive).Where(p => Node.TypeKey != NoteSequencerGenerator.NodeType || !NoteSequencerGenerator.IsPatternParameter(p.Definition.Key)).OrderByDescending(parameter => parameter.Definition.Choices is not null))
+                {
+                    @if (parameter.Definition.Choices is not null)
+                    {
+                        <ParameterChoiceEditor @key="parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue"
+                              Readout="@ParameterReadout.ForChoice(Node, parameter, BeatsPerMinute)"
+                              Timing="@CycleTiming.ForParameter(Node, parameter, BeatsPerMinute)"
+                              ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))" />
+                    }
+                    else
+                    {
+                        <ParameterSlider @key="parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue" Step="0.01"
+                                     IsModulated="@IsModulated(parameter.Id)" ModulationRange="@GetRange(parameter.Id)" EffectiveValue="@GetEffective(parameter.Id)"
+                                     Timing="@CycleTiming.ForParameter(Node, parameter, BeatsPerMinute)"
+                                     ValueChanged="@(edit => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), edit.Value, edit.GestureId)))"
+                                     GestureEnded="OnParameterGestureEnded" />
+                    }
+                }
+            </div>
+        }
+        <NodeVisualizationPanel PatchId="@PatchId" GraphId="@GraphId" Node="@Node" Settings="@Visualization"
+                                BeatsPerMinute="@BeatsPerMinute" SampleRate="@SampleRate" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" Playhead="@Playhead"
+                                ExpandedElsewhere="@VisualizationExpanded" SettingsChanged="OnVisualizationChange" OnExpand="OnExpandVisualization" />
+    }
 </article>
