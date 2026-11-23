@@ -62,6 +62,7 @@ public sealed class CanvasNavigationService : IDisposable
             AnnotationVisibility = snapshot.AnnotationVisibility,
             Visualizations = snapshot.Visualizations.Select(pair => new SavedNodeVisualization(pair.Key, pair.Value)).ToArray(),
             ExpandedVisualizationNodeId = snapshot.ExpandedVisualizationNodeId,
+            PinnedNodeIds = snapshot.PinnedNodeIds.ToArray(),
             Notes = snapshot.Notes.ToArray(),
             NodeDescriptions = snapshot.NodeDescriptions.Values.ToArray(),
             ConnectionDescriptions = snapshot.ConnectionDescriptions.Values.ToArray(),
