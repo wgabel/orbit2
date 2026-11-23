@@ -231,7 +231,12 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
                     if (action.Kind == PerformanceNoteKind.NoteOn && !NoteSequencerGenerator.IsPlayable(action.Note, reference)) return false;
                     return await sink.SendPerformanceNoteAsync(SoundId(patchId), playback.Generation, index, action.NoteCode);
                 }
-                if (action.Kind == PerformanceNoteKind.NoteOff) return true; // Continuous mode never releases pitch.
+                if (action.Kind == PerformanceNoteKind.NoteOff)
+                {
+                    var articulated = playback.Topology.GetGraph(graphId).GetNode(nodeId).Parameters
+                        .Any(parameter => parameter.Definition.Key == NoteSequencerGenerator.ArticulationKey && parameter.BaseValue == 1);
+                    return !articulated || await sink.SendPerformanceNoteAsync(SoundId(patchId), playback.Generation, index, 130);
+                }
                 if (action.Kind == PerformanceNoteKind.NoteOn && !NoteSequencerGenerator.IsPlayable(action.Note, reference)) return false;
                 if (!await sink.SendPerformanceNoteAsync(SoundId(patchId), playback.Generation, index, action.Code)) return false;
                 playback.LatchedPitchActions[(graphId, nodeId)] = action.Code;

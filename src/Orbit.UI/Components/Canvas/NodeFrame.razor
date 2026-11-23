@@ -51,6 +51,10 @@
         <div class="node-boundary-description">From parent graph · exposed inputs</div>
     }
     <NodePresetSelector Node="@Node" Appearance="@Appearance" OnApply="OnPresetApply" OnManage="OnManagePresets" CatalogRevision="@PresetCatalogRevision" />
+    @if (Node.TypeKey == NoteSequencerGenerator.NodeType)
+    {
+        <NoteSequencerNodeSummary Node="@Node" />
+    }
     <RhythmicActionPanel Node="@Node" PatchId="@PatchId" GraphId="@GraphId" />
     <div class="node-ports">
         <div class="node-inputs">
@@ -84,7 +88,7 @@
                     @onclick="() => OnEditRack.InvokeAsync(Node.Id)">Edit ports</button>
         </div>
     }
-    @if (Node.Parameters.Count > 0)
+    @if (Node.Parameters.Count > 0 && Node.TypeKey != NoteSequencerGenerator.NodeType)
     {
         <div class="node-parameters">
             @foreach (var parameter in Node.Parameters.Where(Node.IsParameterActive).Where(p => Node.TypeKey != NoteSequencerGenerator.NodeType || !NoteSequencerGenerator.IsPatternParameter(p.Definition.Key)).OrderByDescending(parameter => parameter.Definition.Choices is not null))

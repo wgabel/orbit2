@@ -49,6 +49,19 @@ public sealed class NodePreset
         if (nodeType == NoteSequencerGenerator.NodeType && values.Count == 2 && values.ContainsKey(NoteSequencerGenerator.ReferenceKey) && values.ContainsKey(NoteSequencerGenerator.InitialPitchKey))
             foreach (var definition in NoteSequencerGenerator.PatternDefinitions)
                 values.Add(definition.Key, definition.DefaultValue);
+        // Schema-1 pitch patterns existed before note articulation. Add only the
+        // three optional controls when all historical keys are present; reject
+        // genuinely incomplete or malformed presets through the validator.
+        if (nodeType == NoteSequencerGenerator.NodeType &&
+            !values.ContainsKey(NoteSequencerGenerator.ArticulationKey) &&
+            !values.ContainsKey(NoteSequencerGenerator.GateLengthKey) &&
+            !values.ContainsKey(NoteSequencerGenerator.VelocityKey) &&
+            NoteSequencerGenerator.PatternDefinitions.Where(definition => definition.Key is not
+                (NoteSequencerGenerator.ArticulationKey or NoteSequencerGenerator.GateLengthKey or NoteSequencerGenerator.VelocityKey))
+                .All(definition => values.ContainsKey(definition.Key)))
+            foreach (var definition in NoteSequencerGenerator.PatternDefinitions.Where(definition => definition.Key is
+                NoteSequencerGenerator.ArticulationKey or NoteSequencerGenerator.GateLengthKey or NoteSequencerGenerator.VelocityKey))
+                values.Add(definition.Key, definition.DefaultValue);
         Parameters = new ReadOnlyDictionary<string, double>(values);
     }
 

@@ -4,10 +4,15 @@ using Orbit.Domain.Parameters;
 
 namespace Orbit.Audio.Compilation.Emitters;
 
-public sealed class NoteSequencerFaustEmitter : IFaustNodeEmitter
+/// <summary>
+/// One sample-coherent control tuple. The existing pitch latch remains continuous;
+/// optional articulated notes use dedicated gate, one-sample trigger and velocity.
+/// </summary>
+public sealed class NoteSequencerFaustEmitter : IFaustMultiOutputEmitter
 {
     public string TypeKey => NoteSequencerGenerator.NodeType;
-    public ParameterRange? EstimateOutputRange(SignalRangeContext context) => new(-NoteSequencerGenerator.MaximumOffset, NoteSequencerGenerator.MaximumOffset);
+    public ParameterRange? EstimateOutputRange(SignalRangeContext context, string portKey) =>
+        portKey == "pitch-out" ? new(-NoteSequencerGenerator.MaximumOffset, NoteSequencerGenerator.MaximumOffset) : new(0, 1);
 
     public string Emit(FaustNodeContext context)
     {
@@ -15,18 +20,26 @@ public sealed class NoteSequencerFaustEmitter : IFaustNodeEmitter
         var reference = context.Parameter(NoteSequencerGenerator.ReferenceKey);
         var initial = context.Parameter(NoteSequencerGenerator.InitialPitchKey, initializeAtTarget: true);
         var glide = context.Parameter(NoteSequencerGenerator.GlideKey);
+        var notes = context.Parameter(NoteSequencerGenerator.ArticulationKey);
+        var velocity = context.Parameter(NoteSequencerGenerator.VelocityKey);
         var meter = context.PitchMeter();
         var stepMeter = meter.Replace("pitch_", "step_", StringComparison.Ordinal);
         return $$"""
-            attach((offset : hbargraph("{{meter}}", -60, 60)), step : hbargraph("{{stepMeter}}", 0, 64)) with {
+            (measured, attach(gate, measured), attach(trigger, measured), attach(velocityOut, measured)) with {
                 action = {{action}};
                 code = int(action) % 256;
                 stepCode = int(int(action) / 256);
                 step = (select2(stepCode > 0, _, select2(stepCode <= 64, 0, stepCode))) ~ _;
-                valid = (code >= 1) & (code <= 129);
-                held = (select2(valid, _, select2(code == 129, code, 0))) ~ _;
+                valid = (code >= 1) & (code <= 128);
+                release = (code == 129) | (code == 130);
+                held = (select2(valid | (code == 129), _, select2(code == 129, code, 0))) ~ _;
                 target = max(-60.0, min(60.0, select2(held > 0, {{initial}}, held - 1 - {{reference}})));
                 offset = ramp(target, {{glide}});
+                measured = attach(offset : hbargraph("{{meter}}", -60, 60), step : hbargraph("{{stepMeter}}", 0, 64));
+                gateState = (select2(valid | release, _, valid)) ~ _;
+                gate = gateState * {{notes}};
+                trigger = valid * {{notes}};
+                velocityOut = gateState * {{velocity}} * {{notes}};
                 ramp(t, duration) = advance ~ (_,_,_,_) : _,!,!,! with {
                     changed = t != t';
                     samples = max(1, int(duration * ma.SR));
@@ -39,6 +52,6 @@ public sealed class NoteSequencerFaustEmitter : IFaustNodeEmitter
                     };
                 };
             }
-            """;
+            """; 
     }
 }

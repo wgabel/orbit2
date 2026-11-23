@@ -45,7 +45,7 @@ test('leading Holds, inactive slots, atomic edits, and stop preserve current pit
     assert.equal(s.setPattern(pattern({loop:false})),true);
     assert.equal(sample(s,0,0,1,61),65*256+61);
     assert.equal(sample(s,0,0,1),0);
-    assert.equal(validPitchPattern(pattern({steps:[129]})),false);
+    assert.equal(validPitchPattern(pattern({steps:[129]})),false); // capacity remains fixed
 });
 test('committed slot edits wait for future boundaries without replaying the current step', () => {
     const s = new PitchPatternScheduler(pattern());
@@ -73,4 +73,23 @@ for (const rate of [44100,48000]) test(`fractional sample timing survives long a
     const output = new Float32Array(n);
     s.render(output,channels);
     assert.deepEqual([...output.entries()].filter(([,v])=>v).map(([i])=>i),[0,rate*.01,rate*.02,rate*.03]);
+});
+
+test('note-mode emits trigger onset, tie, rest and sample-clocked gate release', () => {
+    const s = new PitchPatternScheduler(pattern({notes:true, count:4, ticks:4, gateFraction:.5,
+        steps:[46,0,129,53,...Array(60).fill(0)]}));
+    assert.equal(sample(s,0,0),256+46);
+    assert.equal(sample(s,.5,.25),0); // step 1 ties into step 2
+    assert.equal(sample(s,1,.5),512);
+    assert.equal(sample(s,1.5,.75),512+130);
+    assert.equal(sample(s,2,1),768+130);
+    assert.equal(sample(s,3,1.5),1024+53);
+    assert.equal(sample(s,3.5,1.75),1024+130);
+    assert.equal(sample(s,4,2),256+46);
+});
+test('legacy pitch-only patterns do not emit note release actions', () => {
+    const s = new PitchPatternScheduler(pattern({count:2,ticks:4,steps:[46,129,...Array(62).fill(0)]}));
+    assert.equal(sample(s,0,0),256+46);
+    assert.equal(sample(s,.5,.25),0);
+    assert.equal(sample(s,1,.5),512);
 });

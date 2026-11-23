@@ -67,7 +67,7 @@ public sealed class FaustGraphPlaybackServiceTests
         var sequencer = NestedFaustPatch.Add(session, child, NoteSequencerGenerator.NodeType);
         var orphan = NestedFaustPatch.Add(session, child, NoteSequencerGenerator.NodeType);
         session.Execute(new SetParameterValueCommand(child, new(carrier.Id, carrier.Parameters.Single(p => p.Definition.Key == OscillatorGenerator.PitchTrackingKey).Id), 1));
-        session.Execute(new ConnectNodesCommand(child, new(sequencer.Id, sequencer.Outputs.Single().Id), new(carrier.Id, carrier.Inputs.Single(p => p.Key == OscillatorGenerator.PitchPortKey).Id)));
+        session.Execute(new ConnectNodesCommand(child, new(sequencer.Id, sequencer.Outputs.Single(p => p.Key == "pitch-out").Id), new(carrier.Id, carrier.Inputs.Single(p => p.Key == OscillatorGenerator.PitchPortKey).Id)));
         var compiler = FaustGraphCompiler.CreateBuiltIn();
         var engine = new PitchEngine();
         var service = new FaustGraphPlaybackService(compiler, engine);

@@ -1,0 +1,25 @@
+@namespace Orbit.UI.Components.Canvas
+@using Orbit.Application.Graphs.Snapshots
+@using Orbit.Domain.Nodes.Generators
+@using Orbit.Domain.Timing
+
+<div class="node-sequencer-summary" title="Select this node to open its piano and melody editor">
+    <div class="node-sequencer-heading">
+        <strong>@(Value(NoteSequencerGenerator.ArticulationKey) == 1 ? "Melody · Notes" : "Pitch sequence · Drone")</strong>
+        <span>@(Value(NoteSequencerGenerator.LoopKey) == 1 ? "↻ Loop" : "Live") · @StepCount steps</span>
+    </div>
+    <div class="node-sequencer-steps" aria-label="First 16 steps of pattern">
+        @for (var i = 0; i < Math.Min(StepCount, 16); i++)
+        {
+            var code = (int)Value(NoteSequencerGenerator.StepKey(i));
+            <span class="node-sequencer-step" title="@("Step " + (i + 1))">@(code == 0 ? "—" : code == NoteSequencerGenerator.RestCode ? "×" : MusicalPitch.NoteName(code - 1))</span>
+        }
+    </div>
+    <small>Open the keyboard dock to edit notes and timing.</small>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public GraphNodeSnapshot Node { get; set; } = default!;
+    private double Value(string key) => Node.Parameters.Single(p => p.Definition.Key == key).BaseValue;
+    private int StepCount => (int)Value(NoteSequencerGenerator.CountKey);
+}
