@@ -1,3 +1,11 @@
-# Performance documentation moved
+# Orbit 2 — Performance monitoring, profiling and diagnostics
 
-See the canonical [performance monitoring, profiling and diagnostics guide](docs/quality/performance.md). This short pointer preserves existing links; all changes belong in the quality documentation.
+**Moved:** The canonical overview and specification are at [docs/quality/performance.md](docs/quality/performance.md). This page only preserves older inbound links.
+
+## 1. Purpose and goals
+
+Read [current goals, constraints and measurement policy](docs/quality/performance.md#1-purpose-and-goals).
+
+## Contents
+
+Open the [performance documentation contents](docs/quality/performance.md#contents).
