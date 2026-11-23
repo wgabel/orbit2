@@ -579,7 +579,7 @@ var keyboardGraph = keyboardSession.GraphId;
 GraphNodeSnapshot KeyAdd(string type) => keyboardSession.Execute(new AddNodeCommand(keyboardGraph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
 void KeySet(GraphNodeSnapshot node, string key, double value) => keyboardSession.Execute(new SetParameterValueCommand(keyboardGraph, Address(node, key), value));
 void KeyWire(GraphNodeSnapshot from, GraphNodeSnapshot to, string port) => keyboardSession.Execute(new ConnectNodesCommand(keyboardGraph,
-    new(from.Id, from.Outputs.Single().Id), new(to.Id, to.Inputs.Single(p => p.Key == port).Id)));
+    new(from.Id, from.Outputs[0].Id), new(to.Id, to.Inputs.Single(p => p.Key == port).Id)));
 var keyboardSequencer = KeyAdd(NoteSequencerGenerator.NodeType);
 KeySet(keyboardSequencer, NoteSequencerGenerator.ReferenceKey, 45);
 var keyboardMixer = KeyAdd(MixerProcessor.NodeType);
@@ -592,7 +592,7 @@ var keyboardVoices = new[] {110d, 165d}.Select(hz => {
 }).ToArray();
 KeyWire(keyboardMixer, keyboardMaster, "audio-in");
 var keyboardProgram = FaustGraphCompiler.CreateBuiltIn().Compile(keyboardSession.Snapshot, SignalTapManifest.MaxAuxiliaryChannels);
-int KeyTap(GraphNodeSnapshot node) => keyboardProgram.SignalTaps.Channels[new(keyboardGraph, keyboardGraph, node.Id, node.Outputs.Single().Id, PortDirection.Output)];
+int KeyTap(GraphNodeSnapshot node) => keyboardProgram.SignalTaps.Channels[new(keyboardGraph, keyboardGraph, node.Id, node.Outputs[0].Id, PortDirection.Output)];
 File.WriteAllText(Path.Combine(args[0], "keyboard-pitch.json"), JsonSerializer.Serialize(new {
     source = keyboardProgram.Source, values = keyboardProgram.InitialControlValues(), pitch = KeyTap(keyboardSequencer),
     voices = keyboardVoices.Select(KeyTap).ToArray(), meter = keyboardProgram.PitchMeters.Single().Name,
