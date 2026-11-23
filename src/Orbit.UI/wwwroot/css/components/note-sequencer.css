@@ -1,0 +1,48 @@
+/* Sequencer editor overlays the canvas rather than permanently consuming its height. */
+.node-sequencer-summary { padding: var(--semantic-space-tight) var(--component-node-padding); display: grid; gap: var(--semantic-space-tight); border-block-start: 1px solid var(--semantic-color-border); font-size: var(--semantic-typography-caption); }
+.node-sequencer-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--semantic-space-tight); }
+.node-sequencer-heading span, .node-sequencer-summary small { color: var(--semantic-color-muted); }
+.node-sequencer-steps { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 2px; }
+.node-sequencer-step { padding: 4px 1px; background: var(--semantic-color-canvas); border-radius: 3px; text-align: center; font-size: 9px; overflow: hidden; white-space: nowrap; }
+.performance-keyboard > .pitch-pattern-editor { position: absolute; inset-inline: 0; bottom: 100%; z-index: var(--component-workspace-overlay-layer); max-height: min(65dvh, 640px); overflow: auto; padding: var(--semantic-space-compact); background: var(--semantic-color-surface); border: 1px solid var(--semantic-color-border); border-radius: var(--semantic-radius-control); box-shadow: 0 -10px 35px #0004; display: grid; gap: var(--semantic-space-compact); }
+.pitch-editor-header { display: flex; gap: var(--semantic-space-compact); align-items: center; justify-content: space-between; }
+.pitch-editor-header > div { display: grid; gap: 2px; }
+.pitch-editor-header small, .pitch-editor-header output, .pitch-editor-help, .pitch-roll-help { font-size: var(--semantic-typography-caption); color: var(--semantic-color-muted); }
+.pitch-editor-header button { padding: 4px 10px; }
+.pitch-editor-tabs { display: flex; gap: var(--semantic-space-tight); border-bottom: 1px solid var(--semantic-color-border); }
+.pitch-editor-tabs button { flex: 1; padding: 9px; border-radius: 5px 5px 0 0; }
+.pitch-editor-tabs button[aria-pressed="true"] { border-bottom: 3px solid var(--semantic-color-modulation); background: color-mix(in srgb, var(--semantic-color-modulation) 16%, var(--semantic-color-surface)); }
+.pitch-editor-primary { display: flex; align-items: end; flex-wrap: wrap; gap: var(--semantic-space-compact); }
+.pitch-editor-primary label, .pitch-step-tools label { display: grid; gap: 3px; font-size: var(--semantic-typography-caption); color: var(--semantic-color-muted); }
+.pitch-editor-primary label { flex: 1 1 130px; }
+.pitch-editor-primary select, .pitch-step-tools select, .pitch-editor-primary input { min-width: 0; width: 100%; box-sizing: border-box; padding: 6px; background: var(--semantic-color-canvas); color: var(--semantic-color-text); border: 1px solid var(--semantic-color-border); border-radius: 5px; }
+.pitch-editor-help { margin: 0; line-height: 1.4; }
+.pitch-roll-toolbar { display: flex; flex-wrap: wrap; gap: var(--semantic-space-tight); align-items: center; }
+.pitch-roll-toolbar button { padding: 5px 8px; font-size: var(--semantic-typography-caption); }
+.pitch-roll-help { margin-inline-end: auto; }
+.pitch-roll-scroll { max-width: 100%; overflow-x: auto; overflow-y: hidden; border: 1px solid var(--semantic-color-border); border-radius: 5px; }
+.pitch-roll-board { display: grid; grid-template-columns: 54px repeat(var(--sequence-steps), 35px); grid-template-rows: repeat(13, 23px); width: max-content; min-width: 100%; background: var(--semantic-color-canvas); }
+.pitch-roll-pitch { display: flex; align-items: center; justify-content: end; padding-inline-end: 8px; font-size: var(--semantic-typography-caption); color: var(--semantic-color-muted); border-block-end: 1px solid var(--semantic-color-border); }
+.pitch-roll-cell { padding: 0; border: 1px solid color-mix(in srgb, var(--semantic-color-border) 60%, transparent); border-radius: 0; min-width: 0; min-height: 0; background: transparent; }
+.pitch-roll-cell[data-step="1"], .pitch-roll-cell[data-step="5"], .pitch-roll-cell[data-step="9"], .pitch-roll-cell[data-step="13"] { border-inline-start: 2px solid var(--semantic-color-border); }
+.pitch-roll-cell:hover, .pitch-roll-cell:focus-visible { background: color-mix(in srgb, var(--semantic-color-modulation) 20%, transparent); }
+.pitch-roll-cell.pitch-roll-note { background: var(--semantic-color-modulation); border-radius: 4px; margin: 2px; }
+.pitch-roll-cell.pitch-roll-playing { box-shadow: inset 2px 0 0 var(--semantic-color-selected); }
+.pitch-step-strip { display: flex; gap: 3px; overflow-x: auto; padding-block: 3px; scrollbar-width: thin; }
+.pitch-step-strip button { display: grid; gap: 1px; justify-items: center; flex: 0 0 54px; padding: 5px 2px; min-width: 0; }
+.pitch-step-strip button small { font-size: 10px; opacity: .8; }
+.pitch-step-strip button span { font-size: 12px; }
+.pitch-step-strip button[aria-pressed="true"] { border: 2px solid var(--semantic-color-modulation); }
+.pitch-step-strip button.pitch-step-playing { background: color-mix(in srgb, var(--semantic-color-modulation) 30%, var(--semantic-color-surface)); }
+.pitch-step-tools { display: flex; align-items: end; flex-wrap: wrap; gap: var(--semantic-space-tight); }
+.pitch-step-tools strong { align-self: center; }
+.pitch-step-tools label { flex: 1 1 100px; max-width: 190px; }
+.pitch-step-tools button, .pitch-record-actions button { padding: 7px 10px; }
+.pitch-record-view, .pitch-editor-settings { display: grid; gap: var(--semantic-space-compact); }
+.pitch-record-view p, .pitch-editor-settings p { margin: 0; font-size: var(--semantic-typography-caption); }
+.pitch-record-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--semantic-space-tight); }
+@media (max-width: 700px) {
+    .performance-keyboard > .pitch-pattern-editor { max-height: min(57dvh, 560px); padding: var(--semantic-space-tight); }
+    .pitch-roll-board { grid-template-columns: 45px repeat(var(--sequence-steps), 38px); }
+    .pitch-editor-primary label { flex-basis: 40%; }
+}

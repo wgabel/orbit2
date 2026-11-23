@@ -14,7 +14,7 @@
 @inject IMusicalTransportService Transport
 @inject IJSRuntime JavaScript
 
-<section class="performance-keyboard" aria-label="Performance keyboard" data-target-node="@Node.Id" data-target-graph="@GraphId" data-armed="@armed.ToString().ToLowerInvariant()" data-tall="@tall.ToString().ToLowerInvariant()" data-step-entry="@((stepEntry && showPattern).ToString().ToLowerInvariant())" data-keyboard-ready="@((adapter is not null).ToString().ToLowerInvariant())" tabindex="0" @ref="root">
+<section class="performance-keyboard" aria-label="Performance keyboard" data-target-node="@Node.Id" data-target-graph="@GraphId" data-armed="@armed.ToString().ToLowerInvariant()" data-tall="@tall.ToString().ToLowerInvariant()" data-step-entry="@EditingNotes.ToString().ToLowerInvariant()" data-keyboard-ready="@((adapter is not null).ToString().ToLowerInvariant())" tabindex="0" @ref="root">
     <div class="performance-dock-bar">
         <div class="performance-target" title="@($"{TargetLabel ?? Node.Name} · {Node.Name}")">
             <span class="performance-target-name"><span class="performance-target-dot" data-live="@((Offset is not null).ToString().ToLowerInvariant())" aria-hidden="true"></span>@(TargetLabel ?? Node.Name)</span>
@@ -36,78 +36,179 @@
         }
         <button type="button" class="secondary performance-tool" aria-label="@(armed ? "Collapse keyboard" : "Show keyboard")" title="@(armed ? "Collapse keyboard" : "Show keyboard")" aria-expanded="@armed.ToString().ToLowerInvariant()" @onclick="ToggleAsync">@(armed ? "⌄" : "⌃")</button>
     </div>
+
     @if (armed && !IsNoteSource && showPattern)
     {
-        <div class="pitch-pattern-editor" role="region" aria-label="Pitch pattern">
-            <div class="workspace-toolbar pitch-pattern-settings">
-                @foreach (var definition in NoteSequencerGenerator.PatternDefinitions.Take(7).Where(d => VisibleSetting(d.Key)))
-                {
-                    <label @key="definition.Key">@definition.Name
-                        @if (definition.Choices is { } choices)
-                        {
-                            <select disabled="@RecordingLocked" aria-label="@definition.Name" value="@Format(Value(definition.Key))" @onchange="e => EditValueAsync(definition.Key, e)">
-                                @foreach (var choice in choices)
-                                {
-                                    <option value="@Format(choice.Value)">@choice.Label</option>
-                                }
-                            </select>
-                        }
-                        else
-                        {
-                            <input disabled="@RecordingLocked" type="number" aria-label="@definition.Name" min="@Format(definition.Minimum)" max="@Format(definition.Maximum)" step="0.01" value="@Format(Value(definition.Key))" @onchange="e => EditValueAsync(definition.Key, e)" />
-                        }
+        <div class="pitch-pattern-editor" role="region" aria-label="Melody editor">
+            <header class="pitch-editor-header">
+                <div><strong>Melody editor</strong><small>@StepCount steps · @LoopDuration</small></div>
+                <output data-sequence-playhead="@(Playhead?.ToString() ?? "none")" aria-live="off">@(Playhead is int step ? "Playing step " + step : "Stopped")</output>
+                <button type="button" class="secondary" aria-label="Close melody editor" @onclick="() => showPattern = false">✕</button>
+            </header>
+            <nav class="pitch-editor-tabs" aria-label="Sequencer tools">
+                <button type="button" class="secondary" aria-pressed="@(panel == "edit")" @onclick='() => panel = "edit"'>Edit notes</button>
+                <button type="button" class="secondary" aria-pressed="@(panel == "record")" @onclick='() => panel = "record"'>Record</button>
+                <button type="button" class="secondary" aria-pressed="@(panel == "settings")" @onclick='() => panel = "settings"'>Settings</button>
+            </nav>
+            @if (panel == "edit")
+            {
+                <div class="pitch-editor-primary">
+                    <label>Playback
+                        <select aria-label="Sequencer playback type" disabled="@RecordingLocked" value="@Format(Value(NoteSequencerGenerator.ArticulationKey))" @onchange="e => EditValueAsync(NoteSequencerGenerator.ArticulationKey, e)">
+                            <option value="0">Pitch only · continuous drone</option>
+                            <option value="1">Notes · trigger instrument</option>
+                        </select>
                     </label>
-                }
-                <output data-sequence-playhead="@(Playhead?.ToString() ?? "none")">@(Playhead is int step ? $"Playing step {step}" : "No active step") · @LoopDuration</output>
-            </div>
-            <div class="pitch-pattern-grid" role="group" aria-label="Pattern steps">
-                @for (var index = 0; index < StepCount; index++)
-                {
-                    var slot = index;
-                    var code = take?.Step(slot) ?? (int)Value(NoteSequencerGenerator.StepKey(slot));
-                    <button type="button" class="secondary @(Playhead == slot + 1 ? "pitch-step-playing" : "")" aria-pressed="@((selectedStep == slot).ToString().ToLowerInvariant())" data-step="@(slot + 1)" aria-label="@($"Step {slot + 1}: {StepLabel(code)}")" @onclick="() => selectedStep = slot">
-                        <small>@(slot + 1)</small><span>@StepLabel(code)</span>
-                    </button>
-                }
-            </div>
-            <div class="workspace-toolbar">
-                <label>Selected step @(selectedStep + 1)
-                    <select disabled="@RecordingLocked" aria-label="Step note" value="@Format(take?.Step(selectedStep) ?? Value(NoteSequencerGenerator.StepKey(selectedStep)))" @onchange="e => EditValueAsync(NoteSequencerGenerator.StepKey(selectedStep), e)">
-                        <option value="0">Hold</option>
-                        @foreach (var note in Enumerable.Range(0, 128))
+                    <label>Pattern
+                        <select aria-label="Pattern playback" disabled="@RecordingLocked" value="@Format(Value(NoteSequencerGenerator.LoopKey))" @onchange="e => EditValueAsync(NoteSequencerGenerator.LoopKey, e)">
+                            <option value="1">Loop pattern</option>
+                            <option value="0">Live keyboard only</option>
+                        </select>
+                    </label>
+                    <label>Steps
+                        <select aria-label="Pattern length" disabled="@RecordingLocked" value="@Format(Value(NoteSequencerGenerator.CountKey))" @onchange="e => EditValueAsync(NoteSequencerGenerator.CountKey, e)">
+                            @foreach (var count in Enumerable.Range(1, NoteSequencerGenerator.Capacity))
+                            {
+                                <option value="@count">@count</option>
+                            }
+                        </select>
+                    </label>
+                </div>
+                <p class="pitch-editor-help">Choose a step, then play a piano key to enter its note. Or tap a cell to place a note directly. The play button in Orbit's top bar starts the loop.</p>
+                <div class="pitch-roll-toolbar">
+                    <strong>Piano roll</strong>
+                    <span class="pitch-roll-help">Higher notes ↑ · Time →</span>
+                    <button type="button" class="secondary" aria-label="Show lower octave" @onclick="() => ShiftRoll(-12)">↓ Octave</button>
+                    <button type="button" class="secondary" aria-label="Show higher octave" @onclick="() => ShiftRoll(12)">↑ Octave</button>
+                </div>
+                <div class="pitch-roll-scroll" role="region" aria-label="Pitch and time grid" tabindex="0">
+                    <div class="pitch-roll-board" style="@(" --sequence-steps:" + StepCount)">
+                        @for (var midi = RollHigh; midi >= RollLow; midi--)
                         {
-                            <option value="@(note + 1)">@MusicalPitch.NoteName(note)</option>
+                            var note = midi;
+                            var row = RollHigh - midi + 1;
+                            <span class="pitch-roll-pitch" style="@("grid-row:" + row + ";grid-column:1")">@MusicalPitch.NoteName(note)</span>
+                            @for (var i = 0; i < StepCount; i++)
+                            {
+                                var slot = i;
+                                var code = StepCode(slot);
+                                <button type="button" class="pitch-roll-cell @(code == note + 1 ? "pitch-roll-note" : "") @(Playhead == slot + 1 ? "pitch-roll-playing" : "")"
+                                        style="@("grid-row:" + row + ";grid-column:" + (slot + 2))"
+                                        data-step="@(slot + 1)" data-midi-note="@note" aria-label="@("Step " + (slot + 1) + ", " + MusicalPitch.NoteName(note) + (code == note + 1 ? ", filled" : ""))"
+                                        aria-pressed="@(code == note + 1)" disabled="@RecordingLocked" @onclick="() => PlaceNoteAsync(slot, note)"></button>
+                            }
                         }
-                    </select>
-                </label>
-                <button type="button" class="secondary" disabled="@RecordingLocked" @onclick="() => WriteStepAsync(0, false)">Clear step (Hold)</button>
-                <button type="button" class="secondary" disabled="@RecordingLocked" @onclick="ClearAllAsync">@(confirmClear ? "Confirm clear all 64 slots" : "Clear all")</button>
-                @if (confirmClear) { <button type="button" class="secondary" @onclick="() => confirmClear = false">Cancel</button> }
-                <label><input type="checkbox" disabled="@RecordingLocked" @bind="stepEntry" /> Step entry (arm keyboard)</label>
-                <label>Advance <select disabled="@RecordingLocked" aria-label="Auto advance" @bind="advance">@foreach (var n in new[] { 1, 2, 4, 8 }) { <option value="@n">@n</option> }</select></label>
-                <small>Space = Hold, arrows = select step. Step entry wraps; shrinking retains hidden slots.</small>
-            </div>
-            <div class="workspace-toolbar" role="group" aria-label="Live recording" data-recording="@((take is not null).ToString().ToLowerInvariant())">
-                <label>Take mode <select aria-label="Take mode" disabled="@RecordingLocked" @bind="takeMode"><option value="0">Overdub</option><option value="1">Replace active slots</option></select></label>
-                <label>Quantize <select aria-label="Recording quantization" disabled="@RecordingLocked" @bind="quantizeSpacing">
-                    @foreach (var spacing in Enumerable.Range(1, StepCount).Where(n => StepCount % n == 0))
+                    </div>
+                </div>
+                <div class="pitch-step-strip" role="group" aria-label="Select step">
+                    @for (var i = 0; i < StepCount; i++)
                     {
-                        <option value="@spacing">Every @spacing @(spacing == 1 ? "step" : "steps")</option>
+                        var slot = i;
+                        <button type="button" class="secondary @(Playhead == slot + 1 ? "pitch-step-playing" : "")"
+                                aria-pressed="@(selectedStep == slot)" data-step="@(slot + 1)"
+                                aria-label="@("Select step " + (slot + 1) + ": " + StepLabel(StepCode(slot)))" @onclick="() => selectedStep = slot">
+                            <small>@(slot + 1)</small><span>@StepLabel(StepCode(slot))</span>
+                        </button>
                     }
-                </select></label>
-                @if (take is null)
+                </div>
+                <div class="pitch-step-tools">
+                    <strong>Step @(selectedStep + 1)</strong>
+                    <label>Note
+                        <select disabled="@RecordingLocked" aria-label="Selected step note" value="@StepCode(selectedStep)" @onchange="e => EditValueAsync(NoteSequencerGenerator.StepKey(selectedStep), e)">
+                            <option value="0">@(IsArticulated ? "Tie / Hold" : "Hold pitch")</option>
+                            <option value="@NoteSequencerGenerator.RestCode">Rest (silent)</option>
+                            @foreach (var note in Enumerable.Range(0, 128))
+                            {
+                                <option value="@(note + 1)">@MusicalPitch.NoteName(note)</option>
+                            }
+                        </select>
+                    </label>
+                    <button type="button" class="secondary" disabled="@RecordingLocked" @onclick="() => WriteStepAsync(0, false)">@(IsArticulated ? "Tie" : "Hold")</button>
+                    @if (IsArticulated)
+                    {
+                        <button type="button" class="secondary" disabled="@RecordingLocked" @onclick="() => WriteStepAsync(NoteSequencerGenerator.RestCode, false)">Rest</button>
+                    }
+                    <label>Auto-advance
+                        <select disabled="@RecordingLocked" aria-label="Advance after keyboard entry" @bind="advance">
+                            @foreach (var n in new[] { 1, 2, 4, 8 }) { <option value="@n">@n @(n == 1 ? "step" : "steps")</option> }
+                        </select>
+                    </label>
+                    <button type="button" class="secondary" disabled="@RecordingLocked" @onclick="ClearAllAsync">@(confirmClear ? "Confirm clear all" : "Clear pattern")</button>
+                    @if (confirmClear) { <button type="button" class="secondary" @onclick="() => confirmClear = false">Cancel</button> }
+                </div>
+                @if (IsArticulated)
                 {
-                    <button type="button" class="secondary" disabled="@(!CanStartTake || recordingOperation)" @onclick="StartTakeAsync">Record take</button>
+                    <p class="pitch-editor-help">Connect Pitch + Trigger to a plucked instrument, or Pitch + Gate to a sustained instrument. Tie extends a note, while Rest stops it.</p>
                 }
                 else
                 {
-                    <button type="button" class="secondary" disabled="@(recordingOperation || pendingNotes > 0)" @onclick="CommitTakeAsync">Commit take</button>
-                    <button type="button" class="secondary" @onclick="CancelTake">Cancel take</button>
-                    <output data-recorded-slots="@take.RecordedSlots">@take.RecordedSlots recorded slots · pending take</output>
+                    <p class="pitch-editor-help">Continuous pitch keeps the last note indefinitely. To make the sequencer play instruments on its own, choose “Notes · trigger instrument” above.</p>
                 }
-                <small>Arm keyboard and play a connected Loop. Notes sound immediately; the pending grid is saved only on Commit. Replace clears active slots, not hidden slots.</small>
-                @if (recordingNotice is not null) { <span class="workspace-notice" role="status">@recordingNotice</span> }
-            </div>
+            }
+            else if (panel == "record")
+            {
+                <div class="pitch-record-view">
+                    <p>Record notes as the loop plays. Play the patch, choose Overdub or Replace, then press Record take and perform on the keyboard. Commit saves the take to the pattern; Cancel discards it.</p>
+                    <div class="pitch-editor-primary">
+                        <label>Take mode
+                            <select aria-label="Take mode" disabled="@RecordingLocked" @bind="takeMode"><option value="0">Overdub</option><option value="1">Replace active slots</option></select>
+                        </label>
+                        <label>Quantize
+                            <select aria-label="Recording quantization" disabled="@RecordingLocked" @bind="quantizeSpacing">
+                                @foreach (var spacing in Enumerable.Range(1, StepCount).Where(n => StepCount % n == 0))
+                                {
+                                    <option value="@spacing">Every @spacing @(spacing == 1 ? "step" : "steps")</option>
+                                }
+                            </select>
+                        </label>
+                    </div>
+                    <div class="pitch-record-actions" role="group" aria-label="Recording actions">
+                        @if (take is null)
+                        {
+                            <button type="button" disabled="@(!CanStartTake || recordingOperation)" @onclick="StartTakeAsync">● Record take</button>
+                        }
+                        else
+                        {
+                            <button type="button" disabled="@(recordingOperation || pendingNotes > 0)" @onclick="CommitTakeAsync">Commit take</button>
+                            <button type="button" class="secondary" @onclick="CancelTake">Cancel take</button>
+                            <output data-recorded-slots="@take.RecordedSlots">@take.RecordedSlots recorded slots · not yet saved</output>
+                        }
+                    </div>
+                    @if (!CanStartTake && take is null) { <p class="pitch-editor-help">Set Pattern to Loop, start playback, and connect the sequencer before recording.</p> }
+                    @if (recordingNotice is not null) { <p class="workspace-notice" role="status">@recordingNotice</p> }
+                </div>
+            }
+            else
+            {
+                <div class="pitch-editor-settings">
+                    <p>Timing and sound details. Changes update the same pattern; your existing notes remain intact when you reduce the visible length.</p>
+                    <div class="pitch-editor-primary">
+                        @foreach (var definition in NoteSequencerGenerator.PatternDefinitions.Take(10).Where(d => VisibleSetting(d.Key)))
+                        {
+                            <label @key="definition.Key">@definition.Name
+                                @if (definition.Choices is { } choices)
+                                {
+                                    <select disabled="@RecordingLocked" aria-label="@definition.Name" value="@Format(Value(definition.Key))" @onchange="e => EditValueAsync(definition.Key, e)">
+                                        @foreach (var choice in choices)
+                                        {
+                                            <option value="@Format(choice.Value)">@choice.Label</option>
+                                        }
+                                    </select>
+                                }
+                                else
+                                {
+                                    <input disabled="@RecordingLocked" type="number" aria-label="@definition.Name" min="@Format(definition.Minimum)" max="@Format(definition.Maximum)" step="0.01" value="@Format(Value(definition.Key))" @onchange="e => EditValueAsync(definition.Key, e)" />
+                                }
+                            </label>
+                        }
+                        <label>Reference note
+                            <select disabled="@RecordingLocked" value="@Reference" aria-label="Reference pitch" @onchange="e => EditValueAsync(NoteSequencerGenerator.ReferenceKey, e)">
+                                @foreach (var note in Enumerable.Range(0, 128)) { <option value="@note">@MusicalPitch.NoteName(note)</option> }
+                            </select>
+                        </label>
+                    </div>
+                </div>
+            }
         </div>
     }
     @if (armed)
@@ -147,7 +248,9 @@
     private Task? mounting;
     private bool disposed, focusRequested;
     private bool armed = true, tall;
-    private bool showPattern, stepEntry, confirmClear;
+    private bool showPattern, confirmClear;
+    private string panel = "edit";
+    private int rollShift;
     private int selectedStep, advance = 1;
     private int octave = 4;
     private int previousReference = -1;
@@ -157,9 +260,11 @@
     private bool recordingOperation;
     private int takeMode, quantizeSpacing = 1, pendingNotes;
     private bool RecordingLocked => take is not null || recordingOperation;
+    private bool EditingNotes => showPattern && panel == "edit" && armed && !IsNoteSource;
     private bool IsNoteSource => Node.TypeKey == NoteSourceGenerator.NodeType;
     private double KeyboardVelocity => IsNoteSource ? Value(NoteSourceGenerator.VelocityKey) : 1;
-    private bool CanStartTake => armed && !stepEntry && Offset is not null && Value(NoteSequencerGenerator.LoopKey) == 1;
+    private bool CanStartTake => armed && !EditingNotes && Offset is not null && Value(NoteSequencerGenerator.LoopKey) == 1;
+    private bool IsArticulated => !IsNoteSource && Value(NoteSequencerGenerator.ArticulationKey) == 1;
     private readonly Dictionary<string, int> held = [];
     private int Reference => (int)Node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.ReferenceKey).BaseValue;
     private double Value(string key) => Node.Parameters.Single(p => p.Definition.Key == key).BaseValue;
@@ -168,9 +273,29 @@
     private string LoopDuration => Free
         ? $"Loop: {Value(NoteSequencerGenerator.SecondsKey) * StepCount:0.##} s"
         : $"Loop: {Value(NoteSequencerGenerator.DivisionKey) * Value(NoteSequencerGenerator.MultiplierKey) * StepCount / 4:0.##} beats · {Value(NoteSequencerGenerator.DivisionKey) * Value(NoteSequencerGenerator.MultiplierKey) * StepCount / 4 * 60 / Tempo:0.##} s";
-    private bool VisibleSetting(string key) => key switch { NoteSequencerGenerator.SecondsKey => Free, NoteSequencerGenerator.DivisionKey or NoteSequencerGenerator.MultiplierKey => !Free, _ => true };
+    private bool VisibleSetting(string key) => key switch { NoteSequencerGenerator.SecondsKey => Free, NoteSequencerGenerator.DivisionKey or NoteSequencerGenerator.MultiplierKey => !Free, NoteSequencerGenerator.GateLengthKey or NoteSequencerGenerator.VelocityKey => IsArticulated, NoteSequencerGenerator.GlideKey => !IsArticulated, _ => true };
     private static string Format(double value) => value.ToString(CultureInfo.InvariantCulture);
-    private static string StepLabel(int code) => code == 0 ? "Hold" : MusicalPitch.NoteName(code - 1);
+    private string StepLabel(int code) => code == 0 ? (IsArticulated ? "Tie" : "Hold") :
+        code == NoteSequencerGenerator.RestCode ? "Rest" : MusicalPitch.NoteName(code - 1);
+    private int StepCode(int slot) => take?.Step(slot) ?? (int)Value(NoteSequencerGenerator.StepKey(slot));
+    private int RollHigh
+    {
+        get
+        {
+            var notes = Enumerable.Range(0, StepCount).Select(StepCode).Where(n => n >= 1 && n <= 128).ToArray();
+            var highest = notes.Length > 0 ? notes.Max() - 1 : Reference;
+            return Math.Clamp(highest + 2 + rollShift, 12, 127);
+        }
+    }
+    private int RollLow => RollHigh - 12;
+    private void ShiftRoll(int semitones) => rollShift = Math.Clamp(rollShift + semitones, -96, 96);
+    private async Task PlaceNoteAsync(int slot, int note)
+    {
+        selectedStep = slot;
+        if (RecordingLocked || !NoteSequencerGenerator.IsPlayable(note, Reference)) return;
+        var code = StepCode(slot) == note + 1 ? (IsArticulated ? NoteSequencerGenerator.RestCode : 0) : note + 1;
+        await WriteStepAsync(code, false);
+    }
     private async Task EditValueAsync(string key, ChangeEventArgs args)
     {
         if (RecordingLocked) return;
@@ -188,7 +313,7 @@
     private async Task EnterNoteAsync(int note)
     {
         if (recordingOperation) return;
-        if (stepEntry && showPattern) { await WriteStepAsync(note + 1, true); return; }
+        if (EditingNotes) { await WriteStepAsync(note + 1, true); await SendAsync(new(PerformanceNoteKind.NoteOn, note, KeyboardVelocity)); return; }
         var current = take;
         if (current is null) { await SendAsync(new(PerformanceNoteKind.NoteOn, note, KeyboardVelocity)); return; }
         pendingNotes++;
@@ -272,7 +397,7 @@
             showPattern = false;
             held.Clear();
             if (adapter is not null) await adapter.InvokeVoidAsync("clear");
-            if (IsNoteSource) await ReleaseAllAsync();
+            if (IsNoteSource || IsArticulated) await ReleaseAllAsync();
         }
         else focusRequested = true;
         notice = null;
@@ -311,11 +436,11 @@
         if (!armed || disposed) return;
         if (!down)
         {
-            if (held.Remove(code, out var released) && !held.ContainsValue(released)) await SendAsync(new(PerformanceNoteKind.NoteOff, released));
+            if (held.Remove(code, out var released) && !held.ContainsValue(released) && (IsNoteSource || IsArticulated)) await SendAsync(new(PerformanceNoteKind.NoteOff, released));
             StateHasChanged();
             return;
         }
-        if (stepEntry && showPattern && code is "Space" or "ArrowLeft" or "ArrowRight")
+        if (EditingNotes && code is "Space" or "ArrowLeft" or "ArrowRight")
         {
             if (code == "Space") await WriteStepAsync(0, true);
             else selectedStep = (selectedStep + (code == "ArrowLeft" ? StepCount - 1 : 1)) % StepCount;
@@ -335,7 +460,7 @@
     [JSInvokable] public Task ReleasePhysicalKeys() => InvokeAsync(async () =>
     {
         held.Clear();
-        if (IsNoteSource && !disposed) await ReleaseAllAsync();
+        if ((IsNoteSource || IsArticulated) && !disposed) await ReleaseAllAsync();
         if (!disposed) StateHasChanged();
     });
 
@@ -353,7 +478,7 @@
             // Retune first, then release the previous key, for continuous legato.
             if (previous != next && (!IsNoteSource || !alreadyHeld)) await EnterNoteAsync(next);
         }
-        if (IsNoteSource && previous is int released && released != note && !held.ContainsValue(released))
+        if ((IsNoteSource || IsArticulated) && previous is int released && released != note && !held.ContainsValue(released))
             await SendAsync(new(PerformanceNoteKind.NoteOff, released));
         StateHasChanged();
     });
@@ -362,7 +487,7 @@
     {
         if (!armed || (adapter is not null && e.Detail != 0) || held.ContainsValue(note)) return;
         // Native keyboard/screen-reader activation is a short strike.
-        if (!IsNoteSource) { await EnterNoteAsync(note); return; }
+        if (!IsNoteSource) { await EnterNoteAsync(note); if (IsArticulated) await SendAsync(new(PerformanceNoteKind.NoteOff, note)); return; }
         if (await SendAsync(new(PerformanceNoteKind.NoteOn, note, KeyboardVelocity)))
             await SendAsync(new(PerformanceNoteKind.NoteOff, note));
     }
@@ -392,7 +517,7 @@
     {
         disposed = true;
         held.Clear();
-        if (IsNoteSource) await ReleaseAllAsync();
+        if (IsNoteSource || IsArticulated) await ReleaseAllAsync();
         if (mounting is not null) await mounting;
         try { if (adapter is not null) { await adapter.InvokeVoidAsync("dispose"); await adapter.DisposeAsync(); } }
         finally { reference?.Dispose(); if (module is not null) await module.DisposeAsync(); }
