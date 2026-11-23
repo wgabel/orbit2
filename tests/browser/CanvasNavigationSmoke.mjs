@@ -79,9 +79,14 @@ async function verifyCoveredNodePinch(page) {
     // there is no exposed background to start a navigation gesture on.
     // Phase 6.21.5 starts each leaf node compact. Expand a parameter-rich
     // candidate before testing takeover on the real range slider.
-    const candidate = canvas(page).locator('.node-frame-expandable').first();
+    // Compact nodes vary greatly in height. Pick the most parameter-rich
+    // leaf so that its expanded editor can genuinely cover the viewport.
+    const id = await canvas(page).locator('.node-frame-expandable').evaluateAll(nodes =>
+        nodes.map(node => ({ id: node.dataset.nodeId, ports: node.querySelectorAll('.node-input-row').length,
+            properties: node.querySelectorAll('.node-compact-property').length }))
+            .sort((a, b) => b.ports + b.properties - a.ports - a.properties)[0].id);
+    const candidate = canvas(page).locator(`[data-node-id="${id}"]`);
     await candidate.getByRole('button', { name: 'Expand node' }).evaluate(button => button.click());
-    const id = await candidate.getAttribute('data-node-id');
     const node = canvas(page).locator(`[data-node-id="${id}"]`);
     await node.locator('.node-alias').click({ button: 'right' });
     await page.locator('.canvas-context-menu').getByRole('button', { name: 'Focus node', exact: true }).click();
@@ -89,7 +94,8 @@ async function verifyCoveredNodePinch(page) {
     // context menu is returning focus. Keyboard zoom has independent coverage.
     const corner = await canvas(page).evaluate(element => {
         const rect = element.getBoundingClientRect();
-        return { x: Math.round(rect.left + 8), y: Math.round(rect.top + 8) };
+        return { x: Math.round(rect.left + rect.width / 2),
+            y: Math.round(rect.top + rect.height / 2) };
     });
     await page.mouse.move(corner.x, corner.y);
     for (let i = 0; i < 30 && (await currentViewport(page)).zoom < 4; i++) {
