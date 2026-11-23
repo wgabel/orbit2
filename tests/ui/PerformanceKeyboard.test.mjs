@@ -50,20 +50,49 @@ function fixture() {
         dispose() { adapter.dispose(); Object.assign(globalThis, original); } };
 }
 
-test("canvas-focused F fits instead of playing; piano-focused F plays and releases after focus changes", async () => {
+test("armed keyboard captures F on canvas; collapsed dock leaves F to canvas", async () => {
     const f = fixture();
     try {
         const canvas = new ElementStub();
         canvas.matches = selector => selector === ".canvas-viewport";
         canvas.closest = () => null;
-        f.window.emit("keydown", { code: "KeyF", key: "f", target: canvas });
-        f.window.emit("keyup", { code: "KeyF", key: "f", target: canvas });
-        await f.flush();
-        assert.deepEqual(f.calls, []);
-        f.window.emit("keydown", { code: "KeyF", key: "f", target: f.root });
-        f.window.emit("keyup", { code: "KeyF", key: "f", target: canvas });
+        let prevented = 0, stopped = 0;
+        const event = {
+            code: "KeyF", key: "f", target: canvas,
+            preventDefault() { prevented++; },
+            stopPropagation() { stopped++; }
+        };
+        f.window.emit("keydown", event);
+        f.window.emit("keyup", event);
         await f.flush();
         assert.deepEqual(f.calls, [["PhysicalKey", "KeyF", true], ["PhysicalKey", "KeyF", false]]);
+        assert.equal(prevented, 2);
+        assert.equal(stopped, 2);
+
+        f.root.dataset.armed = "false";
+        prevented = stopped = 0;
+        f.window.emit("keydown", event);
+        f.window.emit("keyup", event);
+        await f.flush();
+        assert.deepEqual(f.calls, [["PhysicalKey", "KeyF", true], ["PhysicalKey", "KeyF", false]]);
+        assert.equal(prevented, 0);
+        assert.equal(stopped, 0);
+    } finally { f.dispose(); }
+});
+
+test("armed keyboard ignores F in editable fields and with modifier keys", async () => {
+    const f = fixture();
+    try {
+        const textField = new ElementStub();
+        textField.closest = () => ({ tagName: "INPUT" });
+        f.window.emit("keydown", { code: "KeyF", key: "f", target: textField });
+        f.window.emit("keyup", { code: "KeyF", key: "f", target: textField });
+        const canvas = new ElementStub();
+        canvas.closest = () => null;
+        f.window.emit("keydown", { code: "KeyF", key: "f", target: canvas, ctrlKey: true });
+        f.window.emit("keyup", { code: "KeyF", key: "f", target: canvas, ctrlKey: true });
+        await f.flush();
+        assert.deepEqual(f.calls, []);
     } finally { f.dispose(); }
 });
 
