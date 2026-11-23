@@ -2,7 +2,7 @@
 
 [Instrument nodes](faust-instrument-nodes.md) · [Faust-first design](realistic-instrument-emulation.md) · [Usage](../usage/sound-and-instruments.md#faust-instrument-nodes)
 
-**Status:** implementation in review (wind implementation PR (pending link)). Two monophonic wind candidates using the existing pinned Faust compiler 2.90.0, libraries 2.74.2 and physmodels.lib 1.2.1. Both model the interaction of nonlinear excitation and acoustic propagation; neither is a fixed oscillator/filter approximation or a listening-approved replica. No new runtime dependency.
+**Status:** implementation in review ([PR #82](https://github.com/wgabel/orbit2/pull/82)). Two monophonic wind candidates using the existing pinned Faust compiler 2.90.0, libraries 2.74.2 and physmodels.lib 1.2.1. Both model the interaction of nonlinear excitation and acoustic propagation; neither is a fixed oscillator/filter approximation or a listening-approved replica. No new runtime dependency.
 
 ## Playing and modulation
 

@@ -2,7 +2,7 @@
 
 [Realistic instrument design](realistic-instrument-emulation.md) · [Physical Pluck calibration](faust-physical-pluck.md) · [Usage](../usage/sound-and-instruments.md#faust-instrument-nodes) · [Roadmap](../roadmap/advanced.md#phase-727--faust-first-physical-models-planned)
 
-**Status:** Physical Pluck, Physical Marimba, Drawbar Organ and Rotary Speaker merged in [PR #81](https://github.com/wgabel/orbit2/pull/81). Physical Clarinet and Physical Flute are in review (wind implementation PR (pending link)); see [sustained physical models](faust-sustained-instruments.md). These are technically tested candidates, not listening-approved acoustic replicas. Existing presets and node IDs remain unchanged. The existing Faust compiler distribution-compliance work is explicitly deferred by project owner; no new dependency/version or copied upstream model source is introduced, and the [audit](faust-dependency-audit.md) remains open.
+**Status:** Physical Pluck, Physical Marimba, Drawbar Organ and Rotary Speaker merged in [PR #81](https://github.com/wgabel/orbit2/pull/81). Physical Clarinet and Physical Flute are in review ([PR #82](https://github.com/wgabel/orbit2/pull/82)); see [sustained physical models](faust-sustained-instruments.md). These are technically tested candidates, not listening-approved acoustic replicas. Existing presets and node IDs remain unchanged. The existing Faust compiler distribution-compliance work is explicitly deferred by project owner; no new dependency/version or copied upstream model source is introduced, and the [audit](faust-dependency-audit.md) remains open.
 
 ## Play the instruments
 
