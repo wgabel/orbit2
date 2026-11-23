@@ -42,7 +42,7 @@ for(const [kind,sustained] of [['violin',true],['brass',true],['electric-guitar'
     for(const rate of [44100,48000]){
         test(kind+' direct note, safety, tuning diagnostics @'+rate,async()=>{
             const duration=2.5, n=count(rate,duration), first=count(rate,.1), last=count(rate,1.4);
-            const results=[];
+            const results=[],silentNotes=[];
             for(const semitones of [-12,-5,0,7,12]){
                 let inputs;
                 if(sustained){
@@ -61,10 +61,16 @@ for(const [kind,sustained] of [['violin',true],['brass',true],['electric-guitar'
                 results.push({note:semitones,rms:+active.toFixed(6),cents:estimate?+cents(estimate,f).toFixed(1):null});
                 // A silent or octave-jumping model is not a validated instrument. Log measured deviations for model fitting.
                 assert.ok(Number.isFinite(active));
-                if(kind==='electric-guitar') assert.ok(active>0.0001,'guitar voice must not disappear before 0.55s');
+                if(kind==='electric-guitar'){
+                    const early=rms(y.subarray(count(rate,.12),count(rate,.20)));
+                    const mid=rms(y.subarray(count(rate,.25),count(rate,.40)));
+                    console.log('GUITAR_DIAG',rate,semitones,{early,mid,late:active,peak:peak(y)});
+                    if(active<=0.0001)silentNotes.push(semitones);
+                }
                 if(sustained) assert.ok(peak(y.subarray(count(rate,1.8)))<.000001,'release must end');
             }
             console.log(kind,rate,JSON.stringify(results));
+            if(kind==='electric-guitar')assert.deepEqual(silentNotes,[],'guitar voice must sustain at 0.55s for these semitones');
         });
         test(kind+' Note Source graph and retrigger @'+rate,async()=>{
             assert.equal(fixture.inputs,1);
