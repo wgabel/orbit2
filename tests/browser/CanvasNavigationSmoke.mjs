@@ -181,9 +181,16 @@ async function verifyCompactModulationValueEdit(page, touch) {
 async function verifyCoveredNodePinch(page) {
     // Focus a parameter-rich node, then zoom around the viewport centre until
     // there is no exposed background to start a navigation gesture on.
-    const id = await canvas(page).locator('article[data-node-id]').evaluateAll(nodes => nodes
-        .filter(node => node.querySelector('input[type="range"]'))
-        .sort((a, b) => b.offsetHeight - a.offsetHeight)[0].dataset.nodeId);
+    const id = await canvas(page).locator('article[data-node-id]').evaluateAll(nodes => {
+        const viewport = document.querySelector('.canvas-viewport').getBoundingClientRect();
+        // An instrument with many persistent modulation rows can be so tall
+        // that all its sliders sit outside the 400% viewport. Select the
+        // smallest parameter-rich node that will still fully cover that view.
+        const eligible = nodes.filter(node => node.querySelector('input[type="range"]') &&
+            node.offsetWidth * 4 > viewport.width + 2 && node.offsetHeight * 4 > viewport.height + 2);
+        if (!eligible.length) throw new Error("No node can cover the viewport at 400% with a slider");
+        return eligible.sort((a, b) => a.offsetHeight - b.offsetHeight)[0].dataset.nodeId;
+    });
     const node = canvas(page).locator(`[data-node-id="${id}"]`);
     await node.locator('.node-alias').click({ button: 'right' });
     await page.locator('.canvas-context-menu').getByRole('button', { name: 'Focus node', exact: true }).click();
