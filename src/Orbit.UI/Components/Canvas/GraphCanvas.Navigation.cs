@@ -79,12 +79,14 @@ public partial class GraphCanvas
         return InvokeAsync(StateHasChanged);
     }
 
-    private async Task BeginNodeSurfaceAsync(PointerEventArgs args)
+    private async Task BeginNodeSurfaceAsync(Guid nodeId, PointerEventArgs args)
     {
         fitTaps.Reset();
         if (args.PointerType != "touch" || module is null || args.Button != 0 ||
             !await module.InvokeAsync<bool>("isNodeNavigationSurface", viewportElement, args.ClientX, args.ClientY)) return;
         if (universalNavigating || await TakeOverNavigationAsync(args)) return;
+        State.SelectNode(nodeId);
+        TrackNodeTap(nodeId, args);
         await BeginGesture(args, null, wire: false);
     }
 
