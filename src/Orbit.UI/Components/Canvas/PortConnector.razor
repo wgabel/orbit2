@@ -5,6 +5,7 @@
 @* One typed port for every node, including future rack nodes. The small marker
    is measured by the canvas DOM adapter; the whole button is a hit target. *@
 <button type="button" class="@ConnectorClass" title="@Description" aria-label="@Description"
+        data-port-help="@HintText" data-port-title="@($"{Port.Name} · {Port.Direction} ({Port.SignalType})")"
         aria-pressed="@(Active ? "true" : "false")"
         @onpointerdown="PointerDown" @onpointerdown:stopPropagation="true"
         @onclick="Activate" @onclick:stopPropagation="true">
