@@ -24,6 +24,8 @@ public sealed record SavedComposite(string Name, Guid InputRackId, Guid OutputRa
 public sealed record SavedCanvas(Guid GraphId, double PanX, double PanY, double Zoom, SavedNodePosition[] Positions)
 {
     public SavedNodeVisualization[] Visualizations { get; init; } = [];
+    // Optional presentation-only pins. Older schema-1 patches load with no pins.
+    public Guid[] PinnedNodeIds { get; init; } = [];
     public ConnectionLabelMode ConnectionLabels { get; init; } = ConnectionLabelMode.All;
     public AnnotationVisibility AnnotationVisibility { get; set; } = AnnotationVisibility.Show;
     public Guid? ExpandedVisualizationNodeId { get; init; }
