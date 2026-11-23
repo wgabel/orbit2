@@ -182,7 +182,7 @@ Ideas for extending composition capability (not implemented by this guide, and n
 
 | Capability | Musical purpose |
 |---|---|
-| Note-mode Gate/Trigger, duration and rests | Articulate each actual note, including silence and held notes; see planned [Note Sequencer design](../instruments/note-sequencer-design.md). |
+| Per-note duration and velocity editing (remaining) | Gate, Trigger, Hold/Rest and pattern-wide note length/velocity already work in [Note Sequencer Notes mode](../instruments/note-sequencer.md) ([PR #87](https://github.com/wgabel/orbit2/pull/87)); independent note lengths, per-note velocity and complete arrangement automation remain future capabilities. |
 | Smooth random and sample-and-hold | Bounded, slowly changing or sampled values rather than raw noise jitter. |
 | Probability gates and Euclidean rhythms | Controlled variation and occasional accents, with repeatable rhythmic structure. |
 | Scale quantizer | Constrain generative pitch decisions to meaningful notes. |

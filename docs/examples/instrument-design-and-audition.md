@@ -83,7 +83,7 @@ The supplied workspace has the reference branch; add and connect the candidate b
 | Trigger | Trigger | One typed edge pulse at each written onset (including changes during a held gate); a separate onset lane and Signal to Trigger adapter guarantee a new event after at least one low slot. |
 | Velocity | Modulation | 0–1 strength, encoded by semitone level / 12. Held until next onset, including releases. |
 
-The initial driver supports onsets at least two sixteenths apart because the Schmitt trigger must see a low slot between rises. For arbitrary adjacent sixteenth repetitions and real note velocity/retrigger/gate rules, implement Note-mode patterns (7.2.8d) rather than misusing Hold as a note event. A gate-driven ADSR responds to a new gate edge, not to every legato pitch change; a separate Trigger-driven AD transient can still respond at each onset. The supplied reference uses exactly that combination.
+The initial driver supports onsets at least two sixteenths apart because the Schmitt trigger must see a low slot between rises. For arbitrary adjacent sixteenth repetitions, use the **implemented** Note Sequencer Notes mode (7.2.8d, [PR #87](https://github.com/wgabel/orbit2/pull/87)) with separate Note onsets, Hold ties and explicit Rest instead of misusing Hold as a note event. Notes mode has pattern-wide velocity and length, **not** independently recorded per-note velocity or arbitrary note duration. A gate-driven ADSR responds to a new gate edge, not to every legato pitch change; a separate Trigger-driven AD transient can still respond at each onset. The supplied reference uses exactly that combination.
 
 **Verification of the supplied fixture:** schema-1 deserialization/restoration through the actual application registry; compile with the Orbit Faust graph compiler; render two 8-second cycles at 48 kHz with the actual pitch-pattern scheduler and dynamic observations. All 30 expected typed trigger pulses occurred at their exact 6,000-frame grid positions; settled gate, pitch and normalized velocity matched the score including legato/repeated notes. Final 250 ms of each cycle was silent (< 10⁻⁶ sample magnitude); the master peak was approximately −18.0 dBFS. This verifies the control and demonstration voice, not approval of any proposed instrument or live device performance.
 
@@ -161,7 +161,7 @@ The first fixture and candidate sound experiments are useful now with existing n
 
 | Priority | Needed capability / existing track |
 | --- | --- |
-| Very high | Real Note-mode sequencer with independent durations, onset/velocity and coherent gate/retrigger/legato (7.2.8d); migrate comparison profiles without changing their score. |
+| Very high | **Remaining** per-note velocity and independently editable durations; Notes-mode Pitch/Gate/Trigger, pattern-wide velocity/length, rests and ties already implemented in 7.2.8d ([PR #87](https://github.com/wgabel/orbit2/pull/87)). Keep the frozen four-lane reference score when developing new profile variants. |
 | Very high | Reusable independent instrument and test modules, catalogue and portable definitions (7.4.3–7.4.5); avoid bespoke storage. |
 | High | Sample assets, sample players, and velocity-layered multisample instruments (Phase 8); recorded instruments are an option alongside synthesis, not mandatory. |
 | High | True stereo/panning/unison (7.5 after 7.3 baseline); effects remain mono until that channel work ships. |
