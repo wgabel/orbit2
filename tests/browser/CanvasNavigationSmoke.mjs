@@ -77,9 +77,11 @@ export async function tripleTapFit(page, touch = true) {
 async function verifyCoveredNodePinch(page) {
     // Focus a parameter-rich node, then zoom around the viewport centre until
     // there is no exposed background to start a navigation gesture on.
-    const id = await canvas(page).locator('article[data-node-id]').evaluateAll(nodes => nodes
-        .filter(node => node.querySelector('input[type="range"]'))
-        .sort((a, b) => b.offsetHeight - a.offsetHeight)[0].dataset.nodeId);
+    // Phase 6.21.5 starts each leaf node compact. Expand a parameter-rich
+    // candidate before testing takeover on the real range slider.
+    const candidate = canvas(page).locator('.node-frame-expandable').first();
+    await candidate.getByRole('button', { name: 'Expand node' }).evaluate(button => button.click());
+    const id = await candidate.getAttribute('data-node-id');
     const node = canvas(page).locator(`[data-node-id="${id}"]`);
     await node.locator('.node-alias').click({ button: 'right' });
     await page.locator('.canvas-context-menu').getByRole('button', { name: 'Focus node', exact: true }).click();
