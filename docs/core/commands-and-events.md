@@ -30,6 +30,7 @@ A domain object can record events while being changed, but it should not directl
 | Command (request) | Event (successful fact) |
 |---|---|
 | AddNode | NodeAdded |
+| DuplicateNode | NodeAdded (new independent node; nested composites deep-copied, external connections omitted) |
 | RemoveNode | NodeRemoved |
 | ConnectNodes | ConnectionCreated |
 | RemoveConnection | ConnectionRemoved |
