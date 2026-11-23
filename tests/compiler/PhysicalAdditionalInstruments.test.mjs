@@ -37,8 +37,29 @@ function pitchEstimate(y,rate,expected,start,end){
 }
 for(const [kind,sustained] of [['violin',true],['brass',true],['electric-guitar',false]]){
     const fixture=JSON.parse(await readFile(join(dir,'generator.physical-'+kind+'.json'),'utf8'));
-    const direct=await compiler.createMonoDSPFactory('phys_'+kind.replaceAll('-','_'),fixture.direct,'-single');
-    const graph=await compiler.createMonoDSPFactory('graph_'+kind.replaceAll('-','_'),fixture.source,'-single');
+    if(kind==='violin') {
+        const forms=[
+            ['constant','pm.violinModel(0.8,0.5,0.6,0.7)'],
+            ['length','pm.violinModel(pm.f2l(440),0.5,0.6,0.7)'],
+            ['dynamic','pm.violinModel(pm.f2l(f),0.5,0.6,0.7) with {f=440;}'],
+            ['expression','pm.violinModel(pm.f2l(440),0.5,vel,0.7) with {vel=0.1+0.5*e;}']
+        ];
+        for(const [label,expression] of forms){
+            try {
+                const snippet='import("stdfaust.lib"); process(e) = '+expression+';';
+                const factory=await compiler.createMonoDSPFactory('violin_diagnostic_'+label,snippet,'-single');
+                console.log('violin minimal',label,'COMPILED',Boolean(factory));
+            }catch(error){console.log('violin minimal',label,'FAILED',String(error));}
+        }
+    }
+    let direct,graph;
+    try{
+        direct=await compiler.createMonoDSPFactory('phys_'+kind.replaceAll('-','_'),fixture.direct,'-single');
+        graph=await compiler.createMonoDSPFactory('graph_'+kind.replaceAll('-','_'),fixture.source,'-single');
+    }catch(error){
+        test(kind+' native model and graph compilation',()=>{throw error;});
+        continue;
+    }
     for(const rate of [44100,48000]){
         test(kind+' direct note, safety, tuning diagnostics @'+rate,async()=>{
             const duration=2.5, n=count(rate,duration), first=count(rate,.1), last=count(rate,1.4);
