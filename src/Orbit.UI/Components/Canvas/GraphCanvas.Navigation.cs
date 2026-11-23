@@ -79,12 +79,15 @@ public partial class GraphCanvas
         return InvokeAsync(StateHasChanged);
     }
 
-    private async Task BeginNodeSurfaceAsync(PointerEventArgs args)
+    private async Task BeginNodeSurfaceAsync(Guid nodeId, PointerEventArgs args)
     {
         fitTaps.Reset();
-        if (args.PointerType != "touch" || module is null || args.Button != 0 ||
+        if (module is null || args.Button != 0 || editingCompactParameters.Count > 0 ||
             !await module.InvokeAsync<bool>("isNodeNavigationSurface", viewportElement, args.ClientX, args.ClientY)) return;
         if (universalNavigating || await TakeOverNavigationAsync(args)) return;
+        State.SelectNode(nodeId, args.ShiftKey || args.CtrlKey || args.MetaKey);
+        BeginNodeTap(nodeId, args);
+        // An inert node surface may pan; only a release within the tap threshold expands.
         await BeginGesture(args, null, wire: false);
     }
 
