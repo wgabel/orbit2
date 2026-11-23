@@ -21,6 +21,7 @@ public sealed partial class CanvasStateService : ICanvasStateService
     private readonly Queue<CanvasStateChange> pendingNotifications = new();
     private readonly Dictionary<Guid, CanvasPoint> removedPositions = [];
     private readonly Dictionary<Guid, NodeVisualizationSettings> removedVisualizations = [];
+    private readonly HashSet<Guid> removedPinnedNodes = [];
     private NodePlacementReservation? nextPlacement;
     private CompositeExpansionLayout? pendingExpansion;
     private CanvasStateSnapshot snapshot;
@@ -308,7 +309,15 @@ public sealed partial class CanvasStateService : ICanvasStateService
             if (snapshot.Visualizations.TryGetValue(node.Id, out var settings) || removedVisualizations.Remove(node.Id, out settings))
                 visualizations[node.Id] = NodeVisualizationCapabilities.Normalize(node, settings);
         var expanded = ValidExpandedNode(graph, snapshot.ExpandedVisualizationNodeId);
-        var pins = snapshot.PinnedNodeIds.Where(id => graph.Nodes.Any(node => node.Id == id && CompactNodePresentation.IsExpandable(node))).ToArray();
+        // Preserve pin preference across undo/redo and composite group/ungroup.
+        // Never keep a pin on a node that is no longer in the live graph.
+        foreach (var oldPin in snapshot.PinnedNodeIds.Where(id => !nodeIds.Contains(id)))
+            removedPinnedNodes.Add(oldPin);
+        var pinned = snapshot.PinnedNodeIds.Where(id => graph.Nodes.Any(node => node.Id == id && CompactNodePresentation.IsExpandable(node))).ToHashSet();
+        foreach (var node in graph.Nodes.Where(node => CompactNodePresentation.IsExpandable(node)))
+            if (removedPinnedNodes.Remove(node.Id)) pinned.Add(node.Id);
+        while (removedPinnedNodes.Count > 512) removedPinnedNodes.Remove(removedPinnedNodes.First());
+        var pins = pinned.Order().ToArray();
         var nodeDescriptions = ReconcileDescriptions(snapshot.NodeDescriptions, removedNodeDescriptions, nodeIds);
         var connectionDescriptions = ReconcileDescriptions(snapshot.ConnectionDescriptions, removedConnectionDescriptions, connectionIds);
         if (expansion is not null)
