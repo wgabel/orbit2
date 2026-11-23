@@ -42,14 +42,13 @@
             }
             @if (IsExpandable)
             {
-                @if (Expanded)
-                {
-                    <button type="button" class="node-pin-toggle" aria-pressed="@Pinned"
-                            aria-label="@(Pinned ? "Unpin expanded node" : "Pin node expanded")"
-                            title="@(Pinned ? "Unpin node" : "Keep this node expanded")"
-                            @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true"
-                            @onclick="OnTogglePin">@(Pinned ? "◆" : "◇")</button>
-                }
+                @* Reserve the pin slot while compact; the header and port positions must never jump. *@
+                <button type="button" class="node-pin-toggle" aria-pressed="@Pinned"
+                        disabled="@(!Expanded)"
+                        aria-label="@(Pinned ? "Unpin expanded node" : "Pin node expanded")"
+                        title="@(Pinned ? "Unpin node" : "Keep this node expanded")"
+                        @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true"
+                        @onclick="OnTogglePin">@(Pinned ? "◆" : "◇")</button>
                 <button type="button" class="node-expand-toggle" aria-expanded="@Expanded"
                         aria-label="@(Expanded ? "Collapse node" : "Expand node")"
                         title="@(Expanded ? "Collapse node" : "Expand node")"
