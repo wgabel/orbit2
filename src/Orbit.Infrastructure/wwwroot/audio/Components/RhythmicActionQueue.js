@@ -5,7 +5,7 @@ export const MAX_ACTIONS = 64;
 export const MAX_RHYTHMIC_INPUTS = 30;
 
 export function validAction(input, action) {
-    return input && Number.isInteger(action) && (input.isNote ? validNoteAction(action) : input.isPitch ? action >= 1 && action <= 129 :
+    return input && Number.isInteger(action) && (input.isNote ? validNoteAction(action) : input.isPitch ? action >= 1 && action <= 130 :
         action === 1 || (action === 2 && input.allowClose));
 }
 

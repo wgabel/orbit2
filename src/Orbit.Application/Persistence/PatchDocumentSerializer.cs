@@ -165,6 +165,21 @@ public sealed class PatchDocumentSerializer
                 if (leaf is NoteSequencerGenerator && parameters.Count == 2 && parameters.ContainsKey(NoteSequencerGenerator.ReferenceKey) && parameters.ContainsKey(NoteSequencerGenerator.InitialPitchKey))
                     foreach (var parameter in leaf.Parameters.Where(p => NoteSequencerGenerator.IsPatternParameter(p.Definition.Key)))
                         parameters.Add(parameter.Definition.Key, (parameter.Id, parameter.BaseValue));
+                // Add independent articulation without changing legacy pitch-port and parameter IDs.
+                // Missing older pattern slots still fail validation unless the complete live-only migration above applies.
+                if (leaf is NoteSequencerGenerator)
+                {
+                    foreach (var key in new[] { NoteSequencerGenerator.ArticulationKey, NoteSequencerGenerator.GateLengthKey, NoteSequencerGenerator.VelocityKey })
+                    {
+                        if (!parameters.ContainsKey(key))
+                        {
+                            var added = leaf.Parameters.Single(p => p.Definition.Key == key);
+                            parameters.Add(key, (added.Id, added.BaseValue));
+                        }
+                    }
+                    foreach (var output in leaf.Outputs.Where(p => p.Key != "pitch-out"))
+                        ports.TryAdd(output.Key, output.Id);
+                }
                 leaf.RestoreIdentity(ports, parameters);
                 graph.AddNode(leaf);
             }
