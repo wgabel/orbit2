@@ -97,3 +97,64 @@ test("dynamic factory creates a worklet from a compiler result and applies graph
     assert.throws(() => factory.setParameters(node, { p_frequency: 220, unknown: 1 }), /Unknown or ambiguous/);
     assert.equal(calls.length, 2);
 });
+
+test("silent gated instruments tolerate controls Faust optimized away during initialization", async () => {
+    // An unconnected physical Clarinet Gate becomes constant zero. Faust may
+    // eliminate Attack, its audio path, and an otherwise valid mute slider.
+    const writes = [];
+    const node = {
+        getParams: () => ["/OrbitGraph/p_pitch", "/OrbitGraph/orbit_tap_select_1"],
+        setParamValue: (path, value) => writes.push([path, value])
+    };
+    const factory = new FaustNodeFactory(null, new Map(),
+        () => ({ createNode: async () => node }), { compile: async () => ({ json: "{}", module: "wasm" }) });
+    await factory.create({}, "OrbitGraph",
+        { p_pitch: 0, p_attack: .055, mute_clarinet: 1 }, "process = 0;");
+    assert.deepEqual(writes, [["/OrbitGraph/p_pitch", 0]]);
+
+    // Those same accepted graph controls remain editable without throwing.
+    // A new, present worklet control not in the initial manifest still works.
+    factory.setParameters(node, { p_attack: .2, mute_clarinet: 0, p_pitch: 5,
+        orbit_tap_select_1: 2 });
+    assert.deepEqual(writes.slice(1), [["/OrbitGraph/p_pitch", 5],
+        ["/OrbitGraph/orbit_tap_select_1", 2]]);
+
+    // Never swallow a typo or partially apply a batch.
+    const count = writes.length;
+    assert.throws(() => factory.setParameters(node, { p_pitch: 7, unrecognized: 1 }), /Unknown or ambiguous/);
+    assert.equal(writes.length, count);
+    assert.throws(() => factory.setParameters(node, { p_attack: Infinity }), /Invalid parameter value/);
+});
+
+test("fully pruned graphs keep only their own omitted controls, not arbitrary edits", async () => {
+    const nodes = [[], ["/OrbitGraph/p_attack"]].map(paths => ({
+        getParams: () => paths,
+        writes: [],
+        setParamValue(path, value) { this.writes.push([path, value]); }
+    }));
+    const factory = new FaustNodeFactory(null, new Map(),
+        () => ({ createNode: async () => nodes.shift() }), { compile: async () => ({ json: "{}", module: "wasm" }) });
+    const first = await factory.create({}, "OrbitGraph", { p_attack: .055 }, "process = 0;");
+    factory.setParameters(first, { p_attack: .1 });
+    assert.deepEqual(first.writes, []);
+    assert.throws(() => factory.setParameters(first, { other: 1 }), /Unknown or ambiguous/);
+    const second = await factory.create({}, "OrbitGraph", { p_attack: .055 }, "process = 1;");
+    factory.setParameters(second, { p_attack: .2 });
+    assert.deepEqual(second.writes, [["/OrbitGraph/p_attack", .055], ["/OrbitGraph/p_attack", .2]]);
+});
+
+test("ambiguous Faust paths still reject and clean up before writing any initial controls", async () => {
+    const writes = [], cleanup = [];
+    const node = {
+        getParams: () => ["/first/gain", "/second/gain", "/first/pitch"],
+        setParamValue: (path, value) => writes.push([path, value]),
+        disconnect: () => cleanup.push("disconnect"),
+        destroy: () => cleanup.push("destroy")
+    };
+    const factory = new FaustNodeFactory(null, new Map(),
+        () => ({ createNode: async () => node }), { compile: async () => ({ json: "{}", module: "wasm" }) });
+    await assert.rejects(factory.create({}, "OrbitGraph", { pitch: 440, gain: 1 }, "process = 0;"),
+        /Unknown or ambiguous Faust parameter: gain/);
+    assert.deepEqual(writes, []);
+    assert.deepEqual(cleanup, ["disconnect", "destroy"]);
+});
