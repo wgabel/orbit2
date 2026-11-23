@@ -428,7 +428,7 @@ public partial class GraphWorkspace : IAsyncDisposable
         if (before.SelectedNodeIds.Count != 1 || before.SelectedNodeIds[0] != nodeId ||
             before.SelectedConnectionIds.Count != 0 ||
             !before.NodePositions.TryGetValue(nodeId, out var position) ||
-            before.Graph.GetNode(nodeId).TypeKey is InputRack.NodeType or OutputRack.NodeType)
+            before.Graph.GetNode(nodeId).TypeKey is InputRack.NodeType or OutputRack.NodeType or MasterOutput.NodeType)
             return;
 
         var duplicateId = Guid.NewGuid();
