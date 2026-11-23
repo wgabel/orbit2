@@ -85,8 +85,7 @@ public partial class GraphCanvas
         if (module is null || args.Button != 0 ||
             !await module.InvokeAsync<bool>("isNodeNavigationSurface", viewportElement, args.ClientX, args.ClientY)) return;
         if (universalNavigating || await TakeOverNavigationAsync(args)) return;
-        await BeginGesture(args, null, wire: false);
-        BeginNodeTap(nodeId, args);
+        await BeginGesture(args, null, wire: false, tapNodeId: nodeId);
     }
 
     // A single input tap remains a port activation. A second finger landing
