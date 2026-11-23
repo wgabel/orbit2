@@ -38,7 +38,7 @@ public static class FaustAdditionalPhysicalInstruments
         """;
 
     public static string ElectricGuitar(string pitch, string trigger, string strength, string position, string mute, string gain) => $$"""
-        (0.65*ma.tanh(raw)*({{gain}})) with {
+        (0.75*ma.tanh(raw)*({{gain}})) with {
             event = ({{trigger}})>0;
             first = 1-1';
             f = 440.0*pow(2.0,max(-21.0,min(15.0,({{pitch}}):ba.sAndH(event|first)))/12.0);
@@ -53,7 +53,7 @@ public static class FaustAdditionalPhysicalInstruments
             burst = no.noise*strikeVelocity*0.08*sin(ma.PI*u)*(u<1.0);
             stringTone = pm.ks(340.0/f+0.05-6.5*340.0/ma.SR,ksDamping,burst);
             electricAttack = pm.elecGuitar(340.0/f,pluckPos,sustain,strikeVelocity,event);
-            raw = (0.8*stringTone+0.2*electricAttack) : fi.dcblocker;
+            raw = (6.0*stringTone+0.2*electricAttack) : fi.dcblocker;
         }
         """;
 }
