@@ -8,7 +8,7 @@
 @{ var wires = Wires; }
 <div class="graph-canvas">
     <div class="canvas-viewport" @ref="viewportElement" tabindex="0" aria-label="Graph canvas"
-         aria-keyshortcuts="F 0 Shift+F10" data-fit-sequence="@fitSequence" data-pinching="@(pinchOrigin is not null ? "true" : "false")"
+         aria-keyshortcuts="F 0 Shift+F10" data-fit-sequence="@fitSequence" data-port-hints-suppressed="@(drawingWire || pendingSource is not null || helpNodeId is not null)" data-pinching="@(pinchOrigin is not null ? "true" : "false")"
          @onpointerdown="BeginBackground" @onpointerdown:preventDefault="true"
          @onpointermove="PointerMoved" @onpointerup="PointerReleasedAsync"
          @onpointercancel="CancelGesture" @onpointerleave="CancelPointerExit" @onlostpointercapture="CancelPointerExit"
