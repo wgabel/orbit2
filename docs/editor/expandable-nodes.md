@@ -7,6 +7,7 @@ This document supersedes the earlier Phase 6.21.5 proposal in [the editor roadma
 ## 1. Scope and firm decisions
 
 - Use the same **compact-by-default, click/tap-to-expand** node behavior on desktop and mobile. Do not introduce a separate inspector.
+- **All nodes remain visible on the canvas at all times. No inactive-node visibility filtering, hiding or collapsing entire nodes.**
 - **Every input and output port remains individually visible in both states**, whether connected, disconnected, active or inactive. Do not collapse, aggregate, dynamically hide or substitute a port with an ambiguous anchor.
 - **Every parameter with a modulation capability remains visible in the compact node** even without a cable or when the parameter is temporarily inactive. Display its base value, unit and label; visually distinguish inactive state without removing the corresponding port.
 - **Compact base values are directly editable**, with an appropriate numeric editor or choice control. The editor should be reachable by clicking/tapping the value itself, without opening the expanded body. Live effective values are read-only.
@@ -73,23 +74,7 @@ Future leaf node registrations must add or verify their compact metadata; a safe
 - Preserve stable cable anchors on expansion. On legitimate parameter/port activation changes, measure from the real DOM and use existing snapping and connection-validation behavior. Never temporarily remove DOM sockets while animating. Current cable-edge panning, touch magnetic snapping and desktop pointer behavior must continue to work.
 - Keep hidden expanded visualizations from consuming unnecessary telemetry/scope taps, while always-visible live effective readings are throttled and render efficiently without jitter; no change to DSP calculations is implied.
 
-## 5. Inactive-node canvas visibility (additional requested option; inactivity definition pending)
-
-Add a canvas-wide **View → Inactive nodes** preference on desktop and mobile:
-
-| Preference | Visual behavior |
-| --- | --- |
-| **Hide inactive** (proposed default) | Filter qualifying inactive node frames and their incident cable visuals out of the displayed canvas. Do not rewrite, bridge or delete graph connections. |
-| **Always visible** | Display inactive and active nodes with all ports, controls and connections according to the compact/expanded contract. |
-
-- This is a **visibility filter only**. Hidden nodes retain all graph data, routing, parameter values, positions, saved state and history; filtering must not modify DSP, play state or stored patch structure.
-- The contract that **all ports are visible** applies to every node **currently displayed** on the canvas. Hidden inactive nodes, by definition, are not displayed with ports. Do not use this feature to hide only some ports on visible nodes.
-- Display a discoverable count such as `3 inactive nodes hidden` and offer a one-action reveal/Always visible route. Searching, locating via Outline, selecting via keyboard, and navigating to hidden nodes must temporarily reveal the target rather than leave it unfindable. Include nested canvases in behavior and tests.
-- A node that loses active status while an inline parameter edit or protected draft is in progress must not disappear mid-edit. Defer hiding it until the edit is resolved or explicitly revealed.
-- **Critical open semantic decision:** current Orbit 2 has explicit `IsMuted`/`IsBypassed` on nodes and `IsInputActive`/`IsParameterActive` for conditional ports/parameters, but no general-purpose node-level `IsInactive` property. Do **not** treat muted, bypassed, temporarily silent, unconnected or non-output-reachable nodes as interchangeable without user confirmation. The predicate for qualifying a node as inactive must be selected before implementing this filter.
-- Do not change composite **appearance** in either expansion state; whether an inactive composite is included in this optional canvas filter follows the confirmed inactivity rule and requires separate acceptance coverage.
-
-## 6. Acceptance criteria and regression coverage (before merging implementation)
+## 5. Acceptance criteria and regression coverage (before merging implementation)
 
 1. Every leaf type in BuiltInNodes/CreateEditorRegistry has deliberate compact metadata or an explicit safe fallback. Tests compare visible compact sockets to snapshot inputs/outputs and compact modulation-capable parameter rows to actual parameter definitions, including inactive and unconnected ones.
 2. All composite presets, arbitrary composite nodes, Input/Output Rack and Master Output keep their current controls and routing appearance; no hidden ports or actions. Composite child-graph editing and parent boundary mapping remain intact.
@@ -97,7 +82,6 @@ Add a canvas-wide **View → Inactive nodes** preference on desktop and mobile:
 4. Validate node-selection transition, outside click, multiple pin states, reload and nested navigation. Assert expansion does not move port marker centers and does not alter graph revisions, audio runtime or other node positions.
 5. Cover both active modulation (base + effective correctly distinguished) and stopped/stale/unavailable telemetry (base still shown; no false live value), plus dim inactive inputs. Check stable readout width under fast modulation.
 6. Validate pointer and touch snapping at 25–400% zoom, edge panning, cable deletion/context menu, pan/pinch takeover, accessible keyboard focus, reduced motion, and no loss of drafts.
-7. Once node inactivity semantics are confirmed, test default Hide inactive and Always visible, hidden counts and reveal/Outline actions, preserved incident graph connections, composite/rack handling, stable history and live DSP, and protection of in-progress edits. Do not ship an unapproved inactivity predicate.
-8. Measure large patch rendering against the existing 7.3.3 responsiveness metrics and live tap budgets; do not claim performance gains without measured evidence.
+7. Measure large patch rendering against the existing 7.3.3 responsiveness metrics and live tap budgets; do not claim performance gains without measured evidence.
 
 Implementation is intentionally out of scope for this specification. Update the usage guide and real status only when code and browser tests ship.
