@@ -399,7 +399,7 @@ foreach (var kind in new[] { PhysicalViolinGenerator.NodeType, PhysicalBrassGene
             new(to.Id, to.Inputs.Single(p => p.Key == inputKey).Id)));
     var note = AddCandidate(NoteSourceGenerator.NodeType);
     var instrument = AddCandidate(kind);
-    var master = AddCandidate(MasterOutput.NodeType);
+    var candidateMaster = AddCandidate(MasterOutput.NodeType);
     WireCandidate(note, "pitch-out", instrument, "pitch-modulation-in");
     if (kind == PhysicalElectricGuitarGenerator.NodeType)
     {
@@ -413,7 +413,7 @@ foreach (var kind in new[] { PhysicalViolinGenerator.NodeType, PhysicalBrassGene
         WireCandidate(note, "gate-out", instrument, "gate-in");
         WireCandidate(note, "velocity-out", instrument, "expression-modulation-in");
     }
-    WireCandidate(instrument, "audio-out", master, "audio-in");
+    WireCandidate(instrument, "audio-out", candidateMaster, "audio-in");
     var compiled = FaustGraphCompiler.CreateBuiltIn().Compile(candidateSession.Snapshot);
     var direct = kind switch
     {
