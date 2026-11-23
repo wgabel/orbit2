@@ -47,7 +47,7 @@ Regular buttons, port sockets, parameter inputs, plots and note body text keep t
 
 ### Duplicate a node
 
-In review ([PR #88](https://github.com/wgabel/orbit2/pull/88)). On desktop, right-click a node; on mobile, long-press its header or noninteractive body. Choose **Duplicate node**. The new node appears slightly down and right of its source and becomes selected, ready to drag or connect. Its parameters, mute/bypass state, alias/description and node plot preference are copied. Cables connecting the source to other nodes **are not copied**—connect the new node as needed. A duplicated composite retains its nested nodes and internal cables with new identities; the new internal canvas starts with normal layout defaults. Input and Output Rack nodes cannot be duplicated on their own. The graph copy is one Undo/Redo step; descriptions still use annotation history.
+In review ([PR #88](https://github.com/wgabel/orbit2/pull/88)). On desktop, right-click a node; on mobile, long-press its header or noninteractive body. Choose **Duplicate node**. The new node appears slightly down and right of its source and becomes selected, ready to drag or connect. Its parameters, mute/bypass state, alias/description and node plot preference are copied. Cables connecting the source to other nodes **are not copied**—connect the new node as needed. A duplicated composite retains its nested nodes and internal cables with new identities; the new internal canvas starts with normal layout defaults. Input and Output Rack nodes and the Master Output cannot be duplicated. The graph copy is one Undo/Redo step; descriptions still use annotation history.
 
 ### Delete a connection on mobile
 
