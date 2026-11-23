@@ -77,10 +77,34 @@ async function closeNodeLibrary(page) {
     await page.getByRole("button", { name: "Close library", exact: true }).click();
     await page.locator(".node-library-panel").waitFor({ state: "hidden" });
 }
+// Legacy playback assertions exercise full sliders; explicitly pin the nodes
+// needed by that fixture while the independent compact-node smoke checks defaults.
+async function pinNodeForFixture(node) {
+    const toggle = node.locator(".node-expand-toggle");
+    if (!await toggle.count()) return; // Composites and routing nodes remain full-sized.
+    if (await toggle.getAttribute("aria-expanded") !== "true")
+        await toggle.evaluate(button => button.click());
+    const pin = node.locator(".node-pin-toggle");
+    await pin.waitFor();
+    if (await pin.getAttribute("aria-pressed") !== "true")
+        await pin.evaluate(button => button.click());
+    await node.locator(".node-pin-toggle[aria-pressed='true']").waitFor();
+}
+async function pinExistingFixtureNodes(page) {
+    const ids = await page.locator(".node-frame").evaluateAll(nodes => nodes.map(node => node.dataset.nodeId));
+    for (const id of ids)
+        await pinNodeForFixture(page.locator(`.node-frame[data-node-id="${id}"]`));
+}
 async function addNode(page, key) {
+    const before = await page.locator(".node-frame").evaluateAll(nodes => nodes.map(node => node.dataset.nodeId));
     await openNodeLibrary(page);
     await libraryRow(page, key).locator(".node-library-add").click();
     await page.locator(".node-library-panel").waitFor({ state: "hidden" });
+    const nodes = page.locator(".node-frame");
+    const fresh = await nodes.evaluateAll((all, existing) =>
+        all.map(node => node.dataset.nodeId).filter(id => !existing.includes(id)), before);
+    for (const id of fresh)
+        await pinNodeForFixture(page.locator(`.node-frame[data-node-id="${id}"]`));
 }
 let browser;
 try {
@@ -91,6 +115,8 @@ try {
     page.on("pageerror", error => console.error(error.message));
     page.on("console", message => { if (message.type() === "error") console.error(message.text()); });
     await page.goto("http://127.0.0.1:" + server.address().port);
+    await page.locator(".node-frame").nth(1).waitFor();
+    await pinExistingFixtureNodes(page);
     const status = page.locator(".playback-toolbar").getByRole("status");
     const play = page.getByRole("button", { name: "Play patch" });
     const articles = page.locator(".node-frame");
