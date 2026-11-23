@@ -44,7 +44,16 @@ public static class FaustAdditionalPhysicalInstruments
             f = 440.0*pow(2.0,max(-21.0,min(15.0,({{pitch}}):ba.sAndH(event|first)))/12.0);
             pluckPos = max(0.05,min(0.95,({{position}}):ba.sAndH(event|first)));
             strikeVelocity = max(0.0,min(1.0,({{strength}}):ba.sAndH(event)));
-            raw = pm.elecGuitar(340.0/f,pluckPos,max(0.95,min(1.0,{{mute}})),strikeVelocity,event) : fi.dcblocker;
+            sustain = max(0.95,min(1.0,{{mute}}));
+            decay = 0.35+45.0*(sustain-0.95);
+            loss = pow(0.001,1.0/(f*decay));
+            ksDamping = max(0.0,min(1.0,(1.0-loss/cos(ma.PI*f/ma.SR))/0.2));
+            samples = max(1,int(0.006*ma.SR+0.5));
+            u = float(ba.countup(samples,event))/samples;
+            burst = no.noise*strikeVelocity*0.08*sin(ma.PI*u)*(u<1.0);
+            stringTone = pm.ks(340.0/f+0.05-6.5*340.0/ma.SR,ksDamping,burst);
+            electricAttack = pm.elecGuitar(340.0/f,pluckPos,sustain,strikeVelocity,event);
+            raw = (0.8*stringTone+0.2*electricAttack) : fi.dcblocker;
         }
         """;
 }
