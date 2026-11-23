@@ -34,6 +34,16 @@ export async function verifyCanvasContext(browser, url) {
         await fitCanvas(desktop);
         await rightClickHeader(desktop, 'article[data-node-id] .node-header');
         await menu(desktop).getByRole('button', { name: 'Focus node', exact: true }).waitFor();
+        const originalIds = await desktop.locator('article[data-node-id]').evaluateAll(nodes => nodes.map(node => node.dataset.nodeId));
+        await menu(desktop).getByRole('button', { name: 'Duplicate node', exact: true }).click();
+        await menu(desktop).waitFor({ state: 'hidden' });
+        await desktop.waitForFunction(count => document.querySelectorAll('article[data-node-id]').length === count, originalIds.length + 1);
+        const duplicatedId = await desktop.locator('article[data-node-id]').evaluateAll((nodes, original) =>
+            nodes.map(node => node.dataset.nodeId).find(id => !original.includes(id)), originalIds);
+        assert.ok(duplicatedId, 'A fresh graph node was created');
+        await desktop.locator(`article[data-node-id="${duplicatedId}"].node-selected`).waitFor();
+        await rightClickHeader(desktop, `article[data-node-id="${duplicatedId}"] .node-header`);
+        await menu(desktop).getByRole('button', { name: 'Duplicate node', exact: true }).waitFor();
         await menu(desktop).getByRole('button', { name: 'Close contextual actions' }).press('Escape');
         await menu(desktop).waitFor({ state: 'hidden' });
         const point = await emptyPoint(desktop);
