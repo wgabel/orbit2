@@ -78,19 +78,28 @@
         <div class="node-inputs">
             @foreach (var port in Node.Inputs)
             {
-                <div @key="port.Id" class="node-port-parameter-row">
-                    <PortConnector NodeId="@Node.Id" Port="@port" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
+                @if (CanExpand)
+                {
+                    <div @key="port.Id" class="node-port-parameter-row">
+                        <PortConnector NodeId="@Node.Id" Port="@port" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
+                                       WireCandidate="@(WireTargets?.Contains(new PortAddress(Node.Id, port.Id)))"
+                                       OnOutputPointerDown="OnOutputPointerDown" OnInputPointerDown="OnInputPointerDown" />
+                        @if (ParameterForPort(port.Id) is { } modulatedParameter)
+                        {
+                            <CompactParameterEditor @key="modulatedParameter.Id" Parameter="@modulatedParameter"
+                                                    Active="@Node.IsParameterActive(modulatedParameter)"
+                                                    Modulated="@IsModulated(modulatedParameter.Id)"
+                                                    EffectiveValue="@GetEffective(modulatedParameter.Id)"
+                                                    ValueChanged="@(value => EditCompactAsync(modulatedParameter.Id, value))" />
+                        }
+                    </div>
+                }
+                else
+                {
+                    <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
                                    WireCandidate="@(WireTargets?.Contains(new PortAddress(Node.Id, port.Id)))"
                                    OnOutputPointerDown="OnOutputPointerDown" OnInputPointerDown="OnInputPointerDown" />
-                    @if (CanExpand && ParameterForPort(port.Id) is { } modulatedParameter)
-                    {
-                        <CompactParameterEditor @key="modulatedParameter.Id" Parameter="@modulatedParameter"
-                                                Active="@Node.IsParameterActive(modulatedParameter)"
-                                                Modulated="@IsModulated(modulatedParameter.Id)"
-                                                EffectiveValue="@GetEffective(modulatedParameter.Id)"
-                                                ValueChanged="@(value => EditCompactAsync(modulatedParameter.Id, value))" />
-                    }
-                </div>
+                }
             }
         </div>
         <div class="node-outputs">
