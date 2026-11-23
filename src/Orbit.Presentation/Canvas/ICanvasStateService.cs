@@ -12,6 +12,7 @@ public interface ICanvasStateService : IDisposable
     CanvasChangeResult SetAnnotationVisibility(AnnotationVisibility visibility);
     CanvasChangeResult SetVisualization(Guid nodeId, NodeVisualizationSettings settings);
     CanvasChangeResult SetExpandedVisualization(Guid? nodeId);
+    CanvasChangeResult SetNodePinned(Guid nodeId, bool pinned);
     CanvasChangeResult MoveNode(Guid nodeId, CanvasPoint worldPosition);
     CanvasChangeResult MoveNodeByScreenDelta(Guid nodeId, CanvasPoint screenDelta);
     CanvasChangeResult SelectNode(Guid nodeId, bool additive = false);
