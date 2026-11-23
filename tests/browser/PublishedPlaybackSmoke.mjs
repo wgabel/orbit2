@@ -113,6 +113,9 @@ async function collapseAllLeafNodes(page) {
             await node.locator('.node-expand-toggle[aria-expanded="false"]').waitFor();
         }
     }
+    // Wait for the collapsed node body to leave hit testing after its eased
+    // roll-up, not just for the disclosure button to update its ARIA state.
+    await page.locator('.canvas-viewport .node-expanded-content').first().waitFor({ state: 'detached' });
 }
 async function addNode(page, key) {
     const before = await page.locator('.node-frame[data-node-id]').evaluateAll(nodes => nodes.map(node => node.dataset.nodeId));
