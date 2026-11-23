@@ -4,12 +4,12 @@
 
 ## Where information belongs
 
-- Keep `/README.md` short: purpose, quick start, commands, and links. Keep `/AGENTS.md`, `/ROADMAP.md` and `/ORBIT2-ARCHITECTURE.md` as stable root entry points.
+- Keep `/README.md` short (target ~1–2 KB): purpose, prerequisites, a quick navigation path and links. Put setup, development commands and deployment detail under `docs/getting-started/`. Keep `/AGENTS.md`, `/ROADMAP.md` and `/ORBIT2-ARCHITECTURE.md` as stable root entry points.
 - Keep the top-level `docs/README.md` as the single documentation directory; do not reproduce technical detail in it. Each topic has a single authoritative owner in `docs/core/`, `audio/`, `instruments/`, `editor/`, or `quality/`.
 - Put agents' process rules in `docs/agents/`, including the [small-slice protocol](work-slices.md). Put milestone/slice **status** in the three `docs/roadmap/` registers, with `ROADMAP.md` as the canonical cross-project summary. Do not create a separate unlinked roadmap.
 - Put practical interaction guides in `docs/usage/`; music research, genres, compositional guidance and reproducible patch references in `docs/examples/`.
 - Keep former implementation notes in `docs/archive/` only when unique history is worth retaining; label their date and non-authoritative status.
-- Keep `README.md` inside a directory when it genuinely serves as a GitHub folder landing page. Do not move `docs/usage/README.md` or the music/foundation indexes merely to remove the name.
+- Use `README.md` only for a *short* folder landing page; name detailed procedures, reference catalogues and case studies by subject. In `docs/examples/`, retain only the short section `README.md`; the foundations reference catalogue is `foundations/catalogue.md`.
 
 ## Maintenance rules
 
