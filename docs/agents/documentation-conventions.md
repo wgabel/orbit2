@@ -16,5 +16,5 @@
 1. Before adding a document, check the [map](../README.md) and current owner. Prefer extending the existing contract with a short section over another near-duplicate document.
 2. Do not copy identical implementation details or statuses between roadmap, feature contracts and usage guides; link to the authoritative owner. Keep status aligned with verified source/tests and real PRs.
 3. When moving a file, update **all relative links** and relevant agent entry points. Preserve old URLs with a small, clearly marked pointer only when necessary for inbound links; the old location must contain no competing copy of the specification.
-4. Run `node scripts/check-doc-links.mjs` and any related verification. The checker validates local Markdown destination paths; inspect fragment anchors, meaningful links and examples when changing headings. Update the map for a new area or a moved entry point.
+4. Run `node scripts/check-doc-links.mjs` and any related verification. The checker validates local Markdown destination paths and anchors for the reorganized pages; inspect other fragment anchors, meaningful links and examples when changing headings. Update the map for a new area or a moved entry point.
 5. Prefer focused reads and compact handoffs over loading the whole documentation tree into an agent's context; preserve traceability instead of appending transcripts.

@@ -11,7 +11,7 @@
 | Run or build the app | [Installation](getting-started/installation.md), [development](getting-started/development.md) and [deployment](getting-started/deployment.md) |
 | Test the app | [Development checks](getting-started/development.md) and [testing contracts](quality/testing.md) |
 | See the current implementation status or next work slice | [One central roadmap](../ROADMAP.md) and its owning milestone register |
-| Understand system architecture and source ownership | [Architecture routing](../ORBIT2-ARCHITECTURE.md) and [project structure](core/project-structure.md) |
+| Understand system architecture and source ownership | [Architecture overview](architecture/overview.md), [task routing](architecture/task-routing.md) and [project structure](core/project-structure.md) |
 | Edit a patch or use nodes | [Usage guide](usage/README.md), [patch editor](usage/patch-editor.md) and [sound/instruments](usage/sound-and-instruments.md) |
 | Create or refine a musical composition | [Music creation](examples/README.md), [genres](examples/electronic-music-genres.md) and [foundations](examples/foundations/catalogue.md) |
 | Add a feature or fix code | [Agent instructions](../AGENTS.md), [coding standards](quality/coding-standards.md), [work-slice protocol](agents/work-slices.md) |
@@ -19,6 +19,8 @@
 | Diagnose DSP, UI or playback performance | [Performance overview](quality/performance.md), [metrics](quality/performance-metrics.md), [diagnostics](quality/performance-troubleshooting.md) |
 
 ## Technical documentation by owner
+
+The [architecture task-routing index](architecture/task-routing.md) provides more precise subsystem links. The root architecture file is a stable compatibility entry point.
 
 | Area | Canonical documents |
 | --- | --- |

@@ -8,7 +8,7 @@ For a complete cross-area directory, start at the [documentation map](../README.
 
 For hands-on workflows and concrete examples, start with the [user and agent usage guide](../usage/README.md). Each page links the authoritative feature contracts and actual implementation PRs; use it alongside the task routing below, not as a constraint on exploration.
 
-For creating, analyzing or refining music, start with the [music creation index](../examples/README.md): routes by task and production stage, including the [sound-design foundations catalogue](../examples/foundations/README.md) of reproducible references and evidence.
+For creating, analyzing or refining music, start with the [music creation index](../examples/README.md): routes by task and production stage, including the [sound-design foundations catalogue](../examples/foundations/catalogue.md) of reproducible references and evidence.
 
 Start here. Read the relevant module(s), source and tests; follow additional references as needed. This index is a discovery aid, not a limit on exploration. For projects spanning layers, combine the relevant modules. For a novel subsystem, inspect the existing architecture and code, make a reasonable design consistent with the principles above (or propose an explicit change), and create or extend documentation when the topic merits it. No matching document is required to begin work.
 
@@ -34,7 +34,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 | Hollow/basic timbres, prominent raw noise, finished instruments and reusable sound palette | [Sound quality and voice design](../examples/sound-quality-and-voice-design.md); use with instrument recipes and the relevant node contracts |
 | Realistic acoustic/electromechanical instruments, Faust physical models, organs and rotary effect | [Faust instrument nodes](../instruments/faust-instrument-nodes.md) — actual new node contracts and examples; [Faust-first instrument design](../instruments/realistic-instrument-emulation.md) — model candidates, recipes, audit and roadmap |
 | Instrument and sound design, repeatable audition and A/B testing across genres | [Instrument and sound design — repeatable audition](../examples/instrument-design-and-audition.md) — Prism Rush listener feedback and measurements, [TEST Melody Driver v1](../examples/instrument-audition/reference.orbit2.json), adaptable test profiles, candidate palette, usage and Phase 7.6 |
-| Evolving sounds, emergent harmonics, interacting modulation and breathing voices | [Sound-design foundations](../examples/foundations/README.md) — reference graphs, analysis, listener feedback, evidence statuses and maintenance |
+| Evolving sounds, emergent harmonics, interacting modulation and breathing voices | [Sound-design foundations](../examples/foundations/catalogue.md) — reference graphs, analysis, listener feedback, evidence statuses and maintenance |
 | Mix balance, mastering, loudness measurements, audio render analysis and iteration | [Mixing, mastering and analysis](../examples/mixing-mastering-and-analysis.md); [signal observation](../audio/signal-observation.md) for native measurement contracts |
 | Relative instrument/voice levels, over-loud or masked melodies, volume automation and balance validation | [Contextual layer balance](../examples/contextual-layer-balance.md) — research, practical level rides, aligned windowed role analysis and measured case study |
 | Save/load, undo/redo, presets | [Persistence](../editor/persistence-and-history.md), [commands](../core/commands-and-events.md), [node presets](../editor/node-presets.md) |
@@ -97,7 +97,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 - [classic synthesizer patch recipes](../examples/synthesizer-patch-recipes.md) — eight user-supplied reference voice designs; palette selection, translation and verification guidance
 - [sound quality and voice design](../examples/sound-quality-and-voice-design.md) — transform noise, develop richer tonal voices and audition candidate preset recipes
 - [music creation index](../examples/README.md) — task routing and end-to-end workflow for music
-- [sound-design foundations](../examples/foundations/README.md) — reusable, evidence-labeled reference graphs and maintenance; first entry: [breathing harmonic drone](../examples/foundations/breathing-harmonic-drone.md)
+- [sound-design foundations](../examples/foundations/catalogue.md) — reusable, evidence-labeled reference graphs and maintenance; first entry: [breathing harmonic drone](../examples/foundations/breathing-harmonic-drone.md)
 - [mixing, mastering and analysis](../examples/mixing-mastering-and-analysis.md) — role balance, peak/LUFS/LRA interpretation, mastering limits, render–measure–refine and a worked feedback example
 - [contextual layer balance](../examples/contextual-layer-balance.md) — relative levels, masking, research-backed mixing decisions, paired A/B validation and the Submerged Relay case
 
