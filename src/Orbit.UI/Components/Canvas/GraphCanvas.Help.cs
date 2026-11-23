@@ -76,21 +76,12 @@ public partial class GraphCanvas
         if (HelpNode is not { } node)
         {
             positionedHelpId = null;
-            if (helpFocusController is not null)
-            {
-                await helpFocusController.InvokeVoidAsync("dispose");
-                await helpFocusController.DisposeAsync();
-                helpFocusController = null;
-            }
+            await ReleaseHelpFocusAsync();
             return;
         }
 
         if (positionedHelpId == node.Id) return;
-        if (helpFocusController is not null)
-        {
-            await helpFocusController.InvokeVoidAsync("dispose");
-            await helpFocusController.DisposeAsync();
-        }
+        await ReleaseHelpFocusAsync();
         positionedHelpId = node.Id;
         await module.InvokeVoidAsync("positionNodeHelp", viewportElement, node.Id.ToString("D"));
         helpReceiver ??= DotNetObjectReference.Create(this);
@@ -98,14 +89,21 @@ public partial class GraphCanvas
         await helpCloseButton.FocusAsync(preventScroll: true);
     }
 
+    // Clear the shared reference *before* awaiting JS interop. Blazor can
+    // enter OnAfterRenderAsync again while another render is still disposing
+    // the controller; a second history.back() would leave the app.
+    private async Task ReleaseHelpFocusAsync()
+    {
+        var controller = helpFocusController;
+        helpFocusController = null;
+        if (controller is null) return;
+        await controller.InvokeVoidAsync("dispose");
+        await controller.DisposeAsync();
+    }
+
     private async Task DisposeNodeHelpAsync()
     {
-        if (helpFocusController is not null)
-        {
-            await helpFocusController.InvokeVoidAsync("dispose");
-            await helpFocusController.DisposeAsync();
-            helpFocusController = null;
-        }
+        await ReleaseHelpFocusAsync();
         helpReceiver?.Dispose();
         helpReceiver = null;
         if (portHintsController is not null)
