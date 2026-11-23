@@ -15,7 +15,13 @@ In review ([PR #77](https://github.com/wgabel/orbit2/pull/77)): desktop and mobi
 - **More:** Patches and Performance diagnostics. Toggle the bottom tool again to close it; apply/cancel an active overview draft before switching tools.
 - Navigate the canvas without zoom buttons. In a nested graph, use its parent breadcrumb to return.
 
-With [PR #61](https://github.com/wgabel/orbit2/pull/61), close a tool via its Close button, the active bottom tab, Escape or browser/Android Back; changing tools dismisses the previous one. Apply/cancel a protected overview draft before leaving it. The color-coded Node Library ([PR #62](https://github.com/wgabel/orbit2/pull/62), implemented) replaces the old dropdown. Automatic node expansion/pinning remains planned; fullscreen is deferred. Resizing the browser retains the same active graph and playback controller.
+With [PR #61](https://github.com/wgabel/orbit2/pull/61), close a tool via its Close button, the active bottom tab, Escape or browser/Android Back; changing tools dismisses the previous one. Apply/cancel a protected overview draft before leaving it. The color-coded Node Library ([PR #62](https://github.com/wgabel/orbit2/pull/62), implemented) replaces the old dropdown. Compact/expandable nodes with pinned layouts are implemented in review ([PR #95](https://github.com/wgabel/orbit2/pull/95)); fullscreen is deferred. Resizing the browser retains the same active graph and playback controller.
+
+### Compact and expanded nodes (6.21.5, in review in PR #95)
+
+On desktop and mobile, regular signal nodes start **compact**. Every node stays on the canvas and all input/output sockets remain visible, including inactive ones. Every modulatable parameter has a directly editable **base value** beside its port. Tap/click a numeric value to open the inline editor: Enter applies a valid number, Escape cancels; dropdowns edit modes and waveforms. A separate read-only **live effective value** appears for incoming modulation when available.
+
+Tap/click an unused node surface or its header to expand its full editing controls, or use the node chevron. Changing a value, dragging cables or nodes, pinching or long-pressing does not expand the node. Opening a different node closes the previous unpinned node; tapping empty canvas closes the unpinned expanded node. An expanded node's pin control keeps it open while selecting others; multiple nodes can stay pinned. Pinned state is stored in the per-graph canvas layout and does not alter the audio signal. Composite/instrument composite nodes, racks and Master Output keep their original full presentation and commands.
 
 ### Gesture-only canvas navigation (6.21.4)
 
