@@ -6,6 +6,7 @@ using Orbit.Application.Graphs.Snapshots;
 using Orbit.Domain.Graphs;
 using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Nodes.Generators;
+using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Parameters;
 using Orbit.Domain.Ports;
 using Xunit;
@@ -110,7 +111,10 @@ public sealed class DuplicateNodeTests
     {
         using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
         var original = Add(session, session.GraphId, CompositeNode.NodeType);
+        var master = Add(session, session.GraphId, MasterOutput.NodeType);
         var before = session.Snapshot;
+        Assert.Throws<GraphValidationException>(() => session.Execute(
+            new DuplicateNodeCommand(session.GraphId, master.Id, Guid.NewGuid())));
         Assert.Throws<GraphValidationException>(() => session.Execute(
             new DuplicateNodeCommand(session.GraphId, original.Id, original.Id)));
         Assert.Throws<GraphValidationException>(() => session.Execute(
