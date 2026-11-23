@@ -239,7 +239,11 @@ export function portHelpPosition(anchor, bounds, size, gap) {
     return { left, top };
 }
 
+const portHintInstances = new WeakMap();
+
 export function mountPortHints(viewport) {
+    const existing = portHintInstances.get(viewport);
+    if (existing) return existing;
     const tooltip = viewport.ownerDocument.createElement("div");
     tooltip.className = "port-help-tooltip";
     tooltip.setAttribute("role", "tooltip");
@@ -297,8 +301,10 @@ export function mountPortHints(viewport) {
     for (const [name, handler] of events) viewport.addEventListener(name, handler, true);
     window.addEventListener("resize", hide);
     window.addEventListener("scroll", hide, true);
-    return {
+    const controller = {
         dispose() {
+            if (portHintInstances.get(viewport) !== controller) return;
+            portHintInstances.delete(viewport);
             hide();
             tooltip.remove();
             for (const [name, handler] of events) viewport.removeEventListener(name, handler, true);
@@ -306,6 +312,8 @@ export function mountPortHints(viewport) {
             window.removeEventListener("scroll", hide, true);
         }
     };
+    portHintInstances.set(viewport, controller);
+    return controller;
 }
 
 // Position the node popup next to its ? trigger in unscaled CSS pixels.
