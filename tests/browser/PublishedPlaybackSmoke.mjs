@@ -77,10 +77,32 @@ async function closeNodeLibrary(page) {
     await page.getByRole("button", { name: "Close library", exact: true }).click();
     await page.locator(".node-library-panel").waitFor({ state: "hidden" });
 }
+// Legacy full-editor scenarios explicitly opt into expanded, pinned nodes.
+ // Separate compact-mode assertions below verify the default remains collapsed.
+async function expandAndPin(node) {
+    const toggle = node.locator('.node-expand-toggle');
+    if (!await toggle.count()) return; // composite, rack or master: unchanged
+    if (await toggle.getAttribute('aria-expanded') === 'false')
+        await toggle.evaluate(button => button.click());
+    const pin = node.locator('.node-pin-toggle');
+    if (await pin.count() && await pin.getAttribute('aria-pressed') === 'false')
+        await pin.evaluate(button => button.click());
+}
+async function expandAndPinAll(page) {
+    const nodes = page.locator('.canvas-viewport .node-frame-expandable');
+    for (let i = 0, count = await nodes.count(); i < count; i++)
+        await expandAndPin(nodes.nth(i));
+}
 async function addNode(page, key) {
+    const before = await page.locator('.node-frame[data-node-id]').evaluateAll(nodes => nodes.map(node => node.dataset.nodeId));
     await openNodeLibrary(page);
     await libraryRow(page, key).locator(".node-library-add").click();
     await page.locator(".node-library-panel").waitFor({ state: "hidden" });
+    const added = page.locator('.node-frame[data-node-id]').filter({
+        has: page.locator('.node-header')
+    });
+    const id = await added.evaluateAll((nodes, before) => nodes.map(node => node.dataset.nodeId).find(id => !before.includes(id)), before);
+    if (id) await expandAndPin(page.locator(`.node-frame[data-node-id="${id}"]`));
 }
 let browser;
 try {
@@ -94,6 +116,7 @@ try {
     const status = page.locator(".playback-toolbar").getByRole("status");
     const play = page.getByRole("button", { name: "Play patch" });
     const articles = page.locator(".node-frame");
+    await expandAndPinAll(page);
     const frequency = articles.nth(1).locator(".parameter-slider").filter({ has: page.getByRole("spinbutton", { name: "Frequency (Hz)" }) });
     const amplitude = articles.nth(1).locator(".parameter-slider").filter({ has: page.getByRole("spinbutton", { name: "Amplitude (normalized)" }) });
     const marker = frequency.locator(".parameter-effective-marker");
@@ -1007,6 +1030,7 @@ try {
     assert.equal(await libraryRow(page, "output.master").count(), 0);
     await closeNodeLibrary(page);
     assert.equal(await articles.count(), 4);
+    await expandAndPinAll(page);
     assert.equal(await viewport.locator(".canvas-count").innerText(), "4 nodes · 4 connections");
     assert.equal(await viewport.locator(".canvas-patch-value").innerText(), wholePatchCount);
     await exerciseNote(droneRevision, "Child modulation");
@@ -1895,6 +1919,7 @@ try {
         return rect.left >= canvas.left && rect.right <= canvas.right && rect.top >= canvas.top && rect.bottom <= canvas.bottom;
     });
     await instrumentPage.getByRole("button", { name: "Output: Pitch (st) (Modulation)" }).waitFor();
+    await expandAndPinAll(instrumentPage);
     assert.equal(await instrumentPage.getByRole("combobox", { name: "Pitch tracking (free)" }).count(), 3);
     await instrumentPage.close();
     // Exercise automatic detail and temporary reveal independently of the main playback viewport.
