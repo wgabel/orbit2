@@ -1,0 +1,4432 @@
+{
+  "schemaVersion": 1,
+  "patchId": "ba550002-0000-4000-8000-0000000002ad",
+  "rootGraph": {
+    "id": "ba550002-0000-4000-8000-000000000001",
+    "nodes": [
+      {
+        "id": "ba550002-0000-4000-8000-000000000002",
+        "typeKey": "generator.note-sequencer",
+        "parameters": [
+          {
+            "key": "reference-note",
+            "id": "ba550002-0000-4000-8000-000000000003",
+            "baseValue": 69
+          },
+          {
+            "key": "initial-pitch",
+            "id": "ba550002-0000-4000-8000-000000000004",
+            "baseValue": -31
+          },
+          {
+            "key": "pattern-loop",
+            "id": "ba550002-0000-4000-8000-000000000005",
+            "baseValue": 1
+          },
+          {
+            "key": "pattern-count",
+            "id": "ba550002-0000-4000-8000-000000000006",
+            "baseValue": 32
+          },
+          {
+            "key": "pattern-timing",
+            "id": "ba550002-0000-4000-8000-000000000007",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-division",
+            "id": "ba550002-0000-4000-8000-000000000008",
+            "baseValue": 2
+          },
+          {
+            "key": "pattern-multiplier",
+            "id": "ba550002-0000-4000-8000-000000000009",
+            "baseValue": 1
+          },
+          {
+            "key": "pattern-seconds",
+            "id": "ba550002-0000-4000-8000-00000000000a",
+            "baseValue": 1
+          },
+          {
+            "key": "pattern-glide",
+            "id": "ba550002-0000-4000-8000-00000000000b",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-articulation",
+            "id": "ba550002-0000-4000-8000-00000000000c",
+            "baseValue": 1
+          },
+          {
+            "key": "pattern-gate-length",
+            "id": "ba550002-0000-4000-8000-00000000000d",
+            "baseValue": 0.88
+          },
+          {
+            "key": "pattern-velocity",
+            "id": "ba550002-0000-4000-8000-00000000000e",
+            "baseValue": 0.8
+          },
+          {
+            "key": "pattern-step-01",
+            "id": "ba550002-0000-4000-8000-00000000000f",
+            "baseValue": 39
+          },
+          {
+            "key": "pattern-step-02",
+            "id": "ba550002-0000-4000-8000-000000000010",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-03",
+            "id": "ba550002-0000-4000-8000-000000000011",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-04",
+            "id": "ba550002-0000-4000-8000-000000000012",
+            "baseValue": 129
+          },
+          {
+            "key": "pattern-step-05",
+            "id": "ba550002-0000-4000-8000-000000000013",
+            "baseValue": 34
+          },
+          {
+            "key": "pattern-step-06",
+            "id": "ba550002-0000-4000-8000-000000000014",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-07",
+            "id": "ba550002-0000-4000-8000-000000000015",
+            "baseValue": 39
+          },
+          {
+            "key": "pattern-step-08",
+            "id": "ba550002-0000-4000-8000-000000000016",
+            "baseValue": 129
+          },
+          {
+            "key": "pattern-step-09",
+            "id": "ba550002-0000-4000-8000-000000000017",
+            "baseValue": 35
+          },
+          {
+            "key": "pattern-step-10",
+            "id": "ba550002-0000-4000-8000-000000000018",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-11",
+            "id": "ba550002-0000-4000-8000-000000000019",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-12",
+            "id": "ba550002-0000-4000-8000-00000000001a",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-13",
+            "id": "ba550002-0000-4000-8000-00000000001b",
+            "baseValue": 42
+          },
+          {
+            "key": "pattern-step-14",
+            "id": "ba550002-0000-4000-8000-00000000001c",
+            "baseValue": 129
+          },
+          {
+            "key": "pattern-step-15",
+            "id": "ba550002-0000-4000-8000-00000000001d",
+            "baseValue": 35
+          },
+          {
+            "key": "pattern-step-16",
+            "id": "ba550002-0000-4000-8000-00000000001e",
+            "baseValue": 129
+          },
+          {
+            "key": "pattern-step-17",
+            "id": "ba550002-0000-4000-8000-00000000001f",
+            "baseValue": 32
+          },
+          {
+            "key": "pattern-step-18",
+            "id": "ba550002-0000-4000-8000-000000000020",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-19",
+            "id": "ba550002-0000-4000-8000-000000000021",
+            "baseValue": 44
+          },
+          {
+            "key": "pattern-step-20",
+            "id": "ba550002-0000-4000-8000-000000000022",
+            "baseValue": 129
+          },
+          {
+            "key": "pattern-step-21",
+            "id": "ba550002-0000-4000-8000-000000000023",
+            "baseValue": 39
+          },
+          {
+            "key": "pattern-step-22",
+            "id": "ba550002-0000-4000-8000-000000000024",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-23",
+            "id": "ba550002-0000-4000-8000-000000000025",
+            "baseValue": 35
+          },
+          {
+            "key": "pattern-step-24",
+            "id": "ba550002-0000-4000-8000-000000000026",
+            "baseValue": 129
+          },
+          {
+            "key": "pattern-step-25",
+            "id": "ba550002-0000-4000-8000-000000000027",
+            "baseValue": 34
+          },
+          {
+            "key": "pattern-step-26",
+            "id": "ba550002-0000-4000-8000-000000000028",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-27",
+            "id": "ba550002-0000-4000-8000-000000000029",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-28",
+            "id": "ba550002-0000-4000-8000-00000000002a",
+            "baseValue": 129
+          },
+          {
+            "key": "pattern-step-29",
+            "id": "ba550002-0000-4000-8000-00000000002b",
+            "baseValue": 41
+          },
+          {
+            "key": "pattern-step-30",
+            "id": "ba550002-0000-4000-8000-00000000002c",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-31",
+            "id": "ba550002-0000-4000-8000-00000000002d",
+            "baseValue": 34
+          },
+          {
+            "key": "pattern-step-32",
+            "id": "ba550002-0000-4000-8000-00000000002e",
+            "baseValue": 129
+          },
+          {
+            "key": "pattern-step-33",
+            "id": "ba550002-0000-4000-8000-00000000002f",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-34",
+            "id": "ba550002-0000-4000-8000-000000000030",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-35",
+            "id": "ba550002-0000-4000-8000-000000000031",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-36",
+            "id": "ba550002-0000-4000-8000-000000000032",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-37",
+            "id": "ba550002-0000-4000-8000-000000000033",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-38",
+            "id": "ba550002-0000-4000-8000-000000000034",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-39",
+            "id": "ba550002-0000-4000-8000-000000000035",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-40",
+            "id": "ba550002-0000-4000-8000-000000000036",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-41",
+            "id": "ba550002-0000-4000-8000-000000000037",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-42",
+            "id": "ba550002-0000-4000-8000-000000000038",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-43",
+            "id": "ba550002-0000-4000-8000-000000000039",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-44",
+            "id": "ba550002-0000-4000-8000-00000000003a",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-45",
+            "id": "ba550002-0000-4000-8000-00000000003b",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-46",
+            "id": "ba550002-0000-4000-8000-00000000003c",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-47",
+            "id": "ba550002-0000-4000-8000-00000000003d",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-48",
+            "id": "ba550002-0000-4000-8000-00000000003e",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-49",
+            "id": "ba550002-0000-4000-8000-00000000003f",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-50",
+            "id": "ba550002-0000-4000-8000-000000000040",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-51",
+            "id": "ba550002-0000-4000-8000-000000000041",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-52",
+            "id": "ba550002-0000-4000-8000-000000000042",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-53",
+            "id": "ba550002-0000-4000-8000-000000000043",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-54",
+            "id": "ba550002-0000-4000-8000-000000000044",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-55",
+            "id": "ba550002-0000-4000-8000-000000000045",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-56",
+            "id": "ba550002-0000-4000-8000-000000000046",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-57",
+            "id": "ba550002-0000-4000-8000-000000000047",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-58",
+            "id": "ba550002-0000-4000-8000-000000000048",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-59",
+            "id": "ba550002-0000-4000-8000-000000000049",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-60",
+            "id": "ba550002-0000-4000-8000-00000000004a",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-61",
+            "id": "ba550002-0000-4000-8000-00000000004b",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-62",
+            "id": "ba550002-0000-4000-8000-00000000004c",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-63",
+            "id": "ba550002-0000-4000-8000-00000000004d",
+            "baseValue": 0
+          },
+          {
+            "key": "pattern-step-64",
+            "id": "ba550002-0000-4000-8000-00000000004e",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "pitch-out",
+            "id": "ba550002-0000-4000-8000-00000000004f"
+          },
+          {
+            "key": "gate-out",
+            "id": "ba550002-0000-4000-8000-000000000050"
+          },
+          {
+            "key": "trigger-out",
+            "id": "ba550002-0000-4000-8000-000000000051"
+          },
+          {
+            "key": "velocity-out",
+            "id": "ba550002-0000-4000-8000-000000000052"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000053",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-000000000054",
+            "baseValue": 440
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-000000000055",
+            "baseValue": 0.4
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-000000000056",
+            "baseValue": 0
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-000000000057",
+            "baseValue": 0
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-000000000058",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-000000000059",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-00000000005a",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-00000000005b",
+            "baseValue": 1
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-00000000005c",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000005d"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000005e"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000005f"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000060"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000061"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-000000000062"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000064",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-000000000065",
+            "baseValue": 440
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-000000000066",
+            "baseValue": 0.13
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-000000000067",
+            "baseValue": 0
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-000000000068",
+            "baseValue": 1
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-000000000069",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-00000000006a",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-00000000006b",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-00000000006c",
+            "baseValue": 1
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-00000000006d",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000006e"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000006f"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000070"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000071"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000072"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-000000000073"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000075",
+        "typeKey": "processor.mixer",
+        "parameters": [],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-000000000076"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-000000000077"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000007a",
+        "typeKey": "processor.filter",
+        "parameters": [
+          {
+            "key": "mode",
+            "id": "ba550002-0000-4000-8000-00000000007b",
+            "baseValue": 0
+          },
+          {
+            "key": "cutoff",
+            "id": "ba550002-0000-4000-8000-00000000007c",
+            "baseValue": 145
+          },
+          {
+            "key": "resonance",
+            "id": "ba550002-0000-4000-8000-00000000007d",
+            "baseValue": 0.72
+          }
+        ],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-00000000007e"
+          },
+          {
+            "key": "cutoff-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000007f"
+          },
+          {
+            "key": "resonance-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000080"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-000000000081"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000083",
+        "typeKey": "generator.envelope",
+        "parameters": [
+          {
+            "key": "attack",
+            "id": "ba550002-0000-4000-8000-000000000084",
+            "baseValue": 32
+          },
+          {
+            "key": "decay",
+            "id": "ba550002-0000-4000-8000-000000000085",
+            "baseValue": 320
+          },
+          {
+            "key": "attack-curve",
+            "id": "ba550002-0000-4000-8000-000000000086",
+            "baseValue": 1
+          },
+          {
+            "key": "decay-curve",
+            "id": "ba550002-0000-4000-8000-000000000087",
+            "baseValue": 3
+          },
+          {
+            "key": "mode",
+            "id": "ba550002-0000-4000-8000-000000000088",
+            "baseValue": 2
+          },
+          {
+            "key": "trigger-source",
+            "id": "ba550002-0000-4000-8000-000000000089",
+            "baseValue": 1
+          },
+          {
+            "key": "release",
+            "id": "ba550002-0000-4000-8000-00000000008a",
+            "baseValue": 210
+          },
+          {
+            "key": "release-curve",
+            "id": "ba550002-0000-4000-8000-00000000008b",
+            "baseValue": 3
+          },
+          {
+            "key": "sustain",
+            "id": "ba550002-0000-4000-8000-00000000008c",
+            "baseValue": 0.82
+          },
+          {
+            "key": "rest",
+            "id": "ba550002-0000-4000-8000-00000000008d",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "signal-trigger-in",
+            "id": "ba550002-0000-4000-8000-00000000008e"
+          },
+          {
+            "key": "event-trigger-in",
+            "id": "ba550002-0000-4000-8000-00000000008f"
+          },
+          {
+            "key": "gate-in",
+            "id": "ba550002-0000-4000-8000-000000000090"
+          },
+          {
+            "key": "attack-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000091"
+          },
+          {
+            "key": "decay-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000092"
+          },
+          {
+            "key": "attack-curve-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000093"
+          },
+          {
+            "key": "decay-curve-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000094"
+          },
+          {
+            "key": "release-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000095"
+          },
+          {
+            "key": "release-curve-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000096"
+          },
+          {
+            "key": "sustain-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000097"
+          },
+          {
+            "key": "rest-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000098"
+          },
+          {
+            "key": "envelope-out",
+            "id": "ba550002-0000-4000-8000-000000000099"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000009b",
+        "typeKey": "processor.gain",
+        "parameters": [
+          {
+            "key": "gain",
+            "id": "ba550002-0000-4000-8000-00000000009c",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-00000000009d"
+          },
+          {
+            "key": "gain-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000009e"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-00000000009f"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000a2",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-0000000000a3",
+            "baseValue": 434.9461689552743
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-0000000000a4",
+            "baseValue": 0.22779237689005963
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-0000000000a5",
+            "baseValue": 0
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-0000000000a6",
+            "baseValue": 3
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-0000000000a7",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-0000000000a8",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-0000000000a9",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-0000000000aa",
+            "baseValue": 1
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-0000000000ab",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000ac"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000ad"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000ae"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000af"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000b0"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-0000000000b1"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000b3",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-0000000000b4",
+            "baseValue": 444.0853125332247
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-0000000000b5",
+            "baseValue": 0.21868068181445724
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-0000000000b6",
+            "baseValue": 85
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-0000000000b7",
+            "baseValue": 3
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-0000000000b8",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-0000000000b9",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-0000000000ba",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-0000000000bb",
+            "baseValue": 1
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-0000000000bc",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000bd"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000be"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000bf"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000c0"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000c1"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-0000000000c2"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000c4",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-0000000000c5",
+            "baseValue": 885.097788139711
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-0000000000c6",
+            "baseValue": 0.14578712120963816
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-0000000000c7",
+            "baseValue": 150
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-0000000000c8",
+            "baseValue": 3
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-0000000000c9",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-0000000000ca",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-0000000000cb",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-0000000000cc",
+            "baseValue": 1
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-0000000000cd",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000ce"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000cf"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000d0"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000d1"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000d2"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-0000000000d3"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000d5",
+        "typeKey": "processor.mixer",
+        "parameters": [],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-0000000000d6"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-0000000000d7"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000db",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-0000000000dc",
+            "baseValue": 0.18
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-0000000000dd",
+            "baseValue": 1
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-0000000000de",
+            "baseValue": 0
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-0000000000df",
+            "baseValue": 0
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-0000000000e0",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-0000000000e1",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-0000000000e2",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-0000000000e3",
+            "baseValue": 0
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-0000000000e4",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000e5"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000e6"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000e7"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000e8"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000e9"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-0000000000ea"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000eb",
+        "typeKey": "processor.filter",
+        "parameters": [
+          {
+            "key": "mode",
+            "id": "ba550002-0000-4000-8000-0000000000ec",
+            "baseValue": 0
+          },
+          {
+            "key": "cutoff",
+            "id": "ba550002-0000-4000-8000-0000000000ed",
+            "baseValue": 830
+          },
+          {
+            "key": "resonance",
+            "id": "ba550002-0000-4000-8000-0000000000ee",
+            "baseValue": 1.1
+          }
+        ],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-0000000000ef"
+          },
+          {
+            "key": "cutoff-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000f0"
+          },
+          {
+            "key": "resonance-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000f1"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-0000000000f2"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000f5",
+        "typeKey": "processor.gain",
+        "parameters": [
+          {
+            "key": "gain",
+            "id": "ba550002-0000-4000-8000-0000000000f6",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-0000000000f7"
+          },
+          {
+            "key": "gain-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000f8"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-0000000000f9"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000fc",
+        "typeKey": "processor.gain",
+        "parameters": [
+          {
+            "key": "gain",
+            "id": "ba550002-0000-4000-8000-0000000000fd",
+            "baseValue": 0.855
+          }
+        ],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-0000000000fe"
+          },
+          {
+            "key": "gain-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000000ff"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-000000000100"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000102",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-000000000103",
+            "baseValue": 0.173
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-000000000104",
+            "baseValue": 1
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-000000000105",
+            "baseValue": 0
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-000000000106",
+            "baseValue": 0
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-000000000107",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-000000000108",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-000000000109",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-00000000010a",
+            "baseValue": 0
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-00000000010b",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000010c"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000010d"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000010e"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000010f"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000110"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-000000000111"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000113",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-000000000114",
+            "baseValue": 442.0379367369037
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-000000000115",
+            "baseValue": 0.3887873227532913
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-000000000116",
+            "baseValue": 40
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-000000000117",
+            "baseValue": 2
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-000000000118",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-000000000119",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-00000000011a",
+            "baseValue": 0.33
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-00000000011b",
+            "baseValue": 1
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-00000000011c",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000011d"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000011e"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000011f"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000120"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000121"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-000000000122"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000124",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-000000000125",
+            "baseValue": 0.266
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-000000000126",
+            "baseValue": 1
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-000000000127",
+            "baseValue": 0
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-000000000128",
+            "baseValue": 0
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-000000000129",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-00000000012a",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-00000000012b",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-00000000012c",
+            "baseValue": 0
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-00000000012d",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000012e"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000012f"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000130"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000131"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000132"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-000000000133"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000135",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-000000000136",
+            "baseValue": 876.9554312885236
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-000000000137",
+            "baseValue": 0.3549797294703964
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-000000000138",
+            "baseValue": 150
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-000000000139",
+            "baseValue": 2
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-00000000013a",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-00000000013b",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-00000000013c",
+            "baseValue": 0.62
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-00000000013d",
+            "baseValue": 1
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-00000000013e",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000013f"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000140"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000141"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000142"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000143"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-000000000144"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000146",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-000000000147",
+            "baseValue": 0.303
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-000000000148",
+            "baseValue": 1
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-000000000149",
+            "baseValue": 0
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-00000000014a",
+            "baseValue": 0
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-00000000014b",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-00000000014c",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-00000000014d",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-00000000014e",
+            "baseValue": 0
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-00000000014f",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000150"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000151"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000152"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000153"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000154"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-000000000155"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000157",
+        "typeKey": "processor.mixer",
+        "parameters": [],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-000000000158"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-000000000159"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000015c",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-00000000015d",
+            "baseValue": 0.32
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-00000000015e",
+            "baseValue": 1
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-00000000015f",
+            "baseValue": 0
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-000000000160",
+            "baseValue": 0
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-000000000161",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-000000000162",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-000000000163",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-000000000164",
+            "baseValue": 0
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-000000000165",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000166"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000167"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000168"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000169"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000016a"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-00000000016b"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000016c",
+        "typeKey": "processor.filter",
+        "parameters": [
+          {
+            "key": "mode",
+            "id": "ba550002-0000-4000-8000-00000000016d",
+            "baseValue": 2
+          },
+          {
+            "key": "cutoff",
+            "id": "ba550002-0000-4000-8000-00000000016e",
+            "baseValue": 450
+          },
+          {
+            "key": "resonance",
+            "id": "ba550002-0000-4000-8000-00000000016f",
+            "baseValue": 2.4
+          }
+        ],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-000000000170"
+          },
+          {
+            "key": "cutoff-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000171"
+          },
+          {
+            "key": "resonance-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000172"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-000000000173"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000176",
+        "typeKey": "processor.gain",
+        "parameters": [
+          {
+            "key": "gain",
+            "id": "ba550002-0000-4000-8000-000000000177",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-000000000178"
+          },
+          {
+            "key": "gain-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000179"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-00000000017a"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000017d",
+        "typeKey": "processor.gain",
+        "parameters": [
+          {
+            "key": "gain",
+            "id": "ba550002-0000-4000-8000-00000000017e",
+            "baseValue": 0.8300000000000001
+          }
+        ],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-00000000017f"
+          },
+          {
+            "key": "gain-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000180"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-000000000181"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000183",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-000000000184",
+            "baseValue": 0.225
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-000000000185",
+            "baseValue": 1
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-000000000186",
+            "baseValue": 0
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-000000000187",
+            "baseValue": 0
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-000000000188",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-000000000189",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-00000000018a",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-00000000018b",
+            "baseValue": 0
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-00000000018c",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000018d"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000018e"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000018f"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000190"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000191"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-000000000192"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000194",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-000000000195",
+            "baseValue": 1318.5102276514797
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-000000000196",
+            "baseValue": 0.40068156876889854
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-000000000197",
+            "baseValue": 50
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-000000000198",
+            "baseValue": 3
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-000000000199",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-00000000019a",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-00000000019b",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-00000000019c",
+            "baseValue": 1
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-00000000019d",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000019e"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000019f"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001a0"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001a1"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001a2"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-0000000001a3"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000001a5",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-0000000001a6",
+            "baseValue": 1760
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-0000000001a7",
+            "baseValue": 0.32783037444728064
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-0000000001a8",
+            "baseValue": 90
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-0000000001a9",
+            "baseValue": 2
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-0000000001aa",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-0000000001ab",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-0000000001ac",
+            "baseValue": 0.25
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-0000000001ad",
+            "baseValue": 1
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-0000000001ae",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001af"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001b0"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001b1"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001b2"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001b3"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-0000000001b4"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000001b6",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-0000000001b7",
+            "baseValue": 0.366
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-0000000001b8",
+            "baseValue": 1
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-0000000001b9",
+            "baseValue": 0
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-0000000001ba",
+            "baseValue": 0
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-0000000001bb",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-0000000001bc",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-0000000001bd",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-0000000001be",
+            "baseValue": 0
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-0000000001bf",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001c0"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001c1"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001c2"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001c3"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001c4"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-0000000001c5"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000001c7",
+        "typeKey": "processor.mixer",
+        "parameters": [],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-0000000001c8"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-0000000001c9"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000001cc",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-0000000001cd",
+            "baseValue": 0.21
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-0000000001ce",
+            "baseValue": 1
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-0000000001cf",
+            "baseValue": 0
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-0000000001d0",
+            "baseValue": 0
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-0000000001d1",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-0000000001d2",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-0000000001d3",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-0000000001d4",
+            "baseValue": 0
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-0000000001d5",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001d6"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001d7"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001d8"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001d9"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001da"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-0000000001db"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000001dc",
+        "typeKey": "processor.filter",
+        "parameters": [
+          {
+            "key": "mode",
+            "id": "ba550002-0000-4000-8000-0000000001dd",
+            "baseValue": 2
+          },
+          {
+            "key": "cutoff",
+            "id": "ba550002-0000-4000-8000-0000000001de",
+            "baseValue": 1350
+          },
+          {
+            "key": "resonance",
+            "id": "ba550002-0000-4000-8000-0000000001df",
+            "baseValue": 2.8
+          }
+        ],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-0000000001e0"
+          },
+          {
+            "key": "cutoff-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001e1"
+          },
+          {
+            "key": "resonance-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001e2"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-0000000001e3"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000001e6",
+        "typeKey": "generator.envelope",
+        "parameters": [
+          {
+            "key": "attack",
+            "id": "ba550002-0000-4000-8000-0000000001e7",
+            "baseValue": 105
+          },
+          {
+            "key": "decay",
+            "id": "ba550002-0000-4000-8000-0000000001e8",
+            "baseValue": 460
+          },
+          {
+            "key": "attack-curve",
+            "id": "ba550002-0000-4000-8000-0000000001e9",
+            "baseValue": 1
+          },
+          {
+            "key": "decay-curve",
+            "id": "ba550002-0000-4000-8000-0000000001ea",
+            "baseValue": 3
+          },
+          {
+            "key": "mode",
+            "id": "ba550002-0000-4000-8000-0000000001eb",
+            "baseValue": 2
+          },
+          {
+            "key": "trigger-source",
+            "id": "ba550002-0000-4000-8000-0000000001ec",
+            "baseValue": 1
+          },
+          {
+            "key": "release",
+            "id": "ba550002-0000-4000-8000-0000000001ed",
+            "baseValue": 260
+          },
+          {
+            "key": "release-curve",
+            "id": "ba550002-0000-4000-8000-0000000001ee",
+            "baseValue": 3
+          },
+          {
+            "key": "sustain",
+            "id": "ba550002-0000-4000-8000-0000000001ef",
+            "baseValue": 0.84
+          },
+          {
+            "key": "rest",
+            "id": "ba550002-0000-4000-8000-0000000001f0",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "signal-trigger-in",
+            "id": "ba550002-0000-4000-8000-0000000001f1"
+          },
+          {
+            "key": "event-trigger-in",
+            "id": "ba550002-0000-4000-8000-0000000001f2"
+          },
+          {
+            "key": "gate-in",
+            "id": "ba550002-0000-4000-8000-0000000001f3"
+          },
+          {
+            "key": "attack-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001f4"
+          },
+          {
+            "key": "decay-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001f5"
+          },
+          {
+            "key": "attack-curve-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001f6"
+          },
+          {
+            "key": "decay-curve-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001f7"
+          },
+          {
+            "key": "release-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001f8"
+          },
+          {
+            "key": "release-curve-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001f9"
+          },
+          {
+            "key": "sustain-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001fa"
+          },
+          {
+            "key": "rest-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000001fb"
+          },
+          {
+            "key": "envelope-out",
+            "id": "ba550002-0000-4000-8000-0000000001fc"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000001fe",
+        "typeKey": "processor.gain",
+        "parameters": [
+          {
+            "key": "gain",
+            "id": "ba550002-0000-4000-8000-0000000001ff",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-000000000200"
+          },
+          {
+            "key": "gain-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000201"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-000000000202"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000205",
+        "typeKey": "processor.gain",
+        "parameters": [
+          {
+            "key": "gain",
+            "id": "ba550002-0000-4000-8000-000000000206",
+            "baseValue": 0.8049999999999999
+          }
+        ],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-000000000207"
+          },
+          {
+            "key": "gain-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000208"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-000000000209"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000020b",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-00000000020c",
+            "baseValue": 0.277
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-00000000020d",
+            "baseValue": 1
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-00000000020e",
+            "baseValue": 0
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-00000000020f",
+            "baseValue": 0
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-000000000210",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-000000000211",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-000000000212",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-000000000213",
+            "baseValue": 0
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-000000000214",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000215"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000216"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000217"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000218"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000219"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-00000000021a"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000021c",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-00000000021d",
+            "baseValue": 880
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-00000000021e",
+            "baseValue": 0.5181161738643503
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-00000000021f",
+            "baseValue": 0
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-000000000220",
+            "baseValue": 3
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-000000000221",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-000000000222",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-000000000223",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-000000000224",
+            "baseValue": 1
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-000000000225",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000226"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000227"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000228"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000229"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000022a"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-00000000022b"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000022d",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-00000000022e",
+            "baseValue": 1760
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-00000000022f",
+            "baseValue": 0.40297924633893917
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-000000000230",
+            "baseValue": 0
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-000000000231",
+            "baseValue": 2
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-000000000232",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-000000000233",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-000000000234",
+            "baseValue": 0.18
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-000000000235",
+            "baseValue": 1
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-000000000236",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000237"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000238"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000239"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000023a"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000023b"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-00000000023c"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000023e",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-00000000023f",
+            "baseValue": 0.429
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-000000000240",
+            "baseValue": 1
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-000000000241",
+            "baseValue": 0
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-000000000242",
+            "baseValue": 0
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-000000000243",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-000000000244",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-000000000245",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-000000000246",
+            "baseValue": 0
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-000000000247",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000248"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000249"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000024a"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000024b"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000024c"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-00000000024d"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000024f",
+        "typeKey": "processor.mixer",
+        "parameters": [],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-000000000250"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-000000000251"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000254",
+        "typeKey": "processor.filter",
+        "parameters": [
+          {
+            "key": "mode",
+            "id": "ba550002-0000-4000-8000-000000000255",
+            "baseValue": 1
+          },
+          {
+            "key": "cutoff",
+            "id": "ba550002-0000-4000-8000-000000000256",
+            "baseValue": 600
+          },
+          {
+            "key": "resonance",
+            "id": "ba550002-0000-4000-8000-000000000257",
+            "baseValue": 0.8
+          }
+        ],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-000000000258"
+          },
+          {
+            "key": "cutoff-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000259"
+          },
+          {
+            "key": "resonance-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000025a"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-00000000025b"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000025d",
+        "typeKey": "generator.envelope",
+        "parameters": [
+          {
+            "key": "attack",
+            "id": "ba550002-0000-4000-8000-00000000025e",
+            "baseValue": 8
+          },
+          {
+            "key": "decay",
+            "id": "ba550002-0000-4000-8000-00000000025f",
+            "baseValue": 220
+          },
+          {
+            "key": "attack-curve",
+            "id": "ba550002-0000-4000-8000-000000000260",
+            "baseValue": 1
+          },
+          {
+            "key": "decay-curve",
+            "id": "ba550002-0000-4000-8000-000000000261",
+            "baseValue": 3
+          },
+          {
+            "key": "mode",
+            "id": "ba550002-0000-4000-8000-000000000262",
+            "baseValue": 2
+          },
+          {
+            "key": "trigger-source",
+            "id": "ba550002-0000-4000-8000-000000000263",
+            "baseValue": 1
+          },
+          {
+            "key": "release",
+            "id": "ba550002-0000-4000-8000-000000000264",
+            "baseValue": 105
+          },
+          {
+            "key": "release-curve",
+            "id": "ba550002-0000-4000-8000-000000000265",
+            "baseValue": 3
+          },
+          {
+            "key": "sustain",
+            "id": "ba550002-0000-4000-8000-000000000266",
+            "baseValue": 0.22
+          },
+          {
+            "key": "rest",
+            "id": "ba550002-0000-4000-8000-000000000267",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "signal-trigger-in",
+            "id": "ba550002-0000-4000-8000-000000000268"
+          },
+          {
+            "key": "event-trigger-in",
+            "id": "ba550002-0000-4000-8000-000000000269"
+          },
+          {
+            "key": "gate-in",
+            "id": "ba550002-0000-4000-8000-00000000026a"
+          },
+          {
+            "key": "attack-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000026b"
+          },
+          {
+            "key": "decay-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000026c"
+          },
+          {
+            "key": "attack-curve-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000026d"
+          },
+          {
+            "key": "decay-curve-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000026e"
+          },
+          {
+            "key": "release-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000026f"
+          },
+          {
+            "key": "release-curve-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000270"
+          },
+          {
+            "key": "sustain-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000271"
+          },
+          {
+            "key": "rest-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000272"
+          },
+          {
+            "key": "envelope-out",
+            "id": "ba550002-0000-4000-8000-000000000273"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000275",
+        "typeKey": "processor.gain",
+        "parameters": [
+          {
+            "key": "gain",
+            "id": "ba550002-0000-4000-8000-000000000276",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-000000000277"
+          },
+          {
+            "key": "gain-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000278"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-000000000279"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000027c",
+        "typeKey": "processor.gain",
+        "parameters": [
+          {
+            "key": "gain",
+            "id": "ba550002-0000-4000-8000-00000000027d",
+            "baseValue": 0.78
+          }
+        ],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-00000000027e"
+          },
+          {
+            "key": "gain-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000027f"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-000000000280"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000282",
+        "typeKey": "generator.oscillator",
+        "parameters": [
+          {
+            "key": "frequency",
+            "id": "ba550002-0000-4000-8000-000000000283",
+            "baseValue": 0.329
+          },
+          {
+            "key": "amplitude",
+            "id": "ba550002-0000-4000-8000-000000000284",
+            "baseValue": 1
+          },
+          {
+            "key": "phase",
+            "id": "ba550002-0000-4000-8000-000000000285",
+            "baseValue": 0
+          },
+          {
+            "key": "waveform",
+            "id": "ba550002-0000-4000-8000-000000000286",
+            "baseValue": 0
+          },
+          {
+            "key": "timing",
+            "id": "ba550002-0000-4000-8000-000000000287",
+            "baseValue": 0
+          },
+          {
+            "key": "division",
+            "id": "ba550002-0000-4000-8000-000000000288",
+            "baseValue": 2
+          },
+          {
+            "key": "pulse-width",
+            "id": "ba550002-0000-4000-8000-000000000289",
+            "baseValue": 0.5
+          },
+          {
+            "key": "pitch-tracking",
+            "id": "ba550002-0000-4000-8000-00000000028a",
+            "baseValue": 0
+          },
+          {
+            "key": "pitch-offset",
+            "id": "ba550002-0000-4000-8000-00000000028b",
+            "baseValue": 0
+          }
+        ],
+        "ports": [
+          {
+            "key": "frequency-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000028c"
+          },
+          {
+            "key": "amplitude-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000028d"
+          },
+          {
+            "key": "phase-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000028e"
+          },
+          {
+            "key": "pulse-width-modulation-in",
+            "id": "ba550002-0000-4000-8000-00000000028f"
+          },
+          {
+            "key": "pitch-modulation-in",
+            "id": "ba550002-0000-4000-8000-000000000290"
+          },
+          {
+            "key": "signal-out",
+            "id": "ba550002-0000-4000-8000-000000000291"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000293",
+        "typeKey": "processor.mixer",
+        "parameters": [],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-000000000294"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-000000000295"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000029b",
+        "typeKey": "processor.filter",
+        "parameters": [
+          {
+            "key": "mode",
+            "id": "ba550002-0000-4000-8000-00000000029c",
+            "baseValue": 1
+          },
+          {
+            "key": "cutoff",
+            "id": "ba550002-0000-4000-8000-00000000029d",
+            "baseValue": 24
+          },
+          {
+            "key": "resonance",
+            "id": "ba550002-0000-4000-8000-00000000029e",
+            "baseValue": 0.707
+          }
+        ],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-00000000029f"
+          },
+          {
+            "key": "cutoff-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000002a0"
+          },
+          {
+            "key": "resonance-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000002a1"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-0000000002a2"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000002a4",
+        "typeKey": "processor.gain",
+        "parameters": [
+          {
+            "key": "gain",
+            "id": "ba550002-0000-4000-8000-0000000002a5",
+            "baseValue": 0.36325707404478613
+          }
+        ],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-0000000002a6"
+          },
+          {
+            "key": "gain-modulation-in",
+            "id": "ba550002-0000-4000-8000-0000000002a7"
+          },
+          {
+            "key": "audio-out",
+            "id": "ba550002-0000-4000-8000-0000000002a8"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000002aa",
+        "typeKey": "output.master",
+        "parameters": [],
+        "ports": [
+          {
+            "key": "audio-in",
+            "id": "ba550002-0000-4000-8000-0000000002ab"
+          }
+        ],
+        "composite": null,
+        "isMuted": false,
+        "isBypassed": false
+      }
+    ],
+    "connections": [
+      {
+        "id": "ba550002-0000-4000-8000-000000000063",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000002",
+          "portId": "ba550002-0000-4000-8000-00000000004f"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000053",
+          "portId": "ba550002-0000-4000-8000-000000000061"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000074",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000002",
+          "portId": "ba550002-0000-4000-8000-00000000004f"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000064",
+          "portId": "ba550002-0000-4000-8000-000000000072"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000078",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000053",
+          "portId": "ba550002-0000-4000-8000-000000000062"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000075",
+          "portId": "ba550002-0000-4000-8000-000000000076"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000079",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000064",
+          "portId": "ba550002-0000-4000-8000-000000000073"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000075",
+          "portId": "ba550002-0000-4000-8000-000000000076"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000082",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000075",
+          "portId": "ba550002-0000-4000-8000-000000000077"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-00000000007a",
+          "portId": "ba550002-0000-4000-8000-00000000007e"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000009a",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000002",
+          "portId": "ba550002-0000-4000-8000-000000000050"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000083",
+          "portId": "ba550002-0000-4000-8000-000000000090"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000a0",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-00000000007a",
+          "portId": "ba550002-0000-4000-8000-000000000081"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-00000000009b",
+          "portId": "ba550002-0000-4000-8000-00000000009d"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000a1",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000083",
+          "portId": "ba550002-0000-4000-8000-000000000099"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-00000000009b",
+          "portId": "ba550002-0000-4000-8000-00000000009e"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000b2",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000002",
+          "portId": "ba550002-0000-4000-8000-00000000004f"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000a2",
+          "portId": "ba550002-0000-4000-8000-0000000000b0"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000c3",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000002",
+          "portId": "ba550002-0000-4000-8000-00000000004f"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000b3",
+          "portId": "ba550002-0000-4000-8000-0000000000c1"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000d4",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000002",
+          "portId": "ba550002-0000-4000-8000-00000000004f"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000c4",
+          "portId": "ba550002-0000-4000-8000-0000000000d2"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000d8",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000a2",
+          "portId": "ba550002-0000-4000-8000-0000000000b1"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000d5",
+          "portId": "ba550002-0000-4000-8000-0000000000d6"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000d9",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000b3",
+          "portId": "ba550002-0000-4000-8000-0000000000c2"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000d5",
+          "portId": "ba550002-0000-4000-8000-0000000000d6"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000da",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000c4",
+          "portId": "ba550002-0000-4000-8000-0000000000d3"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000d5",
+          "portId": "ba550002-0000-4000-8000-0000000000d6"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000f3",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000d5",
+          "portId": "ba550002-0000-4000-8000-0000000000d7"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000eb",
+          "portId": "ba550002-0000-4000-8000-0000000000ef"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000f4",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000db",
+          "portId": "ba550002-0000-4000-8000-0000000000ea"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000eb",
+          "portId": "ba550002-0000-4000-8000-0000000000f0"
+        },
+        "amount": 390
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000fa",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000eb",
+          "portId": "ba550002-0000-4000-8000-0000000000f2"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000f5",
+          "portId": "ba550002-0000-4000-8000-0000000000f7"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000000fb",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000083",
+          "portId": "ba550002-0000-4000-8000-000000000099"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000f5",
+          "portId": "ba550002-0000-4000-8000-0000000000f8"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000101",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000f5",
+          "portId": "ba550002-0000-4000-8000-0000000000f9"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000fc",
+          "portId": "ba550002-0000-4000-8000-0000000000fe"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000112",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000102",
+          "portId": "ba550002-0000-4000-8000-000000000111"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000fc",
+          "portId": "ba550002-0000-4000-8000-0000000000ff"
+        },
+        "amount": 0.145
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000123",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000002",
+          "portId": "ba550002-0000-4000-8000-00000000004f"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000113",
+          "portId": "ba550002-0000-4000-8000-000000000121"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000134",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000124",
+          "portId": "ba550002-0000-4000-8000-000000000133"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000113",
+          "portId": "ba550002-0000-4000-8000-000000000120"
+        },
+        "amount": 0.18
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000145",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000002",
+          "portId": "ba550002-0000-4000-8000-00000000004f"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000135",
+          "portId": "ba550002-0000-4000-8000-000000000143"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000156",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000146",
+          "portId": "ba550002-0000-4000-8000-000000000155"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000135",
+          "portId": "ba550002-0000-4000-8000-000000000142"
+        },
+        "amount": 0.18
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000015a",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000113",
+          "portId": "ba550002-0000-4000-8000-000000000122"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000157",
+          "portId": "ba550002-0000-4000-8000-000000000158"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000015b",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000135",
+          "portId": "ba550002-0000-4000-8000-000000000144"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000157",
+          "portId": "ba550002-0000-4000-8000-000000000158"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000174",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000157",
+          "portId": "ba550002-0000-4000-8000-000000000159"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-00000000016c",
+          "portId": "ba550002-0000-4000-8000-000000000170"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000175",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-00000000015c",
+          "portId": "ba550002-0000-4000-8000-00000000016b"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-00000000016c",
+          "portId": "ba550002-0000-4000-8000-000000000171"
+        },
+        "amount": 230
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000017b",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-00000000016c",
+          "portId": "ba550002-0000-4000-8000-000000000173"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000176",
+          "portId": "ba550002-0000-4000-8000-000000000178"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000017c",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000083",
+          "portId": "ba550002-0000-4000-8000-000000000099"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000176",
+          "portId": "ba550002-0000-4000-8000-000000000179"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000182",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000176",
+          "portId": "ba550002-0000-4000-8000-00000000017a"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-00000000017d",
+          "portId": "ba550002-0000-4000-8000-00000000017f"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000193",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000183",
+          "portId": "ba550002-0000-4000-8000-000000000192"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-00000000017d",
+          "portId": "ba550002-0000-4000-8000-000000000180"
+        },
+        "amount": 0.16999999999999998
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000001a4",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000002",
+          "portId": "ba550002-0000-4000-8000-00000000004f"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000194",
+          "portId": "ba550002-0000-4000-8000-0000000001a2"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000001b5",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000002",
+          "portId": "ba550002-0000-4000-8000-00000000004f"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000001a5",
+          "portId": "ba550002-0000-4000-8000-0000000001b3"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000001c6",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-0000000001b6",
+          "portId": "ba550002-0000-4000-8000-0000000001c5"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000001a5",
+          "portId": "ba550002-0000-4000-8000-0000000001b2"
+        },
+        "amount": 0.18
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000001ca",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000194",
+          "portId": "ba550002-0000-4000-8000-0000000001a3"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000001c7",
+          "portId": "ba550002-0000-4000-8000-0000000001c8"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000001cb",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-0000000001a5",
+          "portId": "ba550002-0000-4000-8000-0000000001b4"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000001c7",
+          "portId": "ba550002-0000-4000-8000-0000000001c8"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000001e4",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-0000000001c7",
+          "portId": "ba550002-0000-4000-8000-0000000001c9"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000001dc",
+          "portId": "ba550002-0000-4000-8000-0000000001e0"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000001e5",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-0000000001cc",
+          "portId": "ba550002-0000-4000-8000-0000000001db"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000001dc",
+          "portId": "ba550002-0000-4000-8000-0000000001e1"
+        },
+        "amount": 670
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000001fd",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000002",
+          "portId": "ba550002-0000-4000-8000-000000000050"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000001e6",
+          "portId": "ba550002-0000-4000-8000-0000000001f3"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000203",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-0000000001dc",
+          "portId": "ba550002-0000-4000-8000-0000000001e3"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000001fe",
+          "portId": "ba550002-0000-4000-8000-000000000200"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000204",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-0000000001e6",
+          "portId": "ba550002-0000-4000-8000-0000000001fc"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000001fe",
+          "portId": "ba550002-0000-4000-8000-000000000201"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000020a",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-0000000001fe",
+          "portId": "ba550002-0000-4000-8000-000000000202"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000205",
+          "portId": "ba550002-0000-4000-8000-000000000207"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000021b",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-00000000020b",
+          "portId": "ba550002-0000-4000-8000-00000000021a"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000205",
+          "portId": "ba550002-0000-4000-8000-000000000208"
+        },
+        "amount": 0.195
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000022c",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000002",
+          "portId": "ba550002-0000-4000-8000-00000000004f"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-00000000021c",
+          "portId": "ba550002-0000-4000-8000-00000000022a"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000023d",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000002",
+          "portId": "ba550002-0000-4000-8000-00000000004f"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-00000000022d",
+          "portId": "ba550002-0000-4000-8000-00000000023b"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000024e",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-00000000023e",
+          "portId": "ba550002-0000-4000-8000-00000000024d"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-00000000022d",
+          "portId": "ba550002-0000-4000-8000-00000000023a"
+        },
+        "amount": 0.10999999999999999
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000252",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-00000000021c",
+          "portId": "ba550002-0000-4000-8000-00000000022b"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-00000000024f",
+          "portId": "ba550002-0000-4000-8000-000000000250"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000253",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-00000000022d",
+          "portId": "ba550002-0000-4000-8000-00000000023c"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-00000000024f",
+          "portId": "ba550002-0000-4000-8000-000000000250"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000025c",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-00000000024f",
+          "portId": "ba550002-0000-4000-8000-000000000251"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000254",
+          "portId": "ba550002-0000-4000-8000-000000000258"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000274",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000002",
+          "portId": "ba550002-0000-4000-8000-000000000050"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-00000000025d",
+          "portId": "ba550002-0000-4000-8000-00000000026a"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000027a",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000254",
+          "portId": "ba550002-0000-4000-8000-00000000025b"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000275",
+          "portId": "ba550002-0000-4000-8000-000000000277"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000027b",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-00000000025d",
+          "portId": "ba550002-0000-4000-8000-000000000273"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000275",
+          "portId": "ba550002-0000-4000-8000-000000000278"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000281",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000275",
+          "portId": "ba550002-0000-4000-8000-000000000279"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-00000000027c",
+          "portId": "ba550002-0000-4000-8000-00000000027e"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000292",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000282",
+          "portId": "ba550002-0000-4000-8000-000000000291"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-00000000027c",
+          "portId": "ba550002-0000-4000-8000-00000000027f"
+        },
+        "amount": 0.22
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000296",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-00000000009b",
+          "portId": "ba550002-0000-4000-8000-00000000009f"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000293",
+          "portId": "ba550002-0000-4000-8000-000000000294"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000297",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-0000000000fc",
+          "portId": "ba550002-0000-4000-8000-000000000100"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000293",
+          "portId": "ba550002-0000-4000-8000-000000000294"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000298",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-00000000017d",
+          "portId": "ba550002-0000-4000-8000-000000000181"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000293",
+          "portId": "ba550002-0000-4000-8000-000000000294"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-000000000299",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000205",
+          "portId": "ba550002-0000-4000-8000-000000000209"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000293",
+          "portId": "ba550002-0000-4000-8000-000000000294"
+        },
+        "amount": 0.9
+      },
+      {
+        "id": "ba550002-0000-4000-8000-00000000029a",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-00000000027c",
+          "portId": "ba550002-0000-4000-8000-000000000280"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-000000000293",
+          "portId": "ba550002-0000-4000-8000-000000000294"
+        },
+        "amount": 0.85
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000002a3",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-000000000293",
+          "portId": "ba550002-0000-4000-8000-000000000295"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-00000000029b",
+          "portId": "ba550002-0000-4000-8000-00000000029f"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000002a9",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-00000000029b",
+          "portId": "ba550002-0000-4000-8000-0000000002a2"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000002a4",
+          "portId": "ba550002-0000-4000-8000-0000000002a6"
+        },
+        "amount": 1
+      },
+      {
+        "id": "ba550002-0000-4000-8000-0000000002ac",
+        "source": {
+          "nodeId": "ba550002-0000-4000-8000-0000000002a4",
+          "portId": "ba550002-0000-4000-8000-0000000002a8"
+        },
+        "destination": {
+          "nodeId": "ba550002-0000-4000-8000-0000000002aa",
+          "portId": "ba550002-0000-4000-8000-0000000002ab"
+        },
+        "amount": 1
+      }
+    ]
+  },
+  "beatsPerMinute": 80,
+  "activeGraphId": "ba550002-0000-4000-8000-000000000001",
+  "canvasLayouts": [
+    {
+      "graphId": "ba550002-0000-4000-8000-000000000001",
+      "panX": 30,
+      "panY": 30,
+      "zoom": 0.25,
+      "positions": [
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000002",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000053",
+          "x": 800,
+          "y": 0
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000064",
+          "x": 800,
+          "y": 270
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000075",
+          "x": 1130,
+          "y": 260
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000007a",
+          "x": 1400,
+          "y": 260
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000083",
+          "x": 400,
+          "y": 1450
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000009b",
+          "x": 1750,
+          "y": 260
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000000a2",
+          "x": 800,
+          "y": 1600
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000000b3",
+          "x": 800,
+          "y": 1870
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000000c4",
+          "x": 800,
+          "y": 2140
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000000d5",
+          "x": 1130,
+          "y": 1860
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000000db",
+          "x": 800,
+          "y": 2750
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000000eb",
+          "x": 1400,
+          "y": 1860
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000000f5",
+          "x": 1750,
+          "y": 1860
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000000fc",
+          "x": 2050,
+          "y": 1860
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000102",
+          "x": 800,
+          "y": 2880
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000113",
+          "x": 800,
+          "y": 3200
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000124",
+          "x": 800,
+          "y": 3310
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000135",
+          "x": 800,
+          "y": 3470
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000146",
+          "x": 800,
+          "y": 3580
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000157",
+          "x": 1130,
+          "y": 3460
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000015c",
+          "x": 800,
+          "y": 4350
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000016c",
+          "x": 1400,
+          "y": 3460
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000176",
+          "x": 1750,
+          "y": 3460
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000017d",
+          "x": 2050,
+          "y": 3460
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000183",
+          "x": 800,
+          "y": 4480
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000194",
+          "x": 800,
+          "y": 4800
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000001a5",
+          "x": 800,
+          "y": 5070
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000001b6",
+          "x": 800,
+          "y": 5180
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000001c7",
+          "x": 1130,
+          "y": 5060
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000001cc",
+          "x": 800,
+          "y": 5950
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000001dc",
+          "x": 1400,
+          "y": 5060
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000001e6",
+          "x": 400,
+          "y": 6250
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000001fe",
+          "x": 1750,
+          "y": 5060
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000205",
+          "x": 2050,
+          "y": 5060
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000020b",
+          "x": 800,
+          "y": 6080
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000021c",
+          "x": 800,
+          "y": 6400
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000022d",
+          "x": 800,
+          "y": 6670
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000023e",
+          "x": 800,
+          "y": 6780
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000024f",
+          "x": 1130,
+          "y": 6660
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000254",
+          "x": 1400,
+          "y": 6660
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000025d",
+          "x": 400,
+          "y": 7850
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000275",
+          "x": 1750,
+          "y": 6660
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000027c",
+          "x": 2050,
+          "y": 6660
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000282",
+          "x": 800,
+          "y": 7680
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000293",
+          "x": 2420,
+          "y": 3500
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000029b",
+          "x": 2720,
+          "y": 3500
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000002a4",
+          "x": 3020,
+          "y": 3500
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000002aa",
+          "x": 3350,
+          "y": 3500
+        }
+      ],
+      "nodeDescriptions": [
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000002",
+          "alias": "Fixed bass audition · 4 bars",
+          "description": "Transport-locked; note codes use MIDI+1, 0 = tie, 129 = rest."
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000053",
+          "alias": "Sub anchor · oscillator 1",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000064",
+          "alias": "Sub anchor · oscillator 2",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000075",
+          "alias": "Sub anchor · oscillators",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000007a",
+          "alias": "Sub anchor · filter",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000083",
+          "alias": "long · gate envelope",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000009b",
+          "alias": "Note articulation",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000000a2",
+          "alias": "Reese engine · oscillator 1",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000000b3",
+          "alias": "Reese engine · oscillator 2",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000000c4",
+          "alias": "Reese engine · oscillator 3",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000000d5",
+          "alias": "Reese engine · oscillators",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000000db",
+          "alias": "Reese engine · cutoff motion",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000000eb",
+          "alias": "Reese engine · filter",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000000f5",
+          "alias": "Note articulation",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000000fc",
+          "alias": "Reese engine · independent breath",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000102",
+          "alias": "Reese engine · breath LFO",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000113",
+          "alias": "Grinding PWM · oscillator 1",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000124",
+          "alias": "Grinding PWM · PWM 1",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000135",
+          "alias": "Grinding PWM · oscillator 2",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000146",
+          "alias": "Grinding PWM · PWM 2",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000157",
+          "alias": "Grinding PWM · oscillators",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000015c",
+          "alias": "Grinding PWM · cutoff motion",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000016c",
+          "alias": "Grinding PWM · filter",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000176",
+          "alias": "Note articulation",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000017d",
+          "alias": "Grinding PWM · independent breath",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000183",
+          "alias": "Grinding PWM · breath LFO",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000194",
+          "alias": "Metallic throat · oscillator 1",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000001a5",
+          "alias": "Metallic throat · oscillator 2",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000001b6",
+          "alias": "Metallic throat · PWM 2",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000001c7",
+          "alias": "Metallic throat · oscillators",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000001cc",
+          "alias": "Metallic throat · cutoff motion",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000001dc",
+          "alias": "Metallic throat · filter",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000001e6",
+          "alias": "slow · gate envelope",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000001fe",
+          "alias": "Note articulation",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000205",
+          "alias": "Metallic throat · independent breath",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000020b",
+          "alias": "Metallic throat · breath LFO",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000021c",
+          "alias": "Transient serration · oscillator 1",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000022d",
+          "alias": "Transient serration · oscillator 2",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000023e",
+          "alias": "Transient serration · PWM 2",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000024f",
+          "alias": "Transient serration · oscillators",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000254",
+          "alias": "Transient serration · filter",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000025d",
+          "alias": "accent · gate envelope",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000275",
+          "alias": "Note articulation",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000027c",
+          "alias": "Transient serration · independent breath",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000282",
+          "alias": "Transient serration · breath LFO",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-000000000293",
+          "alias": "Five complementary bass layers",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-00000000029b",
+          "alias": "Subsonic protection",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000002a4",
+          "alias": "Matched audition level",
+          "description": ""
+        },
+        {
+          "nodeId": "ba550002-0000-4000-8000-0000000002aa",
+          "alias": "MASTER",
+          "description": ""
+        }
+      ],
+      "connectionDescriptions": []
+    }
+  ],
+  "overview": {
+    "title": "Bass Lab II 2 — Iron Tide (reconstructed reference)",
+    "description": "Dark industrial with Reese beating, PWM grind and two resonant bands. Five independently shaped sub/body/texture branches. Reconstructed from the delivered source graph with new IDs.",
+    "instructions": "Import and play from zero. Four bars at 80 BPM (12 seconds), then loop. Solo patch; common backing only in independent preview. Native playback unverified; start at low monitoring level.",
+    "tags": [
+      "bass",
+      "audition",
+      "D minor",
+      "80 BPM",
+      "multi-layer"
+    ]
+  }
+}

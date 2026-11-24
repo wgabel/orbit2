@@ -4,6 +4,8 @@
 
 Documentation provenance: [PR #50](https://github.com/wgabel/orbit2/pull/50) (documentation only).
 
+For a listener-rated multilayer bass comparison, see [Bass Lab II](foundations/bass-lab-ii.md): Iron Tide and Abyssal Machinery rated Great; keep the stable sub, complementary filtered branches and independent motion as candidate relationships, not mandatory settings. The preview evidence is independent of native playback.
+
 This is the user-supplied collection of classic synthesizer recipes. Consult it when planning the sound palette for new music and when designing or refining individual voices. The recipes are cross-synthesizer design references, not a claim that the original named instruments have been recreated, that these exact settings have been tested in Orbit 2, or that every feature mentioned is implemented. The full original text is preserved below, including its terminology and suggested settings.
 
 ## Recipe selection
