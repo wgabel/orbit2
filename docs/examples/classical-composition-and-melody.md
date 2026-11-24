@@ -17,6 +17,64 @@ A keyboard is polyphonic: one physical instrument can carry overlapping bass, in
 
 Listen to the main idea alone, then add each line. Every active part has a role, but it need not have equal prominence. The parts together create **vertical harmony** (what sounds simultaneously) and **horizontal coherence** (where each line goes). To compose a convincing piece, work on both.
 
+### Compositional richness: think in independent musical voices
+
+The piano analogy is a useful composition test, not piano-playing instruction. A conventional right-hand melody and left-hand accompaniment are only one possibility: the lower part can be a pedal, moving bass, broken chord, rhythmic pattern or independent theme; the upper part can carry several voices, and the roles can exchange. Expert performance of even a simple score can be compelling through phrasing, timing, articulation, dynamic shaping and voicing. Expert composition need not be more difficult, denser or more contrapuntal than beginner material. Distinguish the written musical relationships, performance decisions and the sound design that realizes them.
+
+**Write the piece before counting layers.** A layer is musically rich when it adds a meaningful horizontal line, vertical relationship, rhythmic gesture or timbral function. Five synthesizers playing the same synchronized chord shape can be one musical idea. One shared keyboard-like timbre with independently phrased bass, tenor, alto, soprano and intermittent reply can communicate several ideas. When a piece feels flat despite having many voices, first reduce it to a common timbre and inspect whether the lines themselves have interesting direction. Preserve intentional simplicity, repetition and silence when they serve the genre.
+
+**Treat harmony as a framework for movement rather than a series of static blocks.** Choose chord arrivals and bass direction, then decide how individual voices travel between them. Retain common tones where useful, connect other chord tones by step or meaningful leap, and use passing/neighbor tones, anticipations and suspensions intentionally. For example over C → G, one inner voice may retain G4, another move E4–F4–G4, and a third hold C4 into the G harmony before resolving down to B3. The latter requires an actual sustained C across the boundary, not a label saying suspension. Check the resulting simultaneous pitches and rhythm: the same F or C can be welcome tension in one context and unwanted masking or discord in another.
+
+| Accompaniment relationship | Compositional purpose | Orbit realization |
+| --- | --- | --- |
+| Held block chords | Clarity, stable harmony, space for melody; deliberate stasis can be effective | Separate pitched lanes, matching chord attacks and holds |
+| Broken chords / arpeggiation | Maintain motion across a sustained chord, expose its notes across time | Stagger actual note onsets and durations; distribute overlaps across independent monophonic lanes |
+| Bass with approaches | Give harmony direction and establish pulse; approach next root with a step, fifth or chromatic neighbor as appropriate | Dedicated bass score with meaningful rests, passing events and register; don't mistake long sub notes for a moving bassline |
+| Independent inner voices | Connect harmonic changes by horizontal motion, retain common notes, create and resolve tension | Compose each line, examine actual overlap and movement; avoid all voices merely doubling lead rhythm |
+| Call/response and selective silence | Let attention move between voices; support a held note or answer a completed gesture | Offset response attacks into held/rest windows; do not fill every gap, and keep tails in mind |
+| Expressive voicing and phrase shape | Communicate priority, arrival, anticipation and contrast with identical pitches | Vary available note articulation, role/phrase gains and accents. A separate synchronized expression lane can approximate per-event dynamics where native per-step velocity is absent; verify control semantics, alignment and lane capacity. Do not claim unsupported rubato or pedal behavior. |
+
+**Keep a hierarchy of attention.** Give a lead room to speak; a bass may be active without dominating, and inner voices should often be quieter or less busy. Reverse foreground and backing where the piece benefits. Evaluate a passage with its parts soloed and in combination, checking actual pitched events during holds, rests, chord changes, phrase goals and section boundaries. Look for meaningful voice exchanges, contrast in note rate, relative dynamic contours and resolution. Avoid a requirement for any minimum number of voices, notes, counterpoint or non-chord tones. The appropriate relationships depend on style and desired feeling; a spare ambient theme may need fewer events than a dance passage. A melody rated positively in isolation can be inappropriate in a different whole-piece style.
+
+#### Controlled Voice Lab exercise (2026-11-24)
+
+Five original eight-bar studies use the same 84 BPM, 4/4 D-minor theme and harmonic framework: Dm – Bb – Gm – A7 – Dm – F – A7(b9) – Dm. Every version has the same 39 lead attacks and note durations. The final version changes per-note gain as an additional performance variable. One common additive struck-keyboard-like sound is used throughout (body partials plus independently decaying attack harmonics, low-pass and short room); this is not a physical or sampled piano. Rendered comparison previews are independently synthesized, not native Faust. The user has not yet rated these studies. The earlier Melody Lab I feedback on 2026-11-24 was that all five melodies were good when used in appropriate styles and could be bad in mismatched styles; no ranking or separate harmony scores were supplied. This supports evaluating contextual suitability, not a universal melody ranking.
+
+Each group below is one bar of eighth-note slots; dash is tie, R rest. This is the actual shared lead score, not an imagined example.
+
+| Bar | Chord | Lead |
+| --- | --- | --- |
+| 1 | Dm | A4 – D5 E5 F5 – E5 D5 |
+| 2 | Bb | C5 – Bb4 A4 F4 – R R |
+| 3 | Gm | G4 A4 Bb4 – D5 – C5 Bb4 |
+| 4 | A7 | A4 – G4 E4 C#4 – R R |
+| 5 | Dm | A4 – D5 E5 F5 A5 – G5 |
+| 6 | F | F5 – E5 D5 C5 – R R |
+| 7 | A7(b9) | Bb4 – A4 G4 E4 – C#5 – |
+| 8 | Dm | D5 – – A4 F4 – D4 R |
+
+For example, in bar 2 the held C5 over Bb is a ninth color that resolves to Bb4; the rest at the end leaves space for a reply. In bar 4, the dominant C# prepares the tonic; bar 5 transforms the opening with a higher A5. In bar 7 the Bb expresses the flat ninth of the dominant, then moves to A; C#5 leads to D5 at the final tonic. These are interpretations of score relationships, not demonstrated listener reactions.
+
+| Version | Backing attacks | Distinct backing attack slots without a lead attack | Main comparison |
+| --- | ---: | ---: | --- |
+| 01 Held Chords | 32 | 0 | block-chord baseline |
+| 02 Broken Chords | 55 | 19 | flowing staggered arpeggiation |
+| 03 Moving Bass | 110 | 17 | root approaches and rhythmic harmony |
+| 04 Independent Voices | 124 | 16 | independent inner lines, passing and answering motion |
+| 05 Expressive Conversation | 116 | 12 | selective thinning, voice answers and expression automation |
+
+The fifth design uses fewer attacks than the fourth. These counts describe the actual programmed score, not a ranking of quality or audibility; an onset outside the lead's attack may occur under its sustain rather than in silence. For a concrete comparison, in bar 2 of version 05 the bass is Bb2 – – F2 D3 – C3 A2; alto F3 – – – F3 – G3 F3; tenor Bb3 – – – R R D4 F4; upper response D4 – – – R R F4 G4. In the last two slots the lead rests while the other voices move, giving the phrase an answer; check whether this interaction feels clear rather than crowded. Contrast this with the baseline's sustained Bb2/F3/Bb3/D4. The chord framework is shared, but the realized vertical pitch sets vary, by design.
+
+All independent 48 kHz mono previews measure -21 dBFS K-weighted RMS (comparison proxy, not LUFS), with sample peaks -4.05, -6.11, -6.00, -6.04 and -5.48 dBFS and no sample clipping. Static UUID and endpoint checks passed; native import, DSP, performance and listener preference remain unverified. The source patches and full scores/measurement report `Voice-Lab-analysis.json` were delivered to the user, not checked into this PR. Original patch SHA-256 in order:
+
+- `cfe14edc7e432ca298a95e04d7dabb9e7187428c22e5e8bfe64cf294125c4899`
+- `1b58d44c1d8ff59f1970b597655fef4d59eb460d5d5025cf9d272775a6cae477`
+- `2fa1f1e44b9d1afd222afb0ac8e9e86a5de537d454ad1f13c2e2814ad01cc1ea`
+- `2b655fa642d0a5a111ce833cfb2045b84f6ff7c7d11bf11939cb3224213d8883`
+- `80d756d171223d7459f7102004ebe539de326b12b687e54006bebb907f668da5`
+
+For a controlled comparison keep theme, harmony, tempo, timbre and approximate listening level fixed, compare complete phrases and record style-specific feedback. The five versions deliberately change multiple accompaniment characteristics; they cannot isolate the causal effect of any one technique. To isolate expressive dynamics, later compare version 05 with identical score and uniform accents, or compare version 04 with the same score and an alternative mix. Retain approved musical relationships, not merely node count or an entire score copied into an unrelated genre.
+
 ## 2. What makes a melody memorable and expressive?
 
 No equation proves that a melody is beautiful. Melodic expectation is nevertheless measurable in specific listening experiments. Pearce and Wiggins [C1] show how contextual statistical learning can account for many observed expectations. Pearce et al. [C2] compare computational predictions with listeners' behavioral and electrophysiological responses. The experiments and modeling in [C3] indicate that both learned patterns and Gestalt-like grouping principles can help predict continuation expectations. Clemente et al. [C4] studied how perceived balance, contour, symmetry and complexity relate to liking of novel melodies; this separates acoustic/score properties from what listeners actually perceive. These results are not a mandate to maximize predictability, surprise or symmetry.
