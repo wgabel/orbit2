@@ -177,6 +177,11 @@ public sealed class PatchDocumentSerializer
                             parameters.Add(key, (added.Id, added.BaseValue));
                         }
                     }
+                    // A complete legacy pattern has no per-step duration keys. Partial new payloads remain invalid.
+                    var lengths = leaf.Parameters.Where(p => NoteSequencerGenerator.IsStepGateLengthParameter(p.Definition.Key)).ToArray();
+                    if (lengths.All(p => !parameters.ContainsKey(p.Definition.Key)))
+                        foreach (var length in lengths)
+                            parameters.Add(length.Definition.Key, (length.Id, length.BaseValue));
                     foreach (var output in leaf.Outputs.Where(p => p.Key != "pitch-out"))
                         ports.TryAdd(output.Key, output.Id);
                 }

@@ -93,3 +93,35 @@ test('legacy pitch-only patterns do not emit note release actions', () => {
     assert.equal(sample(s,.5,.25),0);
     assert.equal(sample(s,1,.5),512);
 });
+
+test('per-note length overrides differ, ties inherit onset length and edits wait for the next onset', () => {
+    const lengths = [.25, 0, .75, 0, ...Array(60).fill(0)];
+    const p = pattern({notes:true, count:4, ticks:4, gateFraction:.5,
+        gateFractions:lengths, steps:[46,0,53,129,...Array(60).fill(0)]});
+    const s = new PitchPatternScheduler(p);
+    assert.equal(sample(s,0,0),256+46);
+    assert.equal(sample(s,.25,.125),0); // tie prevents early release
+    assert.equal(sample(s,1,.5),512);
+    assert.equal(s.setPattern({...p,gateFractions:[.75,...lengths.slice(1)]}),true);
+    assert.equal(sample(s,1.25,.625),512+130); // original onset length
+    assert.equal(sample(s,2,1),768+53);
+    assert.equal(sample(s,2.5,1.25),0);
+    assert.equal(sample(s,2.75,1.375),768+130);
+    assert.equal(sample(s,3,1.5),1024+130);
+    assert.equal(sample(s,4,2),256+46);
+    assert.equal(sample(s,5,2.5),512);
+    assert.equal(sample(s,5.25,2.625),0);
+    assert.equal(sample(s,5.75,2.875),512+130);
+    assert.equal(validPitchPattern({...p,gateFractions:[.5]}),false);
+    assert.equal(validPitchPattern({...p,gateFractions:[-1,...lengths.slice(1)]}),false);
+    assert.equal(validPitchPattern({...p,gateFractions:[NaN,...lengths.slice(1)]}),false);
+});
+test('zero duration override inherits the pattern default and reset clears a tied gate', () => {
+    const s = new PitchPatternScheduler(pattern({notes:true,count:3,ticks:4,gateFraction:.5,
+        gateFractions:Array(64).fill(0),steps:[46,53,0,...Array(61).fill(0)]}));
+    assert.equal(sample(s,0,0),256+46);
+    assert.equal(sample(s,.5,.25),256+130);
+    assert.equal(sample(s,1,.5),512+53);
+    assert.equal(sample(s,2,1),768);
+    assert.equal(sample(s,2,1,1),768+130);
+});

@@ -24,6 +24,8 @@ public sealed class NoteSequencerGenerator : SignalNode, IGenerator
     public const string VelocityKey = "pattern-velocity";
     public const int RestCode = 129;
     public static string StepKey(int index) => "pattern-step-" + (index + 1).ToString("00", System.Globalization.CultureInfo.InvariantCulture);
+    public static string StepGateLengthKey(int index) => "pattern-step-gate-length-" + (index + 1).ToString("00", System.Globalization.CultureInfo.InvariantCulture);
+    public static bool IsStepGateLengthParameter(string key) => key.StartsWith("pattern-step-gate-length-", StringComparison.Ordinal);
     public static bool IsPatternParameter(string key) => key.StartsWith("pattern-", StringComparison.Ordinal);
 
     private static ParameterDefinition Choice(string key, string name, int value, IReadOnlyList<ParameterChoice> choices) =>
@@ -41,7 +43,9 @@ public sealed class NoteSequencerGenerator : SignalNode, IGenerator
         Choice(ArticulationKey, "Playback", 0, [new(0, "Pitch only (drone)"), new(1, "Notes (gate + trigger)")]),
         new ParameterDefinition(GateLengthKey, "Note length", 0.9, 0.05, 1, ParameterUnit.Normalized, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None),
         new ParameterDefinition(VelocityKey, "Velocity", 0.8, 0, 1, ParameterUnit.Normalized, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None)
-    }.Concat(Enumerable.Range(0, Capacity).Select(i => Choice(StepKey(i), $"Step {i + 1}", 0, Notes))).ToArray());
+    }.Concat(Enumerable.Range(0, Capacity).Select(i => Choice(StepKey(i), $"Step {i + 1}", 0, Notes))).Concat(Enumerable.Range(0, Capacity).Select(i =>
+        new ParameterDefinition(StepGateLengthKey(i), $"Step {i + 1} note length", 0, 0, 1, ParameterUnit.Normalized,
+            ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None))).ToArray());
 
     public NoteSequencerGenerator(Guid id) : base(id, NodeType, "Note Sequencer",
         new[] { new Parameter(Guid.NewGuid(), new ParameterDefinition(ReferenceKey, "Reference note", MusicalPitch.ReferenceMidiNote, 0, 127,

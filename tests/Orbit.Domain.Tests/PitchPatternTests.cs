@@ -40,6 +40,33 @@ public sealed class PitchPatternTests
     }
 
     [Fact]
+    public void PerStepLengthsMigrateAndRoundTripWithUndo()
+    {
+        var registry = BuiltInNodes.CreateRegistry();
+        using var session = new PatchSession(registry);
+        var id = session.GraphId;
+        var node = session.Execute(new AddNodeCommand(id, NoteSequencerGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        var serializer = new PatchDocumentSerializer();
+        var document = serializer.Capture(session, 120, id, []);
+        var saved = document.RootGraph.Nodes.Single();
+        var legacy = saved with { Parameters = saved.Parameters.Where(p => !NoteSequencerGenerator.IsStepGateLengthParameter(p.Key)).ToArray() };
+        using var restored = serializer.Restore(document with { RootGraph = document.RootGraph with { Nodes = [legacy] } }, registry);
+        Assert.All(PitchPattern.FromNode(restored.Snapshot.GetNode(node.Id)).GateFractions!, v => Assert.Equal(0d, v));
+        var preset = new NodePreset(1, "old-length", node.TypeKey, "Old lengths", "Custom", null, legacy.Parameters.ToDictionary(p => p.Key, p => p.BaseValue));
+        new NodePresetValidator(registry).Validate(preset);
+        var baseline = PitchPattern.FromNode(session.Snapshot.GetNode(node.Id));
+        var address = new Orbit.Domain.Parameters.ParameterAddress(node.Id, node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.StepGateLengthKey(0)).Id);
+        session.Execute(new SetParameterValueCommand(id, address, .25));
+        var edited = PitchPattern.FromNode(session.Snapshot.GetNode(node.Id));
+        Assert.False(baseline.Matches(edited));
+        Assert.Equal(.25, edited.GateFractions![0]);
+        using var roundtrip = serializer.Restore(serializer.Deserialize(serializer.Serialize(serializer.Capture(session, 120, id, []))), registry);
+        Assert.True(edited.Matches(PitchPattern.FromNode(roundtrip.Snapshot.GetNode(node.Id))));
+        session.Undo();
+        Assert.True(baseline.Matches(PitchPattern.FromNode(session.Snapshot.GetNode(node.Id))));
+    }
+
+    [Fact]
     public void FixedSlotsMigratePreserveInactiveNotesAndUndoAtomically()
     {
         var registry = BuiltInNodes.CreateRegistry();
