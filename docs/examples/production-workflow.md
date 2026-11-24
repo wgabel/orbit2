@@ -4,6 +4,8 @@
 
 ## End-to-end workflow
 
+**Mandatory whole-piece acceptance:** Use the [musical composition validation protocol](musical-composition-validation.md) from planning through delivery. Define role-by-section expectations before building; audit actual material and routing, seek a native render and measure audible roles in context, correct failed criteria and re-render when possible. The protocol owns gate statuses and the evidence required for a finished composition; this workflow routes to the detailed techniques. A missing render or audition must be explicitly labeled as unverified, not passed.
+
 **Score planning for pitched music:** Before constructing the patch, consult [harmony, scales and temperament](harmony-scales-and-temperament.md) and [classical composition and melody](classical-composition-and-melody.md). Plan actual notes and durations, tonal/modal choices, chord voicings/bass, intentional dissonance, motif, phrase goals and contrasting sections. Consider a keyboard-like reduction and develop the idea before choosing orchestration. These tools also serve pop, chip, ambient and other styles; select what fits the intent, never enforce historical tonal conventions indiscriminately. Use the worked examples as exercises, not validated patches.
 
 **Form and material before graph construction:** for whole pieces, use [compositional development](compositional-development.md) to choose a recognizable identity, plan how it is developed at phrase and section timescales, and allocate musical attention. Keep a compact section plan with intended time/bar boundaries, actual material, active roles, contrast and transitions. A short loop, sound effect or deliberately static texture need not have a song form. For cinematic/orchestral work, use the [cinematic composition and orchestration guide](genres/cinematic-orchestration.md) to develop a score reduction into expressive instrumental roles and a complete cue. Its proposed patterns are exercises, not prevalidated Orbit patches.
@@ -14,7 +16,7 @@
 
 **Instrument audition:** for any genre whenever individual sounds need development or comparison, use the [fixed test melody and protocol](instrument-design-and-audition.md#3-the-instrument-audition-fixture--test-melody-driver-v1). Choose a suitable fixed profile (melody, sustained drone, percussion, chord or audio-input test). Test alternatives with identical relevant performance controls and matched levels, then in a representative mix. Preserve the original score when it has already received positive feedback. A native render is not listener approval; record distinct evidence before recommending a sound.
 
-For complete pieces and substantial voice design, use the [detailed production iteration](mixing-mastering-and-analysis.md#5-agent-workflow-render--analyze--refine--re-render) alongside the [musical quality checklist](music-theory-and-sound-design.md#11-agent-workflow-and-quality-checks). These remain the authoritative procedures; the following is a routing summary.
+For complete pieces and substantial voice design, use the [detailed production iteration](mixing-mastering-and-analysis.md#5-agent-workflow-render--analyze--refine--re-render) alongside the [musical quality checklist](music-theory-and-sound-design.md#11-agent-workflow-and-quality-checks). These guides own the measurement and creative techniques; the validation protocol owns acceptance. The following is a routing summary.
 
 | Stage | Decision or evidence | Read as needed |
 | --- | --- | --- |

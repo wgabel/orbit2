@@ -6,6 +6,8 @@ Documentation provenance: [PR #29](https://github.com/wgabel/orbit2/pull/29) (pr
 
 **Purpose:** make Orbit 2 music sound intentional and polished, rather than merely technically correct. Apply the appropriate depth for a single voice, short loop or long composition. Current Orbit nodes support considerable mixing and tone shaping, but a complete professional mastering suite or standardized loudness meter is not implied. Sound quality benefits most from decisions at the right stage.
 
+For whole-piece creation, substantial arrangement revisions and whole-piece evaluations, the [mandatory musical composition validation protocol](musical-composition-validation.md) defines the acceptance gates, role-by-section checks and evidence required at handoff. This guide owns detailed mixing and measurement techniques; use them within those gates rather than treating a structurally valid patch as finished music.
+
 ## 1. Separate the four production tasks
 
 | Stage | What should be solved here | Evidence of success |
