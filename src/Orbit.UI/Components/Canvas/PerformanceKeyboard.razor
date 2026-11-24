@@ -134,6 +134,17 @@
                                        value="@Format(Value(NoteSequencerGenerator.StepGateLengthKey(selectedStep)))"
                                        @onchange="e => EditValueAsync(NoteSequencerGenerator.StepGateLengthKey(selectedStep), e)" />
                             </label>
+                            var velocityKey = NoteSequencerGenerator.StepVelocityKey(selectedStep);
+                            var velocityChoices = Node.Parameters.Single(p => p.Definition.Key == velocityKey).Definition.Choices!;
+                            <label>Note velocity
+                                <select aria-label="Selected note velocity" disabled="@RecordingLocked" value="@Format(Value(velocityKey))"
+                                        @onchange="e => EditValueAsync(velocityKey, e)">
+                                    @foreach (var choice in velocityChoices)
+                                    {
+                                        <option value="@Format(choice.Value)">@choice.Label</option>
+                                    }
+                                </select>
+                            </label>
                         }
                     }
                     <label>Auto-advance
