@@ -148,3 +148,18 @@ test('velocity overrides are packed only on articulated onsets, including explic
     assert.equal(validPitchPattern({...p,velocityOverrides:[.5]}),false);
     assert.equal(validPitchPattern({...p,velocityOverrides:null}),true);
 });
+
+test('velocity follows shared beat positions across tempo changes and discontinuous seeks', () => {
+    const p = pattern({notes:true,count:4,ticks:4,gateFraction:.5,
+        steps:[46,0,53,0,...Array(60).fill(0)],
+        velocityOverrides:[.3,.9,.7,.1,...Array(60).fill(-1)]});
+    const s = new PitchPatternScheduler(p);
+    assert.equal(sample(s,0,0),31*32768+256+46);
+    assert.equal(sample(s,.75,.375),0);
+    assert.equal(sample(s,1,.75),512); // beat boundary, despite a change in elapsed time
+    assert.equal(sample(s,1.5,1.25),512+130);
+    assert.equal(sample(s,2,1.75),71*32768+768+53);
+    assert.equal(sample(s,2.25,2),0);
+    assert.equal(sample(s,7,4),1024+130); // seek into a tie: no stale held note
+    assert.equal(sample(s,8,4.5),31*32768+256+46);
+});
