@@ -28,7 +28,8 @@ public sealed class NoteSequencerFaustEmitter : IFaustMultiOutputEmitter
             (measured, attach(gate, measured), attach(trigger, measured), attach(velocityOut, measured)) with {
                 action = {{action}};
                 code = int(action) % 256;
-                stepCode = int(int(action) / 256);
+                stepCode = int(int(action) / 256) % 128;
+                velocityCode = int(int(action) / 32768);
                 step = (select2(stepCode > 0, _, select2(stepCode <= 64, 0, stepCode))) ~ _;
                 valid = (code >= 1) & (code <= 128);
                 release = (code == 129) | (code == 130);
@@ -39,7 +40,11 @@ public sealed class NoteSequencerFaustEmitter : IFaustMultiOutputEmitter
                 gateState = (select2(valid | release, _, valid)) ~ _;
                 gate = gateState * {{notes}};
                 trigger = valid * {{notes}};
-                velocityOut = gateState * {{velocity}} * {{notes}};
+                // Encoded explicit strength survives ties and same-step edits.
+                // A legacy/manual onset carries zero and restores pattern-wide velocity.
+                heldVelocityCode = (select2(valid, _, velocityCode)) ~ _;
+                strength = select2(heldVelocityCode > 0, {{velocity}}, float(heldVelocityCode - 1) / 100.0);
+                velocityOut = gateState * strength * {{notes}};
                 ramp(t, duration) = advance ~ (_,_,_,_) : _,!,!,! with {
                     changed = t != t';
                     samples = max(1, int(duration * ma.SR));

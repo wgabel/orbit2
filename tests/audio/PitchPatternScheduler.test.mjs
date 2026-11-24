@@ -125,3 +125,41 @@ test('zero duration override inherits the pattern default and reset clears a tie
     assert.equal(sample(s,2,1),768);
     assert.equal(sample(s,2,1,1),768+130);
 });
+
+test('velocity overrides are packed only on articulated onsets, including explicit zero', () => {
+    const velocities = [.2, .99, 0, -1, ...Array(60).fill(-1)];
+    const p = pattern({notes:true,count:4,ticks:4,gateFraction:.5,
+        velocityOverrides:velocities,steps:[46,0,46,53,...Array(60).fill(0)]});
+    const s = new PitchPatternScheduler(p);
+    assert.equal(sample(s,0,0),21*32768+256+46);
+    assert.equal(sample(s,1,.5),512); // tie never transmits its stored velocity
+    assert.equal(s.setPattern({...p,velocityOverrides:[1,...velocities.slice(1)]}),true);
+    assert.equal(sample(s,1.25,.625,0,61),61); // manual action is not packed
+    assert.equal(sample(s,1.5,.75),512+130);
+    assert.equal(sample(s,2,1),32768+768+46); // repeated pitch, explicit zero
+    assert.equal(sample(s,2.5,1.25),768+130);
+    assert.equal(sample(s,3,1.5),1024+53); // inherits the existing default
+    assert.equal(sample(s,4,2),101*32768+256+46);
+    assert.equal(sample(s,0,0,1),101*32768+256+46);
+    const drone = new PitchPatternScheduler({...p,notes:false});
+    assert.equal(sample(drone,0,0),256+46);
+    for (const invalid of [-.5, 1.01, .123, NaN, Infinity, null])
+        assert.equal(validPitchPattern({...p,velocityOverrides:[invalid,...velocities.slice(1)]}),false);
+    assert.equal(validPitchPattern({...p,velocityOverrides:[.5]}),false);
+    assert.equal(validPitchPattern({...p,velocityOverrides:null}),true);
+});
+
+test('velocity follows shared beat positions across tempo changes and discontinuous seeks', () => {
+    const p = pattern({notes:true,count:4,ticks:4,gateFraction:.5,
+        steps:[46,0,53,0,...Array(60).fill(0)],
+        velocityOverrides:[.3,.9,.7,.1,...Array(60).fill(-1)]});
+    const s = new PitchPatternScheduler(p);
+    assert.equal(sample(s,0,0),31*32768+256+46);
+    assert.equal(sample(s,.75,.375),0);
+    assert.equal(sample(s,1,.75),512); // beat boundary, despite a change in elapsed time
+    assert.equal(sample(s,1.5,1.25),512+130);
+    assert.equal(sample(s,2,1.75),71*32768+768+53);
+    assert.equal(sample(s,2.25,2),0);
+    assert.equal(sample(s,7,4),1024+130); // seek into a tie: no stale held note
+    assert.equal(sample(s,8,4.5),31*32768+256+46);
+});
