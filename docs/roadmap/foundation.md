@@ -107,3 +107,16 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented (6.15): two-voice mono chorus with modulatable rate, depth, base delay and wet mix; shared millisecond parameter unit and conservative output bounds.
 
 Deliverable: several independently configurable drones from one reusable modular architecture.
+
+## Agent documentation discovery and compliance (AGENT-DOCS)
+
+Repository infrastructure, independent of the audio/editor phase numbering. Keep the [canonical contributor policy](../agents/contributor-instructions.md) authoritative and load only task-relevant documentation. Automated checks can verify structural compliance and declared evidence, not an agent's comprehension.
+
+- **AGENT-DOCS-S1 — Restore native discovery (In review)** — Depends: none; preserve root `AGENTS.md` as the only permitted root Markdown file, link canonical instructions, align Copilot and documentation conventions. Done: entry point exists; other root Markdown is rejected; links resolve. Verify: documentation checker and PR CI. [PR #105](https://github.com/wgabel/orbit2/pull/105).
+- **AGENT-DOCS-S2 — Mandatory initialization (Planned)** — Depends: S1 merged; define the canonical pre-work protocol for every task, including read-only and delegated work, scope changes, unavailable docs and concise initialization declaration. Done: all entry points route to the same protocol; representative tasks have clear prerequisites. Verify: documentation checker and scenario review.
+- **AGENT-DOCS-S3 — Explicit task routing (Planned)** — Depends: S2; define additive mandatory/recommended/reference routes using one small machine-readable configuration and distinguish semantic task classification from deterministic path-based checks. Done: route IDs are unique, all required paths resolve, cross-cutting and novel tasks have a fallback. Verify: routing validation and fixtures.
+- **AGENT-DOCS-S4 — Reduce mandatory context (Planned)** — Depends: S3; split global and domain-specific contributor rules without losing obligations or creating competing copies. Done: mandatory global policy stays compact; all prior rules remain reachable by appropriate routes. Verify: rule inventory comparison and scenario review.
+- **AGENT-DOCS-S5 — Auditable handoffs (Planned)** — Depends: S4; standardize compact initialization, completion and PR evidence with selected routes, actual paths read, applicable constraints and verification limitations. Done: examples cover code, documentation, music and delegated work. Verify: scenario review.
+- **AGENT-DOCS-S6 — Enforce structural compliance (Planned)** — Depends: S5; validate routing and PR declarations against objectively classifiable changed paths, required documentation and exceptions; add negative fixtures and wire checks into CI. Document how repository owners can make the check required for main, and distinguish declaration from proof of reading or understanding. Verify: passing/failing fixtures and PR CI.
+
+Next slice after S1 is merged: AGENT-DOCS-S2. Do not implement later slices in the S1 PR.

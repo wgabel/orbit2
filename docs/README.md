@@ -6,6 +6,8 @@ Orbit 2 is a browser-based modular synthesizer with a Blazor WebAssembly/C# edit
 
 **[Open the synthesizer](https://wgabel.github.io/orbit2/)** · [Install (.NET 10 + Node.js 24)](getting-started/installation.md) · [Build and test](getting-started/development.md)
 
+**Agents must start with the root [AGENTS.md](../AGENTS.md) discovery entry point.**
+
 **Start here for any documentation search.** This index routes to authoritative owners; it is not a second copy of the specifications or roadmap. Read only the area needed for your current task.
 
 ## I want to…

@@ -2,6 +2,8 @@
 
 ## Working with the repository
 
+- Start every repository task at the root [AGENTS.md](../../AGENTS.md), including read-only and delegated work. If your agent environment does not discover it automatically, fetch it explicitly before proceeding.
+
 - Begin documentation discovery with the [documentation map](../README.md). Follow the [documentation ownership and placement rules](documentation-conventions.md) when reorganizing, adding, moving, or consolidating docs; keep one authoritative home for each contract/status and repair references. The canonical project entry point is `docs/README.md`; keep it short and navigational.
 
 - **For nontrivial implementation, redesign or multi-part work, follow [granular agent work slices](work-slices.md):** break large milestones into small, independently verifiable roadmap slices *before coding*. Default to **one slice per agent run and one focused PR**; stop with a compact handoff and next-slice ID instead of automatically starting another slice. This applies in ChatGPT Work, Codex and delegated work. Keep necessary regression coverage and quality checks; trivial self-contained edits need no artificial subdivision.
