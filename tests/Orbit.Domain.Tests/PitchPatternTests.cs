@@ -67,6 +67,74 @@ public sealed class PitchPatternTests
     }
 
     [Fact]
+    public void VelocityOverridesMigratePreserveIdentityAndRoundTripWithUndo()
+    {
+        var registry = BuiltInNodes.CreateRegistry();
+        using var session = new PatchSession(registry);
+        var id = session.GraphId;
+        var node = session.Execute(new AddNodeCommand(id, NoteSequencerGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        var serializer = new PatchDocumentSerializer();
+        var document = serializer.Capture(session, 120, id, []);
+        var saved = document.RootGraph.Nodes.Single();
+        var legacy = saved with { Parameters = saved.Parameters.Where(p => !NoteSequencerGenerator.IsStepVelocityParameter(p.Key)).ToArray() };
+        using var restored = serializer.Restore(document with { RootGraph = document.RootGraph with { Nodes = [legacy] } }, registry);
+        var migrated = restored.Snapshot.GetNode(node.Id);
+        Assert.All(legacy.Parameters, p => Assert.Contains(migrated.Parameters, a => a.Id == p.Id && a.BaseValue == p.BaseValue));
+        var baseline = PitchPattern.FromNode(migrated);
+        Assert.Equal(64, baseline.VelocityOverrides!.Count);
+        Assert.All(baseline.VelocityOverrides!, v => Assert.Equal(NoteSequencerGenerator.InheritVelocity, v));
+        Assert.True(baseline.Matches(baseline with { VelocityOverrides = null }));
+        var validator = new NodePresetValidator(registry);
+        var preset = new NodePreset(1, "old-velocity", node.TypeKey, "Old velocity", "Custom", null, legacy.Parameters.ToDictionary(p => p.Key, p => p.BaseValue));
+        validator.Validate(preset);
+        Assert.Equal(NoteSequencerGenerator.InheritVelocity, preset.Parameters[NoteSequencerGenerator.StepVelocityKey(0)]);
+
+        var address = new Orbit.Domain.Parameters.ParameterAddress(node.Id, node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.StepVelocityKey(0)).Id);
+        var hidden = new Orbit.Domain.Parameters.ParameterAddress(node.Id, node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.StepVelocityKey(63)).Id);
+        session.Execute(new SetParameterValueCommand(id, hidden, .73));
+        session.Execute(new SetParameterValueCommand(id, address, 0));
+        var edited = PitchPattern.FromNode(session.Snapshot.GetNode(node.Id));
+        Assert.False(baseline.Matches(edited));
+        Assert.Equal(0d, edited.VelocityOverrides![0]);
+        Assert.Equal(.73, edited.VelocityOverrides![63]);
+        Assert.Equal(16, edited.Count);
+        Assert.Equal(.8, edited.Velocity);
+        var currentDocument = serializer.Capture(session, 120, id, []);
+        using var roundtrip = serializer.Restore(serializer.Deserialize(serializer.Serialize(currentDocument)), registry);
+        Assert.True(edited.Matches(PitchPattern.FromNode(roundtrip.Snapshot.GetNode(node.Id))));
+        session.Undo();
+        Assert.Equal(NoteSequencerGenerator.InheritVelocity, PitchPattern.FromNode(session.Snapshot.GetNode(node.Id)).VelocityOverrides![0]);
+        session.Redo();
+        Assert.True(edited.Matches(PitchPattern.FromNode(session.Snapshot.GetNode(node.Id))));
+
+        var partial = currentDocument.RootGraph.Nodes.Single();
+        partial = partial with { Parameters = partial.Parameters.Where(p => p.Key != NoteSequencerGenerator.StepVelocityKey(0)).ToArray() };
+        Assert.Throws<ArgumentException>(() => serializer.Restore(currentDocument with { RootGraph = currentDocument.RootGraph with { Nodes = [partial] } }, registry));
+        Assert.Throws<ArgumentException>(() => validator.Validate(new NodePreset(1, "partial-velocity", node.TypeKey, "Partial velocity", "Custom", null, partial.Parameters.ToDictionary(p => p.Key, p => p.BaseValue))));
+    }
+
+    [Theory]
+    [InlineData(-1.01)]
+    [InlineData(-.5)]
+    [InlineData(1.01)]
+    [InlineData(.123)]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    public void InvalidVelocityOverridesAreRejectedWithoutHistory(double value)
+    {
+        var registry = BuiltInNodes.CreateRegistry();
+        using var session = new PatchSession(registry);
+        var id = session.GraphId;
+        var node = session.Execute(new AddNodeCommand(id, NoteSequencerGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        var parameter = node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.StepVelocityKey(0));
+        var revision = session.Snapshot.Revision;
+        Assert.False(parameter.Definition.IsValidBaseValue(value));
+        Assert.Throws<ArgumentOutOfRangeException>(() => session.Execute(new SetParameterValueCommand(id, new(node.Id, parameter.Id), value)));
+        Assert.Equal(revision, session.Snapshot.Revision);
+        Assert.Equal(NoteSequencerGenerator.InheritVelocity, PitchPattern.FromNode(session.Snapshot.GetNode(node.Id)).VelocityOverrides![0]);
+    }
+
+    [Fact]
     public void FixedSlotsMigratePreserveInactiveNotesAndUndoAtomically()
     {
         var registry = BuiltInNodes.CreateRegistry();
