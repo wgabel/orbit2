@@ -71,6 +71,8 @@ User feedback: existing instrument timbres lack realism. Prioritize the [Faust-f
 
 ##### Phase 7.2.9 — Polyphonic Strum (planned)
 
+Planning documentation: [PR #112](https://github.com/wgabel/orbit2/pull/112); committed, not runtime implementation evidence.
+
 Deliverable: a standalone one-shot Strum node converts one note/chord onset into individually articulated, overlapping chord tones over multiple octaves (default two), inspired by Orchid. See the [planned Strum contract](../instruments/polyphony.md#strum-note-event-processor-planned-phase-729). Depends on the independent note-event/voice allocation portion of 7.2.6c; hardware MIDI is not required. Do not alter the existing monophonic sequencer contract.
 
 - **7.2.9-S1 — Planned; depends on 7.2.6c note-event contract and bounded voice allocation.** Implement reusable strum event expansion and sample scheduling with root/chord input, octave repetitions, interval and up/down order. Acceptance: C major over two octaves schedules six correctly pitched events in order; zero spacing creates simultaneous notes and out-of-range pitches are skipped. Verify: focused domain/scheduler tests at 44.1/48 kHz.
