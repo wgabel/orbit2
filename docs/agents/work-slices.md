@@ -8,6 +8,12 @@ For a nontrivial feature, redesign, refactor or multi-part fix, **plan the whole
 
 This rule is for **shorter, recoverable sessions and lower repeated-context/token cost**, not a reason to cut corners on correctness, tests or documentation. An explicitly requested broader delivery may use multiple separately verifiable slices, but pause at a safe boundary instead of extending an unstable session.
 
+## Documentation-only continuation
+
+For changes limited to documentation content and agent instructions (including non-executable routing metadata), the repository owner has waived separate verification and CI waiting. Commit one requested slice, record its actual status and PR in the owning register, report completion and stop until the user instructs continuation. Consecutive documentation slices may use the same open branch/PR when requested; the prior slice need only be committed on that branch, not merged. Do not start another slice automatically.
+
+This exception does not cover executable scripts, CI workflows, tests, application code, or changes that affect runtime behavior. Keep relevant validation requirements for those changes. Do not mark untested changes CI verified or merged. Existing repository-required merge checks are unchanged; this rule changes agent handoff timing, not branch protection.
+
 ## How small is a slice?
 
 - **One independently testable result:** one user-observable behavior, bug, or narrowly necessary enabling change; it should be independently reviewable and leave the repository buildable/mergeable. Do not make "create scaffolding", "write tests" and "fix tests" separate PRs when none is useful or safe on its own.
@@ -20,7 +26,7 @@ This rule is for **shorter, recoverable sessions and lower repeated-context/toke
 1. Read `docs/agents/contributor-instructions.md`, the architecture routing index and **only the relevant** feature/quality contracts and code. Locate the existing milestone in the appropriate `docs/roadmap/*.md` register, or add an entry near the related work.
 2. Decompose any oversized milestone into ordered **`<existing-milestone>-S1`, `-S2`, ...** slices. Preserve existing milestone IDs. Record only the next few actionable slices; elaborate later work when it becomes ready.
 3. Each slice needs **status, dependency (if any), one-sentence scope, acceptance check(s), and verification target**. Add the actual PR link once opened. Keep the detailed technical contract in its feature document, not copied into the roadmap.
-4. Select **one ready slice**; give a brief plan, then implement, test and review it. If the requested feature already fits, it is one slice and needs no contrived decomposition.
+4. Select **one ready slice**; give a brief plan, then implement and apply the relevant verification policy, including the documentation-only exception. If the requested feature already fits, it is one slice and needs no contrived decomposition.
 
 Example register format (illustrative, not an actual scheduled milestone):
 
@@ -36,13 +42,13 @@ Use the repository's normal vocabulary: `Planned`, `In progress`, `In review`, `
 ## During the slice: limit context growth
 
 - Inspect existing owners and tests before changing code; use targeted file/section reads rather than loading whole documentation trees, full history, huge logs or unrelated feature specs.
-- Do not combine opportunistic cleanup, extra UX changes or the next roadmap slice in the same PR. If a new dependency is discovered, note it in the roadmap and finish or stop at a safe, buildable checkpoint.
+- Do not combine opportunistic cleanup, extra UX changes or the next roadmap slice in the same PR by default; consecutive documentation-only slices explicitly requested by the owner may share the current PR. If a new dependency is discovered, note it in the roadmap and finish or stop at a safe, buildable checkpoint.
 - Test the focused behavior and relevant regression surfaces; do **not** omit needed broader validation for DSP, persistence, gesture collisions or shared contracts merely to save tokens.
-- If context/time becomes constrained, record verified progress and remaining work in the roadmap or PR, label partial/unverified claims accurately, and stop. Never report a failing or untested change as complete.
+- If context/time becomes constrained, record verified progress and remaining work in the roadmap or PR, label partial/unverified claims accurately, and stop. Never report a failing or untested implementation as verified; report documentation-only completion without verification under the exception above.
 
 ## Finish the slice; enable a clean restart
 
-**Required green-CI closeout:** When all required implementation CI checks pass, update the authoritative `docs/roadmap/*.md` slice entry **in the same implementation PR before reporting the slice done**. Set `Implemented (CI verified; awaiting merge)` (or equivalent explicit wording), link the actual PR and successful run, state the verified acceptance outcomes, and name the next dependent slice. A passing build alone is not enough if required browser, interaction, or performance checks remain incomplete. If checks fail, leave `In progress`/`In review` and fix them instead. Once merged, the next roadmap edit may mark the entry `Merged` with the verified PR; never mark an open PR merged. The closeout documentation commit triggers CI again: ensure that final run passes too, but avoid repeatedly editing the register only to replace one passing CI run URL with another.
+**Required green-CI closeout for implementation changes:** When all required implementation CI checks pass, update the authoritative `docs/roadmap/*.md` slice entry **in the same implementation PR before reporting the slice done**. Set `Implemented (CI verified; awaiting merge)` (or equivalent explicit wording), link the actual PR and successful run, state the verified acceptance outcomes, and name the next dependent slice. A passing build alone is not enough if required browser, interaction, or performance checks remain incomplete. If checks fail, leave `In progress`/`In review` and fix them instead. Once merged, the next roadmap edit may mark the entry `Merged` with the verified PR; never mark an open PR merged. A documentation-only closeout commit may trigger CI again; do not wait for that rerun solely for documentation. Preserve the exact verified implementation revision and report any known failure. Do not repeatedly edit the register only to replace one passing CI run URL with another.
 
 Complete the existing `docs/agents/contributor-instructions.md` quality and documentation checks. Keep the handoff compact (normally **at most ~8 short lines**), containing:
 
