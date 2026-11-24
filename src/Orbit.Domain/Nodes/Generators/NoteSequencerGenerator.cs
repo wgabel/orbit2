@@ -23,15 +23,22 @@ public sealed class NoteSequencerGenerator : SignalNode, IGenerator
     public const string GateLengthKey = "pattern-gate-length";
     public const string VelocityKey = "pattern-velocity";
     public const int RestCode = 129;
+    public const double InheritVelocity = -1;
     public static string StepKey(int index) => "pattern-step-" + (index + 1).ToString("00", System.Globalization.CultureInfo.InvariantCulture);
     public static string StepGateLengthKey(int index) => "pattern-step-gate-length-" + (index + 1).ToString("00", System.Globalization.CultureInfo.InvariantCulture);
     public static bool IsStepGateLengthParameter(string key) => key.StartsWith("pattern-step-gate-length-", StringComparison.Ordinal);
+    public static string StepVelocityKey(int index) => "pattern-step-velocity-" + (index + 1).ToString("00", System.Globalization.CultureInfo.InvariantCulture);
+    public static bool IsStepVelocityParameter(string key) => key.StartsWith("pattern-step-velocity-", StringComparison.Ordinal);
     public static bool IsPatternParameter(string key) => key.StartsWith("pattern-", StringComparison.Ordinal);
 
     private static ParameterDefinition Choice(string key, string name, int value, IReadOnlyList<ParameterChoice> choices) =>
         new(key, name, value, choices.Min(c => c.Value), choices.Max(c => c.Value), ParameterUnit.Ratio, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None) { Choices = choices };
     private static IReadOnlyList<ParameterChoice> Integers(int first, int count) => Array.AsReadOnly(Enumerable.Range(first, count).Select(n => new ParameterChoice(n, n.ToString(System.Globalization.CultureInfo.InvariantCulture))).ToArray());
     private static IReadOnlyList<ParameterChoice> Notes { get; } = Array.AsReadOnly(new[] { new ParameterChoice(0, "Tie / Hold") }.Concat(Enumerable.Range(0, 128).Select(n => new ParameterChoice(n + 1, MusicalPitch.NoteName(n)))).Append(new ParameterChoice(RestCode, "Rest")).ToArray());
+    // Zero is a valid silent-strength onset, not the inherit sentinel.
+    private static IReadOnlyList<ParameterChoice> StepVelocities { get; } = Array.AsReadOnly(
+        new[] { new ParameterChoice(InheritVelocity, "Default") }.Concat(Enumerable.Range(0, 101)
+            .Select(percent => new ParameterChoice(percent / 100d, percent.ToString(System.Globalization.CultureInfo.InvariantCulture) + "%"))).ToArray());
     public static IReadOnlyList<ParameterDefinition> PatternDefinitions { get; } = Array.AsReadOnly(new[] {
         Choice(LoopKey, "Pattern mode", 0, [new(0, "Live"), new(1, "Loop")]),
         Choice(CountKey, "Step count", 16, Integers(1, Capacity)),
@@ -45,7 +52,9 @@ public sealed class NoteSequencerGenerator : SignalNode, IGenerator
         new ParameterDefinition(VelocityKey, "Velocity", 0.8, 0, 1, ParameterUnit.Normalized, ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None)
     }.Concat(Enumerable.Range(0, Capacity).Select(i => Choice(StepKey(i), $"Step {i + 1}", 0, Notes))).Concat(Enumerable.Range(0, Capacity).Select(i =>
         new ParameterDefinition(StepGateLengthKey(i), $"Step {i + 1} note length", 0, 0, 1, ParameterUnit.Normalized,
-            ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None))).ToArray());
+            ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None))).Concat(Enumerable.Range(0, Capacity).Select(i =>
+        new ParameterDefinition(StepVelocityKey(i), $"Step {i + 1} velocity", InheritVelocity, InheritVelocity, 1, ParameterUnit.Normalized,
+            ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None) { Choices = StepVelocities })).ToArray());
 
     public NoteSequencerGenerator(Guid id) : base(id, NodeType, "Note Sequencer",
         new[] { new Parameter(Guid.NewGuid(), new ParameterDefinition(ReferenceKey, "Reference note", MusicalPitch.ReferenceMidiNote, 0, 127,
