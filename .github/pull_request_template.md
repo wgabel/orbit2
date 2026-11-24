@@ -8,7 +8,7 @@
 
 ## Agent documentation compliance
 
-<!-- For agent-created/updated PRs, replace the placeholders with actual cumulative evidence. See docs/agents/compliance-reports.md. Do not claim unread docs or unperformed checks. -->
+<!-- For every PR, replace the placeholders with actual cumulative evidence. See docs/agents/compliance-reports.md. Do not claim unread docs or unperformed checks. -->
 
 <!-- orbit2-agent-compliance:v1 -->
 ```json

@@ -18,7 +18,7 @@ Reuse the initialization declaration; add only new paths and routes unless handi
 
 ## Pull request evidence
 
-For every agent-created or updated PR, maintain one machine-readable block in the PR description. Keep normal scope and test summaries outside it. Use the exact marker and JSON fence shown in the [PR template](../../.github/pull_request_template.md). Replace placeholders, do not duplicate blocks, do not use comments or trailing commas inside JSON.
+For every PR, maintain one machine-readable block in the PR description. CI cannot reliably distinguish human-authored from agent-authored changes, so the structural check applies uniformly to both. Keep normal scope and test summaries outside it. Use the exact marker and JSON fence shown in the [PR template](../../.github/pull_request_template.md). Replace placeholders, do not duplicate blocks, do not use comments or trailing commas inside JSON.
 
 The schema is version 1:
 
@@ -32,7 +32,17 @@ The schema is version 1:
 - `discoverability`: short factual summary of navigation issues or "No issues found."
 - `exceptions`: array of objects with `path`, `reason`, and `authorization` (specific owner approval reference). Empty unless explicitly authorized; self-declared exceptions do not bypass automated checks. Never list an unread document as consulted.
 
-An updated PR must describe cumulative scope, not only the last slice. If onboarding a pre-existing PR, consult any missing required documents now, explicitly label retrospective reads, and never imply earlier agents read them before working. The report is a declaration, not independent proof of reading or comprehension. Automated validation is a later slice; merge requirements and existing testing rules still apply.
+An updated PR must describe cumulative scope, not only the last slice. If onboarding a pre-existing PR, consult any missing required documents now, explicitly label retrospective reads, and never imply earlier agents read them before working. The report is a declaration, not independent proof of reading or comprehension. Automated validation checks the declared evidence; merge requirements and existing testing rules still apply. A report with incomplete verification and truthful limitations can pass structural checks, because requiring successful CI in the report before CI runs would create a circular dependency.
+
+## Automated enforcement
+
+The [Agent documentation compliance workflow](../../.github/workflows/agent-compliance.yml) runs on main pushes and on PR opening, synchronization, reopening, description edits and ready-for-review events. It runs Node's built-in test runner and validates the routing configuration against repository files. On PR events it also parses the single JSON report, validates its fields, requires the union of global and selected-route documentation, and adds conservative route requirements from the PR's changed paths. Deleted paths count; renames are treated as delete/add. The documentation-only waiver is rejected for non-documentation paths. An exception declaration never bypasses a missing required consultation.
+
+Local commands: `node --test tests/tooling/AgentCompliance.test.mjs` and `node scripts/check-agent-compliance.mjs`. The latter checks only routing outside a GitHub pull-request event; PR-body checks use the event payload and Git history in CI.
+
+Repository owners can require the status check named **Agent documentation compliance** in the main branch's GitHub ruleset or branch protection. Until configured as required, a failed check does not necessarily prevent a merge. Keep existing build/test checks required as appropriate. Protect review of changes to the workflow, checker and route policy themselves; a PR can modify its own checker, and this is not an adversarial attestation system.
+
+This check verifies structural consistency, not actual reading, understanding, semantic completeness, claimed test execution or owner authorization. It cannot infer every task category from paths; reviewers and agents must still apply the semantic routes. Read-only work without a PR remains governed by initialization and handoff policy.
 
 ## Compact examples
 
