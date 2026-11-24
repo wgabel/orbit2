@@ -3,7 +3,7 @@
 **Status:** Planned design · Phase 7.5. No new runtime capabilities or presets are implemented by this document.
 **Recommended prerequisite:** Phase 7.3.1, 7.3.2 and the benchmark baseline of 7.3.4 (see [performance specification](../quality/performance.md)).
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md) · [Milestone register](../roadmap/advanced.md#phase-75--stereo-audio-panning-and-unison-planned)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md) · [Milestone register](../roadmap/advanced.md#phase-75--stereo-audio-panning-and-unison-planned)
 
 Related: [oscillators](oscillators-and-noise.md), [signals and ports](../core/signals-and-ports.md), [parameters and modulation](../core/parameters-and-modulation.md), [DSP engine](dsp-engine.md), [composite nodes](../editor/composite-nodes.md), [effects](effects.md), [signal observation](signal-observation.md), [polyphony](../instruments/polyphony.md).
 

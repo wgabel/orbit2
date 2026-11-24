@@ -1,6 +1,6 @@
 # Audio performance metrics and monitor UX
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [performance](performance.md) · [dsp engine](../audio/dsp-engine.md) · [testing](testing.md).
 

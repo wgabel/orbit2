@@ -1,6 +1,6 @@
 # Faust and real-time execution
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [signals and ports](../core/signals-and-ports.md) · [transport and timing](transport-and-timing.md) · [parameters and modulation](../core/parameters-and-modulation.md) · [audition](../editor/audition.md).
 

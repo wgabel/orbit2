@@ -1,6 +1,6 @@
 # Milestone register: advanced functionality
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](overview.md)
 
 Related: [envelopes](../audio/envelopes.md) · [pitch control](../instruments/pitch-control.md) · [note sequencer](../instruments/note-sequencer.md) · [physical modelling](../instruments/physical-modelling.md) · [polyphony](../instruments/polyphony.md) · [sample assets](../audio/sample-assets.md) · [performance](../quality/performance.md).
 

@@ -1,6 +1,6 @@
 # Decisions and open questions
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 ## 15. Decisions and open questions
 

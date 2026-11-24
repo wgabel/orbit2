@@ -1,6 +1,6 @@
 # Historical implementation record — transport and oscillators
 
-> Superseded 2026-11-23 README implementation notes, regrouped without changing their technical claims. These are **historical**, not current feature status. Go to the [archive index](legacy-readme.md), [roadmap](../../ROADMAP.md) and [feature contracts](../README.md) before implementing.
+> Superseded 2026-11-23 README implementation notes, regrouped without changing their technical claims. These are **historical**, not current feature status. Go to the [archive index](legacy-readme.md), [roadmap](../roadmap/overview.md) and [feature contracts](../README.md) before implementing.
 
 ## Shared timing and audio-rate modulation (Phase 2)
 

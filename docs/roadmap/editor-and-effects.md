@@ -1,6 +1,6 @@
 # Milestone register: editor, analysis and effects
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](overview.md)
 
 Related: [audition](../editor/audition.md) · [node presets](../editor/node-presets.md) · [visualizations](../editor/visualizations.md) · [signal observation](../audio/signal-observation.md) · [annotations and connections](../editor/annotations-and-connections.md) · [pitch shifter](../audio/pitch-shifter.md).
 

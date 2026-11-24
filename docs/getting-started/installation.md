@@ -1,6 +1,6 @@
 # Install and run Orbit 2 locally
 
-[Project](../../README.md) · [Development and testing](development.md) · [Deployment](deployment.md)
+[Project](../README.md) · [Development and testing](development.md) · [Deployment](deployment.md)
 
 ## Requirements
 

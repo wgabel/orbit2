@@ -1,6 +1,6 @@
 # Reusable composite modules and module library
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap, Phase 7.4](../roadmap/advanced.md#phase-74--reusable-composite-modules-planned)
+[Architecture overview](../architecture/overview.md) · [Roadmap, Phase 7.4](../roadmap/advanced.md#phase-74--reusable-composite-modules-planned)
 
 **Status:** Phase 7.4.1 multi-node selection and actions and 7.4.2a grouping implemented; 7.4.2b conservative ungrouping implemented. Library, portability and macros remain planned. This is the design contract and implementation record for general-purpose reusable graphs. Existing composite graphs, boundary racks, built-in drone/impact factories and individual node presets are already implemented; see [composite nodes](composite-nodes.md) and [node presets](node-presets.md).
 

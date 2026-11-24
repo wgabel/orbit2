@@ -1,6 +1,6 @@
 # Architecture overview and original design goals
 
-[Project](../../README.md) · [Task routing](task-routing.md) · [Documentation map](../README.md)
+[Project](../README.md) · [Task routing](task-routing.md) · [Documentation map](../README.md)
 
 
 **Status:** Living architecture, implemented contracts and implementation roadmap  

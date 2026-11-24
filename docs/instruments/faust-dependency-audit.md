@@ -6,7 +6,7 @@
 
 ## 1. Artifact identity
 
-The repository's [prepare-faust-compiler.mjs](../../scripts/prepare-faust-compiler.mjs) requires `@grame/faustwasm@0.19.0` and copies its ESM browser bundle, source map and COPYING notice. The [README](../../README.md) describes the pinned runtime and compiler-worker path. Audit performed against the actual registry tarball, not upstream master or a globally installed Faust.
+The repository's [prepare-faust-compiler.mjs](../../scripts/prepare-faust-compiler.mjs) requires `@grame/faustwasm@0.19.0` and copies its ESM browser bundle, source map and COPYING notice. The [README](../README.md) describes the pinned runtime and compiler-worker path. Audit performed against the actual registry tarball, not upstream master or a globally installed Faust.
 
 | Identity | Verified value |
 |---|---|

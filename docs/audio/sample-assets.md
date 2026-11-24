@@ -1,6 +1,6 @@
 # Sample-based synthesis and audio assets
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [dsp engine](dsp-engine.md) · [persistence and history](../editor/persistence-and-history.md) · [graph model](../core/graph-model.md).
 

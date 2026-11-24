@@ -1,6 +1,6 @@
 # Signals, nodes and ports
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [graph model](graph-model.md) · [parameters and modulation](parameters-and-modulation.md) · [commands and events](commands-and-events.md) · [envelopes](../audio/envelopes.md).
 

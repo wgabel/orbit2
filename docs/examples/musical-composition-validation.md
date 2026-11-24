@@ -4,6 +4,8 @@
 
 **Mandatory for whole-piece creation, substantial arrangement revisions and whole-piece evaluations.** A valid patch is a necessary prerequisite, not a finished musical composition. This document owns the acceptance gates; the linked guides own the detailed creative and measurement techniques. Apply the protocol to the intended genre, not a universal recipe for music. Individual sound experiments and sketches need only proportional checks, but must be identified as such.
 
+Documentation provenance: [PR #106](https://github.com/wgabel/orbit2/pull/106) (documentation policy only).
+
 ## 1. Establish the musical acceptance contract before building
 
 Write a concise brief with duration, style, intended energy/emotional trajectory, tempo or free-time intent, tonal center or other organizing principle, and section boundaries. Determine what the listener should actually hear in each passage. Decide which musical roles are required, optional, deliberately absent or temporarily withheld, and why. For substantial pieces, create a role-by-section matrix with concrete material, not only instrument names or fader targets.

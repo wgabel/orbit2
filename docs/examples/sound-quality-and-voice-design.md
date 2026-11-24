@@ -1,6 +1,6 @@
 # Sound quality and voice design — beyond raw synthesis
 
-[Architecture](../../ORBIT2-ARCHITECTURE.md) · [Theory and sound design](music-theory-and-sound-design.md) · [Instrument recipes](instrument-recipes.md) · [Genre techniques](genres/orbit-techniques.md) · [Mixing, mastering and analysis](mixing-mastering-and-analysis.md)
+[Architecture](../architecture/overview.md) · [Theory and sound design](music-theory-and-sound-design.md) · [Instrument recipes](instrument-recipes.md) · [Genre techniques](genres/orbit-techniques.md) · [Mixing, mastering and analysis](mixing-mastering-and-analysis.md)
 
 Documentation provenance: [PR #29](https://github.com/wgabel/orbit2/pull/29) (guidance and candidate recipes, not shipped preset implementations).
 

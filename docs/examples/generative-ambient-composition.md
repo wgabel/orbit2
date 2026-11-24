@@ -2,7 +2,7 @@
 
 For specific ambient subgenres, rhythmic hybrids and genre-dependent sound palettes, see the [genre reference](electronic-music-genres.md) and [ambient family](genres/ambient.md). Its musical techniques supplement the layering and arrangement approach below.
 
-[Music creation index](README.md) · [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Instrument recipes](instrument-recipes.md) · [Worked drone](drone.md)
+[Music creation index](README.md) · [Architecture overview](../architecture/overview.md) · [Instrument recipes](instrument-recipes.md) · [Worked drone](drone.md)
 
 Companion guide: [Music theory and sound design](music-theory-and-sound-design.md) explains how to choose compatible pitches, harmonic progressions, voicing, perceived loudness, spectral balance and spatial depth for the layers and arrangements in this document.
 
@@ -189,7 +189,7 @@ Ideas for extending composition capability (not implemented by this guide, and n
 | Macro controls | Shape several related parameters or voice levels with one musical gesture. |
 | Scene sequencer and scene morphing | Schedule multi-minute sections, fades, density/harmonic changes and an ending, enabling an unattended composition with intentional form. |
 
-For future composition work, design features against real musical workflows: a pitch source is not inherently a note event source, and a sound preset is not a song or scene. Prefer reusable primitives and compatible routing instead of special-case ambient-only nodes. Prioritize note articulation for playable motifs and arrangement/scene control for longer autonomous pieces; choose additional tools according to the requested musical goal. Consult the [roadmap](../../ROADMAP.md) before treating any proposal as an accepted implementation milestone.
+For future composition work, design features against real musical workflows: a pitch source is not inherently a note event source, and a sound preset is not a song or scene. Prefer reusable primitives and compatible routing instead of special-case ambient-only nodes. Prioritize note articulation for playable motifs and arrangement/scene control for longer autonomous pieces; choose additional tools according to the requested musical goal. Consult the [roadmap](../roadmap/overview.md) before treating any proposal as an accepted implementation milestone.
 
 ## 6. Audition and iteration
 

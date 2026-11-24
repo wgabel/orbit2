@@ -1,6 +1,6 @@
 # Oscillators and noise
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [transport and timing](transport-and-timing.md) · [parameters and modulation](../core/parameters-and-modulation.md) · [dsp engine](dsp-engine.md).
 

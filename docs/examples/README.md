@@ -14,6 +14,8 @@ A short entry point for composing, building instruments, analyzing patches and r
 - **[Foundation catalogue](foundations/catalogue.md)** — reusable, evidence-labeled sound-design relationships and reference patches.
 - **[Genre techniques](electronic-music-genres.md)** and [actual node usage](../usage/sound-and-instruments.md).
 
+For a new cinematic or orchestral cue, follow the [focused composition and orchestration guide](genres/cinematic-orchestration.md). For adding new external musical knowledge, use [source intake and provenance](music-learning-sources.md).
+
 ## End-to-end workflow
 
 Follow the [full workflow](production-workflow.md#end-to-end-workflow) and the [mandatory whole-piece acceptance gates](musical-composition-validation.md). A graph that works is not automatically a musically successful result; compare real listening and measurement evidence separately.

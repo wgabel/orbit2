@@ -1,6 +1,6 @@
 # Deployment and browser release diagnosis
 
-[Project README](../../README.md) · [Development checks](development.md) · [CI workflow](../../.github/workflows/build-and-deploy.yml)
+[Project README](../README.md) · [Development checks](development.md) · [CI workflow](../../.github/workflows/build-and-deploy.yml)
 
 The main-branch GitHub Actions workflow builds and tests the graph, Faust DSP, UI tokens, browser playback and published static assets. It deploys `publish/wwwroot` to GitHub Pages at [Orbit 2](https://wgabel.github.io/orbit2/). The Pages job is serialized and rechecks main HEAD before deployment, so an older successful build cannot overwrite a newer one; see [PR #67](https://github.com/wgabel/orbit2/pull/67).
 
