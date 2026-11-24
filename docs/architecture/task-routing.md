@@ -4,7 +4,7 @@
 
 ## Find the context for your task
 
-For a complete cross-area directory, start at the [documentation map](../README.md). This architecture file remains the stable technical routing overview, not another roadmap.
+For a complete cross-area directory, start at the [documentation map](../README.md). Agents must also use the [mandatory routing configuration](../agents/task-routing.json); the technical index below provides additional discovery. This architecture file remains the stable technical routing overview, not another roadmap.
 
 For hands-on workflows and concrete examples, start with the [user and agent usage guide](../usage/README.md). Each page links the authoritative feature contracts and actual implementation PRs; use it alongside the task routing below, not as a constraint on exploration.
 
