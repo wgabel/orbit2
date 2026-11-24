@@ -12,6 +12,8 @@
 | Individual voice, instrument or preset | [Classic synthesizer patch recipes](synthesizer-patch-recipes.md), [Voice quality](sound-quality-and-voice-design.md), [instrument recipes](instrument-recipes.md), [instrument usage](../usage/sound-and-instruments.md) |
 | Drone, evolving texture or sound-design experiment | [Foundations catalogue](foundations/catalogue.md), [worked drone](drone.md), [timbre](music-theory-and-sound-design.md#5-timbre-why-one-oscillator-is-not-always-enough) |
 | Whole piece, ambient or otherwise | [Composition and layers](generative-ambient-composition.md#1-the-structure-of-a-musical-piece), [compositional development](compositional-development.md), [genre index](electronic-music-genres.md), workflow below |
+| Cinematic cue, orchestral arrangement, ostinato, expressive instrumental writing or thematic climax | [Cinematic composition and orchestration](genres/cinematic-orchestration.md) — detailed workflow, roles, register, expression and worked form |
+
 | Chords, scales, tuning, consonance/dissonance, wolf intervals, modulation or voice leading | [Harmony, scales and temperament](harmony-scales-and-temperament.md) — acoustics, historical tuning, functional/modal harmony and worked voicings |
 | Writing a memorable melody, rich material with one instrument, classical inspiration, counterpoint, phrase and larger form | [Classical composition and melody](classical-composition-and-melody.md) — Bach, Mozart, partimenti, thematic development, score examples and practical Orbit translation |
 | Feedback on monotony, repetitive melody, indistinct choruses/drops or lack of progression | [Compositional development](compositional-development.md) — micro/meso/macro development, section contrast and listener feedback |
@@ -20,4 +22,6 @@
 | User feedback on timbre, noise or hollow sounds | [Voice design](sound-quality-and-voice-design.md), [production feedback example](mixing-mastering-and-analysis.md#6-worked-feedback-example-event-horizon--a-signal-returns) |
 | Instrument, texture, effect or sound design and comparison across genres; unintended chiptune/childish timbre | [Instrument and sound design — repeatable audition](instrument-design-and-audition.md) — Prism Rush evidence, 12 initial candidate roles, adaptable test profiles and [editable TEST melody driver](instrument-audition/reference.orbit2.json) |
 | Feedback on loud melodies, weak accents, masking or depth | [Contextual layer balance](contextual-layer-balance.md), [spectral balance and register](music-theory-and-sound-design.md#7-spectral-balance-masking-and-register) |
+| Extract knowledge from a tutorial, transcript or other music source | [Music learning source intake](music-learning-sources.md) — provenance, deduplication, actionable explanation and evidence levels |
+
 | Export, load, organize or verify a patch | [Patch editor usage](../usage/patch-editor.md), [persistence](../editor/persistence-and-history.md), [node and port contracts](../core/signals-and-ports.md) |

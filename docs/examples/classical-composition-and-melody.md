@@ -36,6 +36,28 @@ No equation proves that a melody is beautiful. Melodic expectation is neverthele
 
 Keep **melodic rhythm** separate from **harmonic rhythm**. A single chord can support many notes and subdivisions, and a held note can continue across multiple chord changes. Changing which note starts on the downbeat, where an answer breathes, or how a motif leads into a cadence is often more consequential than increasing oscillators. Use actual note lengths and rests rather than uniformly triggering random in-scale notes at the fastest rate.
 
+### MESH: a practical melody-development exercise
+
+The educator in [MS3](music-learning-sources.md#ms3--how-to-write-your-first-piece-of-cinematic-music) describes **MESH** (Motive, Evolve, Shape, returning Home). It is a useful drafting method for pitched music, not a guarantee of memorability. Harmony-first is one possible starting point: sketch a short progression in an unadorned timbre and write the melodic idea against it. A melody-first approach is equally valid when an attractive gesture is already available.
+
+- **Motive:** choose a short idea with an identifiable rhythm and contour rather than selecting unrelated scale notes. Start with only a few events; the rhythm, an interval or a distinctive leap should be recognizable even if transposed. Use stable chord tones as anchors and let non-chord tones provide deliberate motion. The video's suggestion that most notes belong to the current chord is a beginner heuristic, not a percentage requirement; metric placement, duration and dissonance resolution are often more informative.
+- **Evolve:** repeat the cell so the listener has time to recognize it. Alter only the notes required to fit the next harmony, or modify the final event to produce an answer. Preserve rhythm and contour where useful; change the rhythmic identity deliberately if stronger contrast is the goal. Exact repetition may be the right choice on the first repeat.
+- **Shape:** examine the full phrase rather than each event in isolation. Design a destination and choose the note-rate, leaps and holds that lead toward it. Reserving a higher note for the second half can help create a lyrical arc, but descending, centered and non-pitched shapes are valid. Do not mistake a higher MIDI pitch for an automatic increase in musical intensity.
+- **Home:** decide whether the phrase should close, suspend, question or lead into another phrase. In a tonal closing phrase a stable tonic or chord tone is often suitable; an unfinished phrase can land on a less stable pitch or remain on a pedal. A loop may deliberately avoid complete closure until its final return.
+
+**Original four-bar score sketch, A minor, 4/4.** Each row occupies one bar. q = quarter note, e = eighth, h = half; rest q = one quarter-note silence. These are new exercise notes, not the video's played examples. Use a plain lead voice and independent chord voices while judging the score.
+
+| Bar / chord | Melody (ordered events) | Purpose |
+| --- | --- | --- |
+| 1 / Am | E4 q, G4 e, A4 e, E4 q, rest q | recognizable short-long cell and space |
+| 2 / F | E4 q, F4 e, A4 e, C5 q, rest q | related rhythm; E approaches F, ending opens upward |
+| 3 / G | G4 q, A4 e, B4 e, D5 q, rest q | familiar rhythm, higher phrase destination |
+| 4 / Am | C5 q, B4 e, G4 e, A4 h | returns to the tonic; B/G are passing/color tones in context |
+
+First audition the plain score and compare the fourth-bar ending with a sustained E4 or a rest leading to the next phrase. Then extend it with a slower answer or a fragment used in a contrasting section. The strong-beat and held notes should relate deliberately to the actual chord voicings; listen for whether B/G color in the last bar is appropriate. Do not blindly force all notes into a triad or preserve a dissonance that is accidental.
+
+**Orbit translation:** for a monophonic line, select the current Note Sequencer note playback mode and use Pitch → Pitch plus Gate → Gate for a sustained instrument, or Trigger → Trigger for a struck/plucked voice, with the correct reference and documented velocity routing. Encode durations/rests using the supported step/articulation controls; verify note lengths and the timing grid against the [sequencer contract](../instruments/note-sequencer.md) rather than assuming MIDI-style overlapping notes. Chord parts need separately pitched voices or a verified suitable chord graph. Check actual sounded pitch, gates, timing, rests, phrase phase and harmony before choosing production effects. Compare motif variants at matched level. If no audio is auditioned, report this as a score proposal, not a listener-validated melody.
+
 ### Non-chord tones: musical detail without random discord
 
 In this Western tonal vocabulary, a dissonant pitch can be meaningful when its approach, metric strength, duration and departure are clear. Classify actual vertical pitches including other melody/inner voices rather than assuming a note is dissonant because it is out of scale (chromatic chord tones can be stable locally).

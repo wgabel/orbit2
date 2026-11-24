@@ -24,6 +24,8 @@ For sound quality and production rather than genre selection, open [voice design
 
 Start with just the relevant family and selected technique sections. Cross genre boundaries freely; for example, a space-ambient track with a halftime climax combines ambient form, a bass foundation and a broken percussion grid. Do not read all modules by default. Unknown genres are not blockers: listen/research if possible, identify the audible ingredients, investigate the relevant node contracts and build an appropriate patch. Extend this reference when a recurring musical need is missing.
 
+For cinematic, orchestral or hybrid soundtrack composition, use the focused [cinematic composition and orchestration guide](genres/cinematic-orchestration.md). It explains how to turn a small score into a complete cue rather than treating orchestral color as a collection of presets.
+
 ## Turn a style into a composition
 
 1. **Brief.** Establish purpose, duration, energy arc, genre(s), references, rhythmic emphasis, and whether the deliverable is one sound, one voice, a loop or a complete piece. For a reference recording, identify audible roles, density, motif, groove, timbral evolution and perceived depth; do not just copy its BPM, title or melody. If listening is unavailable, disclose that and work from reliable descriptions and musical analysis. Create original motifs.
