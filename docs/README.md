@@ -37,7 +37,7 @@ The [architecture task-routing index](architecture/task-routing.md) provides mor
 | Reliability and performance | [Coding quality](quality/coding-standards.md), [testing](quality/testing.md), [performance](quality/performance.md), [profiling](quality/dsp-profiling.md) |
 | Music and sound-design guidance | [Music creation index](examples/README.md), [task index](examples/task-index.md), [production workflow](examples/production-workflow.md) and [reference foundations](examples/foundations/catalogue.md) |
 | Implementation planning | [Central roadmap](roadmap/overview.md): [foundation register](roadmap/foundation.md), [editor/effects register](roadmap/editor-and-effects.md), [advanced register](roadmap/advanced.md) |
-| Agent process and documentation maintenance | [Work slices](agents/work-slices.md), [documentation conventions](agents/documentation-conventions.md), [contributor rules](agents/contributor-instructions.md), [development](agents/development-instructions.md), [music](agents/music-instructions.md), [sound design](agents/sound-design-instructions.md) |
+| Agent process and documentation maintenance | [Work slices](agents/work-slices.md), [documentation conventions](agents/documentation-conventions.md), [contributor rules](agents/contributor-instructions.md), [development](agents/development-instructions.md), [music](agents/music-instructions.md), [sound design](agents/sound-design-instructions.md), [compliance reports](agents/compliance-reports.md) |
 
 ## Document lifecycle and precedence
 

@@ -57,4 +57,4 @@ Complete the existing `docs/agents/contributor-instructions.md` quality and docu
 3. Tests actually run, failures and what could not be verified.
 4. One blocker/decision only if needed, and the **next ready slice ID** with its dependency.
 
-Persist durable decisions in the closest authoritative feature document and work status in the milestone register; **do not paste chat transcripts, full diffs or detailed session notes into the roadmap**. The next agent should be able to continue from the roadmap, PR, source and tests without replaying the old conversation. Keep the existing short documentation-consulted/discoverability report, without repeating the full context.
+Persist durable decisions in the closest authoritative feature document and work status in the milestone register; **do not paste chat transcripts, full diffs or detailed session notes into the roadmap**. The next agent should be able to continue from the roadmap, PR, source and tests without replaying the old conversation. Keep the [standard compliance report](compliance-reports.md), without repeating the full context. Update the cumulative PR evidence block after each slice on a shared branch.

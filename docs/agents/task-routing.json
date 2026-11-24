@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "alwaysRequired": ["AGENTS.md","docs/agents/contributor-instructions.md","docs/README.md","docs/agents/task-routing.json"],
+  "alwaysRequired": ["AGENTS.md","docs/agents/contributor-instructions.md","docs/README.md","docs/agents/task-routing.json","docs/agents/compliance-reports.md"],
   "routes": [
     {"id":"implementation","when":"Application, tooling or test implementation, bug fix, refactoring or code review","required":["docs/agents/development-instructions.md","docs/quality/coding-standards.md","docs/architecture/overview.md","docs/quality/testing.md"],"recommended":["docs/getting-started/development.md"],"reference":["docs/core/project-structure.md"],"pathPrefixes":["src/","tests/","scripts/",".github/workflows/"]},
     {"id":"roadmap","when":"Planning, status or executing a nontrivial work slice","required":["docs/agents/development-instructions.md","docs/agents/work-slices.md","docs/roadmap/overview.md"],"recommended":[],"reference":["docs/roadmap/foundation.md","docs/roadmap/editor-and-effects.md","docs/roadmap/advanced.md"]},
