@@ -327,6 +327,37 @@ File.WriteAllText(Path.Combine(args[0], "note-source.json"), JsonSerializer.Seri
     inputs = noteProgram.RhythmicInputs.Count
 }));
 
+// The sequencer uses the same four-port control tuple but a distinct action-word layout.
+using var sequenceSession = new PatchSession(BuiltInNodes.CreateRegistry());
+var sequenceRoot = sequenceSession.GraphId;
+GraphNodeSnapshot SequenceAdd(string type) => sequenceSession.Execute(new AddNodeCommand(sequenceRoot, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+void SequenceSet(GraphNodeSnapshot node, string key, double value) => sequenceSession.Execute(new SetParameterValueCommand(sequenceRoot, Address(node, key), value));
+void SequenceWire(GraphNodeSnapshot from, string output, GraphNodeSnapshot to, string input, double amount = 1) => sequenceSession.Execute(new ConnectNodesCommand(sequenceRoot,
+    new(from.Id, from.Outputs.Single(p => p.Key == output).Id), new(to.Id, to.Inputs.Single(p => p.Key == input).Id), amount));
+var sequenceSource = SequenceAdd(NoteSequencerGenerator.NodeType);
+SequenceSet(sequenceSource, NoteSequencerGenerator.ArticulationKey, 1);
+var sequenceVoice = SequenceAdd(OscillatorGenerator.NodeType);
+var sequenceGate = SequenceAdd(EnvelopeGenerator.NodeType);
+var sequenceTrigger = SequenceAdd(EnvelopeGenerator.NodeType);
+var sequenceMaster = SequenceAdd(MasterOutput.NodeType);
+SequenceSet(sequenceVoice, OscillatorGenerator.PitchTrackingKey, 1); SequenceSet(sequenceVoice, "frequency", 440); SequenceSet(sequenceVoice, "amplitude", 0);
+SequenceSet(sequenceGate, EnvelopeGenerator.ModeKey, (int)EnvelopeMode.Adsr);
+SequenceSet(sequenceTrigger, EnvelopeGenerator.TriggerSourceKey, 1);
+SequenceWire(sequenceSource, "pitch-out", sequenceVoice, OscillatorGenerator.PitchPortKey);
+SequenceWire(sequenceSource, "gate-out", sequenceGate, EnvelopeGenerator.GatePortKey);
+SequenceWire(sequenceSource, "trigger-out", sequenceTrigger, EnvelopeGenerator.EventTriggerPortKey);
+SequenceWire(sequenceSource, "velocity-out", sequenceVoice, "amplitude-modulation-in", .1);
+SequenceWire(sequenceGate, "envelope-out", sequenceVoice, "amplitude-modulation-in", .1);
+SequenceWire(sequenceTrigger, "envelope-out", sequenceVoice, "amplitude-modulation-in", .1);
+SequenceWire(sequenceVoice, "signal-out", sequenceMaster, "audio-in");
+var sequenceProgram = FaustGraphCompiler.CreateBuiltIn().Compile(sequenceSession.Snapshot, SignalTapManifest.MaxAuxiliaryChannels);
+File.WriteAllText(Path.Combine(args[0], "note-sequencer.json"), JsonSerializer.Serialize(new {
+    source = sequenceProgram.Source, values = sequenceProgram.InitialControlValues(),
+    channels = sequenceSource.Outputs.ToDictionary(port => port.Key, port => sequenceProgram.SignalTaps.Channels[new(sequenceRoot, sequenceRoot, sequenceSource.Id, port.Id, PortDirection.Output)]),
+    mute = sequenceProgram.AuditionControls.Single(c => c.NodeId == sequenceSource.Id).Name,
+    inputs = sequenceProgram.RhythmicInputs.Count
+}));
+
 // Each instrument is wired to the real Note Source, with an independent graph and
 // shared direct-core fixtures for sample-level physics and effects regression tests.
 foreach (var instrumentType in new[] { PhysicalPluckGenerator.NodeType, PhysicalMarimbaGenerator.NodeType, DrawbarOrganGenerator.NodeType })
