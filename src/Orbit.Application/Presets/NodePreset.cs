@@ -56,7 +56,8 @@ public sealed class NodePreset
             !values.ContainsKey(NoteSequencerGenerator.ArticulationKey) &&
             !values.ContainsKey(NoteSequencerGenerator.GateLengthKey) &&
             !values.ContainsKey(NoteSequencerGenerator.VelocityKey) &&
-            NoteSequencerGenerator.PatternDefinitions.Where(definition => !NoteSequencerGenerator.IsStepGateLengthParameter(definition.Key) && definition.Key is not
+            NoteSequencerGenerator.PatternDefinitions.Where(definition => !NoteSequencerGenerator.IsStepGateLengthParameter(definition.Key) &&
+                !NoteSequencerGenerator.IsStepVelocityParameter(definition.Key) && definition.Key is not
                 (NoteSequencerGenerator.ArticulationKey or NoteSequencerGenerator.GateLengthKey or NoteSequencerGenerator.VelocityKey))
                 .All(definition => values.ContainsKey(definition.Key)))
             foreach (var definition in NoteSequencerGenerator.PatternDefinitions.Where(definition => definition.Key is
@@ -68,6 +69,10 @@ public sealed class NodePreset
             if (lengths.All(d => !values.ContainsKey(d.Key)))
                 foreach (var length in lengths)
                     values.Add(length.Key, length.DefaultValue);
+            var velocities = NoteSequencerGenerator.PatternDefinitions.Where(d => NoteSequencerGenerator.IsStepVelocityParameter(d.Key)).ToArray();
+            if (velocities.All(d => !values.ContainsKey(d.Key)))
+                foreach (var velocity in velocities)
+                    values.Add(velocity.Key, velocity.DefaultValue);
         }
         Parameters = new ReadOnlyDictionary<string, double>(values);
     }
