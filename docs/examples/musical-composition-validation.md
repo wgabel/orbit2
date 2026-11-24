@@ -1,0 +1,71 @@
+# Musical composition validation protocol
+
+[Music creation](README.md) · [Production workflow](production-workflow.md) · [Mixing and measurements](mixing-mastering-and-analysis.md) · [Contextual balance](contextual-layer-balance.md)
+
+**Mandatory for whole-piece creation, substantial arrangement revisions and whole-piece evaluations.** A valid patch is a necessary prerequisite, not a finished musical composition. This document owns the acceptance gates; the linked guides own the detailed creative and measurement techniques. Apply the protocol to the intended genre, not a universal recipe for music. Individual sound experiments and sketches need only proportional checks, but must be identified as such.
+
+## 1. Establish the musical acceptance contract before building
+
+Write a concise brief with duration, style, intended energy/emotional trajectory, tempo or free-time intent, tonal center or other organizing principle, and section boundaries. Determine what the listener should actually hear in each passage. Decide which musical roles are required, optional, deliberately absent or temporarily withheld, and why. For substantial pieces, create a role-by-section matrix with concrete material, not only instrument names or fader targets.
+
+| Role | What needs to be specified and later demonstrated |
+| --- | --- |
+| Foreground / motif | Actual pitches or gestures, rhythmic phrasing, rests, recognizable identity, meaningful development and intelligibility in the mix. |
+| Harmony / background | Voicings and voice leading, register, harmonic rhythm, changes and resolution or intentional stasis; support without obscuring foreground. |
+| Bass / low-end weight | Independent role where appropriate: actual notes, durations, accents, register, timbre and relationship to harmony and pulse. A low organ note is not necessarily an audible bassline. Sub and audible upper bass can be combined or separate; neither is mandatory in every style. |
+| Beat / pulse | Actual onset pattern, accents, rests, timing and relationship to bass. A clock, step grid or sparse low drum does not prove a perceptible beat. Pulse can be implied by pitched instruments. |
+| Complementary rhythm | Where needed, distinguish low impact, backbeat, high-frequency subdivision, syncopation, fills or other rhythmic functions. Specify their temporal interplay, not just extra drum nodes. |
+| Motion, transitions and energy | Specify how harmony, rhythm, register, density, articulation, timbre, tension and release change. A climax must be distinguishable from its preparation in the intended dimensions; loudness alone need not supply intensity. |
+| Space and contrast | Identify foreground/background depth, intentional silence, pauses, breakdown and resolution; avoid continuous layers when they undermine the brief. |
+
+A single instrument can serve multiple roles, and a role may require multiple independent voices. A role is not a node count. Examples: beat-driven cinematic electronica generally needs a perceptible pulse, dedicated bass function, complementary rhythmic accents and a convincing buildup/climax as well as melodic and harmonic material. A free-time drone may intentionally omit beat, percussion and melody, instead requiring evolving texture, coherent spectral movement and an appropriate long-form arc. A chamber-like piece can establish rhythm and bass through contrapuntal voices without drums. Drum and bass needs a convincing drum groove and active low-end interaction rather than a mandatory violin or chord bed. Choose requirements from the actual brief and [genre guidance](electronic-music-genres.md); document justified exceptions before treating them as passes.
+
+For each section write the score/rhythm material (notes or gestures, durations, rests, accents, chord/bass relationships, phrase variations), planned role entries/exits and expected energy. Plan an ending, including release tails, duration and whether manual Stop is necessary. Use [compositional development](compositional-development.md) for actual changes in musical material, not just level automation.
+
+## 2. Gate A — structural and arrangement audit
+
+Inspect the exact deliverable revision, not a conceptual graph. Reconstruct the actual programmed notes, rests, ties, trigger/gate durations, pattern periods and phase, gain/mute automation and loop boundaries. Check each required role from source through all effects, faders and mixers to the master; validate actual node types, ports, parameter ranges, signal semantics, reference tuning and import/runtime compatibility. Check for closed gates, missing triggers, zero or near-zero gain, canceled signals, inactive ports, wrong registers, disconnected routes, unintended rests and repeated patterns that undermine the planned form.
+
+Compare programmed role activity against the section matrix. Count note/trigger events and their timing per section; inspect the real bassline and kick relationship, complementary rhythmic patterns, harmonic voicings and motif variation where applicable. A node with a nonzero parameter or reachable output is not acoustic evidence: envelopes, modulation, instrument models, filters, wet mixes and downstream faders can still suppress its contribution. Record failed or missing roles and fix the arrangement before proceeding. Mark this gate separately from rendered audio verification.
+
+## 3. Gate B — acoustic verification
+
+For whole pieces, actively seek a way to render the exact patch with the current native Orbit/Faust engine. Prefer a deterministic full-duration render, starting at transport zero and including the intended release tail. Use existing supported tooling; do not assume an offline renderer, stem exporter or native browser is available. Record the patch revision/hash, engine/build, tempo, sample rate, channel count, render length and method. If rendering with an independent approximation, label it prominently and list meaningful differences (especially physical instruments, timing, nonlinearities and effects); it cannot certify native playback. Do not substitute a graph audit, a diagram or invented numbers for audio.
+
+Analyze the actual master and important roles, ideally with aligned post-voice-fader stems captured under the same transport, automation and mix conditions. Compare each role to the simultaneous backing; a soloed pre-fader source can hide missing articulation or downstream attenuation. If isolating a role changes shared effects or nonlinear interactions, document that limitation and use appropriate comparison captures instead of assuming subtraction yields a faithful stem. Use the [measurement guide](mixing-mastering-and-analysis.md#2-what-to-measure-and-what-each-measurement-cannot-tell-you) and [contextual balance](contextual-layer-balance.md) for definitions and methods.
+
+| Check | Required evidence for relevant roles and passages |
+| --- | --- |
+| Output and safety | Actual non-silent waveform where expected, sample peak/headroom and clipping; true peak and loudness where suitable tools exist. Inspect transitions, start, end and potential wrap. Do not call sample peak true peak or RMS LUFS. |
+| Low-end and body | Time-resolved band energy (illustrative bands: 20–60, 60–250, 250–1000, 1000–4000, 4000–10000 and 10000+ Hz, limited by sample rate), especially during bass entrances, beat and climax. Distinguish sub, audible bass harmonics and kick using stems and event timing; aggregate low-end energy alone cannot prove a bassline. |
+| Rhythm / impact | Detect audible onsets and inter-onset intervals, compare to programmed timing and accents; inspect kick/backbeat/subdivision stems and master transient envelopes. Check crest factor or peak/RMS on short event windows as appropriate. Count only relevant sounding events; a detector can miss soft attacks or count melodic notes as percussion. |
+| Role audibility and masking | Compare aligned post-fader role vs simultaneous backing in windows where that role is intended to sound; inspect level, spectral overlap and onset clarity. Report actual measured values and windows, not just mixer settings; there is no universal dB ratio or equal-loudness target. |
+| Dynamics and form | Compare short-window RMS/short-term loudness, band energy, event density and role activity in sparse passages, main sections, transition and climax. Confirm intended contrasts and tails; average over the whole piece only as a supplement. |
+| Pitches and musical material | Where feasible compare rendered notes/fundamentals and audible durations with the score, especially experimental instruments; inspect harmony, bass, motif development and excessive repetition using score and audio evidence. A spectral estimate is not a definitive polyphonic transcription. |
+
+Use event-sized windows for attack and impact (e.g. 50–250 ms), beat/phrase-sized windows for rhythm and balance (e.g. 0.5–4 s), and summaries over every planned section. Use sufficient FFT length for bass resolution and consistent normalization and windowing; choose time/frequency tradeoffs deliberately. Inspect all required roles at their intended entries and representative dense moments, not just one favorable segment. Measure intended silence separately. Record timestamps, units, methodology and any unavailable tools. No single spectrum shape, onset count, LUFS target or numerical threshold is mandatory for all genres; decide what constitutes a problem relative to the brief and comparable sections. If an expected role has no attributable signal or events during its intended active window, that role fails regardless of node count.
+
+## 4. Gate C — musical evaluation in context
+
+Listen to the actual full piece when possible and examine critical passages at matched, comfortable levels. Check whether a listener can identify the intended melody, bass movement, pulse, rhythmic interplay, harmonic support, tension, momentum, climax and resolution as relevant. Ask whether the low end provides weight without swallowing the groove; whether percussion sounds like a coherent rhythm rather than occasional effects; whether foreground and background have distinct identities; whether the piece progresses rather than simply repeating notes with added layers. Revisit the role matrix and [musical expectation guide](musical-quality-and-expectation.md). Intentional absences, unconventional forms and silence are legitimate if they meet the brief.
+
+Compare against the user's explicit feedback and earlier approved elements. For example, feedback that a cinematic electronic track sounds like only melody, with no bass or rhythm, is a failed genre-specific acceptance criterion, not a request to normalize the master. Investigate whether the actual score lacks those roles, whether the selected sources produce them, or whether routing, articulation, timbre or masking prevents audibility. An occasional quiet low-frequency impact cannot substitute for a groove where one was requested. Correct the responsible layer rather than reflexively increasing all gains. Preserve successful motifs, phrases and sound choices.
+
+Listening feedback is separate from objective measurement. An agent without reliable audio listening access must say so and must not claim to have heard the result or fabricate listener approval. User listening feedback can establish a failure even if the structural and acoustic checks passed; numerical proxies cannot overrule it.
+
+## 5. Correct, re-render and decide whether to deliver
+
+A failed required criterion triggers a targeted correction: compose missing notes or percussion patterns, repair articulation and routing, improve bass timbre/harmonic content, rebalance competing parts, or develop a weak section as needed. Re-run affected structural checks, re-render the revised patch and compare equivalent windows and matched playback levels with the baseline. Re-check the master for new clipping and unintended changes to approved parts. Iterate until required criteria are supported or a concrete limitation prevents further verification. Do not deliver an unchanged known-failing patch as finished.
+
+Use independent statuses for structural, acoustic and musical gates: **Pass**, **Fail**, **Partial / unverified**, or **Not applicable** with rationale. A role marked intentionally absent is not a failed role; an applicable role with missing evidence is not a pass. If native rendering or listening is unavailable, continue useful score/graph analysis and provide an editable candidate rather than blocking the task or pretending it is finished. Label the exact limitation and remaining checks; an independent preview can support a provisional acoustic assessment but not native verification. If the user explicitly requests an unfinished sketch, state that scope. Never manufacture measurements, claim completion of an audition that did not happen, or imply that the documentation implements a renderer or listening capability.
+
+## 6. Compact handoff and evidence retention
+
+For each substantial piece or revision report:
+
+- Brief and version: patch filename/revision, genre, duration, tempo/form and material changes.
+- Role-by-section assessment: requirement/expected passage, evidence (score, audio timestamp, measurement or listening feedback), status and fix for any weakness.
+- Actual render method and measurement summary: native/approximation/unavailable, key master and role findings, relevant window times, peak safety and baseline-to-revision changes. Include supporting files if created; never invent artifacts.
+- Separate gate statuses, remaining limitations, manual playback/stop instructions where needed, and specific listening questions for the user if audition is pending.
+
+Keep the report compact; save extensive measurement data separately when useful, and do not paste large transcripts or raw arrays into every response. Use [knowledge retention](production-workflow.md#documentation-feedback-and-knowledge-retention) for generalizable evidence and the existing foundation catalogue for reusable, reproducible sound relationships. An ordinary music request does not by itself authorize repository publication. This protocol is a process requirement, not a new DSP feature or automated musical-quality certification.
