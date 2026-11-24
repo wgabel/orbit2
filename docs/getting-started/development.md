@@ -1,6 +1,6 @@
 # Develop and test Orbit 2
 
-[Installation](installation.md) · [Architecture](../../ORBIT2-ARCHITECTURE.md) · [Coding standards](../quality/coding-standards.md)
+[Installation](installation.md) · [Architecture](../architecture/overview.md) · [Coding standards](../quality/coding-standards.md)
 
 Run the [Faust and compiler preparation](installation.md#prepare-faust-and-launch) before building or running the complete audio suite. The generated directory is ignored by Git.
 
@@ -23,6 +23,6 @@ The [build-and-deploy workflow](../../.github/workflows/build-and-deploy.yml) ad
 
 ## Code boundaries and agent protocol
 
-Follow [architecture routing](../../ORBIT2-ARCHITECTURE.md), [project dependencies](../core/project-structure.md), [agent work slices](../agents/work-slices.md), and [interaction registry](../editor/user-interactions.md) for gesture changes. Put verified implementation status in the owning [milestone register](../../ROADMAP.md), not here.
+Follow [architecture routing](../architecture/overview.md), [project dependencies](../core/project-structure.md), [agent work slices](../agents/work-slices.md), and [interaction registry](../editor/user-interactions.md) for gesture changes. Put verified implementation status in the owning [milestone register](../roadmap/overview.md), not here.
 
 For previous phase-by-phase technical implementation history see the [historical notes index](../archive/legacy-readme.md).

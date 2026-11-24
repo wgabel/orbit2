@@ -1,6 +1,6 @@
 # Electronic music genres — composition reference
 
-[Music creation index](README.md) · [Architecture](../../ORBIT2-ARCHITECTURE.md) · [Generative composition](generative-ambient-composition.md) · [Music theory and sound design](music-theory-and-sound-design.md)
+[Music creation index](README.md) · [Architecture](../architecture/overview.md) · [Generative composition](generative-ambient-composition.md) · [Music theory and sound design](music-theory-and-sound-design.md)
 
 Documentation provenance: [PR #26](https://github.com/wgabel/orbit2/pull/26) introduces the genre reference, technique bridge and agent routing (documentation only; not evidence of new engine capabilities).
 
@@ -24,6 +24,8 @@ For sound quality and production rather than genre selection, open [voice design
 
 Start with just the relevant family and selected technique sections. Cross genre boundaries freely; for example, a space-ambient track with a halftime climax combines ambient form, a bass foundation and a broken percussion grid. Do not read all modules by default. Unknown genres are not blockers: listen/research if possible, identify the audible ingredients, investigate the relevant node contracts and build an appropriate patch. Extend this reference when a recurring musical need is missing.
 
+For cinematic, orchestral or hybrid soundtrack composition, use the focused [cinematic composition and orchestration guide](genres/cinematic-orchestration.md). It explains how to turn a small score into a complete cue rather than treating orchestral color as a collection of presets.
+
 ## Turn a style into a composition
 
 1. **Brief.** Establish purpose, duration, energy arc, genre(s), references, rhythmic emphasis, and whether the deliverable is one sound, one voice, a loop or a complete piece. For a reference recording, identify audible roles, density, motif, groove, timbral evolution and perceived depth; do not just copy its BPM, title or melody. If listening is unavailable, disclose that and work from reliable descriptions and musical analysis. Create original motifs.
@@ -42,9 +44,9 @@ Start with just the relevant family and selected technique sections. Cross genre
 | How can I approximate the sound or rhythm using current nodes? | [Musical techniques](genres/orbit-techniques.md) + [instrument recipes](instrument-recipes.md) |
 | How do I avoid basic or hollow voices and exposed noise? | [Voice design](sound-quality-and-voice-design.md) |
 | How do I refine the mix, check the master and measure improvement? | [Mixing, mastering and analysis](mixing-mastering-and-analysis.md) |
-| What can the engine really do, what are valid inputs, and what is planned? | [Architecture/router](../../ORBIT2-ARCHITECTURE.md), [roadmap](../../ROADMAP.md), actual contracts, source and tests |
+| What can the engine really do, what are valid inputs, and what is planned? | [Architecture/router](../architecture/overview.md), [roadmap](../roadmap/overview.md), actual contracts, source and tests |
 
-Use this information as a decision aid, not a mandatory checklist or a restriction on experimentation. Do not invent unsupported sequencing, sampling, nonlinear processing or stereo capabilities. An approximation can still make excellent music: if the defining feature cannot be reproduced, describe the tradeoff, find a musically useful substitute or propose a future feature separately from the composition. Agent handoffs follow [AGENTS.md](../../AGENTS.md), including documentation consulted and discoverability feedback.
+Use this information as a decision aid, not a mandatory checklist or a restriction on experimentation. Do not invent unsupported sequencing, sampling, nonlinear processing or stereo capabilities. An approximation can still make excellent music: if the defining feature cannot be reproduced, describe the tradeoff, find a musically useful substitute or propose a future feature separately from the composition. Agent handoffs follow [AGENTS.md](../agents/contributor-instructions.md), including documentation consulted and discoverability feedback.
 
 ## Reading the genre tables
 

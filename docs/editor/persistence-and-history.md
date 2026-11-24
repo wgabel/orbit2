@@ -1,6 +1,6 @@
 # Workspace persistence and history
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [graph model](../core/graph-model.md) · [commands and events](../core/commands-and-events.md) · [canvas](canvas.md) · [node presets](node-presets.md) · [reusable modules](reusable-modules.md) (planned separate graph-template storage and cloning).
 

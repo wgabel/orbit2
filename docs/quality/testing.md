@@ -1,6 +1,6 @@
 # Testing and acceptance criteria
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [coding standards](coding-standards.md) · [graph model](../core/graph-model.md) · [dsp engine](../audio/dsp-engine.md) · [commands and events](../core/commands-and-events.md) · [performance](performance.md).
 

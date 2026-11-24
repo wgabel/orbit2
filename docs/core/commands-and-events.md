@@ -1,6 +1,6 @@
 # Commands, events and transaction boundaries
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [graph model](graph-model.md) · [composite nodes](../editor/composite-nodes.md) · [persistence and history](../editor/persistence-and-history.md).
 

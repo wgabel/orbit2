@@ -1,6 +1,6 @@
 # DSP profiling and benchmark workflow
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [performance](performance.md) · [dsp engine](../audio/dsp-engine.md) · [testing](testing.md).
 

@@ -1,0 +1,29 @@
+name: Agent documentation compliance
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  agent-documentation-compliance:
+    name: Agent documentation compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test compliance validator
+        run: node --test tests/tooling/AgentCompliance.test.mjs
+      - name: Check routing and PR declaration
+        run: node scripts/check-agent-compliance.mjs

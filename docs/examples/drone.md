@@ -1,6 +1,6 @@
 # Worked drone patch
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [composite nodes](../editor/composite-nodes.md) · [persistence and history](../editor/persistence-and-history.md) · [pitch control](../instruments/pitch-control.md).
 

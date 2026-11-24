@@ -1,6 +1,6 @@
 # Using Orbit 2
 
-[Project](../../README.md) · [Documentation map](../README.md) · [Music creation](../examples/README.md)
+[Project](../README.md) · [Documentation map](../README.md) · [Music creation](../examples/README.md)
 
 Practical user and agent guides for connecting, playing, organizing and troubleshooting patches. The app and tests are the evidence of current behavior; a historical feature entry is not a guarantee of the deployed version.
 
@@ -14,7 +14,7 @@ Practical user and agent guides for connecting, playing, organizing and troubles
 
 ## Recent features and earlier implementation trail
 
-See the [feature history and implementation evidence index](feature-history.md). It preserves PR provenance but does not replace the [current roadmap](../../ROADMAP.md) or source and tests.
+See the [feature history and implementation evidence index](feature-history.md). It preserves PR provenance but does not replace the [current roadmap](../roadmap/overview.md) or source and tests.
 
 ### Browser build version
 

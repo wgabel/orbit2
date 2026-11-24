@@ -1,18 +1,18 @@
 # Architecture task routing and detailed documentation
 
-[Architecture overview](overview.md) · [Documentation map](../README.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](overview.md) · [Documentation map](../README.md) · [Roadmap](../roadmap/overview.md)
 
 ## Find the context for your task
 
-For a complete cross-area directory, start at the [documentation map](../README.md). This architecture file remains the stable technical routing overview, not another roadmap.
+For a complete cross-area directory, start at the [documentation map](../README.md). Agents must also use the [mandatory routing configuration](../agents/task-routing.json); the technical index below provides additional discovery. This architecture file remains the stable technical routing overview, not another roadmap.
 
 For hands-on workflows and concrete examples, start with the [user and agent usage guide](../usage/README.md). Each page links the authoritative feature contracts and actual implementation PRs; use it alongside the task routing below, not as a constraint on exploration.
 
 For creating, analyzing or refining music, start with the [music creation index](../examples/README.md): routes by task and production stage, including the [sound-design foundations catalogue](../examples/foundations/catalogue.md) of reproducible references and evidence.
 
-Start here. Read the relevant module(s), source and tests; follow additional references as needed. This index is a discovery aid, not a limit on exploration. For projects spanning layers, combine the relevant modules. For a novel subsystem, inspect the existing architecture and code, make a reasonable design consistent with the principles above (or propose an explicit change), and create or extend documentation when the topic merits it. No matching document is required to begin work.
+Start here. Read the relevant module(s), source and tests; follow additional references as needed. This index is a discovery aid, not a limit on exploration. For projects spanning layers, combine the relevant modules. For a novel subsystem, inspect the existing architecture and code, make a reasonable design consistent with the principles above (or propose an explicit change), and create or extend documentation when the topic merits it. For a novel task, no exact matching feature document is required; first complete the [mandatory agent initialization](../agents/contributor-instructions.md#mandatory-initialization) using the nearest applicable contracts.
 
-Domain owns graph primitives and validation; Application owns commands, immutable snapshots and services; Presentation owns layout and editor projections; Audio owns Faust compilation and DSP; Infrastructure owns browser integrations; UI composes them. See [project structure](../core/project-structure.md) for dependency direction. Read [ROADMAP.md](../../ROADMAP.md) for current status and priority; the detailed modules preserve both implemented contracts and future designs.
+Domain owns graph primitives and validation; Application owns commands, immutable snapshots and services; Presentation owns layout and editor projections; Audio owns Faust compilation and DSP; Infrastructure owns browser integrations; UI composes them. See [project structure](../core/project-structure.md) for dependency direction. Read [ROADMAP.md](../roadmap/overview.md) for current status and priority; the detailed modules preserve both implemented contracts and future designs.
 
 | Task | Suggested starting points |
 |---|---|
@@ -39,7 +39,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 | Relative instrument/voice levels, over-loud or masked melodies, volume automation and balance validation | [Contextual layer balance](../examples/contextual-layer-balance.md) — research, practical level rides, aligned windowed role analysis and measured case study |
 | Save/load, undo/redo, presets | [Persistence](../editor/persistence-and-history.md), [commands](../core/commands-and-events.md), [node presets](../editor/node-presets.md) |
 | Notes, aliases, visual groups, patch overview, documentation visibility or outline | [Patch annotations](../editor/patch-annotations.md), [canvas](../editor/canvas.md), [persistence](../editor/persistence-and-history.md) |
-| Roadmap or feature priority | [Roadmap](../../ROADMAP.md); open only the relevant milestone register if needed |
+| Roadmap or feature priority | [Roadmap](../roadmap/overview.md); open only the relevant milestone register if needed |
 
 <a id="contents"></a>
 
@@ -106,7 +106,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 - [coding standards and implementation quality](../quality/coding-standards.md)
 - <a id="14-testing-and-acceptance-criteria"></a>[testing](../quality/testing.md)
 - [performance](../quality/performance.md)
-- <a id="13-implementation-roadmap"></a><a id="roadmap-at-a-glance"></a><a id="reading-guide-and-current-implementation"></a>[ROADMAP](../../ROADMAP.md)
+- <a id="13-implementation-roadmap"></a><a id="roadmap-at-a-glance"></a><a id="reading-guide-and-current-implementation"></a>[ROADMAP](../roadmap/overview.md)
 
 **Detailed milestone registers**
 

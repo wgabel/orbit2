@@ -1,6 +1,6 @@
 # Parameters and modulation
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](../roadmap/overview.md)
 
 Related: [signals and ports](signals-and-ports.md) · [oscillators and noise](../audio/oscillators-and-noise.md) · [dsp engine](../audio/dsp-engine.md) · [design system](../editor/design-system.md).
 

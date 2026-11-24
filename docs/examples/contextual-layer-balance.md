@@ -1,6 +1,6 @@
 # Contextual layer balance — melody, accents and accompaniment
 
-[Architecture](../../ORBIT2-ARCHITECTURE.md) · [Production workflow](mixing-mastering-and-analysis.md) · [Psychoacoustics](music-theory-and-sound-design.md#6-perceived-loudness-gain-staging-and-dynamic-range) · [Composition](generative-ambient-composition.md)
+[Architecture](../architecture/overview.md) · [Production workflow](mixing-mastering-and-analysis.md) · [Psychoacoustics](music-theory-and-sound-design.md#6-perceived-loudness-gain-staging-and-dynamic-range) · [Composition](generative-ambient-composition.md)
 
 Documentation provenance: [PR #38](https://github.com/wgabel/orbit2/pull/38) (research, validation method and measured case study; documentation only, not a new runtime measurement feature).
 

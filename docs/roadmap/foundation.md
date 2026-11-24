@@ -1,6 +1,6 @@
 # Milestone register: foundations
 
-[Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Roadmap](../../ROADMAP.md)
+[Architecture overview](../architecture/overview.md) · [Roadmap](overview.md)
 
 Related: [graph model](../core/graph-model.md) · [signals and ports](../core/signals-and-ports.md) · [commands and events](../core/commands-and-events.md) · [transport and timing](../audio/transport-and-timing.md) · [oscillators and noise](../audio/oscillators-and-noise.md) · [effects](../audio/effects.md) · [persistence and history](../editor/persistence-and-history.md).
 
@@ -107,3 +107,16 @@ Deliverable: open a drone node's internal canvas, connect external LFO to a name
 - Implemented (6.15): two-voice mono chorus with modulatable rate, depth, base delay and wet mix; shared millisecond parameter unit and conservative output bounds.
 
 Deliverable: several independently configurable drones from one reusable modular architecture.
+
+## Agent documentation discovery and compliance (AGENT-DOCS)
+
+Repository infrastructure, independent of the audio/editor phase numbering. Keep the [canonical contributor policy](../agents/contributor-instructions.md) authoritative and load only task-relevant documentation. Automated checks can verify structural compliance and declared evidence, not an agent's comprehension.
+
+- **AGENT-DOCS-S1 — Restore native discovery (In review; committed, CI not verified)** — Depends: none; preserve root `AGENTS.md` as the only permitted root Markdown file, link canonical instructions, align Copilot and documentation conventions. Done: entry point exists; other root Markdown is rejected; links resolve. Verify: documentation checker and PR CI. [PR #105](https://github.com/wgabel/orbit2/pull/105).
+- **AGENT-DOCS-S2 — Mandatory initialization (Implemented; documentation committed, awaiting merge)** — Depends: S1 committed on this branch; define the canonical pre-work protocol for every task, including read-only and delegated work, scope changes, unavailable docs and concise initialization declaration. Done: all entry points route to the same protocol; representative tasks have clear prerequisites. Verification: waived for documentation-only changes by owner; no CI claim. [PR #105](https://github.com/wgabel/orbit2/pull/105).
+- **AGENT-DOCS-S3 — Explicit task routing (Implemented; documentation committed, awaiting merge)** — Depends: S2; define additive mandatory/recommended/reference routes using one small machine-readable configuration and distinguish semantic task classification from deterministic path-based checks. Done: route IDs are unique, all required paths resolve, cross-cutting and novel tasks have a fallback. Verification: waived for documentation-only metadata by owner; automated validation and fixtures deferred to S6. [PR #105](https://github.com/wgabel/orbit2/pull/105).
+- **AGENT-DOCS-S4 — Reduce mandatory context (Implemented; documentation committed, awaiting merge)** — Depends: S3; split global and domain-specific contributor rules without losing obligations or creating competing copies. Done: mandatory global policy stays compact; all prior rules remain reachable by appropriate routes. Verification: waived for documentation-only changes by owner; moved domain rules into routed development, music and sound-design policies. [PR #105](https://github.com/wgabel/orbit2/pull/105).
+- **AGENT-DOCS-S5 — Auditable handoffs (Implemented; documentation committed, awaiting merge)** — Depends: S4; standardize compact initialization, completion and PR evidence with selected routes, actual paths read, applicable constraints and verification limitations. Done: examples cover code, documentation, music and delegated work. Verification: waived for documentation-only changes by owner; report contract and PR template committed. [PR #105](https://github.com/wgabel/orbit2/pull/105).
+- **AGENT-DOCS-S6 — Enforce structural compliance (In review; CI pending)** — Depends: S5; validate routing and PR declarations against objectively classifiable changed paths, required documentation and exceptions; add negative fixtures and wire checks into CI. Document how repository owners can make the check required for main, and distinguish declaration from proof of reading or understanding. Verify: passing/failing fixtures and PR CI. [PR #105](https://github.com/wgabel/orbit2/pull/105).
+
+S6 implementation is the final planned slice. Next: verify CI and close out S1/S6; owner may then require the compliance status check on main. Owner-authorized documentation-only slices can proceed without intermediate CI or merge; S1 includes a validator change and remains unverified in review. Executable changes retain their verification requirements.

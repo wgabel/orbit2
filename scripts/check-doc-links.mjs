@@ -16,9 +16,17 @@ const visit = (dir) => {
   }
 };
 visit(root);
+const rootMarkdown = readdirSync(root, { withFileTypes: true }).filter(item => item.isFile() && item.name.toLowerCase().endsWith('.md'));
+const canonical = ['AGENTS.md', 'docs/README.md', 'docs/roadmap/overview.md', 'docs/agents/contributor-instructions.md', '.github/copilot-instructions.md'];
+for (const file of canonical) if (!existsSync(resolve(root, file))) { console.error(`Missing canonical documentation entry: ${file}`); process.exitCode = 1; }
+const unexpectedRootMarkdown = rootMarkdown.filter(file => file.name !== 'AGENTS.md');
+if (unexpectedRootMarkdown.length) {
+  for (const file of unexpectedRootMarkdown) console.error(`Root Markdown forbidden except AGENTS.md; move to docs/: ${file.name}`);
+  process.exitCode = 1;
+}
 
 const checkAnchorsFor = new Set([
-  'README.md', 'ORBIT2-ARCHITECTURE.md',
+  'docs/README.md', 'docs/roadmap/overview.md', 'docs/agents/contributor-instructions.md',
   'docs/architecture/overview.md', 'docs/architecture/task-routing.md',
   'docs/usage/README.md', 'docs/usage/task-index.md', 'docs/usage/feature-history.md',
   'docs/examples/README.md', 'docs/examples/task-index.md',

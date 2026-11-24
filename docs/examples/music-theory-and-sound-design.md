@@ -6,7 +6,7 @@ For quality-focused production, see [sound quality and voice design](sound-quali
 
 For in-depth pitched composition, read [harmony, scales and temperament](harmony-scales-and-temperament.md) (acoustics, wolf intervals, chord functions, voice leading) and [classical composition and melody](classical-composition-and-melody.md) (motifs, non-chord tones, Bach/Mozart, counterpoint, phrase and form). The present guide remains the general theory/sound-design overview.
 
-[Music creation index](README.md) · [Architecture overview](../../ORBIT2-ARCHITECTURE.md) · [Generative ambient composition](generative-ambient-composition.md) · [Instrument recipes](instrument-recipes.md) · [Roadmap](../../ROADMAP.md)
+[Music creation index](README.md) · [Architecture overview](../architecture/overview.md) · [Generative ambient composition](generative-ambient-composition.md) · [Instrument recipes](instrument-recipes.md) · [Roadmap](../roadmap/overview.md)
 
 **Purpose:** A practical musical reference for people and agents creating Orbit 2 patches, instruments, effects and complete pieces. It explains why particular choices may work, how to implement them with the available nodes, and how to evaluate the result. This is not a rulebook for what music must sound like or an implementation specification for new DSP features. All numerical recipes are starting points, not claims of measured or listening-tested sound quality.
 
