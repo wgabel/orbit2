@@ -94,3 +94,7 @@ Requirements for implementation: use the shared node/connector components, keep 
 - Check cancellation, pointer capture, focus restoration, event propagation, and stale graph identity; ensure no accidental graph changes or playback recompilation.
 - For each newly supported action record: target + input, precedence, conflict strategy, accessible alternative, source/test path, status, and actual implementation PR.
 - Use actual code/tests as implementation evidence; keep aspirational milestones distinguishable from current behavior.
+
+### Note Sequencer: selected note length (in review, [PR #111](https://github.com/wgabel/orbit2/pull/111))
+
+The existing Edit notes panel exposes a labeled native numeric input for populated steps in Notes mode. Click/tap or focus to edit the selected slot's gate fraction; normal change commits through the existing parameter-edit command. Keyboard capture remains excluded inside the input, and the input is disabled during recording. No canvas, grid or piano gesture is reassigned. Source: `PerformanceKeyboard.razor`; regression: `tests/browser/PublishedPlaybackSmoke.mjs`.
