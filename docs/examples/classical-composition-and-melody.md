@@ -38,7 +38,7 @@ The piano analogy is a useful composition test, not piano-playing instruction. A
 
 #### Controlled Voice Lab exercise (2026-11-24)
 
-Five original eight-bar studies use the same 84 BPM, 4/4 D-minor theme and harmonic framework: Dm – Bb – Gm – A7 – Dm – F – A7(b9) – Dm. Every version has the same 39 lead attacks and note durations. The final version changes per-note gain as an additional performance variable. One common additive struck-keyboard-like sound is used throughout (body partials plus independently decaying attack harmonics, low-pass and short room); this is not a physical or sampled piano. Rendered comparison previews are independently synthesized, not native Faust. The user has not yet rated these studies. The earlier Melody Lab I feedback on 2026-11-24 was that all five melodies were good when used in appropriate styles and could be bad in mismatched styles; no ranking or separate harmony scores were supplied. This supports evaluating contextual suitability, not a universal melody ranking.
+Five original eight-bar studies use the same 84 BPM, 4/4 D-minor theme and harmonic framework: Dm – Bb – Gm – A7 – Dm – F – A7(b9) – Dm. Every version has the same 39 lead attacks and note durations. The final version changes per-note gain as an additional performance variable. One common additive struck-keyboard-like sound is used throughout (body partials plus independently decaying attack harmonics, low-pass and short room); this is not a physical or sampled piano. Rendered comparison previews are independently synthesized, not native Faust. Subsequent listener feedback: the studies were interesting, with the versions containing audible lower supplementary melodies and tones preferred. The listener requested further variation of individual note duration and behavior. See [Voice Lab II and III](voice-lab-expressive-phrasing.md) for the next experiments and ratings. The earlier Melody Lab I feedback on 2026-11-24 was that all five melodies were good when used in appropriate styles and could be bad in mismatched styles; no ranking or separate harmony scores were supplied. This supports evaluating contextual suitability, not a universal melody ranking.
 
 Each group below is one bar of eighth-note slots; dash is tie, R rest. This is the actual shared lead score, not an imagined example.
 
@@ -74,6 +74,10 @@ All independent 48 kHz mono previews measure -21 dBFS K-weighted RMS (comparison
 - `80d756d171223d7459f7102004ebe539de326b12b687e54006bebb907f668da5`
 
 For a controlled comparison keep theme, harmony, tempo, timbre and approximate listening level fixed, compare complete phrases and record style-specific feedback. The five versions deliberately change multiple accompaniment characteristics; they cannot isolate the causal effect of any one technique. To isolate expressive dynamics, later compare version 05 with identical score and uniform accents, or compare version 04 with the same score and an alternative mix. Retain approved musical relationships, not merely node count or an entire score copied into an unrelated genre.
+
+### Listener-validated rhythmic phrasing and complementary melodies
+
+[Voice Lab II and III](voice-lab-expressive-phrasing.md) retains the six ratings, exact Elastic Dialogue event score and articulation settings. The strongest result combined important melodic anchors, shorter connecting notes, contrasting gate/envelope behavior and audible independent lower phrases. Design the local contrast of note lengths and rhythmic density deliberately; avoid uniform event spacing or mechanically adding extra notes to all voices. A stable chord or held lead can support a moving lower line. Choose the relationships to fit the style and assess their interaction, not just the number of layers. Preview feedback is not native engine verification.
 
 ## 2. What makes a melody memorable and expressive?
 
