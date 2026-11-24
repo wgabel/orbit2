@@ -5,6 +5,8 @@ export function validPitchPattern(p) {
         (p.notes === undefined || typeof p.notes === 'boolean') &&
         (p.gateFraction === undefined || Number.isFinite(p.gateFraction) && p.gateFraction >= .05 && p.gateFraction <= 1) &&
         (p.velocity === undefined || Number.isFinite(p.velocity) && p.velocity >= 0 && p.velocity <= 1) &&
+        (p.gateFractions == null || Array.isArray(p.gateFractions) && p.gateFractions.length === 64 &&
+            p.gateFractions.every(n => Number.isFinite(n) && n >= 0 && n <= 1)) &&
         Number.isInteger(p.count) && p.count >= 1 && p.count <= 64 &&
         Number.isInteger(p.ticks) && p.ticks >= 1 && p.ticks <= 1024 &&
         Number.isFinite(p.seconds) && p.seconds >= .01 && p.seconds <= 600 &&
@@ -19,6 +21,7 @@ export class PitchPatternScheduler {
         this.generation = -1;
         this.dirty = true;
         this.gateOpen = false;
+        this.noteGateFraction = 0;
         this.releasedOrdinal = -1;
     }
 
@@ -67,7 +70,11 @@ export class PitchPatternScheduler {
                         this.gateOpen = false;
                     } else {
                         output[i] = (step + 1) * 256 + (code || output[i]);
-                        if (code >= 1 && code <= 128) this.gateOpen = true;
+                        if (code >= 1 && code <= 128) {
+                            this.gateOpen = true;
+                            // Latch explicit duration at onset; ties inherit it.
+                            this.noteGateFraction = p.gateFractions?.[step] ?? 0;
+                        }
                     }
                     this.releasedOrdinal = -1;
                 } else {
@@ -89,7 +96,7 @@ export class PitchPatternScheduler {
             // note/tie step, only when the following slot isn't another tie.
             if (articulated && this.gateOpen && this.releasedOrdinal !== ordinal &&
                 p.steps[(step + 1) % p.count] !== 0 &&
-                (position / duration - ordinal) >= (p.gateFraction ?? .9)) {
+                (position / duration - ordinal) >= (this.noteGateFraction || (p.gateFraction ?? .9))) {
                 // Do not overwrite a boundary pulse; the next sample is enough.
                 if (output[i] === 0) {
                     output[i] = (step + 1) * 256 + 130;
