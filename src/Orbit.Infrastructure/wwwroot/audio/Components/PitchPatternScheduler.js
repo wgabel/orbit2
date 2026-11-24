@@ -1,5 +1,16 @@
 // Fixed-capacity, sample-clocked pitch and optional note articulation.
 // Existing pitch-only patterns preserve their exact legacy event stream.
+// Low 8 bits: action code. Next 7: step/sentinel. Remaining bits:
+// 0 = legacy/default velocity; 1..101 = explicit 0..100%. All words
+// are exact Float32 integers and the existing manual lane is unchanged.
+const VELOCITY_STRIDE = 32768;
+function validVelocityOverride(value) {
+    return value === -1 || Number.isFinite(value) && value >= 0 && value <= 1 &&
+        value === Math.round(value * 100) / 100;
+}
+function encodeVelocity(value) {
+    return value == null || value === -1 ? 0 : (Math.round(value * 100) + 1) * VELOCITY_STRIDE;
+}
 export function validPitchPattern(p) {
     return p && typeof p.loop === 'boolean' && typeof p.free === 'boolean' &&
         (p.notes === undefined || typeof p.notes === 'boolean') &&
@@ -7,6 +18,8 @@ export function validPitchPattern(p) {
         (p.velocity === undefined || Number.isFinite(p.velocity) && p.velocity >= 0 && p.velocity <= 1) &&
         (p.gateFractions == null || Array.isArray(p.gateFractions) && p.gateFractions.length === 64 &&
             p.gateFractions.every(n => Number.isFinite(n) && n >= 0 && n <= 1)) &&
+        (p.velocityOverrides == null || Array.isArray(p.velocityOverrides) && p.velocityOverrides.length === 64 &&
+            p.velocityOverrides.every(validVelocityOverride)) &&
         Number.isInteger(p.count) && p.count >= 1 && p.count <= 64 &&
         Number.isInteger(p.ticks) && p.ticks >= 1 && p.ticks <= 1024 &&
         Number.isFinite(p.seconds) && p.seconds >= .01 && p.seconds <= 600 &&
@@ -72,6 +85,8 @@ export class PitchPatternScheduler {
                         output[i] = (step + 1) * 256 + (code || output[i]);
                         if (code >= 1 && code <= 128) {
                             this.gateOpen = true;
+                            // Only scheduled onsets carry overrides; manual actions keep their legacy default.
+                            output[i] += encodeVelocity(p.velocityOverrides?.[step]);
                             // Latch explicit duration at onset; ties inherit it.
                             this.noteGateFraction = p.gateFractions?.[step] ?? 0;
                         }
