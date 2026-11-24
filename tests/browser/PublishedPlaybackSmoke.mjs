@@ -1531,6 +1531,15 @@ try {
     await steps.getByRole("button", { name: "Select step 1: A5", exact: true }).waitFor();
     await steps.locator('[data-step="2"][aria-pressed="true"]').waitFor();
     await pattern.getByRole("combobox", { name: "Selected step note" }).selectOption("70");
+    await pattern.getByRole("combobox", { name: "Sequencer playback type" }).selectOption("1");
+    const noteLength = pattern.getByRole("spinbutton", { name: "Selected note length" });
+    await noteLength.fill("0.25");
+    await noteLength.press("Tab");
+    await steps.getByRole("button", { name: "Select step 1: A5", exact: true }).click();
+    assert.equal(await noteLength.inputValue(), "0");
+    await steps.getByRole("button", { name: "Select step 2: A4", exact: true }).click();
+    assert.equal(await noteLength.inputValue(), "0.25");
+    await pattern.getByRole("combobox", { name: "Sequencer playback type" }).selectOption("0");
     await pattern.getByRole("combobox", { name: "Pattern playback" }).selectOption("1");
     await responseStatus.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 30000 });
     await clickWorkspaceTool(responsePage, "transport", "Reset transport");
