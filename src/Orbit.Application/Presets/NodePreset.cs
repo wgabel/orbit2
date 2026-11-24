@@ -56,12 +56,19 @@ public sealed class NodePreset
             !values.ContainsKey(NoteSequencerGenerator.ArticulationKey) &&
             !values.ContainsKey(NoteSequencerGenerator.GateLengthKey) &&
             !values.ContainsKey(NoteSequencerGenerator.VelocityKey) &&
-            NoteSequencerGenerator.PatternDefinitions.Where(definition => definition.Key is not
+            NoteSequencerGenerator.PatternDefinitions.Where(definition => !NoteSequencerGenerator.IsStepGateLengthParameter(definition.Key) && definition.Key is not
                 (NoteSequencerGenerator.ArticulationKey or NoteSequencerGenerator.GateLengthKey or NoteSequencerGenerator.VelocityKey))
                 .All(definition => values.ContainsKey(definition.Key)))
             foreach (var definition in NoteSequencerGenerator.PatternDefinitions.Where(definition => definition.Key is
                 NoteSequencerGenerator.ArticulationKey or NoteSequencerGenerator.GateLengthKey or NoteSequencerGenerator.VelocityKey))
                 values.Add(definition.Key, definition.DefaultValue);
+        if (nodeType == NoteSequencerGenerator.NodeType)
+        {
+            var lengths = NoteSequencerGenerator.PatternDefinitions.Where(d => NoteSequencerGenerator.IsStepGateLengthParameter(d.Key)).ToArray();
+            if (lengths.All(d => !values.ContainsKey(d.Key)))
+                foreach (var length in lengths)
+                    values.Add(length.Key, length.DefaultValue);
+        }
         Parameters = new ReadOnlyDictionary<string, double>(values);
     }
 
