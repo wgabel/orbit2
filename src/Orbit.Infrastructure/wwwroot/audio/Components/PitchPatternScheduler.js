@@ -77,8 +77,9 @@ export class PitchPatternScheduler {
                 if (articulated) {
                     // 0 ties the previous note; 129 is an explicit rest.
                     // Release on reset/rest; ordinary note boundaries retrigger.
-                    if (reset || this.dirty) this.gateOpen = false;
-                    if (code === 129 || (code === 0 && (reset || this.dirty))) {
+                    const discontinuity = reset || this.dirty || ordinal !== this.ordinal + 1;
+                    if (discontinuity) this.gateOpen = false;
+                    if (code === 129 || (code === 0 && discontinuity)) {
                         output[i] = (step + 1) * 256 + 130;
                         this.gateOpen = false;
                     } else {
