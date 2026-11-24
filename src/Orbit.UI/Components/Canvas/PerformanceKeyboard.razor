@@ -127,6 +127,14 @@
                     @if (IsArticulated)
                     {
                         <button type="button" class="secondary" disabled="@RecordingLocked" @onclick="() => WriteStepAsync(NoteSequencerGenerator.RestCode, false)">Rest</button>
+                        @if (StepCode(selectedStep) is >= 1 and <= 128)
+                        {
+                            <label>Note length (0 = default)
+                                <input type="number" min="0" max="1" step="0.01" aria-label="Selected note length" disabled="@RecordingLocked"
+                                       value="@Format(Value(NoteSequencerGenerator.StepGateLengthKey(selectedStep)))"
+                                       @onchange="e => EditValueAsync(NoteSequencerGenerator.StepGateLengthKey(selectedStep), e)" />
+                            </label>
+                        }
                     }
                     <label>Auto-advance
                         <select disabled="@RecordingLocked" aria-label="Advance after keyboard entry" @bind="advance">
