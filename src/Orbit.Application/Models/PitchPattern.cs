@@ -5,7 +5,7 @@ namespace Orbit.Application.Models;
 
 /// <summary>Immutable, bounded worklet configuration. Zero means Hold; note codes are MIDI + 1.</summary>
 public sealed record PitchPattern(bool Loop, int Count, bool Free, int Ticks, double Seconds, IReadOnlyList<int> Steps,
-    bool Notes = false, double GateFraction = 0.9, double Velocity = 0.8, IReadOnlyList<double>? GateFractions = null)
+    bool Notes = false, double GateFraction = 0.9, double Velocity = 0.8, IReadOnlyList<double>? GateFractions = null, IReadOnlyList<double>? VelocityOverrides = null)
 {
     public static PitchPattern FromNode(GraphNodeSnapshot node)
     {
@@ -18,14 +18,19 @@ public sealed record PitchPattern(bool Loop, int Count, bool Free, int Ticks, do
             values[NoteSequencerGenerator.ArticulationKey] == 1,
             values[NoteSequencerGenerator.GateLengthKey], values[NoteSequencerGenerator.VelocityKey],
             Array.AsReadOnly(Enumerable.Range(0, NoteSequencerGenerator.Capacity)
-                .Select(i => values[NoteSequencerGenerator.StepGateLengthKey(i)]).ToArray()));
+                .Select(i => values[NoteSequencerGenerator.StepGateLengthKey(i)]).ToArray()),
+            Array.AsReadOnly(Enumerable.Range(0, NoteSequencerGenerator.Capacity)
+                .Select(i => values[NoteSequencerGenerator.StepVelocityKey(i)]).ToArray()));
     }
 
     public bool Matches(PitchPattern? other) => other is not null && Loop == other.Loop && Count == other.Count && Free == other.Free &&
         Ticks == other.Ticks && Seconds == other.Seconds && Notes == other.Notes &&
         GateFraction == other.GateFraction && Velocity == other.Velocity && Steps.SequenceEqual(other.Steps) &&
-        (GateFractions ?? DefaultGateFractions).SequenceEqual(other.GateFractions ?? DefaultGateFractions);
+        (GateFractions ?? DefaultGateFractions).SequenceEqual(other.GateFractions ?? DefaultGateFractions) &&
+        (VelocityOverrides ?? DefaultVelocityOverrides).SequenceEqual(other.VelocityOverrides ?? DefaultVelocityOverrides);
 
+    private static readonly IReadOnlyList<double> DefaultVelocityOverrides = Array.AsReadOnly(
+        Enumerable.Repeat(NoteSequencerGenerator.InheritVelocity, NoteSequencerGenerator.Capacity).ToArray());
     private static readonly IReadOnlyList<double> DefaultGateFractions = Array.AsReadOnly(new double[NoteSequencerGenerator.Capacity]);
 }
 
