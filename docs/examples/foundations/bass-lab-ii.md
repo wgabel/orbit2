@@ -2,6 +2,8 @@
 
 [Foundation catalogue](catalogue.md) · [Repeatable audition](../instrument-design-and-audition.md) · [Voice design](../sound-quality-and-voice-design.md) · [Mixing](../mixing-mastering-and-analysis.md)
 
+Documentation provenance: [PR #108](https://github.com/wgabel/orbit2/pull/108) (reference documentation and reconstructed data-only assets, not an engine change).
+
 ## Evidence and purpose
 
 2026-11-24: the listener described *Beneath the Aurora* v2 as better but flat, with insufficient melodic variation and bass that was present but could be more prominent. The first Bass Lab's five candidates were all rated OK, not good. The listener requested more layers. Bass Lab II deliberately compared five complementary branches per voice at matched audition levels. The user rated **Iron Tide and Abyssal Machinery Great**, Tectonic Bloom Good, Molten Circuit OK and Obsidian Cathedral Bad. These are ratings of the delivered independent-preview experiment; native Orbit playback, playback device, and separate ratings of the solo and backed excerpts were not established. Do not claim a finished composition or native-verified preset.
