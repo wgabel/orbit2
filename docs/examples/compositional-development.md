@@ -91,6 +91,8 @@ Original 144-second, 160 BPM D-minor 16-bit/chiptune, polka and dark-bass hybrid
 
 ### Listener feedback case — Copper Cog Polka
 
+Documentation provenance: [PR #107](https://github.com/wgabel/orbit2/pull/107).
+
 Original three-minute, 128 BPM, G-major chiptune polka delivered 2026-11-24. Exact delivered patch: `Copper-Cog-Polka.orbit2.json`, SHA-256 `785e550a31357b4709fe2a6793f65e4934515824cbadc2a386a492b531cbeb42`. Independent audio preview and analysis: `Copper-Cog-Polka-analysis.json`, SHA-256 `5e7ed380c581e033b1c70c11d393985703d7140fb95b1baec0fe0453f3447b86`. These were delivered to the user; the files are not checked-in presets. Native Faust playback and the listener's playback route were not established.
 
 **Listener evidence:** The user described the melody composition as spot on and suitable as a good example, but found the piece somewhat monotonous. They initially noted the absence of newer physical instruments, then explicitly agreed that the traditional chiptune aesthetic did not need those instruments. This approves the melodic aspect and accepts the genre-specific palette, not every aspect of the arrangement, mix or native playback.
