@@ -102,3 +102,7 @@ The existing Edit notes panel exposes a labeled native numeric input for populat
 ### Note Sequencer: selected note velocity (CI verified; awaiting merge, [PR #115](https://github.com/wgabel/orbit2/pull/115))
 
 In the existing Edit notes panel, a populated Notes-mode step exposes a labeled native select with Default and 0–100% options. Mouse/touch or native keyboard selection commits through the normal validated parameter edit command; Undo/Redo restores the saved slot value. Focus in the select excludes piano capture, recording disables editing, and Rest/Tie or Pitch-only mode hides the control. No new gestures or node layout changes. Source: `PerformanceKeyboard.razor`; regression: `tests/browser/PublishedPlaybackSmoke.mjs` (desktop and narrow viewport).
+
+### Note Sequencer: selected note timing (in review, [PR #119](https://github.com/wgabel/orbit2/pull/119))
+
+In Edit notes, a populated Notes-mode slot exposes a labeled native Timing offset select and a calculated millisecond readout. Pointer, touch and native keyboard selection use the existing validated parameter edit path and undo/redo; input focus excludes piano capture. Recording disables editing and Rest/Tie or Pitch-only hides the control. No new gestures or alternate mobile editing path. Source: `PerformanceKeyboard.razor`; regression: `tests/browser/PublishedPlaybackSmoke.mjs`.

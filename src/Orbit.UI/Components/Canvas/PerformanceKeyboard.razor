@@ -145,6 +145,18 @@
                                     }
                                 </select>
                             </label>
+                            var timingKey = NoteSequencerGenerator.StepTimingOffsetKey(selectedStep);
+                            var timingChoices = Node.Parameters.Single(p => p.Definition.Key == timingKey).Definition.Choices!;
+                            <label>Timing offset
+                                <select aria-label="Selected note timing offset" disabled="@RecordingLocked" value="@Format(Value(timingKey))"
+                                        @onchange="e => EditValueAsync(timingKey, e)">
+                                    @foreach (var choice in timingChoices)
+                                    {
+                                        <option value="@Format(choice.Value)">@(choice.Value > 0 ? "+" + choice.Label : choice.Value == 0 ? "0% (on grid)" : choice.Label)</option>
+                                    }
+                                </select>
+                                <small aria-label="Selected note timing in milliseconds">@TimingOffsetReadout(Value(timingKey))</small>
+                            </label>
                         }
                     }
                     <label>Auto-advance
@@ -299,9 +311,18 @@
     private double Value(string key) => Node.Parameters.Single(p => p.Definition.Key == key).BaseValue;
     private int StepCount => (int)Value(NoteSequencerGenerator.CountKey);
     private bool Free => Value(NoteSequencerGenerator.TimingKey) == 1;
+    private double StepBeats => Value(NoteSequencerGenerator.DivisionKey) * Value(NoteSequencerGenerator.MultiplierKey) / 4;
+    private double StepSeconds => Free ? Value(NoteSequencerGenerator.SecondsKey) : StepBeats * 60 / Tempo;
     private string LoopDuration => Free
-        ? $"Loop: {Value(NoteSequencerGenerator.SecondsKey) * StepCount:0.##} s"
-        : $"Loop: {Value(NoteSequencerGenerator.DivisionKey) * Value(NoteSequencerGenerator.MultiplierKey) * StepCount / 4:0.##} beats · {Value(NoteSequencerGenerator.DivisionKey) * Value(NoteSequencerGenerator.MultiplierKey) * StepCount / 4 * 60 / Tempo:0.##} s";
+        ? $"Loop: {StepSeconds * StepCount:0.##} s"
+        : $"Loop: {StepBeats * StepCount:0.##} beats · {StepSeconds * StepCount:0.##} s";
+    private string TimingOffsetReadout(double fraction)
+    {
+        if (fraction == 0) return "0 ms · on grid";
+        var milliseconds = fraction * StepSeconds * 1000;
+        var formatted = milliseconds.ToString("+0.##;-0.##;0", CultureInfo.InvariantCulture);
+        return $"{formatted} ms · {(fraction < 0 ? "early" : "late")}";
+    }
     private bool VisibleSetting(string key) => key switch { NoteSequencerGenerator.SecondsKey => Free, NoteSequencerGenerator.DivisionKey or NoteSequencerGenerator.MultiplierKey => !Free, NoteSequencerGenerator.GateLengthKey or NoteSequencerGenerator.VelocityKey => IsArticulated, NoteSequencerGenerator.GlideKey => !IsArticulated, _ => true };
     private static string Format(double value) => value.ToString(CultureInfo.InvariantCulture);
     private string StepLabel(int code) => code == 0 ? (IsArticulated ? "Tie" : "Hold") :
