@@ -1,0 +1,140 @@
+# Historical measurements use one runner, one harness and one saved fixture set.
+# Never deploy these historical application builds.
+name: Historical editor benchmarks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/historical-editor-benchmarks.yml'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Editor fixture
+        type: choice
+        options: [editor-50, editor-200, editor-500]
+        default: editor-50
+      viewport:
+        description: Desktop or narrow viewport emulation
+        type: choice
+        options: [desktop, mobile]
+        default: desktop
+
+permissions:
+  contents: read
+
+jobs:
+  historical-pairs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      BEFORE_135: a21198712750a9c4679ba4e451c636c68211091b
+      AFTER_135: 0356ffe183b43f6654c21266f4816fdf2c35a1b1
+      BEFORE_137: c7d3a32b6d6cd2796fa667b0317a39a1688ec906
+      AFTER_137: de2540b95388dc620271d348cb8d9525d74ba38a
+      ORBIT_EDITOR_EXPANSION_MATRIX: '1'
+      ORBIT_EDITOR_REPEATS: '3'
+      ORBIT_EDITOR_IDLE_MS: '1500'
+      ORBIT_EDITOR_VIEWPORT: ${{ inputs.viewport || 'desktop' }}
+      ORBIT_EDITOR_PLAYBACK: '1'
+      ORBIT_EDITOR_RENDER_COUNTS: '0'
+      PROFILE: ${{ inputs.profile || 'editor-50' }}
+      ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/historical-browser/node_modules/playwright-core
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Verify historical revision relationship and common harness
+        run: |
+          set -euo pipefail
+          for rev in "$BEFORE_135" "$AFTER_135" "$BEFORE_137" "$AFTER_137"; do
+            git cat-file -e "$rev^{commit}"
+          done
+          git merge-base --is-ancestor "$BEFORE_135" "$AFTER_135"
+          git merge-base --is-ancestor "$AFTER_135" "$BEFORE_137"
+          git merge-base --is-ancestor "$BEFORE_137" "$AFTER_137"
+          # The shared middle build is valid only if the actual pre-137 main
+          # revision adds no runtime/test/tooling input changes.
+          git diff --exit-code "$AFTER_135" "$BEFORE_137" -- . ':!docs/**/*.md' ':!AGENTS.md' ':!.github/copilot-instructions.md'
+          node --test tests/benchmarks/*.test.mjs
+      - name: Prepare dependencies and one saved fixture set
+        run: |
+          set -euo pipefail
+          npm install --prefix "$RUNNER_TEMP/historical-browser" --no-audit --no-fund --ignore-scripts --no-save playwright-core@1.65.1
+          npm install --prefix "$RUNNER_TEMP/historical-faust" --no-audit --no-fund --ignore-scripts --no-save @grame/faustwasm@0.19.0
+          mkdir -p "$RUNNER_TEMP/historical-editor"
+          dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj --configuration Release -- --editor-benchmark "$RUNNER_TEMP/historical-editor/fixtures"
+          git rev-parse HEAD > "$RUNNER_TEMP/historical-editor/harness-revision.txt"
+      - name: Publish the three historical runtimes
+        run: |
+          set -euo pipefail
+          for rev in "$BEFORE_135" "$AFTER_135" "$AFTER_137"; do
+            checkout="$RUNNER_TEMP/historical-src-$rev"
+            output="$RUNNER_TEMP/historical-publish-$rev"
+            git worktree add --detach "$checkout" "$rev"
+            (
+              cd "$checkout"
+              test "$(git rev-parse HEAD)" = "$rev"
+              node src/Orbit.UI/DesignSystem/generate-tokens.mjs
+              npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts src/Orbit.Audio/Dsp/Oscillators/ModulatedSine.dsp src/Orbit.Infrastructure/wwwroot/audio/generated/modulated-sine
+              node scripts/prepare-faust-compiler.mjs "$RUNNER_TEMP/historical-faust/node_modules/@grame/faustwasm"
+              dotnet publish src/Orbit.UI/Orbit.UI.csproj --configuration Release --output "$output" -p:OrbitBrowserAssetVersion="$rev" -p:OrbitBuildNumber="$GITHUB_RUN_NUMBER"
+              node scripts/version-published-editor.mjs "$output/wwwroot" "$rev" "$GITHUB_RUN_NUMBER"
+              cd "$output/wwwroot/_content/Orbit.Infrastructure"
+              cp -a audio "audio-$rev"
+              cp -a persistence "persistence-$rev"
+              test -s "audio-$rev/generated/compiler/index.js"
+            )
+            git worktree remove --force "$checkout"
+          done
+      - name: Measure historical revisions sequentially and compare
+        run: |
+          set -euo pipefail
+          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
+          test -x "$ORBIT_CHROME"
+          case "$PROFILE" in editor-50|editor-200|editor-500) ;; *) exit 1;; esac
+          reports="$RUNNER_TEMP/historical-editor"
+          for rev in "$BEFORE_135" "$AFTER_135" "$AFTER_137"; do
+            ORBIT_REVISION="$rev" ORBIT_BENCH_PUBLISH_DIR="$RUNNER_TEMP/historical-publish-$rev/wwwroot" \
+              node scripts/benchmark-live.mjs --editor "$reports/fixtures" "$reports/$rev.json" "$PROFILE"
+          done
+          node scripts/compare-editor-benchmarks.mjs "$reports/$BEFORE_135.json" "$reports/$AFTER_135.json" "$reports/pr-135.json"
+          node scripts/compare-editor-benchmarks.mjs "$reports/$AFTER_135.json" "$reports/$AFTER_137.json" "$reports/pr-137.json"
+          node --input-type=module - "$reports" <<'JS' > "$reports/summary.md"
+          import { readFileSync } from "node:fs";
+          import { join } from "node:path";
+          const dir = process.argv[2];
+          const display = n => Number.isFinite(n) ? n.toFixed(2) : "N/A";
+          const pair = m => display(m.before) + " → " + display(m.after);
+          console.log("# Historical editor performance (same-runner diagnostic)");
+          for (const pr of [135, 137]) {
+            const r = JSON.parse(readFileSync(join(dir, "pr-" + pr + ".json"), "utf8"));
+            console.log("\n## PR #" + pr);
+            console.log("\nBuilt revisions: " + r.beforeRevision + " → " + r.afterRevision);
+            console.log("\nProfile: " + Object.keys(r.fixtures).join(", ") + "; viewport: " + r.settings.mode + "; repeats: " + r.settings.repeats);
+            console.log("\n| State | Expansion | Workload | FPS before → after | P95 ms before → after | DOM before → after |");
+            console.log("| --- | --- | --- | ---: | ---: | ---: |");
+            for (const row of r.rows) {
+              const c = row.changes;
+              console.log("| " + [row.state, row.expansion?.name, row.workload, pair(c.fps), pair(c.frameGapP95Ms), pair(c.domElements)].join(" | ") + " |");
+            }
+          }
+          console.log("\nShared runner, sequential build order, muted output, no physical-device or audio-underrun measurement. See JSON for all metrics, fingerprints and provenance.");
+          JS
+          cat "$reports/summary.md" >> "$GITHUB_STEP_SUMMARY"
+          cat "$reports/summary.md"
+      - name: Preserve historical reports and fixtures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orbit-historical-editor-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/historical-editor/
+          retention-days: 90
+          if-no-files-found: warn
