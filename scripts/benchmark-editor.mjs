@@ -12,6 +12,7 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
     const idleMs = Number(process.env.ORBIT_EDITOR_IDLE_MS ?? 1500);
     const mode = process.env.ORBIT_EDITOR_VIEWPORT ?? "desktop";
     const playback = process.env.ORBIT_EDITOR_PLAYBACK !== "0";
+    const countRenders = process.env.ORBIT_EDITOR_RENDER_COUNTS === "1";
     assert.ok(Number.isInteger(repeats) && repeats >= 1 && repeats <= 5);
     assert.ok(Number.isInteger(idleMs) && idleMs >= 500 && idleMs <= 10000);
     assert.ok(["desktop", "mobile"].includes(mode));
@@ -27,7 +28,7 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
             await cdp.send("Performance.enable");
             const metrics = async () => Object.fromEntries((await cdp.send("Performance.getMetrics")).metrics
                 .map(({ name, value }) => [name, value]));
-            await page.goto(baseUrl);
+            await page.goto(countRenders ? baseUrl + "/?orbit-render-counts=1" : baseUrl);
             const status = page.locator(".playback-toolbar").getByRole("status");
             const ready = () => status.filter({ hasText: /Ready/ }).waitFor({ timeout: 60000 });
             const play = page.getByRole("button", { name: "Play patch" });
@@ -69,7 +70,11 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
             const initialGeometry = await geometry();
             assert.ok(initialGeometry.zoom >= .249 && initialGeometry.zoom <= 4.001);
             const measurements = [];
+            const renderCounts = () => page.locator(".canvas-world [data-node-render-count]").evaluateAll(nodes =>
+                Object.fromEntries(nodes.map(node => [node.dataset.nodeId, Number(node.dataset.nodeRenderCount)])));
+            if (countRenders) assert.equal(Object.keys(await renderCounts()).length, profile.nodes);
             async function measure(state, workload, action) {
+                const beforeRenders = countRenders ? await renderCounts() : null;
                 const before = await metrics();
                 await page.evaluate(() => {
                     const gaps = [], longTasks = [];
@@ -105,7 +110,20 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                 const after = await metrics();
                 const delta = name => Number.isFinite(before[name]) && Number.isFinite(after[name]) ?
                     after[name] - before[name] : null;
-                measurements.push({ state, workload, elapsedMs: sample.elapsedMs,
+                let nodeRenders = null;
+                if (beforeRenders) {
+                    const afterRenders = await renderCounts();
+                    assert.equal(Object.keys(afterRenders).length, profile.nodes);
+                    const changes = Object.entries(afterRenders).map(([id, count]) => count - beforeRenders[id]);
+                    assert.ok(changes.every(value => Number.isInteger(value) && value >= 0));
+                    nodeRenders = { total: changes.reduce((a, b) => a + b, 0), affectedNodes: changes.filter(n => n > 0).length };
+                    if (state === "stopped" && workload === "pan")
+                        assert.equal(nodeRenders.total, 0, "Pure canvas pan must not rerender node frames");
+                    if (state === "stopped" && workload === "node-drag")
+                        assert.ok(nodeRenders.affectedNodes > 0 && nodeRenders.affectedNodes <= 2,
+                            "Dragging must rerender only moved/previously selected frames");
+                }
+                measurements.push({ state, workload, nodeRenders, elapsedMs: sample.elapsedMs,
                     frameGapsMs: sample.gaps.length ? summarize(sample.gaps) : null,
                     observedFps: sample.gaps.length ? 1000 * sample.gaps.length / sample.gaps.reduce((a, b) => a + b, 0) : null,
                     longTasksMs: sample.longTasks,
@@ -234,7 +252,7 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
         environment: { chrome: browser.version(), node: process.version, headless, muted: true,
             platform: platform(), release: release(), arch: arch(), cpuModel: cpus()[0]?.model ?? null, logicalCpuCount: cpus().length },
         settings: { repeats, idleMs, viewport, mode, playback, input: "scripted mouse; mobile is viewport emulation",
-            monitorOpen: false, warmupMs: 1000, cdpDurationUnit: "seconds" },
+            monitorOpen: false, countRenders, warmupMs: 1000, cdpDurationUnit: "seconds" },
         limitations: ["rAF callback gaps are not GPU paint timings", "CDP durations are renderer counters, not component render counts",
             "No physical Android, touch, or audio underrun measurement", "Import wall time includes file selection and dialog dismissal"],
         rows }, null, 2) + "\n");

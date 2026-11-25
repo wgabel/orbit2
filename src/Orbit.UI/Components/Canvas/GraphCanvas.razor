@@ -40,8 +40,9 @@
                           OnUpdate="UpdateNote" OnDuplicate="@(() => NoteAction(() => State.DuplicateNote(note.Id)))"
                           OnDelete="@(() => NoteAction(() => State.DeleteNote(note.Id)))" />
             }
-            @foreach (var node in Snapshot.Graph.Nodes.OrderBy(node => node.TypeKey is InputRack.NodeType or OutputRack.NodeType ? 1 : 0))
+            @foreach (var entry in NodeProjection)
             {
+                var node = entry.Node;
                 <NodeFrame @key="node.Id" Node="@node" Position="@DisplayNodePosition(node.Id)" PatchId="@PatchId" GraphId="@Snapshot.GraphId"
                            Documentation="@Snapshot.NodeDescriptions.GetValueOrDefault(node.Id)"
                            ShowSecondaryDocumentation="@(Snapshot.ShowSecondaryAnnotations || Snapshot.SelectedNodeIds.Contains(node.Id))"
@@ -50,8 +51,8 @@
                            Visualization="@Snapshot.VisualizationFor(node.Id)" VisualizationExpanded="@(Snapshot.ExpandedVisualizationNodeId == node.Id)"
                            OnVisualizationChange="@(settings => { State.SetVisualization(node.Id, settings); })"
                            OnExpandVisualization="@(() => { State.SetExpandedVisualization(Snapshot.ExpandedVisualizationNodeId == node.Id ? null : node.Id); })"
-                           Role="@NodeRoleClassifier.Classify(Snapshot.Graph, node)"
-                           Selected="@Snapshot.SelectedNodeIds.Contains(node.Id)" Expanded="@nodeExpansion.IsExpanded(node)" OnToggleExpand="ToggleNodeExpand" PendingSource="@pendingSource"
+                           Role="@entry.Role" CountRenders="@CountNodeRenders"
+                           Selected="@Snapshot.SelectedNodeIds.Contains(node.Id)" Expanded="@nodeExpansion.IsExpanded(node)" OnToggleExpand="ToggleNodeExpand" PendingSource="@(pendingSource?.NodeId == node.Id ? pendingSource : null)"
                            WireTargets="@(wireAim is not null ? wireTargetAddresses : null)"
                            OnHeaderPointerDown="@(args => BeginNode(node.Id, args))"
                            OnBodyPointerDown="@(args => BeginNodeSurfaceAsync(node.Id, args))"

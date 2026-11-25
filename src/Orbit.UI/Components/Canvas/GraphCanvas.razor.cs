@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Orbit.Application.Graphs.Commands;
+using Orbit.Application.Graphs.Snapshots;
+using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Ports;
 using Orbit.Domain.Parameters;
 using Orbit.Domain.Timing;
@@ -17,6 +19,7 @@ namespace Orbit.UI.Components.Canvas;
 public partial class GraphCanvas : IAsyncDisposable
 {
     [Inject] private IJSRuntime JavaScript { get; set; } = default!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
     [Parameter, EditorRequired] public ICanvasStateService State { get; set; } = default!;
     [Parameter, EditorRequired] public GraphElementCounts PatchCounts { get; set; }
     [Parameter] public OutlineFocusRequest? OutlineFocus { get; set; }
@@ -190,6 +193,27 @@ public partial class GraphCanvas : IAsyncDisposable
     }
 
     private CanvasStateSnapshot Snapshot => State.Snapshot;
+    private GraphSnapshot? projectedGraph;
+    private IReadOnlyList<(GraphNodeSnapshot Node, NodeVisualRole Role)> nodeProjection = [];
+    private bool? countNodeRenders;
+    private bool CountNodeRenders => countNodeRenders ??= new Uri(NavigationManager.Uri).Query
+        .TrimStart('?').Split('&').Contains("orbit-render-counts=1", StringComparer.Ordinal);
+
+    private IReadOnlyList<(GraphNodeSnapshot Node, NodeVisualRole Role)> NodeProjection
+    {
+        get
+        {
+            var graph = Snapshot.Graph;
+            if (!ReferenceEquals(projectedGraph, graph))
+            {
+                nodeProjection = graph.Nodes
+                    .OrderBy(node => node.TypeKey is InputRack.NodeType or OutputRack.NodeType ? 1 : 0)
+                    .Select(node => (node, NodeRoleClassifier.Classify(graph, node))).ToArray();
+                projectedGraph = graph;
+            }
+            return nodeProjection;
+        }
+    }
     private string? Hint => pendingSource is not null
         ? "Connect to an input · Esc to cancel"
         : marqueeMode ? "Drag background to select · Ctrl/Meta adds · Esc cancels"

@@ -150,6 +150,7 @@ jobs:
           node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-report.json" editor-50 editor-200
           ORBIT_EDITOR_PLAYBACK=0 node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-500-stopped.json" editor-500
           ORBIT_EDITOR_VIEWPORT=mobile ORBIT_EDITOR_PLAYBACK=0 node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-mobile-stopped.json" editor-200
+          ORBIT_EDITOR_RENDER_COUNTS=1 ORBIT_EDITOR_PLAYBACK=0 node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-render-counts.json" editor-50
       - name: Upload editor benchmark baseline
         uses: actions/upload-artifact@v4
         with:

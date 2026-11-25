@@ -55,6 +55,45 @@ public partial class NodeFrame
     [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();
     [Parameter] public Orbit.Application.Models.EnvelopePlayhead? Playhead { get; set; }
 
+    // A frame is keyed by node ID within a single canvas. Parent callback
+    // closures address that same node and canvas throughout its lifetime.
+    // Child components retain their independent event-driven render lifecycle.
+    [Parameter] public bool CountRenders { get; set; }
+    private long renderCount;
+    private RenderInputs? rendered;
+
+    private readonly record struct RenderInputs(
+        GraphNodeSnapshot Node, Guid PatchId, Guid GraphId, CanvasPoint Position,
+        SavedNodeDescription? Documentation, bool ShowSecondaryDocumentation,
+        bool DocumentationEditDisabled, bool HelpOpen, NodeVisualizationSettings Visualization,
+        bool VisualizationExpanded, NodeVisualRole Role, bool Selected, bool Expanded,
+        double BeatsPerMinute, int? SampleRate, PortAddress? PendingSource,
+        IReadOnlyDictionary<ParameterAddress, ParameterRange?> Ranges,
+        IReadOnlyDictionary<ParameterAddress, double> Values,
+        Orbit.Application.Models.EnvelopePlayhead? Playhead, long PresetCatalogRevision,
+        bool CountRenders);
+
+    private RenderInputs CurrentInputs => new(Node, PatchId, GraphId, Position, Documentation,
+        ShowSecondaryDocumentation, DocumentationEditDisabled, HelpOpen, Visualization,
+        VisualizationExpanded, Role, Selected, Expanded, BeatsPerMinute, SampleRate, PendingSource,
+        ModulationRanges, EffectiveValues, Playhead, PresetCatalogRevision, CountRenders);
+
+    // Wire candidates may change in place. Conservatively render both entry
+    // and exit until dedicated wire invalidation is implemented.
+    private bool renderedWithWireTargets;
+    protected override bool ShouldRender() =>
+        WireTargets is not null || renderedWithWireTargets || rendered != CurrentInputs;
+
+    private void RecordRender()
+    {
+        rendered = CurrentInputs;
+        renderedWithWireTargets = WireTargets is not null;
+        if (CountRenders) renderCount++;
+    }
+
+    private string? DiagnosticRenderCount => CountRenders
+        ? renderCount.ToString(CultureInfo.InvariantCulture) : null;
+
     private bool IsModulated(Guid id) => ModulationRanges.ContainsKey(new ParameterAddress(Node.Id, id));
     private ParameterRange? GetRange(Guid id) => ModulationRanges.GetValueOrDefault(new ParameterAddress(Node.Id, id));
     private double? GetEffective(Guid id) => EffectiveValues.TryGetValue(new ParameterAddress(Node.Id, id), out var value) ? value : null;
