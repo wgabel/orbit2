@@ -161,7 +161,7 @@ S1 initial tooling and expanded CI baseline merged; physical-device follow-up re
 
 <a id="7311-gpu-renderer"></a>
 
-- **7.3.11 — Evidence-first full GPU-rendered editor (planned):** target a fully WebGL-rendered visible editor, including expanded nodes and workspace controls, with minimal native browser adapters. Preserve the existing application and audio architecture. Full migration requires measured benefit, reviewed architecture/pattern decisions, regression coverage and owner go/no-go. See [mandatory design and migration contract](../editor/gpu-renderer.md).
+- **7.3.11 — Evidence-first full GPU-rendered editor (planned; design/roadmap [PR #145](https://github.com/wgabel/orbit2/pull/145)):** target a fully WebGL-rendered visible editor, including expanded nodes and workspace controls, with minimal native browser adapters. Preserve the existing application and audio architecture. Full migration requires measured benefit, reviewed architecture/pattern decisions, regression coverage and owner go/no-go. See [mandatory design and migration contract](../editor/gpu-renderer.md).
 
 | Slice | Depends on | Scope and acceptance / verification |
 | --- | --- | --- |
