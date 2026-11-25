@@ -104,7 +104,7 @@ The detailed implementation and usage contract lives in [performance.md](../qual
 - **7.3.8 — Device capacity diagnostic (planned):** build composition-like 50/200/500/1,000+ reachable-node benchmark tiers, repeatable mobile/desktop baselines, opt-in safe and bounded stress tests, local scoped results, and measured threshold calibration. Depends on 7.3.4 benchmark foundations and extends 7.3.6 reporting. [Capacity workflow](../quality/dsp-profiling.md#94-device-specific-capacity-and-reference-compositions-planned).
 
 
-- **7.3.9 — Large-patch editor responsiveness (planned; high priority):** fix the editor slowdown reported with a 191-node musical patch; the root cause is not yet measured. Reuse 7.3.3/7.3.4 facilities without waiting for 7.3.7/7.3.8. [Technical acceptance and benchmark contract](../quality/performance.md#large-patch-editor-responsiveness-739).
+- **7.3.9 — Large-patch editor responsiveness (planned; high priority; plan recorded in [PR #125](https://github.com/wgabel/orbit2/pull/125)):** fix the editor slowdown reported with a 191-node musical patch; the root cause is not yet measured. Reuse 7.3.3/7.3.4 facilities without waiting for 7.3.7/7.3.8. [Technical acceptance and benchmark contract](../quality/performance.md#large-patch-editor-responsiveness-739).
 
 ##### 7.3.9 delivery slices
 
