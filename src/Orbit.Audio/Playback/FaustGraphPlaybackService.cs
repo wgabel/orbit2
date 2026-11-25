@@ -76,6 +76,7 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
 
     public async Task PlayAsync(GraphSnapshot graph)
     {
+        graph = graph.WithEffectiveMacroBaseValues();
         if (active.ContainsKey(graph.Id))
             throw new InvalidOperationException("Graph playback is already active.");
         var diagnostics = collectDiagnostics ? new GraphPerformanceTracker(graph.Id, graph.Revision) : null;
@@ -130,6 +131,9 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
                 diagnostics?.Skipped(graph.Revision);
                 return playback.Result;
             }
+
+            // Use the same resolved bases for controls, host patterns and note actions.
+            graph = graph.WithEffectiveMacroBaseValues();
 
             // Compiling a different topology can still produce identical DSP,
             // e.g. adding an unconnected node. Preserve the existing voice then.

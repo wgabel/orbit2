@@ -1,9 +1,10 @@
 using Orbit.Domain.Graphs;
+using Orbit.Domain.Parameters;
 
 namespace Orbit.Domain.Nodes.Composites;
 
 /// <summary>Immutable per-instance macro configuration. Values are normalized;
-/// manual child parameter values remain independent until runtime lowering is added.</summary>
+/// manual child parameter values remain independent of the mapped runtime base.</summary>
 public sealed class CompositeMacroDefinition
 {
     public CompositeMacroDefinition(Guid id, string name, double defaultValue, double baseValue,
@@ -26,6 +27,10 @@ public sealed class CompositeMacroDefinition
     public double DefaultValue { get; }
     public double BaseValue { get; }
     public CompositeMacroMapping Mapping { get; }
+
+    /// <summary>Resolve the stored base through the same curve used by one-shot mappings.</summary>
+    public IEnumerable<(ParameterAddress Target, double Value)> ResolveBaseValues() =>
+        Mapping.Bindings.Select(binding => (binding.Target, CompositeMacroMapping.Map(binding, BaseValue)));
 
     internal bool HasSameConfiguration(CompositeMacroDefinition other) =>
         Id == other.Id && Name == other.Name && DefaultValue == other.DefaultValue &&

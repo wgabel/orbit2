@@ -7,6 +7,7 @@ using Orbit.Audio.Compilation;
 using Orbit.Audio.Playback;
 using Orbit.Domain.Parameters;
 using Orbit.Domain.Nodes;
+using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Nodes.Processors;
 using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Ports;
@@ -335,6 +336,46 @@ public sealed class FaustGraphPlaybackServiceTests
         Assert.Single(engine.Replacements);
         Assert.Single(engine.Updates);
         await service.StopAsync(patch.Session.GraphId);
+        await playing;
+    }
+
+    [Fact]
+    public async Task PersistentMacroUpdatesAndRemovalReuseTheVoiceAndRestoreManualBase()
+    {
+        using var patch = new NestedFaustPatch();
+        var session = patch.Session;
+        var compiler = FaustGraphCompiler.CreateBuiltIn();
+        var engine = new RecordingEngine();
+        var service = new FaustGraphPlaybackService(compiler, engine);
+        var wrapper = session.Snapshot.GetGraph(patch.OuterId).Nodes.Single(n => n.Composite?.Graph.Id == patch.ChildId);
+        var id = Guid.NewGuid();
+        var mapping = new CompositeMacroMapping([new(patch.Frequency, 200, 400)]);
+        void SetMacro(double value) => session.Execute(new ReplaceCompositeMacrosCommand(patch.OuterId, wrapper.Id,
+            [new(id, "Size", 0.5, value, mapping)]));
+        SetMacro(0.5);
+        var control = compiler.Compile(session.Snapshot).Controls.Single(c => c.GraphId == patch.ChildId && c.Address == patch.Frequency);
+        var playing = service.PlayAsync(session.Snapshot);
+        Assert.Equal(300, engine.Request!.Parameters[control.Name]);
+
+        SetMacro(1);
+        await service.UpdateAsync(session.Snapshot);
+        Assert.Equal(400, Assert.Single(engine.Updates)[control.Name]);
+        session.Execute(new SetParameterValueCommand(patch.ChildId, patch.Frequency, 330));
+        await service.UpdateAsync(session.Snapshot);
+        Assert.Single(engine.Updates); // Editing the manual value is inaudible while owned.
+        session.Execute(new ReplaceCompositeMacrosCommand(patch.OuterId, wrapper.Id, []));
+        await service.UpdateAsync(session.Snapshot);
+        Assert.Equal(330, engine.Updates.Last()[control.Name]);
+        session.Undo();
+        await service.UpdateAsync(session.Snapshot);
+        Assert.Equal(400, engine.Updates.Last()[control.Name]);
+        session.Redo();
+        await service.UpdateAsync(session.Snapshot);
+        Assert.Equal(330, engine.Updates.Last()[control.Name]);
+        Assert.Equal(4, engine.Updates.Count);
+        Assert.Empty(engine.Replacements);
+        Assert.Equal(1, engine.PlayCount);
+        await service.StopAsync(session.GraphId);
         await playing;
     }
 
