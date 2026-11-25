@@ -8,14 +8,17 @@ import { setTimeout as delay } from "node:timers/promises";
 import { platform, release, arch, cpus } from "node:os";
 import { summarize } from "./benchmark-metrics.mjs";
 
-const [directory, outputFile, ...requested] = process.argv.slice(2);
+import { runEditorBenchmark } from "./benchmark-editor.mjs";
+
+const editorMode = process.argv[2] === "--editor";
+const [directory, outputFile, ...requested] = process.argv.slice(editorMode ? 3 : 2);
 assert.ok(directory && outputFile && process.env.ORBIT_PLAYWRIGHT_DIR && process.env.ORBIT_CHROME,
     "Usage: ORBIT_PLAYWRIGHT_DIR=... ORBIT_CHROME=... node scripts/benchmark-live.mjs <fixtures> <report.json> [profile IDs]");
 const seconds = Number(process.env.ORBIT_BENCH_LIVE_SECONDS ?? 10);
 assert.ok(Number.isInteger(seconds) && seconds >= 5 && seconds <= 120);
 const fixture = JSON.parse(await readFile(join(directory, "fixtures.json"), "utf8"));
 assert.equal(fixture.fixtureVersion, 1);
-const ids = requested.length ? requested : ["sine-bank-1", "sine-bank-10"];
+const ids = requested.length ? requested : editorMode ? ["editor-50", "editor-200", "editor-500"] : ["sine-bank-1", "sine-bank-10"];
 assert.ok(ids.length <= 8 && new Set(ids).size === ids.length);
 const profiles = ids.map(id => {
     const profile = fixture.fixtures.find(f => f.id === id && !f.pairedMono);
@@ -40,6 +43,9 @@ let browser;
 try {
     const headless = process.env.ORBIT_BENCH_HEADFUL !== "1";
     browser = await chromium.launch({ executablePath: process.env.ORBIT_CHROME, headless, args: ["--mute-audio"] });
+    if (editorMode) {
+        await runEditorBenchmark({ browser, baseUrl: "http://127.0.0.1:" + server.address().port, directory, outputFile, profiles, headless });
+    } else {
     const rows = [];
     for (const profile of profiles) {
         const context = await browser.newContext();
@@ -181,6 +187,7 @@ try {
         environment: { chrome: browser.version(), node: process.version, headless, muted: true,
             platform: platform(), release: release(), arch: arch(), cpuModel: cpus()[0]?.model ?? null, logicalCpuCount: cpus().length },
         settings: { seconds, sampleCadenceMs: 1000, plotViews: 0, monitorOpenDuringRendererSampling: false }, rows }, null, 2) + "\n");
+    }
 } finally {
     await browser?.close();
     await new Promise(done => server.close(done));
