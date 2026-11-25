@@ -68,7 +68,9 @@ export async function measureCompositeResources({ page, canvas, status, composit
         await openChild();
         // Use an in-viewport modulated carrier, not an arbitrary offscreen
         // oscillator: IntersectionObserver deliberately releases hidden plots.
-        const id = await canvas.evaluate(view => {
+        const candidate = await page.waitForFunction(() => {
+            const view = document.querySelector(".canvas-viewport");
+            if (!view) return null;
             const bounds = view.getBoundingClientRect();
             return [...view.querySelectorAll("article.node-compactable[data-node-id]")]
                 .filter(node => node.querySelector('.parameter-slider input[aria-label="Frequency"]') &&
@@ -80,7 +82,9 @@ export async function measureCompositeResources({ page, canvas, status, composit
                     return r.left >= bounds.left && r.right <= bounds.right &&
                         r.top >= bounds.top && r.bottom + 80 <= bounds.bottom;
                 })?.dataset.nodeId ?? null;
-        });
+        }, null, { timeout: 60000 });
+        const id = await candidate.jsonValue();
+        await candidate.dispose();
         assert.ok(id, "No visible modulated carrier available for resource probe");
         const node = canvas.locator(`article[data-node-id="${id}"]`);
         const compact = node.locator(".node-visualization-panel");
