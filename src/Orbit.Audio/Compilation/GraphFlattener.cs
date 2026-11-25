@@ -19,6 +19,7 @@ internal static class GraphFlattener
     public static Result Flatten(GraphSnapshot root)
     {
         ArgumentNullException.ThrowIfNull(root);
+        root = root.WithEffectiveMacroBaseValues();
         var nodes = new List<GraphNodeSnapshot>();
         var edges = new List<SignalConnection>();
         var origins = new Dictionary<Guid, NodeOrigin>();

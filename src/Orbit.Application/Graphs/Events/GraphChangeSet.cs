@@ -9,5 +9,5 @@ public sealed record GraphChangeSet(
 {
     public GraphSnapshot ChangedGraph => Snapshot.GetGraph(GraphId);
     public long Revision => Snapshot.Revision;
-    public bool TopologyChanged => Events.Any(graphEvent => graphEvent is not (ParameterChanged or NodeMutedChanged or NodeBypassedChanged));
+    public bool TopologyChanged => Events.Any(graphEvent => graphEvent is not (ParameterChanged or NodeMutedChanged or NodeBypassedChanged or CompositeMacrosChanged));
 }

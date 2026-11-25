@@ -42,6 +42,40 @@ public sealed class NestedFaustGraphTests
     }
 
     [Fact]
+    public void MacroBasesResolveInNestedGraphsWithoutChangingManualValuesOrDspSource()
+    {
+        using var patch = new NestedFaustPatch();
+        var session = patch.Session;
+        var compiler = FaustGraphCompiler.CreateBuiltIn();
+        var original = session.Snapshot;
+        var source = compiler.Compile(original).Source;
+        var wrapper = original.GetGraph(patch.OuterId).Nodes.Single(n => n.Composite?.Graph.Id == patch.ChildId);
+        var oscillator = original.GetGraph(patch.ChildId).GetNode(patch.Frequency.NodeId);
+        var pulse = oscillator.Parameters.Single(p => p.Definition.Key == OscillatorGenerator.PulseWidthKey);
+        var pulseAddress = new ParameterAddress(oscillator.Id, pulse.Id);
+        var macro = new CompositeMacroDefinition(Guid.NewGuid(), "Size", 0, 0.5,
+            new([new(patch.Frequency, 440, 240, 2), new(pulseAddress, 0.2, 0.4)]));
+        var change = session.Execute(new ReplaceCompositeMacrosCommand(patch.OuterId, wrapper.Id, [macro])).ChangeSet!;
+        Assert.False(change.TopologyChanged);
+        var authored = session.Snapshot;
+        var resolved = authored.WithEffectiveMacroBaseValues().GetGraph(patch.ChildId).GetNode(oscillator.Id);
+        Assert.Equal(440, authored.GetGraph(patch.ChildId).GetNode(oscillator.Id).Parameters.Single(p => p.Id == patch.Frequency.ParameterId).BaseValue);
+        Assert.Equal(390, resolved.Parameters.Single(p => p.Id == patch.Frequency.ParameterId).BaseValue);
+        Assert.Equal(pulse.BaseValue, resolved.Parameters.Single(p => p.Id == pulse.Id).BaseValue);
+        var compiled = compiler.Compile(authored);
+        Assert.Equal(source, compiled.Source);
+        Assert.Equal(390, compiled.Controls.Single(c => c.GraphId == patch.ChildId && c.Address == patch.Frequency).InitialValue);
+        Assert.DoesNotContain(compiled.Controls, c => c.GraphId == patch.ChildId && c.Address == pulseAddress);
+        Assert.Equal(new ParameterRange(290, 490),
+            new GraphModulationRangeEstimator(BuiltInFaustEmitters.Create()).Estimate(authored, patch.ChildId)[patch.Frequency]!.Value);
+
+        var waveform = oscillator.Parameters.Single(p => p.Definition.Key == "waveform");
+        session.Execute(new SetParameterValueCommand(patch.ChildId, new(oscillator.Id, waveform.Id), (int)OscillatorWaveform.Square));
+        Assert.Equal(0.3, compiler.Compile(session.Snapshot).Controls.Single(c => c.GraphId == patch.ChildId && c.Address == pulseAddress).InitialValue, 10);
+        Assert.Equal(pulse.BaseValue, session.Snapshot.GetGraph(patch.ChildId).GetNode(oscillator.Id).Parameters.Single(p => p.Id == pulse.Id).BaseValue);
+    }
+
+    [Fact]
     public void UnconnectedBoundaryProducesZeroAndUnusedCompositeDoesNotAffectProgram()
     {
         using var patch = new NestedFaustPatch();
