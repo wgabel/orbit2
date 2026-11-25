@@ -7,6 +7,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { platform, release, arch, cpus } from "node:os";
 import { summarize } from "./benchmark-metrics.mjs";
 import { verifyFoldedTelemetry } from "./benchmark-folded-telemetry.mjs";
+import { measureCompositeResources } from "./benchmark-composite-resources.mjs";
 
 export async function runEditorBenchmark({ browser, baseUrl, directory, outputFile, profiles, headless }) {
     const repeats = Number(process.env.ORBIT_EDITOR_REPEATS ?? 3);
@@ -15,6 +16,10 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
     const playback = process.env.ORBIT_EDITOR_PLAYBACK !== "0";
     const countRenders = process.env.ORBIT_EDITOR_RENDER_COUNTS === "1";
     const expansionMatrix = process.env.ORBIT_EDITOR_EXPANSION_MATRIX === "1";
+    const compositeResources = process.env.ORBIT_EDITOR_COMPOSITE_RESOURCES === "1";
+    if (compositeResources) assert.ok(playback && !countRenders && !expansionMatrix &&
+        mode === "desktop" && profiles.every(profile => profile.composite),
+        "Composite resource probe requires desktop composite playback without timing instrumentation");
     assert.ok(Number.isInteger(repeats) && repeats >= 1 && repeats <= 5);
     assert.ok(Number.isInteger(idleMs) && idleMs >= 500 && idleMs <= 10000);
     assert.ok(["desktop", "mobile"].includes(mode));
@@ -345,7 +350,7 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
             // Desktop pointer workloads on a narrow viewport are not physical
             // touch/pinch measurements; label that limitation in the report.
             await runWorkloads("stopped");
-            let initialPlayWallMs = null, foldedTelemetry = null;
+            let initialPlayWallMs = null, foldedTelemetry = null, resourceLifecycle = null;
             if (playback) {
                 const start = performance.now();
                 await play.click();
@@ -359,6 +364,8 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                         null, { timeout: 60000 });
                 }
                 await runWorkloads("playing");
+                if (compositeResources) resourceLifecycle = await measureCompositeResources({
+                    page, canvas, status, composite: profile.composite });
                 if (countRenders && !expansionMatrix) {
                     foldedTelemetry = await verifyFoldedTelemetry({ page, canvas, status, renderCounts, idleMs });
                     console.log("EDITOR FOLDED TELEMETRY " + JSON.stringify(foldedTelemetry));
@@ -373,7 +380,7 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
             const finalGeometry = await geometry();
             assert.equal(finalGeometry.renderedNodes, profile.nodes);
             assert.equal(finalGeometry.renderedConnections, profile.connections);
-            rows.push({ ...profile, fingerprint, importWallMs, initialPlayWallMs, initialGeometry, finalGeometry, measurements, foldedTelemetry });
+            rows.push({ ...profile, fingerprint, importWallMs, initialPlayWallMs, initialGeometry, finalGeometry, measurements, foldedTelemetry, resourceLifecycle });
             console.log(profile.id + ": " + initialGeometry.intersectingNodes + " viewport-intersecting nodes, " +
                 measurements.length + " measured interaction windows");
             // Log compact results as well as preserving the detailed artifact.
@@ -395,12 +402,12 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
         kind: "external-editor-benchmark", revision: process.env.ORBIT_REVISION ?? process.env.GITHUB_SHA ?? null,
         timestampUtc: new Date().toISOString(),
         harnessFingerprint: createHash("sha256").update(JSON.stringify(await Promise.all(
-            ["benchmark-editor.mjs", "benchmark-live.mjs", "benchmark-metrics.mjs", "benchmark-folded-telemetry.mjs"]
+            ["benchmark-editor.mjs", "benchmark-live.mjs", "benchmark-metrics.mjs", "benchmark-folded-telemetry.mjs", "benchmark-composite-resources.mjs"]
                 .map(async name => [name, createHash("sha256").update(await readFile(new URL(name, import.meta.url))).digest("hex")])))).digest("hex"),
         environment: { chrome: browser.version(), node: process.version, headless, muted: true,
             platform: platform(), release: release(), arch: arch(), cpuModel: cpus()[0]?.model ?? null, logicalCpuCount: cpus().length },
         settings: { repeats, idleMs, viewport, mode, playback, input: "scripted mouse; mobile is viewport emulation",
-            monitorOpen: false, countRenders, expansionMatrix, warmupMs: 1000, cdpDurationUnit: "seconds" },
+            monitorOpen: false, countRenders, expansionMatrix, compositeResources, warmupMs: 1000, cdpDurationUnit: "seconds" },
         limitations: ["rAF callback gaps are not GPU paint timings", "CDP durations are renderer counters, not component render counts",
             "No physical Android, touch, or audio underrun measurement", "Import wall time includes file selection and dialog dismissal",
             "Parameter edits may use scripted focus on an occluded in-viewport editor; access method is reported and does not establish pointer usability"],
