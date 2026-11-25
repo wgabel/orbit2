@@ -14,7 +14,19 @@ If scope changes, report only new routes, newly consulted paths and changed cons
 
 ## Completion (every task)
 
-Reuse the initialization declaration; add only new paths and routes unless handing off to a fresh context. Include result/status, PR or commit if any, actual verification and limitations, documentation discoverability (or "No issues found"), and next slice/blocker when applicable. A delegated agent reports to its coordinator; the coordinator consolidates actual evidence and never infers a read from another agent's silence. Each delegate must still initialize independently. No PR report is required for read-only tasks without a PR.
+Reuse the initialization declaration; add only new paths and routes unless handing off to a fresh context. Include result/status, PR or commit if any, actual verification and limitations, documentation discoverability (or "No issues found"), and next slice/blocker when applicable. A delegated agent reports to its coordinator; the coordinator consolidates actual evidence and never infers a read from another agent's silence. Each delegate must still initialize independently. No machine-readable PR report is required for read-only tasks without a PR; the user-facing report is still mandatory for **every Orbit 2 response**, including short conversational follow-ups.
+
+### Compact response evidence (including no-PR answers)
+
+Append a concise evidence footer to each project response. Include the selected route IDs, checked branch/revision (short SHA is sufficient for conversational display), actual repository-relative documentation paths consulted, and discovery status or limitations. Cite the authoritative file/section or reference asset in the answer itself for existing features, experiments or design decisions. A citation to an index alone is insufficient when the underlying owner was required. Do not claim source verification without reading the source.
+
+For a same-task follow-up at a confirmed unchanged revision, explicitly label any previously consulted documents reused from the current context, and list new reads separately; a compact shared path prefix may reduce repetition but must identify the actual files. Do not reuse prior evidence across a new task, session or changed revision without reinitializing. If access fails, report the failure and alternative retrieval attempts before answering the affected question; clearly label any general/unverified explanation, and identify missing documents. Do not make unsupported repository-state claims.
+
+Illustrative footer (not an attestation of actual reads):
+
+> **Docs:** `sound-foundations`; main @ `<checked SHA>`; consulted: `AGENTS.md`, `docs/agents/{contributor-instructions.md,task-routing.json,compliance-reports.md,music-instructions.md,sound-design-instructions.md}`, `docs/README.md`, `docs/examples/foundations/{catalogue.md,breathing-harmonic-drone.md}`. Discovery: owner located; no issues found.
+
+List all actually applicable prerequisites in a real report, not just those in this illustration. Keep the existing full PR evidence format for repository changes; it does not replace the conversational report.
 
 ## Pull request evidence
 
@@ -42,7 +54,7 @@ Local commands: `node --test tests/tooling/AgentCompliance.test.mjs` and `node s
 
 Repository owners can require the status check named **Agent documentation compliance** in the main branch's GitHub ruleset or branch protection. Until configured as required, a failed check does not necessarily prevent a merge. Keep existing build/test checks required as appropriate. Protect review of changes to the workflow, checker and route policy themselves; a PR can modify its own checker, and this is not an adversarial attestation system.
 
-This check verifies structural consistency, not actual reading, understanding, semantic completeness, claimed test execution or owner authorization. It cannot infer every task category from paths; reviewers and agents must still apply the semantic routes. Read-only work without a PR remains governed by initialization and handoff policy.
+This check verifies structural consistency, not actual reading, understanding, semantic completeness, claimed test execution or owner authorization. It cannot infer every task category from paths; reviewers and agents must still apply the semantic routes. Read-only work without a PR remains governed by initialization and handoff policy. The workflow cannot block or inspect a standalone conversational response; its evidence footer is an agent obligation, not independently enforced proof.
 
 ## Compact examples
 
