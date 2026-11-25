@@ -37,7 +37,7 @@ Use existing C# DI and project dependency directions. JS/TypeScript choice and m
 
 ## GPU resource and batching strategy
 
-The mandatory companion [GPU rendering efficiency and resource management guide](gpu-renderer-optimization.md) records the Unity lesson, native PixiJS mechanisms, resource ownership, invalidation, render scheduling and diagnostic requirements. S3 must produce a resource ADR and S4b must evaluate the specific mechanisms with controlled paired measurements before S5 approval. Prefer native engine features, shared assets and geometry, and bounded cache policies; do not add a custom batcher or per-node texture cache by default.
+The mandatory companion [GPU rendering efficiency and resource management guide](gpu-renderer-optimization.md) records the Unity lesson, native PixiJS mechanisms, resource ownership, invalidation, render scheduling and diagnostic requirements. S3 must produce a resource ADR and S4c must evaluate the specific mechanisms with controlled paired measurements before S5 approval. Prefer native engine features, shared assets and geometry, and bounded cache policies; do not add a custom batcher or per-node texture cache by default.
 
 ## Benchmark, parity and migration gates
 
