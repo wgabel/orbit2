@@ -103,6 +103,10 @@ The existing Edit notes panel exposes a labeled native numeric input for populat
 
 In the existing Edit notes panel, a populated Notes-mode step exposes a labeled native select with Default and 0–100% options. Mouse/touch or native keyboard selection commits through the normal validated parameter edit command; Undo/Redo restores the saved slot value. Focus in the select excludes piano capture, recording disables editing, and Rest/Tie or Pitch-only mode hides the control. No new gestures or node layout changes. Source: `PerformanceKeyboard.razor`; regression: `tests/browser/PublishedPlaybackSmoke.mjs` (desktop and narrow viewport).
 
-### Note Sequencer: selected note timing (in review, [PR #119](https://github.com/wgabel/orbit2/pull/119))
+### Note Sequencer: selected note timing (merged, [PR #119](https://github.com/wgabel/orbit2/pull/119))
 
 In Edit notes, a populated Notes-mode slot exposes a labeled native Timing offset select and a calculated millisecond readout. Pointer, touch and native keyboard selection use the existing validated parameter edit path and undo/redo; input focus excludes piano capture. Recording disables editing and Rest/Tie or Pitch-only hides the control. No new gestures or alternate mobile editing path. Source: `PerformanceKeyboard.razor`; regression: `tests/browser/PublishedPlaybackSmoke.mjs`.
+
+### Note Sequencer: Humanize tab (in review, [PR #121](https://github.com/wgabel/orbit2/pull/121))
+
+The existing melody editor tab bar opens Humanize. Native select/number inputs configure timing direction, amount, velocity variation, seed and selected-step/range/whole-pattern scope. Apply humanization is an explicit button; changing inputs does not edit the graph. Disabled during recording, in Pitch-only mode (no controls), on invalid or empty ranges and at zero amounts. One undo/redo entry restores all changed values. Editable focus follows the existing keyboard exclusion policy; no new gestures or global shortcuts. Source: `PerformanceKeyboard.razor`, `GraphWorkspace.razor(.cs)`; regression: `tests/browser/PublishedPlaybackSmoke.mjs`.

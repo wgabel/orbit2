@@ -541,6 +541,14 @@ public partial class GraphWorkspace : IAsyncDisposable
             Execute(new SetPitchPatternStepsCommand(graphId, nodeId, new int[NoteSequencerGenerator.Capacity]));
     }
 
+    private bool HumanizePitchPattern(Guid graphId, Guid nodeId, int first, int count, PitchHumanization profile)
+    {
+        if (disposed || performanceAddress != (graphId, nodeId) || PerformanceTarget is not { } target ||
+            target.Id != nodeId || target.TypeKey != NoteSequencerGenerator.NodeType)
+            return false;
+        return Execute(new HumanizePitchPatternCommand(graphId, nodeId, first, count, profile));
+    }
+
     private bool CommitPitchTake(Guid graphId, Guid nodeId, PitchRecordingTake take)
     {
         if (disposed || performanceAddress != (graphId, nodeId) || PerformanceTarget is not { } target || target.Id != nodeId)
