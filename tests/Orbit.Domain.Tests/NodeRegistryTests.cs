@@ -18,7 +18,7 @@ public sealed class NodeRegistryTests
     {
         var registry = BuiltInNodes.CreateRegistry();
 
-        Assert.Equal(29, registry.RegisteredTypes.Count);
+        Assert.Equal(30, registry.RegisteredTypes.Count);
         foreach (var kind in Enum.GetValues<PhysicalSustainedKind>())
             Assert.IsType<PhysicalSustainedGenerator>(registry.Create(PhysicalSustainedGenerator.TypeFor(kind)));
         Assert.IsType<PhysicalPluckGenerator>(registry.Create(PhysicalPluckGenerator.NodeType));
@@ -34,6 +34,7 @@ public sealed class NodeRegistryTests
         Assert.IsType<SignalToTriggerGenerator>(registry.Create(SignalToTriggerGenerator.NodeType));
         Assert.IsType<SignalToGateGenerator>(registry.Create(SignalToGateGenerator.NodeType));
         Assert.IsType<EnvelopeGenerator>(registry.Create(EnvelopeGenerator.NodeType));
+        Assert.IsType<DistortionProcessor>(registry.Create(DistortionProcessor.NodeType));
         Assert.IsType<ChorusProcessor>(registry.Create(ChorusProcessor.NodeType));
         Assert.IsType<ReverbProcessor>(registry.Create(ReverbProcessor.NodeType));
         Assert.IsType<DelayProcessor>(registry.Create(DelayProcessor.NodeType));

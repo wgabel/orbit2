@@ -114,6 +114,10 @@ public static class NodeHelpCatalog
                 "Adds a ringing resonance at a tuned frequency.",
                 ["Feed a short noisy impulse into Resonator for bell-like tones.",
                  "Combine several resonators tuned differently to create a richer texture."]),
+            ["processor.distortion"] = new(
+                "Adds harmonics by soft-clipping audio; Drive controls the input intensity and Wet output gain trims the affected signal.",
+                ["Connect a bass oscillator through Distortion and reduce Wet mix for subtle saturation.",
+                 "Modulate Drive with a slow LFO and filter the output to shape evolving harmonics."]),
             ["processor.chorus"] = new(
                 "Layers small modulated delays to thicken or animate a sound.",
                 ["Apply Chorus to an organ or pad to add gentle motion.",

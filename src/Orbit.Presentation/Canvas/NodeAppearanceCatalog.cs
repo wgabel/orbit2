@@ -38,6 +38,7 @@ public static class NodeAppearanceCatalog
         ["processor.delay"] = new(NodeCategory.Effects, "M3 5V19 M9 8V16 M15 10V14 M21 11V13", "Repeat a signal over time", "echo feedback"),
         ["processor.reverb"] = new(NodeCategory.Effects, "M2 12H5 M7 5V19 M11 8V16 M15 10V14 M19 11V13 M22 12H23", "Add space and reverberation", "room decay"),
         ["processor.resonator"] = new(NodeCategory.Effects, "M2 12 5 4 8 20 11 8 14 16 17 10 20 14 22 12", "Resonate at tuned frequencies", "modal ring"),
+        ["processor.distortion"] = new(NodeCategory.Effects, "M2 17 7 7H11L16 17H20L22 12", "Shape audio with soft clipping", "saturation overdrive waveshaping drive"),
         ["processor.chorus"] = new(NodeCategory.Effects, "M2 9Q7 1 12 9T22 9 M2 15Q7 7 12 15T22 15", "Layer modulated copies of a signal", "detune width"),
         ["processor.rotary-speaker"] = new(NodeCategory.Effects, "M12 3A9 9 0 1 1 3 12 M3 7V12H8 M12 7V17 M8 12H16", "Dual rotor amplitude and Doppler modulation", "leslie rotary organ speaker"),
         ["output.master"] = new(NodeCategory.Routing, "M3 9H7L13 4V20L7 15H3Z M16 8Q21 12 16 16 M19 5Q26 12 19 19", "Final audio output", "speaker master"),

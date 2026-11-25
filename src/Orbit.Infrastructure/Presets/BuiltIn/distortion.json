@@ -1,0 +1,67 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "distortion-gentle-color",
+    "nodeType": "processor.distortion",
+    "name": "Gentle Color",
+    "group": "Saturation",
+    "description": "A small wet contribution for restrained harmonic coloration; adjust trim to match the source.",
+    "parameters": {
+      "drive": 2,
+      "mix": 0.2,
+      "gain": 0.65
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "distortion-warm-parallel",
+    "nodeType": "processor.distortion",
+    "name": "Warm Parallel",
+    "group": "Saturation",
+    "description": "Parallel soft clipping with a reduced wet level for sustained tones.",
+    "parameters": {
+      "drive": 4,
+      "mix": 0.35,
+      "gain": 0.45
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "distortion-soft-rounding",
+    "nodeType": "processor.distortion",
+    "name": "Soft Rounding",
+    "group": "Saturation",
+    "description": "A fully wet low-drive setting for rounding peaks; compare levels before and after.",
+    "parameters": {
+      "drive": 1.5,
+      "mix": 1,
+      "gain": 0.8
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "distortion-driven-bass",
+    "nodeType": "processor.distortion",
+    "name": "Driven Bass",
+    "group": "Drive",
+    "description": "Higher drive and partial blend as a starting point for harmonically rich bass.",
+    "parameters": {
+      "drive": 8,
+      "mix": 0.65,
+      "gain": 0.4
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "distortion-dense-texture",
+    "nodeType": "processor.distortion",
+    "name": "Dense Texture",
+    "group": "Drive",
+    "description": "Strong soft clipping with conservative wet trim for experimental textures.",
+    "parameters": {
+      "drive": 16,
+      "mix": 1,
+      "gain": 0.35
+    }
+  }
+]
