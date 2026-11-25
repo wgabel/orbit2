@@ -193,27 +193,13 @@ public partial class GraphCanvas : IAsyncDisposable
     }
 
     private CanvasStateSnapshot Snapshot => State.Snapshot;
-    private GraphSnapshot? projectedGraph;
-    private IReadOnlyList<(GraphNodeSnapshot Node, NodeVisualRole Role)> nodeProjection = [];
+    private readonly NodeFrameProjection nodeProjection = new();
     private bool? countNodeRenders;
     private bool CountNodeRenders => countNodeRenders ??= new Uri(NavigationManager.Uri).Query
         .TrimStart('?').Split('&').Contains("orbit-render-counts=1", StringComparer.Ordinal);
 
-    private IReadOnlyList<(GraphNodeSnapshot Node, NodeVisualRole Role)> NodeProjection
-    {
-        get
-        {
-            var graph = Snapshot.Graph;
-            if (!ReferenceEquals(projectedGraph, graph))
-            {
-                nodeProjection = graph.Nodes
-                    .OrderBy(node => node.TypeKey is InputRack.NodeType or OutputRack.NodeType ? 1 : 0)
-                    .Select(node => (node, NodeRoleClassifier.Classify(graph, node))).ToArray();
-                projectedGraph = graph;
-            }
-            return nodeProjection;
-        }
-    }
+    private IReadOnlyList<NodeFrameProjection.Entry> NodeProjection =>
+        nodeProjection.Update(Snapshot.Graph, ModulationRanges);
     private string? Hint => pendingSource is not null
         ? "Connect to an input · Esc to cancel"
         : marqueeMode ? "Drag background to select · Ctrl/Meta adds · Esc cancels"
@@ -226,6 +212,7 @@ public partial class GraphCanvas : IAsyncDisposable
         if (ReferenceEquals(State, subscribedState)) return;
         subscription?.Dispose();
         subscribedState = State;
+        nodeProjection.Reset();
         nodeExpansion.Reset();
         measurement = null;
         portOffsets.Clear();
