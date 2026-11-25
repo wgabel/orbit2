@@ -27,6 +27,18 @@ If scope changes, resolve additional documentation requirements before affected 
 - Respect established architectural boundaries and stable identifiers, while remaining free to propose and implement justified architectural improvements within the user's requested scope. Documentation guides decisions; it is not a substitute for engineering judgment.
 - A new task may have no matching document or roadmap entry. Explore adjacent contracts and the code, design the new capability, and continue within the authorized scope. Extend the closest module or create a new one when that makes the knowledge easier to find; add or revise the index and roadmap if relevant. Do not require a separate documentation PR, a previously assigned milestone, or a fixed directory/template before beginning work.
 
+## Pull request title prefixes (mandatory)
+
+Every new PR must start with one or more of the uppercase, bracketed scope prefixes below, followed by a space and a concise description of what changes. Retain the roadmap slice ID after the prefix when applicable.
+
+- `[DOC]` — documentation, specifications, roadmap, agent instructions or other documentation-only work.
+- `[UI]` — user interface, editor, presentation, interaction, canvas, visualization or UI performance changes, including their supporting tests/tooling.
+- `[ENGINE]` — audio engine, DSP, Faust compilation, synthesis, modulation execution, musical timing, audio runtime or engine performance changes, including their supporting tests/tooling.
+
+Classify by actual PR scope, not the branch name or roadmap number. Use `[UI][ENGINE]` when both runtime areas change; split independently deliverable changes into focused PRs when practical. Ordinary supporting documentation and roadmap closeout in a code PR do not require an extra `[DOC]` prefix. For shared infrastructure or tests, use the runtime area(s) they support; documentation-only process changes use `[DOC]`. If the scope expands, update the title before handoff/merge to keep it accurate. This rule applies to all agents and every newly opened PR, including fixes and refactors; do not rename historical merged PRs.
+
+Examples: `[DOC] Define audio optimization test requirements`, `[UI] 7.3.9-S3b: gate live values by property pins`, `[ENGINE] 7.3.10-S6: suspend eligible idle voices`, `[UI][ENGINE] Scope telemetry at the playback bridge`.
+
 ## Domain policies
 
 The routing configuration requires [development instructions](development-instructions.md), [music instructions](music-instructions.md) and/or [sound-design instructions](sound-design-instructions.md) when their task routes apply. Read those policies before substantive work; apply their conditional obligations without loading unrelated feature documents. For a new task, select all applicable routes, including domain policies, even if the task spans areas.
