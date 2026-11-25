@@ -103,6 +103,26 @@ The detailed implementation and usage contract lives in [performance.md](../qual
 - **7.3.7 — Explainable performance health (planned):** centralized metric-specific Good/Caution/Critical and neutral statuses, with a short visible reason alongside each assessed value, cadence-relative UI targets and separate audio, DSP, editor and compiler summaries. No false health when measurements are missing/stale; integrate validated live load when available. [Targets](../quality/performance-metrics.md#31-suggested-health-thresholds) · [Health UX](../quality/performance-metrics.md#421-explainable-health-indicators-planned-737). Can proceed with existing measurements independently of live DSP profiling.
 - **7.3.8 — Device capacity diagnostic (planned):** build composition-like 50/200/500/1,000+ reachable-node benchmark tiers, repeatable mobile/desktop baselines, opt-in safe and bounded stress tests, local scoped results, and measured threshold calibration. Depends on 7.3.4 benchmark foundations and extends 7.3.6 reporting. [Capacity workflow](../quality/dsp-profiling.md#94-device-specific-capacity-and-reference-compositions-planned).
 
+
+- **7.3.9 — Large-patch editor responsiveness (planned; high priority):** fix the editor slowdown reported with a 191-node musical patch; the root cause is not yet measured. Reuse 7.3.3/7.3.4 facilities without waiting for 7.3.7/7.3.8. [Technical acceptance and benchmark contract](../quality/performance.md#large-patch-editor-responsiveness-739).
+
+##### 7.3.9 delivery slices
+
+All slices are Planned. Execute one focused slice per agent run; S1 establishes the baseline and may reorder S2–S7 according to measured costs. No change may remove in-viewport nodes, ports or required compact controls, alter graph/audio semantics, or introduce always-on diagnostic polling.
+
+| Slice | Dependency | Scope and acceptance / verification target |
+| --- | --- | --- |
+| 7.3.9-S1 | 7.3.3, 7.3.4 | Deterministic 50/200/500 active-canvas node fixtures with dense wires and realistic controls; capture stopped/playing idle, pan, zoom, drag and live updates. Record local desktop/mobile baseline, renderer traces and per-stage costs; validate fixture counts and repeatability in browser tests. |
+| 7.3.9-S2 | S1 | Isolate node/frame invalidation and stabilize per-node render inputs. Unchanged nodes do not rerender on unrelated changes; selected/edited nodes update correctly. Verify render counts and before/after traces. |
+| 7.3.9-S3 | S1, S2 | Scope live effective values, envelope/playhead updates and visualization subscriptions to consumers; coalesce UI updates without changing DSP control rate. Verify base/effective accuracy, no stale subscriptions, and stopped/playing frame-cost comparison. |
+| 7.3.9-S4 | S1 | Optimize viewport transforms and pointer-move handling; batch visual movement to animation frames, avoid per-move global render/layout or persistence. Verify drag, pinch, zoom anchors, edge pan and final committed positions with desktop/touch tests. |
+| 7.3.9-S5 | S1, S4 | Cache wire geometry and port anchors, update only affected edges and optimize path/hit testing. Verify endpoint accuracy, rigid sleeves, selection, draft wires and offscreen-crossing cables; compare dense-wire traces. |
+| 7.3.9-S6 | S1, S4, S5 | Investigate viewport-aware rendering/DOM reduction with overscan and stable anchors; preserve all in-view nodes/ports, focus, selections and crossing wires. Verify navigation, Fit, marquee, keyboard access, nested canvases and no pop-in during drag/pan. |
+| 7.3.9-S7 | S1, S2, S3 | Reduce expensive control/preview DOM, layout and allocation cost while preserving original compact/expanded editors and live feedback. Verify node inventory, editing, accessibility and dense visible-node performance. |
+| 7.3.9-S8 | S1, S2 | Profile import/first paint, graph projection and anchor discovery; avoid repeated whole-graph work and use bounded yielding where measured. Verify valid large-patch import, restored layouts/zoom, error handling and time-to-interactive. |
+| 7.3.9-S9 | S2–S8 | Repeat the identical baseline workloads on reference desktop and mobile; verify frame targets, no UI-induced audio regression, long-session resource bounds and behavioral regression suite. Publish measured limits including 500-node results; no claim of capacity without evidence. |
+
+
 Deliverable: a musician can inspect audio latency and reliability while safely editing a patch, identify performance pressure and distinguish it from clipping or DSP discontinuities; developers can reproduce and compare performance regressions without changing sound. The first four increments do not depend on NoteSource, ADSR or polyphony. No ordinary browser API is assumed to expose an exact whole-renderer CPU or physical key-to-speaker latency measurement.
 
 **Priority for Phase 7.5:** implement 7.3.1, 7.3.2 and the baseline benchmark workflow in 7.3.4 before adding unison or stereo; characterize the existing mono system and measure each subsequent DSP change. 7.3.3 is recommended for editor work; 7.3.5 and 7.3.6 need not delay Phase 7.5. Benchmark profile additions and limits are specified in [stereo/unison performance first](../audio/stereo-panning-and-unison.md#1-performance-first).
