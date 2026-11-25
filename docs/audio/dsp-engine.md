@@ -113,6 +113,8 @@ When swapping graphs, use an appropriate short fade/crossfade and preserve state
 
 #### Real-time requirements
 
+Performance-motivated production audio changes are subject to the [mandatory evidence-first optimization gate](../quality/audio-engine-optimization.md) (7.3.10); inspect actual generated code, measure, design and test before implementing.
+
 - A 128-frame block at 48 kHz represents only about 2.67 ms.
 - Avoid allocation-heavy work, blocking I/O, graph compilation or ordinary UI event dispatch inside processing callbacks.
 - Use actual sample rate/block sizes and reuse buffers.

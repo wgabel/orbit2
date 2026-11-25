@@ -106,6 +106,7 @@ Domain owns graph primitives and validation; Application owns commands, immutabl
 - [coding standards and implementation quality](../quality/coding-standards.md)
 - <a id="14-testing-and-acceptance-criteria"></a>[testing](../quality/testing.md)
 - [performance](../quality/performance.md)
+- [Audio engine optimization gate and candidate designs](../quality/audio-engine-optimization.md) — 7.3.10, required before DSP performance changes
 - <a id="13-implementation-roadmap"></a><a id="roadmap-at-a-glance"></a><a id="reading-guide-and-current-implementation"></a>[ROADMAP](../roadmap/overview.md)
 
 **Detailed milestone registers**

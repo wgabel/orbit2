@@ -194,6 +194,7 @@ public partial class GraphCanvas : IAsyncDisposable
 
     private CanvasStateSnapshot Snapshot => State.Snapshot;
     private readonly NodeFrameProjection nodeProjection = new();
+    private readonly NodeEffectiveValuesProjection effectiveProjection = new();
     private bool? countNodeRenders;
     private bool CountNodeRenders => countNodeRenders ??= new Uri(NavigationManager.Uri).Query
         .TrimStart('?').Split('&').Contains("orbit-render-counts=1", StringComparer.Ordinal);
@@ -209,6 +210,8 @@ public partial class GraphCanvas : IAsyncDisposable
 
     protected override void OnParametersSet()
     {
+        if (!ReferenceEquals(State, subscribedState)) effectiveProjection.Reset();
+        effectiveProjection.Update(EffectiveValues);
         if (ReferenceEquals(State, subscribedState)) return;
         subscription?.Dispose();
         subscribedState = State;

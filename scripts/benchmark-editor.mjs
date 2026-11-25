@@ -117,6 +117,9 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                     const changes = Object.entries(afterRenders).map(([id, count]) => count - beforeRenders[id]);
                     assert.ok(changes.every(value => Number.isInteger(value) && value >= 0));
                     nodeRenders = { total: changes.reduce((a, b) => a + b, 0), affectedNodes: changes.filter(n => n > 0).length };
+                    if (state === "playing" && workload === "idle")
+                        assert.ok(nodeRenders.affectedNodes < profile.nodes,
+                            "Playback telemetry must not invalidate every node frame");
                     if (state === "stopped" && workload === "parameter-edit")
                         assert.equal(nodeRenders.affectedNodes, 1, "Carrier frequency edit must only rerender the changed frame");
                     if (state === "stopped" && workload === "pan")
@@ -225,9 +228,18 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                 await status.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 120000 });
                 initialPlayWallMs = performance.now() - start;
                 await delay(1000);
+                if (countRenders) {
+                    // Require actual finite effective readouts before checking render scope.
+                    await page.waitForFunction(() => [...document.querySelectorAll(".node-compact-effective")]
+                        .some(output => output.textContent.trim() !== "—" && output.textContent.trim().length > 0),
+                        null, { timeout: 60000 });
+                }
                 await exercise("playing");
                 await page.getByRole("button", { name: "Stop", exact: true }).click();
                 await ready();
+                if (countRenders) await page.waitForFunction(() =>
+                    [...document.querySelectorAll(".node-compact-effective")]
+                        .every(output => output.textContent.trim() === "—"), null, { timeout: 60000 });
             }
             const finalGeometry = await geometry();
             assert.equal(finalGeometry.renderedNodes, profile.nodes);
@@ -244,7 +256,8 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                     `scriptMs=${fixed(m.cdp.ScriptDuration === null ? null : m.cdp.ScriptDuration * 1000)} ` +
                     `layoutMs=${fixed(m.cdp.LayoutDuration === null ? null : m.cdp.LayoutDuration * 1000)} ` +
                     `styleMs=${fixed(m.cdp.RecalcStyleDuration === null ? null : m.cdp.RecalcStyleDuration * 1000)} ` +
-                    `longTasks=${m.longTasksMs?.length ?? "N/A"} nodes=${m.geometry.intersectingNodes} dom=${m.geometry.domElements}`);
+                    `longTasks=${m.longTasksMs?.length ?? "N/A"} nodes=${m.geometry.intersectingNodes} dom=${m.geometry.domElements}` +
+                    (m.nodeRenders ? ` frameRenders=${m.nodeRenders.total} affectedFrames=${m.nodeRenders.affectedNodes}` : ""));
             }
         } finally { await context.close(); }
     }
