@@ -2,7 +2,8 @@
 # publishes the generated static browser assets to GitHub Pages on main.
 name: Build and deploy
 
-# Pull requests build only; main pushes and manual runs can deploy.
+# Always report the build check. Documentation-only changes run lightweight checks;
+# runtime changes build fully. Only main runtime builds/manual runs can deploy.
 on:
   push:
     branches: [main]
@@ -16,47 +17,65 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      runtime: ${{ steps.changes.outputs.runtime }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test CI change classification
+        run: node --test tests/tooling/CiChangeScope.test.mjs
+      - name: Classify changed files
+        id: changes
+        run: node scripts/ci-change-scope.mjs build
+      - name: Check documentation links
+        run: node scripts/check-doc-links.mjs
       - uses: actions/setup-dotnet@v4
+        if: steps.changes.outputs.runtime == 'true'
         with:
           dotnet-version: '10.0.x'
       # The graph tests need neither a browser nor generated Faust assets.
       - name: Test signal graph and domain
+        if: steps.changes.outputs.runtime == 'true'
         run: dotnet test tests/Orbit.Domain.Tests/Orbit.Domain.Tests.csproj --configuration Release
       - name: Test canvas presentation state
+        if: steps.changes.outputs.runtime == 'true'
         run: dotnet test tests/Orbit.Presentation.Tests/Orbit.Presentation.Tests.csproj --configuration Release
-      # Node is a build-time tool only: Faust produces browser-ready WASM assets.
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-      - name: Check documentation links
-        run: node scripts/check-doc-links.mjs
       # Rebuild the tracked stylesheet and reject stale output or invalid tokens.
       - name: Generate and test design tokens
+        if: steps.changes.outputs.runtime == 'true'
         run: |
           node src/Orbit.UI/DesignSystem/generate-tokens.mjs
           git diff --exit-code -- src/Orbit.UI/wwwroot/css/tokens.css
           node --test tests/ui/*.test.mjs
       - name: Compile Faust DSP
+        if: steps.changes.outputs.runtime == 'true'
         run: |
           npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts src/Orbit.Audio/Dsp/Oscillators/ModulatedSine.dsp src/Orbit.Infrastructure/wwwroot/audio/generated/modulated-sine
       # The browser's lazy worker uses the same pinned Faust distribution.
       - name: Prepare browser graph compiler
+        if: steps.changes.outputs.runtime == 'true'
         run: |
           npm install --prefix "$RUNNER_TEMP/orbit-faust" --no-audit --no-fund --ignore-scripts --no-save @grame/faustwasm@0.19.0
           node scripts/prepare-faust-compiler.mjs "$RUNNER_TEMP/orbit-faust/node_modules/@grame/faustwasm"
       # Assert the real DSP and its supporting runtime were generated.
       - name: Verify Faust build assets
+        if: steps.changes.outputs.runtime == 'true'
         run: |
           test -s src/Orbit.Infrastructure/wwwroot/audio/generated/modulated-sine/dsp-module.wasm
           test -s src/Orbit.Infrastructure/wwwroot/audio/generated/modulated-sine/dsp-meta.json
           test -s src/Orbit.Infrastructure/wwwroot/audio/generated/modulated-sine/faustwasm/index.js
           test -s src/Orbit.Infrastructure/wwwroot/audio/generated/compiler/index.js
       - name: Test audio infrastructure and compiled DSP
+        if: steps.changes.outputs.runtime == 'true'
         run: node --test tests/audio/*.test.mjs
       # Exercise the real graph compiler output, not a handcrafted DSP fixture.
       - name: Compile and render generated graph
+        if: steps.changes.outputs.runtime == 'true'
         env:
           ORBIT_GRAPH_PROBE_DIR: ${{ runner.temp }}/orbit-graph-probe
           ORBIT_FAUST_DIR: ${{ runner.temp }}/orbit-faust/node_modules/@grame/faustwasm
@@ -66,6 +85,7 @@ jobs:
           node --test tests/compiler/*.test.mjs
       # Timings are informational; deterministic output and graph contracts are the gates.
       - name: Benchmark offline DSP baseline
+        if: steps.changes.outputs.runtime == 'true'
         timeout-minutes: 5
         env:
           ORBIT_FAUST_DIR: ${{ runner.temp }}/orbit-faust/node_modules/@grame/faustwasm
@@ -76,6 +96,7 @@ jobs:
           node scripts/benchmark-dsp.mjs "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/offline-report.json"
       # Check the bundled worker and actual browser AudioWorklet together.
       - name: Browser graph playback smoke test
+        if: steps.changes.outputs.runtime == 'true'
         timeout-minutes: 5
         env:
           ORBIT_GRAPH_PROBE_DIR: ${{ runner.temp }}/orbit-graph-probe
@@ -87,9 +108,11 @@ jobs:
           node tests/browser/GraphPlaybackSmoke.mjs
       # Compiles the referenced projects and produces the static site in publish/wwwroot.
       - name: Build and publish
+        if: steps.changes.outputs.runtime == 'true'
         run: dotnet publish src/Orbit.UI/Orbit.UI.csproj --configuration Release --output publish -p:OrbitBrowserAssetVersion="$GITHUB_SHA" -p:OrbitBuildNumber="$GITHUB_RUN_NUMBER"
       # Ensure the generated token CSS and every imported stylesheet are published.
       - name: Verify published design system
+        if: steps.changes.outputs.runtime == 'true'
         run: |
           test -s publish/wwwroot/css/tokens.css
           cmp src/Orbit.UI/wwwroot/css/tokens.css publish/wwwroot/css/tokens.css
@@ -103,6 +126,7 @@ jobs:
           done
       # Ensure the class library's browser assets actually made it to the static site.
       - name: Verify published audio assets
+        if: steps.changes.outputs.runtime == 'true'
         run: |
           test -s publish/wwwroot/_content/Orbit.Infrastructure/audio/audio.js
           test -s publish/wwwroot/_content/Orbit.Infrastructure/audio/AudioEngine.js
@@ -114,6 +138,7 @@ jobs:
       # Namespace the entire module tree, including worker and generated assets,
       # so new .NET code can never import JavaScript cached from an older commit.
       - name: Version published browser module trees
+        if: steps.changes.outputs.runtime == 'true'
         run: |
           node scripts/version-published-editor.mjs publish/wwwroot "$GITHUB_SHA" "$GITHUB_RUN_NUMBER"
           cd publish/wwwroot/_content/Orbit.Infrastructure
@@ -124,6 +149,7 @@ jobs:
           test -s "audio-$GITHUB_SHA/Faust/FaustCompilerWorker.js"
           test -s "audio-$GITHUB_SHA/generated/compiler/index.js"
       - name: Test published editor playback
+        if: steps.changes.outputs.runtime == 'true'
         timeout-minutes: 5
         env:
           ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
@@ -131,6 +157,7 @@ jobs:
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
           node tests/browser/PublishedPlaybackSmoke.mjs
       - name: Benchmark published editor (external renderer)
+        if: steps.changes.outputs.runtime == 'true'
         timeout-minutes: 5
         env:
           ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
@@ -139,6 +166,7 @@ jobs:
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
           node scripts/benchmark-live.mjs "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/live-report.json"
       - name: Benchmark large-patch editor smoke
+        if: steps.changes.outputs.runtime == 'true'
         timeout-minutes: 15
         env:
           ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
@@ -152,12 +180,14 @@ jobs:
           ORBIT_EDITOR_VIEWPORT=mobile ORBIT_EDITOR_PLAYBACK=0 node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-mobile-stopped.json" editor-200
           ORBIT_EDITOR_RENDER_COUNTS=1 node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-render-counts.json" editor-50
       - name: Upload editor benchmark baseline
+        if: steps.changes.outputs.runtime == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: orbit-editor-benchmark-${{ github.sha }}
           path: ${{ runner.temp }}/orbit-editor-benchmark/
           retention-days: 30
       - name: Upload DSP benchmark baseline
+        if: steps.changes.outputs.runtime == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: orbit-dsp-benchmark-${{ github.sha }}
@@ -165,17 +195,17 @@ jobs:
           retention-days: 30
       # The browser entry document must resolve runtime files under /orbit2/.
       - name: Set GitHub Pages base path
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        if: steps.changes.outputs.runtime == 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: sed -i 's|<base href="/" />|<base href="/orbit2/" />|' publish/wwwroot/index.html
       - name: Upload Pages artifact
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        if: steps.changes.outputs.runtime == 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
           path: publish/wwwroot
 
   # Deploy consumes the build artifact, not the C# source files.
   deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    if: needs.build.outputs.runtime == 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -189,20 +219,21 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      # Builds finish independently. Check the head only after this job acquires
-      # the deployment lock; otherwise a slower old build could roll Pages back.
-      - name: Check current main revision
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      # Check after acquiring the Pages lock. Documentation-only changes
+      # do not invalidate an already built runtime artifact.
+      - name: Check current main runtime inputs
         id: current-main
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          latest="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
-          if [[ "$latest" == "$GITHUB_SHA" ]]; then
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "deploy=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping stale Pages build $GITHUB_SHA; current main is $latest"
-          fi
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          latest="$(git rev-parse refs/remotes/origin/main)"
+          node scripts/ci-change-scope.mjs deploy "$GITHUB_SHA" "$latest"
       - uses: actions/configure-pages@v5
         if: steps.current-main.outputs.deploy == 'true'
       - name: Deploy to GitHub Pages

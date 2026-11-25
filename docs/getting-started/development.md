@@ -10,6 +10,7 @@ From the repository root:
 
 ```sh
 node scripts/check-doc-links.mjs
+node --test tests/tooling/CiChangeScope.test.mjs
 dotnet test tests/Orbit.Domain.Tests/Orbit.Domain.Tests.csproj -c Release
 dotnet test tests/Orbit.Presentation.Tests/Orbit.Presentation.Tests.csproj -c Release
 node src/Orbit.UI/DesignSystem/generate-tokens.mjs --check
