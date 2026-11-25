@@ -56,7 +56,7 @@ The conservative signal range is the input range expanded to include zero (initi
 
 **Planned Phase 7.5:** [Stereo audio, panning and unison](stereo-panning-and-unison.md) adds a modulatable equal-power Pan processor, stereo mixer and incrementally channel-aware effects (separate filter state, intentional crossfeed, stereo delay/chorus/reverb). Existing mono effects are not stereo-capable merely because a stereo master is introduced. Use the Phase 7.3 benchmark baseline to evaluate added channel costs.
 
-#### Distortion (Phase 7.6.6-S1 — in review)
+#### Distortion (Phase 7.6.6-S1 — in review, [PR #122](https://github.com/wgabel/orbit2/pull/122))
 
 The first mono Distortion processor uses the existing audio-effect bypass, graph registry and shared parameter UI. Drive is a linear multiplier (1–16, default 2), Wet mix is 0–1 (default 0.5), and Wet output gain is 0–1 (default 1). All are continuous modulation targets with shared base-control smoothing. The symmetric soft clip is `driven / (1 + abs(driven))` where `driven = input * drive`. Its wet output is bounded to ±1 before trim; the dry path retains input peaks and zero mix is transparent. This is not a limiter, automatic loudness compensation or alias-free processing. It adds odd harmonics and has zero output for zero input. The user controls wet gain to compare at similar levels. No new DSP clock, custom UI or persistent mode is required.
 
