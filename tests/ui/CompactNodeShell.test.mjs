@@ -17,7 +17,8 @@ test("compact node keeps all real ports mounted outside the expandable controls"
     assert.match(styling, /\.node-header-actions \{[\s\S]*?grid-area: actions;/);
     assert.match(styling, /> \.node-ports \{ order: 1; \}/);
     assert.match(styling, /> :not\(\.node-header\):not\(\.node-ports\) \{ order: 2; \}/);
-    assert.match(canvas, /Expanded="@nodeExpansion\.IsExpanded\(node\)"/);
+    assert.match(canvas, /var expanded = nodeExpansion\.IsExpanded\(node\);/);
+    assert.match(canvas, /Expanded="@expanded"/);
 });
 
 test("expansion has a dedicated accessible button and preserves native connector activation", () => {
@@ -35,4 +36,10 @@ test("folded nodes mount no property editors; expanded nodes use the originals o
     assert.equal((component.match(/<ParameterSlider\b/g) ?? []).length, 1);
     assert.equal((component.match(/<ParameterChoiceEditor\b/g) ?? []).length, 1);
     assert.match(component, /EffectiveValue="@GetEffective\(parameter\.Id\)"/);
+});
+
+test("folded node frames receive no changing playback telemetry", () => {
+    assert.match(canvas, /EffectiveValues="@effectiveProjection\.ForNode\(node.Id, expanded\)"/);
+    assert.match(canvas, /Playhead="@\(expanded \? EnvelopePlayheads\.GetValueOrDefault\(node.Id\) : null\)"/);
+    assert.match(canvas, /SampleRate="@\(expanded \? SampleRate : null\)"/);
 });

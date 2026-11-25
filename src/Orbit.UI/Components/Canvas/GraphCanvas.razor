@@ -43,6 +43,7 @@
             @foreach (var entry in NodeProjection)
             {
                 var node = entry.Node;
+                var expanded = nodeExpansion.IsExpanded(node);
                 <NodeFrame @key="node.Id" Node="@node" Position="@DisplayNodePosition(node.Id)" PatchId="@PatchId" GraphId="@Snapshot.GraphId"
                            Documentation="@Snapshot.NodeDescriptions.GetValueOrDefault(node.Id)"
                            ShowSecondaryDocumentation="@(Snapshot.ShowSecondaryAnnotations || Snapshot.SelectedNodeIds.Contains(node.Id))"
@@ -52,7 +53,7 @@
                            OnVisualizationChange="@(settings => { State.SetVisualization(node.Id, settings); })"
                            OnExpandVisualization="@(() => { State.SetExpandedVisualization(Snapshot.ExpandedVisualizationNodeId == node.Id ? null : node.Id); })"
                            Role="@entry.Role" CountRenders="@CountNodeRenders"
-                           Selected="@Snapshot.SelectedNodeIds.Contains(node.Id)" Expanded="@nodeExpansion.IsExpanded(node)" OnToggleExpand="ToggleNodeExpand" PendingSource="@(pendingSource?.NodeId == node.Id ? pendingSource : null)"
+                           Selected="@Snapshot.SelectedNodeIds.Contains(node.Id)" Expanded="@expanded" OnToggleExpand="ToggleNodeExpand" PendingSource="@(pendingSource?.NodeId == node.Id ? pendingSource : null)"
                            WireTargets="@(wireAim is not null ? wireTargetAddresses : null)"
                            OnHeaderPointerDown="@(args => BeginNode(node.Id, args))"
                            OnBodyPointerDown="@(args => BeginNodeSurfaceAsync(node.Id, args))"
@@ -61,7 +62,7 @@
                            OnEditRack="OnEditRack"
                            OnAudition="OnAudition"
                            OnPresetApply="OnPresetApply" OnManagePresets="OnManagePresets" PresetCatalogRevision="@PresetCatalogRevision"
-                           OnParameterEdit="OnParameterEdit" OnParameterGestureEnded="OnParameterGestureEnded" ModulationRanges="@entry.Ranges" EffectiveValues="@effectiveProjection.ForNode(node.Id)" Playhead="@EnvelopePlayheads.GetValueOrDefault(node.Id)" BeatsPerMinute="@BeatsPerMinute" SampleRate="@SampleRate" />
+                           OnParameterEdit="OnParameterEdit" OnParameterGestureEnded="OnParameterGestureEnded" ModulationRanges="@entry.Ranges" EffectiveValues="@effectiveProjection.ForNode(node.Id, expanded)" Playhead="@(expanded ? EnvelopePlayheads.GetValueOrDefault(node.Id) : null)" BeatsPerMinute="@BeatsPerMinute" SampleRate="@(expanded ? SampleRate : null)" />
             }
         </div>
         @if (wireAim is { } aim)
