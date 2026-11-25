@@ -8,6 +8,44 @@ The target is a fully WebGL-rendered visible editor (nodes in every expansion st
 
 Maintain the C# domain/application model, command validation, stable graph-qualified IDs, persistence/history, shared timing and independent Faust/Web Audio/AudioWorklet execution. Do not migrate or optimize DSP under this milestone. Changes to audio-generation execution require the independent [7.3.10 gate](../quality/audio-engine-optimization.md). Graphical capacity is not DSP capacity. Preserve root/nested canvas semantics, current expansion contract, all real ports, design tokens, accessible workflows and the [gesture registry](user-interactions.md). Viewport culling must not hide inactive nodes as a product feature; any visible-detail reduction needs reviewed UX rules and unambiguous ports/hit targets.
 
+## Mandatory source-tree and dependency isolation
+
+The GPU editor is a distinct presentation subsystem, not a collection of modifications scattered through the legacy Razor editor. Reserve **`src/Orbit.GpuRenderer/`** as the single dedicated source root for all new renderer-specific implementation, including experimental backends, browser code, interop adapters, view components, assets and renderer-specific diagnostics. This root is mandatory; the internal layout below is a proposed organization to refine during S3, not permission to create empty scaffolding or adopt unnecessary layers. Prefer a separate project/package under that root where compatible with the existing .NET/browser build; the S3 ADR must establish the exact build, module, asset-publication and project-reference boundaries before production implementation. Keep tests under a correspondingly dedicated test root (for example `tests/Orbit.GpuRenderer.Tests/`); shared browser test runners may invoke renderer-specific suites without mixing their implementations into legacy tests.
+
+```text
+src/
+  Orbit.Domain/              # unchanged graph invariants and node definitions
+  Orbit.Application/         # shared commands, snapshots, services
+  Orbit.Presentation/        # genuinely shared renderer-neutral policies
+  Orbit.Audio/               # unchanged Faust DSP
+  Orbit.Infrastructure/      # unchanged audio and persistence adapters
+  Orbit.UI/                  # existing host and legacy HTML/SVG renderer
+  Orbit.GpuRenderer/         # NEW: one isolated renderer source root
+    Contracts/               # renderer-specific boundary types
+    Interop/                 # narrow host bridge and lifecycle
+    Browser/
+      Core/                  # renderer, camera, scene, scheduling
+      Components/            # reusable graphical primitives
+      Nodes/                 # node presentation and specialized views
+      Connections/           # port and wire views
+      Interaction/           # gesture arbitration and hit testing
+      Resources/             # textures, geometry, fonts, asset ownership
+      Workspace/             # GPU shell, menus, dialogs and piano
+      Diagnostics/           # renderer-specific instrumentation
+      Assets/                # renderer-owned source assets
+      Prototypes/            # isolated comparative experiments
+tests/
+  Orbit.GpuRenderer.Tests/   # renderer-specific test source
+```
+
+**Allowed dependency direction:** the existing UI composition root selects and mounts a renderer through a narrow, reviewed lifecycle/intent/projection boundary. The GPU subsystem consumes authoritative shared application and presentation contracts and communicates with browser APIs through its own adapters; it never depends on legacy Razor components, their DOM measurement logic, CSS, or internal JS helpers. Domain, Application, Audio and Infrastructure must not depend on the GPU subsystem, PixiJS, WebGL or GPU-specific types. The legacy renderer must not import the GPU implementation. Shared renderer-neutral contracts belong to the existing authoritative owner (normally Application or Presentation), not a duplicated model in either renderer. No circular references or service locator coupling. Only the composition root and a deliberately small host/mount adapter may know which backend is active.
+
+**File-placement rules:** never place new GPU implementation files in existing `Orbit.UI/Components`, legacy JS/CSS folders, audio runtime modules or unrelated projects simply because a similar feature already exists there. Do not copy or fork entire existing UI, graph, validation, persistence, timing, design-token, or telemetry implementations into the GPU root. Reuse shared policy via its canonical owner. If a missing renderer-neutral seam requires a change outside the GPU root, isolate the minimum enabling change in a focused, documented slice with its own regression coverage and explain why the existing contract is insufficient. Host registration, build configuration, dependency manifests, test runner integration, routing docs and generated distribution assets are explicit limited exceptions; keep publication paths namespaced (e.g. `gpu-renderer/`), with one source of truth and no hand-edited duplicate bundles. Prototype entry points must be opt-in and must not load or initialize the GPU engine in the normal legacy path.
+
+**Coexistence and migration:** keep the legacy renderer independently usable throughout migration and A/B comparisons; one authoritative patch/session and one active interactive renderer at a time. Switching or context recovery disposes obsolete listeners, subscriptions, GPU resources and frame callbacks, and must preserve graph identity, history, playback and persistence. Do not refactor legacy internals merely to imitate the new renderer. Shared extractions must be justified by actual consumers, not speculative abstractions. Removal of legacy code is a distinct, approved final cleanup after parity and benchmark gates.
+
+**Enforcement:** S3 must record the directory tree, allowed dependency graph, public contracts, host/build integration, and ownership exceptions in an ADR. Before the first production slice, add focused structural checks for forbidden imports/project references, GPU files outside the dedicated source root (with explicit reviewed exceptions), and absence of GPU dependencies in Domain/Application/Audio or the legacy backend. Test independent renderer mounting/disposal and the unchanged legacy path. Apply these checks to later GPU PRs alongside existing pre-CI test-impact review; a directory name alone is not architectural isolation. The owner-approved root is fixed unless a later explicit decision changes it.
+
 ## Mandatory architecture and quality gate (before production implementation)
 
 Apply the existing [coding standards](../quality/coding-standards.md), [development policy](../agents/development-instructions.md), [testing contracts](../quality/testing.md) and [work-slice protocol](../agents/work-slices.md). Do not start production migration merely because a prototype is fast. Commit source-linked findings and reviewed architecture decisions before production implementation. First audit actual implementations, consumers, tests, workflows and existing owners (including JS and interop), not just architectural prose. Record current call graphs, update frequency, state ownership, lifecycle, contention and dependency directions. Measure optimized 7.3.9 baseline before comparison. Isolated prototypes must not modify production behavior.
