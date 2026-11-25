@@ -32,6 +32,7 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
             HumanizePitchPatternCommand humanize => HumanizePitchPattern(graph, humanize, revision),
             ApplyNodePresetCommand apply => ApplyNodePreset(graph, apply),
             ApplyCompositeMacroCommand macro => ApplyCompositeMacro(graph, macro),
+            ReplaceCompositeMacrosCommand macros => ReplaceCompositeMacros(graph, macros),
             SetNodeMutedCommand mute => SetNodeMuted(graph, mute),
             SetNodeBypassedCommand bypass => SetNodeBypassed(graph, bypass),
             AddBoundaryPortCommand add => BoundaryFacts(graph.Id, graph.AddBoundaryPort(add.Direction,
@@ -118,6 +119,13 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
         return graph.SetNodeParameterValues(command.NodeId, command.Preset.NodeType, command.Preset.Parameters)
             .Select(change => (IGraphEvent)new ParameterChanged(graph.Id, change.Address,
                 change.PreviousValue, change.CurrentValue)).ToArray();
+    }
+
+    private static IReadOnlyList<IGraphEvent> ReplaceCompositeMacros(SignalGraph graph, ReplaceCompositeMacrosCommand command)
+    {
+        if (graph.GetNode(command.NodeId) is not CompositeNode composite)
+            throw new GraphValidationException("Macro definitions require a composite.");
+        return composite.ReplaceMacros(command.Macros) ? [new CompositeMacrosChanged(graph.Id, composite.Id)] : [];
     }
 
     private static IReadOnlyList<IGraphEvent> ApplyCompositeMacro(SignalGraph graph, ApplyCompositeMacroCommand command) =>

@@ -80,6 +80,9 @@ public sealed class SignalGraph
         if (node is InputRack or OutputRack)
             throw new GraphValidationException("Boundary racks cannot be removed independently of their composite.");
 
+        if (Owner?.Macros.Any(macro => macro.Mapping.Bindings.Any(binding => binding.Target.NodeId == nodeId)) == true)
+            throw new GraphValidationException("Remove the macro bindings before deleting their target node.");
+
         // Remove every incident edge in the same domain operation.
         connections.RemoveAll(connection =>
             connection.Source.NodeId == nodeId || connection.Destination.NodeId == nodeId);
@@ -180,20 +183,26 @@ public sealed class SignalGraph
         var changes = new List<(Parameter, ParameterValueChange)>();
         foreach (var binding in mapping.Bindings)
         {
-            var parameter = GetParameter(binding.Target);
-            var definition = parameter.Definition;
-            var node = GetNode(binding.Target.NodeId);
-            if (definition.RequiresRecompile || definition.Choices is not null ||
-                definition.ActiveWhen is { } condition && !condition.Matches(key =>
-                    node.Parameters.SingleOrDefault(selector => selector.Definition.Key == key)?.BaseValue) ||
-                !definition.IsValidBaseValue(binding.AtZero) || !definition.IsValidBaseValue(binding.AtOne))
-                throw new GraphValidationException("Macro targets must be active continuous parameters with valid range endpoints.");
+            var parameter = ValidateCompositeMacroBinding(binding, requireActive: true);
             var mapped = CompositeMacroMapping.Map(binding, value);
             parameter.ValidateBaseValue(mapped);
             if (parameter.BaseValue != mapped)
                 changes.Add((parameter, new ParameterValueChange(binding.Target, parameter.BaseValue, mapped)));
         }
         return changes;
+    }
+
+    internal Parameter ValidateCompositeMacroBinding(CompositeMacroBinding binding, bool requireActive)
+    {
+        var parameter = GetParameter(binding.Target);
+        var definition = parameter.Definition;
+        var node = GetNode(binding.Target.NodeId);
+        if (definition.RequiresRecompile || definition.Choices is not null ||
+            requireActive && definition.ActiveWhen is { } condition && !condition.Matches(key =>
+                node.Parameters.SingleOrDefault(selector => selector.Definition.Key == key)?.BaseValue) ||
+            !definition.IsValidBaseValue(binding.AtZero) || !definition.IsValidBaseValue(binding.AtOne))
+            throw new GraphValidationException("Macro targets must be continuous parameters with valid range endpoints and active when applied.");
+        return parameter;
     }
 
     public void SetNodeMuted(Guid nodeId, bool muted)
