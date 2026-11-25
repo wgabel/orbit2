@@ -138,6 +138,22 @@ jobs:
         run: |
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
           node scripts/benchmark-live.mjs "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/live-report.json"
+      - name: Benchmark large-patch editor smoke
+        timeout-minutes: 10
+        env:
+          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
+          ORBIT_EDITOR_REPEATS: '1'
+          ORBIT_EDITOR_IDLE_MS: '500'
+        run: |
+          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
+          dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj --configuration Release -- --editor-benchmark "$RUNNER_TEMP/orbit-editor-benchmark"
+          node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-report.json" editor-50
+      - name: Upload editor benchmark baseline
+        uses: actions/upload-artifact@v4
+        with:
+          name: orbit-editor-benchmark-${{ github.sha }}
+          path: ${{ runner.temp }}/orbit-editor-benchmark/
+          retention-days: 30
       - name: Upload DSP benchmark baseline
         uses: actions/upload-artifact@v4
         with:

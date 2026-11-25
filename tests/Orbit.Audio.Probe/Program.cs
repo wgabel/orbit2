@@ -18,6 +18,11 @@ using Orbit.Domain.Ports;
 // Produce a graph via ordinary commands, not hand-written Faust fixture code.
 // A parent LFO fans out through named rack inputs to pitch and gain inside a drone.
 // Offline tests verify the complete compiled path through the child output rack.
+if (args.Length == 2 && args[0] == "--editor-benchmark")
+{
+    EditorBenchmarkFixtures.Write(args[1]);
+    return;
+}
 if (args.Length is 2 or 3 && args[0] == "--benchmark" && (args.Length == 2 || args[2] == "--large"))
 {
     BenchmarkFixtures.Write(args[1], args.Length == 3);

@@ -108,11 +108,11 @@ The detailed implementation and usage contract lives in [performance.md](../qual
 
 ##### 7.3.9 delivery slices
 
-All slices are Planned. Execute one focused slice per agent run; S1 establishes the baseline and may reorder S2–S7 according to measured costs. No change may remove in-viewport nodes, ports or required compact controls, alter graph/audio semantics, or introduce always-on diagnostic polling.
+S1 tooling is in review; remaining slices are Planned. Execute one focused slice per agent run; S1 establishes the baseline and may reorder S2–S7 according to measured costs. No change may remove in-viewport nodes, ports or required compact controls, alter graph/audio semantics, or introduce always-on diagnostic polling.
 
 | Slice | Dependency | Scope and acceptance / verification target |
 | --- | --- | --- |
-| 7.3.9-S1 | 7.3.3, 7.3.4 | Deterministic 50/200/500 active-canvas node fixtures with dense wires and realistic controls; capture stopped/playing idle, pan, zoom, drag and live updates. Record local desktop/mobile baseline, renderer traces and per-stage costs; validate fixture counts and repeatability in browser tests. |
+| 7.3.9-S1 (in review, [PR #125](https://github.com/wgabel/orbit2/pull/125); device baseline pending) | 7.3.3, 7.3.4 | Deterministic 50/200/500 active-canvas node fixtures with dense wires and realistic controls; capture stopped/playing idle, pan, zoom, drag and live updates. Record local desktop/mobile baseline, renderer traces and per-stage costs; validate fixture counts and repeatability in browser tests. |
 | 7.3.9-S2 | S1 | Isolate node/frame invalidation and stabilize per-node render inputs. Unchanged nodes do not rerender on unrelated changes; selected/edited nodes update correctly. Verify render counts and before/after traces. |
 | 7.3.9-S3 | S1, S2 | Scope live effective values, envelope/playhead updates and visualization subscriptions to consumers; coalesce UI updates without changing DSP control rate. Verify base/effective accuracy, no stale subscriptions, and stopped/playing frame-cost comparison. |
 | 7.3.9-S4 | S1 | Optimize viewport transforms and pointer-move handling; batch visual movement to animation frames, avoid per-move global render/layout or persistence. Verify drag, pinch, zoom anchors, edge pan and final committed positions with desktop/touch tests. |
