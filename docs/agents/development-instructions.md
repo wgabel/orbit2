@@ -14,11 +14,23 @@ Apply the relevant sections for implementation, code review, UX/input changes, r
 - Use [the canonical roadmap](../roadmap/overview.md) and its linked milestone registers when planning or changing implementation status. Use [local setup](../getting-started/installation.md) and [development/testing](../getting-started/development.md) for practical commands. The implementation and tests are the evidence for current behavior; reconcile stale documentation instead of assuming that every design proposal is implemented.
 - For using implemented features in patches, or explaining them to a user, start with the [usage guide](../usage/README.md) and follow only the relevant walkthrough and technical contracts. When adding or changing a user-facing feature, update its usage example (actual UI actions, port/parameter settings, limitations and PR provenance) as appropriate. Reconcile status after merges; do not require new pages for changes already adequately covered.
 
+## Pre-CI test-impact review (mandatory for executable changes)
+
+Before the first implementation push/PR and before each corrective push, review the relevant existing tests and workflow steps against the intended final behavior. Do not use a full CI run as the first discovery mechanism for obvious incompatibilities.
+
+1. Trace the changed contracts and removed/renamed symbols, components, selectors, events, data fields and assumptions into their consumers. Search the repository for old and new references, including `tests/`, `scripts/` (especially benchmark and smoke helpers), and relevant `.github/workflows/` entry points. If code search is unavailable or incomplete, enumerate the relevant workflow commands and inspect their invoked files and helpers directly.
+2. Inspect affected unit/contract, integration, published-browser and benchmark scenarios proportionately. Check selector uniqueness and lifetime, event/commit semantics, model-backed assertions, geometry/overlap, desktop/touch and small/large fixture assumptions, playback/stopped paths, cleanup and undo/redo where applicable. Check the whole affected scenario, not only the first failing line.
+3. Fix obvious stale assumptions and update/add focused regression coverage in the same change. Preserve the acceptance intent: never skip a workload, weaken an assertion, or change production behavior merely to make a test green. If the workload needs a different interaction method, make it explicit and document measurement limitations.
+4. Run the cheapest available relevant checks before pushing (syntax/static checks, focused unit tests, targeted integration/browser cases where the environment supports them). Review the final diff and search for obsolete references again. If local execution is unavailable, perform the static review anyway and state what remains CI-only.
+5. Record a compact test-impact summary in the PR: affected suites/helpers inspected, key assumptions corrected, checks actually executed, and remaining CI-only verification. For CI failures, inspect the failing step and adjacent dependent checks before another push.
+
+This review is not a substitute for required CI or the audio optimization gate. Keep it targeted to affected contracts and workflow consumers, not a mandatory full-repository audit. Documentation-only changes retain their existing waiver.
+
 ## Implementation quality check (before handoff)
 
 For code changes, confirm proportionately that:
 
-1. Existing implementations, shared abstractions and relevant tests were checked; the change does not introduce a second source of truth.
+1. The pre-CI test-impact review was completed; existing implementations, shared abstractions and relevant tests were checked without introducing a second source of truth.
 2. Responsibility, naming and complexity fit the existing architecture; stable IDs, error paths, resource cleanup and compatibility were considered.
 3. Important behavior and relevant edge cases have regression coverage; the final diff was reviewed for unrelated changes.
 4. Relevant builds/tests or browser/DSP checks were actually run, and failures or unverified claims are reported explicitly.
