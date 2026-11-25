@@ -118,7 +118,7 @@ async function verifyFoldedPropertiesAndExpandedEdit(page, touch) {
     const node = canvas(page).locator(`article[data-node-id="${nodeId}"]`);
     const toggle = node.locator(".node-expand-toggle");
     const editor = node.locator('.parameter-slider:has(input[type=range][aria-label="Frequency"])');
-    const base = editor.locator('.parameter-heading > input[type="number"]');
+    const base = editor.locator('.parameter-heading > input[type="number"][id^="parameter-"]');
     await base.waitFor();
     assert.equal(await editor.count(), 1);
     assert.equal(await node.locator(".node-compact-value").count(), 0);
@@ -149,16 +149,16 @@ async function verifyFoldedPropertiesAndExpandedEdit(page, touch) {
     await base.waitFor();
     assert.equal(Number(await base.inputValue()), original);
     await base.fill(String(candidate));
-    await editor.locator('.parameter-heading > input[type=number][aria-invalid="false"]').waitFor();
+    await editor.locator('.parameter-heading > input[type=number][id^="parameter-"][aria-invalid="false"]').waitFor();
     assert.equal(Number(await base.inputValue()), candidate);
     assert.equal(await toggle.getAttribute("aria-expanded"), "true", "Original editor remains expanded");
     assert.deepEqual(await anchors(), startAnchors, "Editing the base value must not move sockets");
 
     const invalid = max + Math.max(1, Math.abs(max));
     await base.fill(String(invalid));
-    await editor.locator('.parameter-heading > input[type=number][aria-invalid="true"]').waitFor();
+    await editor.locator('.parameter-heading > input[type=number][id^="parameter-"][aria-invalid="true"]').waitFor();
     await base.fill(String(candidate));
-    await editor.locator('.parameter-heading > input[type=number][aria-invalid="false"]').waitFor();
+    await editor.locator('.parameter-heading > input[type=number][id^="parameter-"][aria-invalid="false"]').waitFor();
     assert.equal(Number(await base.inputValue()), candidate);
     assert.equal(await base.getAttribute("aria-invalid"), "false");
 
@@ -177,12 +177,12 @@ async function verifyFoldedPropertiesAndExpandedEdit(page, touch) {
     await history("Undo");
     await page.waitForFunction(({ id, expected }) => {
         const node = document.querySelector(`article[data-node-id="${id}"]`);
-        return node && Number(node.querySelector('.parameter-slider:has(input[type=range][aria-label="Frequency"]) .parameter-heading > input[type=number]').value) === expected;
+        return node && Number(node.querySelector('.parameter-slider:has(input[type=range][aria-label="Frequency"]) .parameter-heading > input[type=number][id^="parameter-"]').value) === expected;
     }, { id: nodeId, expected: original });
     await history("Redo");
     await page.waitForFunction(({ id, expected }) => {
         const node = document.querySelector(`article[data-node-id="${id}"]`);
-        return node && Number(node.querySelector('.parameter-slider:has(input[type=range][aria-label="Frequency"]) .parameter-heading > input[type=number]').value) === expected;
+        return node && Number(node.querySelector('.parameter-slider:has(input[type=range][aria-label="Frequency"]) .parameter-heading > input[type=number][id^="parameter-"]').value) === expected;
     }, { id: nodeId, expected: candidate });
 }
 
