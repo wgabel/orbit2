@@ -345,7 +345,9 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
     await writeFile(outputFile, JSON.stringify({ schemaVersion: 1, fixtureVersion: 1,
         kind: "external-editor-benchmark", revision: process.env.ORBIT_REVISION ?? process.env.GITHUB_SHA ?? null,
         timestampUtc: new Date().toISOString(),
-        harnessFingerprint: createHash("sha256").update(await readFile(new URL(import.meta.url))).digest("hex"),
+        harnessFingerprint: createHash("sha256").update(JSON.stringify(await Promise.all(
+            ["benchmark-editor.mjs", "benchmark-live.mjs", "benchmark-metrics.mjs", "benchmark-folded-telemetry.mjs"]
+                .map(async name => [name, createHash("sha256").update(await readFile(new URL(name, import.meta.url))).digest("hex")])))).digest("hex"),
         environment: { chrome: browser.version(), node: process.version, headless, muted: true,
             platform: platform(), release: release(), arch: arch(), cpuModel: cpus()[0]?.model ?? null, logicalCpuCount: cpus().length },
         settings: { repeats, idleMs, viewport, mode, playback, input: "scripted mouse; mobile is viewport emulation",
