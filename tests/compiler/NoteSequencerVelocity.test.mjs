@@ -56,3 +56,33 @@ for (const rate of [44100, 48000]) test(`Scheduled velocity, gate, trigger and p
     check(manualFrame,2,1,.8); // unencoded manual onset restores default
     assert.ok(result[0].every(Number.isFinite));
 });
+
+for (const rate of [44100,48000]) test(`Shifted scheduler actions reach Faust pitch, gate, trigger and velocity at ${rate}`, async () => {
+    const dsp = await new FaustMonoDspGenerator().createOfflineProcessor(rate, 128, { ...factory, soundfiles: {} });
+    for (const [name, value] of Object.entries(fixture.values)) {
+        const path = dsp.getParams().find(p => p.endsWith('/' + name));
+        assert.ok(path, name); dsp.setParamValue(path, value);
+    }
+    const step = rate / 10;
+    const n = Math.ceil(3.5 * step / 128) * 128;
+    const clock = Array.from({length:7}, () => new Float32Array(n));
+    for (let i=0;i<n;i++) { clock[4][i]=Math.floor(i/rate); clock[5][i]=(i/rate)%1; }
+    const scheduler = new PitchPatternScheduler({loop:true,free:true,count:3,ticks:4,seconds:.1,notes:true,gateFraction:.25,
+        steps:[70,70,82,...Array(61).fill(0)],timingOffsets:[.2,-.2,.4,...Array(61).fill(0)],
+        velocityOverrides:[.2,0,.73,...Array(61).fill(-1)]});
+    const action = new Float32Array(n);
+    scheduler.render(action,clock);
+    const result = dsp.render([action],n);
+    const { 'pitch-out': p, 'gate-out': g, 'trigger-out': t, 'velocity-out': v } = fixture.channels;
+    const expected = [.2,.8,2.4,3.2].map(u=>Math.ceil(u*step-1e-7));
+    assert.deepEqual([...result[t].entries()].filter(([,value])=>value!==0).map(([i])=>i),expected);
+    for (const [index,pitch,velocity] of [[0,0,.2],[1,0,0],[2,12,.73],[3,0,.2]]) {
+        const frame=expected[index];
+        assert.equal(result[p][frame],pitch);
+        assert.equal(result[g][frame],1);
+        assert.ok(Math.abs(result[v][frame]-velocity)<1e-6);
+    }
+    assert.equal(result[g][Math.ceil(.45*step-1e-7)],0);
+    assert.equal(result[g][Math.ceil(1.05*step-1e-7)],0);
+    assert.equal(result[g][Math.ceil(2.65*step-1e-7)],0);
+});
