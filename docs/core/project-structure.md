@@ -127,7 +127,7 @@ The UI-to-infrastructure dependency is restricted to composition/setup, where de
 
 ### Planned GPU renderer isolation (7.3.11)
 
-The new graphical editor will have its own source root, `src/Orbit.GpuRenderer/`, separate from the existing `Orbit.UI` HTML/SVG implementation. It consumes shared renderer-neutral Application/Presentation contracts; existing graph and audio layers do not depend on GPU code. The existing UI composition root may select/mount it through a minimal adapter. Renderer-specific source, prototypes and resources belong inside the new root, with dedicated tests; cross-root exceptions and architectural checks are defined in the [mandatory GPU renderer isolation contract](../editor/gpu-renderer.md#mandatory-source-tree-and-dependency-isolation). This is planned, not a currently implemented project reference.
+The new graphical editor's preferred prototype stack is PixiJS + PixiUI + PixiJS Layout, subject to the 7.3.11 approval gate. The new graphical editor will have its own source root, `src/Orbit.GpuRenderer/`, separate from the existing `Orbit.UI` HTML/SVG implementation. It consumes shared renderer-neutral Application/Presentation contracts; existing graph and audio layers do not depend on GPU code. The existing UI composition root may select/mount it through a minimal adapter. Renderer-specific source, prototypes and resources belong inside the new root, with dedicated tests; cross-root exceptions and architectural checks are defined in the [mandatory GPU renderer isolation contract](../editor/gpu-renderer.md#mandatory-source-tree-and-dependency-isolation). This is planned, not a currently implemented project reference.
 
 ### Application startup and connection of layers
 
