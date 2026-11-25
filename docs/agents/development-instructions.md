@@ -26,6 +26,10 @@ Before the first implementation push/PR and before each corrective push, review 
 
 This review is not a substitute for required CI or the audio optimization gate. Keep it targeted to affected contracts and workflow consumers, not a mandatory full-repository audit. Documentation-only changes retain their existing waiver.
 
+## Before/after optimization evidence (mandatory for Phase 7.3.9)
+
+For each editor optimization PR, record the exact pre-change runtime revision and capture the focused workload baseline before changing production code; rerun with the identical saved fixture bytes, benchmark harness, machine, browser and settings on the candidate revision. Preserve both raw reports, compare repeated samples and document measured gains, regressions, unchanged/unavailable metrics and any confounders in the PR and [performance history](../quality/performance.md#large-patch-editor-responsiveness-739). If baseline measurement is blocked, record the reason and do not claim a measured gain; stop before further production optimization unless the owner explicitly authorizes proceeding. Existing deterministic regression assertions and full runtime CI remain mandatory. After merge, reconcile the actual main revision and successful checks; rerun when runtime inputs differ from the verified candidate. Use focused comparisons per PR, full suite for runtime changes and controlled physical desktop/Android runs at major milestones and final verification. Shared CI runner timings are diagnostic, not absolute FPS gates. Benchmark-only infrastructure slices may establish the missing baseline without changing production behavior.
+
 ## Implementation quality check (before handoff)
 
 For code changes, confirm proportionately that:
