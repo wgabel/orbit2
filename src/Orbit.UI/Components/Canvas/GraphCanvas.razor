@@ -61,7 +61,7 @@
                            OnEditRack="OnEditRack"
                            OnAudition="OnAudition"
                            OnPresetApply="OnPresetApply" OnManagePresets="OnManagePresets" PresetCatalogRevision="@PresetCatalogRevision"
-                           OnParameterEdit="OnParameterEdit" OnParameterGestureEnded="OnParameterGestureEnded" ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" Playhead="@EnvelopePlayheads.GetValueOrDefault(node.Id)" BeatsPerMinute="@BeatsPerMinute" SampleRate="@SampleRate" />
+                           OnParameterEdit="OnParameterEdit" OnParameterGestureEnded="OnParameterGestureEnded" ModulationRanges="@entry.Ranges" EffectiveValues="@EffectiveValues" Playhead="@EnvelopePlayheads.GetValueOrDefault(node.Id)" BeatsPerMinute="@BeatsPerMinute" SampleRate="@SampleRate" />
             }
         </div>
         @if (wireAim is { } aim)

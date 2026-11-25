@@ -117,6 +117,8 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                     const changes = Object.entries(afterRenders).map(([id, count]) => count - beforeRenders[id]);
                     assert.ok(changes.every(value => Number.isInteger(value) && value >= 0));
                     nodeRenders = { total: changes.reduce((a, b) => a + b, 0), affectedNodes: changes.filter(n => n > 0).length };
+                    if (state === "stopped" && workload === "parameter-edit")
+                        assert.equal(nodeRenders.affectedNodes, 1, "Carrier frequency edit must only rerender the changed frame");
                     if (state === "stopped" && workload === "pan")
                         assert.equal(nodeRenders.total, 0, "Pure canvas pan must not rerender node frames");
                     if (state === "stopped" && workload === "node-drag")
