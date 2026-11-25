@@ -55,6 +55,9 @@ public sealed class CompositeMacroTests
             Assert.Throws<GraphValidationException>(() => graph.ApplyCompositeMacro(mapping, 0.5));
             Assert.Equal(440, graph.GetParameter(frequency).BaseValue);
         }
+        var timing = new ParameterAddress(oscillator.Id, oscillator.Parameters.Single(p => p.Definition.Key == "timing").Id);
+        graph.SetParameterValue(timing, 1);
+        Assert.Throws<GraphValidationException>(() => graph.ApplyCompositeMacro(new([good]), 0.5));
         Assert.Throws<GraphValidationException>(() => graph.ApplyCompositeMacro(new([good]), double.NaN));
         Assert.Throws<GraphValidationException>(() => new SignalGraph().ApplyCompositeMacro(new([good]), 0.5));
     }
