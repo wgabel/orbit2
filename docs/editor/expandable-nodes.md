@@ -1,6 +1,6 @@
 # Phase 6.21.5 — Expandable node design contract (approved; staged implementation)
 
-Status: revised design approved; S1 and S2 merged ([PR #100](https://github.com/wgabel/orbit2/pull/100), [PR #101](https://github.com/wgabel/orbit2/pull/101)). Their compact-specific value editors are superseded by the staged refactor. S3a removes the duplicate port-side editors, mapping and styles and uses the shared parameter editors; additional essential compact metadata, property pins and telemetry render gating remain follow-up work (in review). Track implementation and verification in [the editor roadmap](../roadmap/editor-and-effects.md).
+Status: revised design approved; S1 and S2 merged ([PR #100](https://github.com/wgabel/orbit2/pull/100), [PR #101](https://github.com/wgabel/orbit2/pull/101)). Their compact-specific value editors are superseded by the staged refactor. S3a ([PR #135](https://github.com/wgabel/orbit2/pull/135)) removes the duplicate port-side editors, mapping and styles and uses the shared parameter editors; additional essential compact metadata, property pins and telemetry render gating remain follow-up work (in review). Track implementation and verification in [the editor roadmap](../roadmap/editor-and-effects.md).
 
 This document supersedes the earlier Phase 6.21.5 proposal in [the editor roadmap](../roadmap/editor-and-effects.md). It describes the agreed target rather than claiming existing product behavior. Implementation must cross-check the actual registered node definitions and their active parameter/port rules.
 
