@@ -151,12 +151,48 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                 await page.mouse.move(point.x, point.y, { steps: 12 });
                 await page.mouse.up();
             }
+            async function editParameter(state) {
+                // Find a frequency control actually inside the current viewport;
+                // do not let Playwright scroll the canvas to an offscreen node.
+                const id = await canvas.evaluate(view => {
+                    const v = view.getBoundingClientRect();
+                    for (const input of view.querySelectorAll('input[aria-label="Frequency base value"]')) {
+                        const r = input.getBoundingClientRect();
+                        const x = (r.left + r.right) / 2, y = (r.top + r.bottom) / 2;
+                        if (r.width > 0 && r.height > 0 && x > v.left && x < v.right && y > v.top && y < v.bottom &&
+                            document.elementFromPoint(x, y) === input && Number(input.value) >= 100)
+                            return input.id;
+                    }
+                    return null;
+                });
+                assert.ok(id, "No visible carrier frequency base editor");
+                const input = page.locator("#" + id);
+                const original = Number(await input.inputValue());
+                assert.ok(Number.isFinite(original) && original >= 100);
+                async function commit(value) {
+                    const current = state === "playing" ? Number((await status.innerText()).match(/\d+$/)?.[0]) : null;
+                    if (state === "playing") assert.ok(Number.isInteger(current), "Expected active playback revision");
+                    await input.fill(String(value));
+                    await input.press("Enter");
+                    if (state === "playing") {
+                        await status.filter({ hasText: new RegExp("^Playing revision " + (current + 1) + "$") })
+                            .waitFor({ timeout: 60000 });
+                    } else {
+                        await ready();
+                    }
+                    await input.blur();
+                    assert.equal(Number(await input.inputValue()), value);
+                }
+                await commit(original + 1);
+                await commit(original);
+            }
             async function exercise(state) {
                 for (let i = 0; i < repeats; i++) {
                     await measure(state, "idle", () => delay(idleMs));
                     await measure(state, "pan", pan);
                     await measure(state, "wheel-zoom", zoom);
                     await measure(state, "node-drag", drag);
+                    await measure(state, "parameter-edit", () => editParameter(state));
                 }
             }
             // Desktop pointer workloads on a narrow viewport are not physical
@@ -179,6 +215,17 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
             rows.push({ ...profile, fingerprint, importWallMs, initialPlayWallMs, initialGeometry, finalGeometry, measurements });
             console.log(profile.id + ": " + initialGeometry.intersectingNodes + " viewport-intersecting nodes, " +
                 measurements.length + " measured interaction windows");
+            // Log compact results as well as preserving the detailed artifact.
+            // CI hardware varies; these are observations, never timing gates.
+            for (const m of measurements) {
+                const fixed = value => Number.isFinite(value) ? value.toFixed(2) : "N/A";
+                console.log(`EDITOR BENCH ${profile.id} ${mode} ${m.state} ${m.workload} ` +
+                    `fps=${fixed(m.observedFps)} p95ms=${fixed(m.frameGapsMs?.p95)} ` +
+                    `scriptMs=${fixed(m.cdp.ScriptDuration === null ? null : m.cdp.ScriptDuration * 1000)} ` +
+                    `layoutMs=${fixed(m.cdp.LayoutDuration === null ? null : m.cdp.LayoutDuration * 1000)} ` +
+                    `styleMs=${fixed(m.cdp.RecalcStyleDuration === null ? null : m.cdp.RecalcStyleDuration * 1000)} ` +
+                    `longTasks=${m.longTasksMs?.length ?? "N/A"} nodes=${m.geometry.intersectingNodes} dom=${m.geometry.domElements}`);
+            }
         } finally { await context.close(); }
     }
     await writeFile(outputFile, JSON.stringify({ schemaVersion: 1, fixtureVersion: 1,
