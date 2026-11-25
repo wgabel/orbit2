@@ -11,7 +11,8 @@
 
 @* Shared node shell: header is the drag handle; ports and parameter editors
    are independent interactive children, never specific to a DSP implementation. *@
-<article class="@FrameClass" style="@PositionStyle" data-node-id="@Node.Id"
+@{ RecordRender(); }
+<article class="@FrameClass" style="@PositionStyle" data-node-id="@Node.Id" data-node-render-count="@DiagnosticRenderCount"
          @onpointerdown="OnBodyPointerDown" @onpointerdown:stopPropagation="true">
     <header class="node-header" @onpointerdown="OnHeaderPointerDown" @onpointerdown:stopPropagation="true">
         <NodeAppearanceIcon Appearance="@Appearance" />
