@@ -22,6 +22,7 @@ Orbit 2 is a browser-based modular synthesizer with a Blazor WebAssembly/C# edit
 | Create or refine a musical composition | [Music creation](examples/README.md), [genres](examples/electronic-music-genres.md) and [foundations](examples/foundations/catalogue.md) |
 | Add a feature or fix code | [Agent instructions](agents/contributor-instructions.md), [coding standards](quality/coding-standards.md), [work-slice protocol](agents/work-slices.md) |
 | Modify input, gesture or node behavior | [Interaction registry](editor/user-interactions.md), [canvas](editor/canvas.md), [node expansion](editor/expandable-nodes.md) |
+| Optimize music-generation/DSP execution | [Mandatory audit, design and pre-change tests](quality/audio-engine-optimization.md) (7.3.10) |
 | Diagnose DSP, UI or playback performance | [Performance overview](quality/performance.md), [metrics](quality/performance-metrics.md), [diagnostics](quality/performance-troubleshooting.md) |
 
 ## Technical documentation by owner

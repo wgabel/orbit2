@@ -108,7 +108,7 @@ The detailed implementation and usage contract lives in [performance.md](../qual
 
 ##### 7.3.9 delivery slices
 
-S1 initial tooling and expanded CI baseline merged; physical-device follow-up remains outstanding. S2a and S2b merged and verified in CI; S3a is in review. Device evidence remains pending; remaining slices are Planned. Execute one focused slice per agent run; S1 establishes the baseline and may reorder S2–S7 according to measured costs. No change may remove in-viewport nodes, ports or required compact controls, alter graph/audio semantics, or introduce always-on diagnostic polling.
+S1 initial tooling and expanded CI baseline merged; physical-device follow-up remains outstanding. S2a and S2b merged and verified in CI; S3a is in review (runtime build and compliance passed at the preceding documentation revision; latest changes require normal PR checks). Device evidence remains pending; remaining slices are Planned. Execute one focused slice per agent run; S1 establishes the baseline and may reorder S2–S7 according to measured costs. No change may remove in-viewport nodes, ports or required compact controls, alter graph/audio semantics, or introduce always-on diagnostic polling.
 
 | Slice | Dependency | Scope and acceptance / verification target |
 | --- | --- | --- |
@@ -125,6 +125,28 @@ S1 initial tooling and expanded CI baseline merged; physical-device follow-up re
 | 7.3.9-S7 | S1, S2b, S3d | Reduce expensive control/preview DOM, layout and allocation cost while preserving original compact/expanded editors and live feedback. Verify node inventory, editing, accessibility and dense visible-node performance. |
 | 7.3.9-S8 | S1, S2b | Profile import/first paint, graph projection and anchor discovery; avoid repeated whole-graph work and use bounded yielding where measured. Verify valid large-patch import, restored layouts/zoom, error handling and time-to-interactive. |
 | 7.3.9-S9 | S2–S8 | Repeat the identical baseline workloads on reference desktop and mobile; verify frame targets, no UI-induced audio regression, long-session resource bounds and behavioral regression suite. Publish measured limits including 500-node results; no claim of capacity without evidence. |
+
+<a id="7310-audio-engine-optimization"></a>
+
+- **7.3.10 — Evidence-first audio-engine optimization (planned; design recorded in [PR #130](https://github.com/wgabel/orbit2/pull/130)):** optimize music-generation processing only after strict code analysis, reproducible baseline, reviewed technical design and passing pre-change regression tests. [Mandatory gate and candidate contracts](../quality/audio-engine-optimization.md). Independent of 7.3.9 editor work; do not start runtime improvements until the gate for that specific candidate passes.
+
+| Slice | Dependency | Scope and acceptance |
+| --- | --- | --- |
+| 7.3.10-S1 | 7.3.4 | Read-only code/execution audit: exact revision, compiled Faust/WASM, clocks/actions, lifecycle, existing optimizations and suspected costs. Produce a source-linked inventory and proposed fixtures. No production changes. |
+| 7.3.10-S2 | S1 | Baseline/test infrastructure: extend existing profiling with deterministic audio/state/event comparison, per-type paired fixtures, percussion/ambient/FX/physical models, representative nested workloads, repeated offline/live and device measurements. Commit and verify baseline tests; no production changes. Split further by fixture if needed. |
+| 7.3.10-S3 | S1, S2 | Audit and design candidate for redundant stateless control expressions, shared timing derivations, control batching and compiled-program reuse; measure existing elimination and compilation costs. Candidate-specific tests and review before implementation. |
+| 7.3.10-S4 | S3 gate | Implement only individually justified redundant-work/control or compile/replacement optimizations, one PR per candidate; otherwise record no-go. Verify audio, revision and lifecycle invariants. |
+| 7.3.10-S5 | S1, S2 | Analyze/design silent percussive or instrument voice activity, wakeup, state continuity and tails; prove actual conditional compute feasibility, commit candidate regression tests, review. |
+| 7.3.10-S6 | S5 gate | Implement one approved activity-aware voice candidate or defer; benchmark sparse and sustained patches and exact trigger/phase/tail behavior. |
+| 7.3.10-S7 | S1, S2 | Analyze/design bypassed/muted processor work reduction; preserve explicit audition and wet state semantics; candidate tests and review before any implementation. |
+| 7.3.10-S8 | S7 gate | Implement approved bypass candidate only; verify stateful effect tails and reactivation, otherwise defer. |
+| 7.3.10-S9 | S1, S2 | Analyze/design multi-rate processing eligibility, error bounds and interpolation; test slow, fast, nonlinear and audio-rate consumers. Review before changes. |
+| 7.3.10-S10 | S9 gate | Implement only proven lower-rate candidate paths; verify numerical, spectral and timing equivalence within preapproved bounds, otherwise defer. |
+| 7.3.10-S11 | S1, S2; earlier measured outcomes | Evaluate DSP partitioning with source inspection, architecture decision, isolated prototype and tests for routing, timing, resource overhead and state replacement. No production repartitioning until reviewed and proven. |
+| 7.3.10-S12 | S11 gate | Implement only a demonstrably beneficial approved partitioning candidate; otherwise record no-go. |
+| 7.3.10-S13 | Accepted candidate slices | Repeat identical reference workloads independently and combined, real devices, long sessions, crossfade peak and audio equivalence. Publish measured outcomes and rejected candidates. |
+
+7.3.9-S3d owns demand-filtered telemetry collection/transfer; any proposal to alter DSP meter execution additionally requires the 7.3.10 gate. No duplicate telemetry work. Candidate slices can be reordered or deferred based on measured costs; the audit and tests cannot be skipped.
 
 
 Deliverable: a musician can inspect audio latency and reliability while safely editing a patch, identify performance pressure and distinguish it from clipping or DSP discontinuities; developers can reproduce and compare performance regressions without changing sound. The first four increments do not depend on NoteSource, ADSR or polyphony. No ordinary browser API is assumed to expose an exact whole-renderer CPU or physical key-to-speaker latency measurement.
