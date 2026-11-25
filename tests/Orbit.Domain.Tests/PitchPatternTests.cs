@@ -201,6 +201,72 @@ public sealed class PitchPatternTests
     }
 
     [Fact]
+    public void HumanizationIsDeterministicBoundedAndDoesNotChangeTheScore()
+    {
+        var steps = new[] { 46, 0, 129, 53, 57, 58 }.Concat(Enumerable.Repeat(46, 58)).ToArray();
+        var velocities = Enumerable.Repeat(-1d, 64).ToArray();
+        velocities[3] = 0; // intentionally silent
+        var offsets = new double[64];
+        offsets[4] = -.44;
+        var pattern = new PitchPattern(true, 6, false, 1, 1, steps, Notes: true,
+            VelocityOverrides: velocities, TimingOffsets: offsets);
+        var profile = new PitchHumanization(HumanizationTiming.Ahead, 15, 10, 1234);
+        var changes = profile.CreateChanges(pattern, 1, 4);
+        Assert.Equal(changes.ToArray(), profile.CreateChanges(pattern, 1, 4).ToArray());
+        Assert.Equal(-.45, changes[NoteSequencerGenerator.StepTimingOffsetKey(4)]);
+        Assert.InRange(changes[NoteSequencerGenerator.StepTimingOffsetKey(3)], -.15, -.01);
+        Assert.DoesNotContain(NoteSequencerGenerator.StepVelocityKey(3), changes.Keys);
+        Assert.All(changes.Keys, key => Assert.True(new[] { 3, 4 }.Any(i =>
+            key == NoteSequencerGenerator.StepTimingOffsetKey(i) || key == NoteSequencerGenerator.StepVelocityKey(i))));
+        var behind = profile with { Timing = HumanizationTiming.Behind };
+        Assert.InRange(behind.CreateChanges(pattern, 3, 1)[NoteSequencerGenerator.StepTimingOffsetKey(3)], .01, .15);
+        var centered = profile with { Timing = HumanizationTiming.Centered, TimingPercent = 45 };
+        var all = centered.CreateChanges(pattern, 0, 6);
+        Assert.All(all.Where(pair => NoteSequencerGenerator.IsStepTimingOffsetParameter(pair.Key)), pair => Assert.InRange(pair.Value, -.45, .45));
+        Assert.All(all.Where(pair => NoteSequencerGenerator.IsStepVelocityParameter(pair.Key)), pair => Assert.InRange(pair.Value, 0, 1));
+        Assert.Empty((profile with { TimingPercent = 0, VelocityPercent = 0 }).CreateChanges(pattern, 0, 6));
+        Assert.Throws<ArgumentOutOfRangeException>(() => profile.CreateChanges(pattern, 5, 2));
+        Assert.Throws<ArgumentOutOfRangeException>(() => (profile with { TimingPercent = 46 }).CreateChanges(pattern, 0, 6));
+        Assert.Throws<ArgumentException>(() => profile.CreateChanges(pattern with { Notes = false }, 0, 6));
+    }
+
+    [Fact]
+    public void HumanizationCommitsOneRevisionAndRoundTripsWithUndo()
+    {
+        var registry = BuiltInNodes.CreateRegistry();
+        using var session = new PatchSession(registry);
+        var id = session.GraphId;
+        var node = session.Execute(new AddNodeCommand(id, NoteSequencerGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        session.Execute(new SetParameterValueCommand(id, new(node.Id, node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.ArticulationKey).Id), 1));
+        var steps = new int[64]; steps[0] = 46; steps[2] = 53; steps[63] = 58;
+        session.Execute(new SetPitchPatternStepsCommand(id, node.Id, steps));
+        var baseline = PitchPattern.FromNode(session.Snapshot.GetNode(node.Id));
+        var profile = new PitchHumanization(HumanizationTiming.Behind, 12, 10, 77);
+        var revision = session.Snapshot.Revision;
+        session.Execute(new HumanizePitchPatternCommand(id, node.Id, 0, 16, profile));
+        Assert.Equal(revision + 1, session.Snapshot.Revision);
+        var edited = PitchPattern.FromNode(session.Snapshot.GetNode(node.Id));
+        Assert.Equal(steps, edited.Steps);
+        Assert.Equal(baseline.GateFractions!.ToArray(), edited.GateFractions!.ToArray());
+        Assert.InRange(edited.TimingOffsets![0], .01, .12);
+        Assert.InRange(edited.TimingOffsets![2], .01, .12);
+        Assert.Equal(0d, edited.TimingOffsets![63]);
+        Assert.Equal(-1d, edited.VelocityOverrides![63]);
+        var serializer = new PatchDocumentSerializer();
+        using var roundtrip = serializer.Restore(serializer.Deserialize(serializer.Serialize(serializer.Capture(session, 120, id, []))), registry);
+        Assert.True(edited.Matches(PitchPattern.FromNode(roundtrip.Snapshot.GetNode(node.Id))));
+        revision = session.Snapshot.Revision;
+        session.Execute(new HumanizePitchPatternCommand(id, node.Id, 0, 16, profile with { TimingPercent = 0, VelocityPercent = 0 }));
+        Assert.Equal(revision, session.Snapshot.Revision);
+        Assert.Throws<ArgumentOutOfRangeException>(() => session.Execute(new HumanizePitchPatternCommand(id, node.Id, 15, 2, profile)));
+        Assert.Equal(revision, session.Snapshot.Revision);
+        session.Undo();
+        Assert.True(baseline.Matches(PitchPattern.FromNode(session.Snapshot.GetNode(node.Id))));
+        session.Redo();
+        Assert.True(edited.Matches(PitchPattern.FromNode(session.Snapshot.GetNode(node.Id))));
+    }
+
+    [Fact]
     public void FixedSlotsMigratePreserveInactiveNotesAndUndoAtomically()
     {
         var registry = BuiltInNodes.CreateRegistry();
