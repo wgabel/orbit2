@@ -125,6 +125,10 @@ flowchart TD
 
 The UI-to-infrastructure dependency is restricted to composition/setup, where dependencies are injected (e.g. Program.cs). Presentation components consume application contracts. Domain must not reference Blazor, infrastructure or Faust-specific runtime objects.
 
+### Planned GPU renderer isolation (7.3.11)
+
+The new graphical editor will have its own source root, `src/Orbit.GpuRenderer/`, separate from the existing `Orbit.UI` HTML/SVG implementation. It consumes shared renderer-neutral Application/Presentation contracts; existing graph and audio layers do not depend on GPU code. The existing UI composition root may select/mount it through a minimal adapter. Renderer-specific source, prototypes and resources belong inside the new root, with dedicated tests; cross-root exceptions and architectural checks are defined in the [mandatory GPU renderer isolation contract](../editor/gpu-renderer.md#mandatory-source-tree-and-dependency-isolation). This is planned, not a currently implemented project reference.
+
 ### Application startup and connection of layers
 
 Program.cs in the Blazor UI is the composition root. It registers the application services, graph registry, event dispatcher, compiler and browser audio engine implementations through dependency injection. The canvas renders the graph model through a view state/projection. User input invokes commands on the application services, not direct modifications of DSP state by the UI.
