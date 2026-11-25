@@ -34,6 +34,32 @@ public sealed class CompositeNode : SignalNode, ICompositeNode
     public InputRack InputRack { get; }
     public OutputRack OutputRack { get; }
 
+    public IReadOnlyList<CompositeMacroDefinition> Macros { get; private set; } = Array.Empty<CompositeMacroDefinition>();
+
+    /// <summary>Validate the entire proposed configuration before replacing it.
+    /// Stored mappings do not overwrite manual child base values.</summary>
+    public bool ReplaceMacros(IEnumerable<CompositeMacroDefinition> macros)
+    {
+        ArgumentNullException.ThrowIfNull(macros);
+        var copy = macros.ToArray();
+        if (copy.Length > 64 || copy.Any(macro => macro is null) ||
+            copy.Select(macro => macro.Id).Distinct().Count() != copy.Length ||
+            copy.Select(macro => macro.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count() != copy.Length)
+            throw new GraphValidationException("A composite supports up to 64 uniquely named and identified macros.");
+        var targets = new HashSet<Orbit.Domain.Parameters.ParameterAddress>();
+        foreach (var macro in copy)
+        foreach (var binding in macro.Mapping.Bindings)
+        {
+            if (!targets.Add(binding.Target))
+                throw new GraphValidationException("An internal parameter cannot be owned by several macros.");
+            InternalGraph.ValidateCompositeMacroBinding(binding, requireActive: false);
+        }
+        if (Macros.Count == copy.Length && Macros.Zip(copy).All(pair => pair.First.HasSameConfiguration(pair.Second)))
+            return false;
+        Macros = Array.AsReadOnly(copy);
+        return true;
+    }
+
     internal void ReplaceBoundary(IEnumerable<ExposedPort> inputs, IEnumerable<ExposedPort> outputs)
     {
         // Materialize and validate the whole boundary before touching any view.

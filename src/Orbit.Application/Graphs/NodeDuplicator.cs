@@ -53,7 +53,17 @@ internal static class NodeDuplicator
                 composite.Name, Remap(composite.InputRackId), Remap(composite.OutputRackId),
                 composite.Inputs.Select(port => port with { Id = Remap(port.Id) }).ToArray(),
                 composite.Outputs.Select(port => port with { Id = Remap(port.Id) }).ToArray(),
-                CopyGraph(composite.Graph)) : null)
+                CopyGraph(composite.Graph))
+                {
+                    Macros = composite.Macros.Select(macro => macro with
+                    {
+                        Id = Remap(macro.Id),
+                        Bindings = macro.Bindings.Select(binding => binding with
+                        {
+                            Target = new(Remap(binding.Target.NodeId), Remap(binding.Target.ParameterId))
+                        }).ToArray()
+                    }).ToArray()
+                } : null)
         {
             IsMuted = node.IsMuted,
             IsBypassed = node.IsBypassed

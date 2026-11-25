@@ -20,7 +20,13 @@ public sealed record SavedNode(Guid Id, string TypeKey, SavedParameter[] Paramet
 public sealed record SavedParameter(string Key, Guid Id, double BaseValue);
 public sealed record SavedPort(string Key, Guid Id);
 public sealed record SavedComposite(string Name, Guid InputRackId, Guid OutputRackId,
-    ExposedPort[] Inputs, ExposedPort[] Outputs, SavedGraph Graph);
+    ExposedPort[] Inputs, ExposedPort[] Outputs, SavedGraph Graph)
+{
+    // Optional in older schema-1 documents.
+    public SavedCompositeMacro[] Macros { get; set; } = [];
+}
+public sealed record SavedCompositeMacro(Guid Id, string Name, double DefaultValue, double BaseValue,
+    CompositeMacroBinding[] Bindings);
 public sealed record SavedCanvas(Guid GraphId, double PanX, double PanY, double Zoom, SavedNodePosition[] Positions)
 {
     public SavedNodeVisualization[] Visualizations { get; init; } = [];

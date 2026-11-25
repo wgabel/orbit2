@@ -16,6 +16,8 @@ public static class CompositeUngrouping
     {
         var wrapper = parent.GetNode(compositeId);
         var composite = wrapper.Composite ?? throw new GraphValidationException("Select one composite to ungroup.");
+        if (composite.Macros.Count != 0)
+            throw new GraphValidationException("Remove macro definitions before expanding this composite.");
         if (wrapper.IsMuted)
             throw new GraphValidationException("Unmute the composite before expanding it; its output mute cannot be retained without the wrapper.");
         var child = composite.Graph;

@@ -44,6 +44,7 @@ public sealed record GraphNodeSnapshot(
             Composite = node is ICompositeNode composite
                 ? new CompositeSnapshot(GraphSnapshot.Capture(composite.InternalGraph, revision),
                     composite.InputRack.Id, composite.OutputRack.Id)
+                    { Macros = node is CompositeNode concrete ? concrete.Macros : Array.Empty<CompositeMacroDefinition>() }
                 : null
         };
 }
