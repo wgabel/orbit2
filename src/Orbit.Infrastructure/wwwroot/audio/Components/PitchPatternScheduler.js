@@ -11,6 +11,32 @@ function validVelocityOverride(value) {
 function encodeVelocity(value) {
     return value == null || value === -1 ? 0 : (Math.round(value * 100) + 1) * VELOCITY_STRIDE;
 }
+const MAX_TIMING_OFFSET = .45;
+function validTimingOffset(value) {
+    return Number.isFinite(value) && Math.abs(value) <= MAX_TIMING_OFFSET &&
+        value === Math.round(value * 100) / 100;
+}
+function stepAt(p, ordinal) {
+    return ((ordinal % p.count) + p.count) % p.count;
+}
+function offsetAt(p, ordinal) {
+    const step = stepAt(p, ordinal);
+    const code = p.steps[step];
+    return code >= 1 && code <= 128 ? p.timingOffsets?.[step] ?? 0 : 0;
+}
+function hasTimingOffsets(p) {
+    return p.notes === true && (p.timingOffsets?.some((value, step) =>
+        value !== 0 && step < p.count && p.steps[step] >= 1 && p.steps[step] <= 128) ?? false);
+}
+// Adjacent onsets cannot cross with offsets bounded to ±.45 of one step.
+// Ties and rests retain their grid boundaries. Before transport zero no events exist.
+function timedOrdinal(p, position, duration) {
+    const units = (position + 1e-7) / duration;
+    const grid = Math.floor(units);
+    if (units >= grid + 1 + offsetAt(p, grid + 1)) return grid + 1;
+    if (units < grid + offsetAt(p, grid)) return grid - 1;
+    return grid;
+}
 export function validPitchPattern(p) {
     return p && typeof p.loop === 'boolean' && typeof p.free === 'boolean' &&
         (p.notes === undefined || typeof p.notes === 'boolean') &&
@@ -20,6 +46,8 @@ export function validPitchPattern(p) {
             p.gateFractions.every(n => Number.isFinite(n) && n >= 0 && n <= 1)) &&
         (p.velocityOverrides == null || Array.isArray(p.velocityOverrides) && p.velocityOverrides.length === 64 &&
             p.velocityOverrides.every(validVelocityOverride)) &&
+        (p.timingOffsets == null || Array.isArray(p.timingOffsets) && p.timingOffsets.length === 64 &&
+            p.timingOffsets.every(validTimingOffset)) &&
         Number.isInteger(p.count) && p.count >= 1 && p.count <= 64 &&
         Number.isInteger(p.ticks) && p.ticks >= 1 && p.ticks <= 1024 &&
         Number.isFinite(p.seconds) && p.seconds >= .01 && p.seconds <= 600 &&
@@ -36,6 +64,11 @@ export class PitchPatternScheduler {
         this.gateOpen = false;
         this.noteGateFraction = 0;
         this.releasedOrdinal = -1;
+        this.hasOffsets = hasTimingOffsets(pattern);
+        this.lastPosition = null;
+        this.skipThroughOrdinal = -1;
+        this.noteTimingOffset = 0;
+        this.noteEndOrdinal = -1;
     }
 
     setPattern(pattern) {
@@ -44,10 +77,20 @@ export class PitchPatternScheduler {
         const sameTiming = previous.loop && pattern.loop && previous.count === pattern.count &&
             previous.free === pattern.free && previous.ticks === pattern.ticks && previous.seconds === pattern.seconds &&
             Boolean(previous.notes) === Boolean(pattern.notes);
+        const hasOffsets = hasTimingOffsets(pattern);
+        if (sameTiming && (this.hasOffsets || hasOffsets) && this.lastPosition !== null && !this.dirty) {
+            const duration = pattern.free ? pattern.seconds : pattern.ticks / 4;
+            // Do not replay an onset moved into the already-rendered past.
+            const current = timedOrdinal(pattern, this.lastPosition, duration);
+            if (current > this.ordinal) this.skipThroughOrdinal = Math.max(this.skipThroughOrdinal, current);
+        }
         this.pattern = pattern;
+        this.hasOffsets = hasOffsets;
         if (!sameTiming) {
             this.dirty = true;
             this.gateOpen = false;
+            this.skipThroughOrdinal = -1;
+            this.lastPosition = null;
         }
         return true;
     }
@@ -65,21 +108,39 @@ export class PitchPatternScheduler {
                 this.dirty = false;
                 this.ordinal = -1;
                 this.gateOpen = false;
+                this.lastPosition = null;
+                this.skipThroughOrdinal = -1;
                 continue;
             }
             const position = p.free ? clock[4][i] + clock[5][i] : clock[2][i] + clock[3][i];
             const duration = p.free ? p.seconds : p.ticks / 4;
-            const ordinal = Math.floor((position + 1e-7) / duration);
-            const step = ((ordinal % p.count) + p.count) % p.count;
-            const changed = this.dirty || reset || ordinal !== this.ordinal;
+            const backwards = articulated && this.lastPosition !== null && position < this.lastPosition;
+            let ordinal = this.hasOffsets ? timedOrdinal(p, position, duration) :
+                Math.floor((position + 1e-7) / duration);
+            // A live offset edit may move the current onset later; it must not retrigger.
+            if (articulated && !this.dirty && !reset && !backwards) ordinal = Math.max(ordinal, this.ordinal);
+            this.lastPosition = position;
+            if (reset || backwards) this.skipThroughOrdinal = -1;
+            // The first positive-offset onset waits; an early first onset is clipped to zero.
+            if (ordinal < 0) {
+                if (this.dirty || reset || backwards || this.ordinal >= 0) output[i] = 256 + 130;
+                this.ordinal = -1;
+                this.dirty = false;
+                this.gateOpen = false;
+                continue;
+            }
+            const step = stepAt(p, ordinal);
+            const changed = this.dirty || reset || backwards || ordinal !== this.ordinal;
             if (changed) {
                 let code = p.steps[step];
                 if (articulated) {
                     // 0 ties the previous note; 129 is an explicit rest.
                     // Release on reset/rest; ordinary note boundaries retrigger.
-                    const discontinuity = reset || this.dirty || ordinal !== this.ordinal + 1;
+                    const discontinuity = reset || backwards || this.dirty || ordinal !== this.ordinal + 1;
+                    const skipped = ordinal <= this.skipThroughOrdinal;
+                    if (ordinal > this.skipThroughOrdinal) this.skipThroughOrdinal = -1;
                     if (discontinuity) this.gateOpen = false;
-                    if (code === 129 || (code === 0 && discontinuity)) {
+                    if (skipped || code === 129 || (code === 0 && discontinuity)) {
                         output[i] = (step + 1) * 256 + 130;
                         this.gateOpen = false;
                     } else {
@@ -90,6 +151,14 @@ export class PitchPatternScheduler {
                             output[i] += encodeVelocity(p.velocityOverrides?.[step]);
                             // Latch explicit duration at onset; ties inherit it.
                             this.noteGateFraction = p.gateFractions?.[step] ?? 0;
+                            const offset = offsetAt(p, ordinal);
+                            this.noteTimingOffset = ordinal === 0 ? Math.max(0, offset) : offset;
+                            this.noteEndOrdinal = ordinal;
+                            if (this.noteTimingOffset !== 0) {
+                                // Latch the tied extent for shifted notes, once per onset.
+                                for (let next = 1; next < p.count && p.steps[(step + next) % p.count] === 0; next++)
+                                    this.noteEndOrdinal++;
+                            }
                         }
                     }
                     this.releasedOrdinal = -1;
@@ -110,9 +179,12 @@ export class PitchPatternScheduler {
             }
             // A tie continues through its step. Release near the end of the last
             // note/tie step, only when the following slot isn't another tie.
-            if (articulated && this.gateOpen && this.releasedOrdinal !== ordinal &&
-                p.steps[(step + 1) % p.count] !== 0 &&
-                (position / duration - ordinal) >= (this.noteGateFraction || (p.gateFraction ?? .9))) {
+            if (articulated && this.gateOpen && this.releasedOrdinal !== ordinal) {
+                const fraction = this.noteGateFraction || (p.gateFraction ?? .9);
+                const releaseDue = this.noteTimingOffset !== 0
+                    ? (position + 1e-7) / duration >= this.noteEndOrdinal + this.noteTimingOffset + fraction
+                    : p.steps[(step + 1) % p.count] !== 0 && position / duration - ordinal >= fraction;
+                if (!releaseDue) continue;
                 // Do not overwrite a boundary pulse; the next sample is enough.
                 if (output[i] === 0) {
                     output[i] = (step + 1) * 256 + 130;
