@@ -95,6 +95,10 @@ Requirements for implementation: use the shared node/connector components, keep 
 - For each newly supported action record: target + input, precedence, conflict strategy, accessible alternative, source/test path, status, and actual implementation PR.
 - Use actual code/tests as implementation evidence; keep aspirational milestones distinguishable from current behavior.
 
-### Note Sequencer: selected note length (in review, [PR #111](https://github.com/wgabel/orbit2/pull/111))
+### Note Sequencer: selected note length (merged, [PR #111](https://github.com/wgabel/orbit2/pull/111))
 
 The existing Edit notes panel exposes a labeled native numeric input for populated steps in Notes mode. Click/tap or focus to edit the selected slot's gate fraction; normal change commits through the existing parameter-edit command. Keyboard capture remains excluded inside the input, and the input is disabled during recording. No canvas, grid or piano gesture is reassigned. Source: `PerformanceKeyboard.razor`; regression: `tests/browser/PublishedPlaybackSmoke.mjs`.
+
+### Note Sequencer: selected note velocity (CI verified; awaiting merge, [PR #115](https://github.com/wgabel/orbit2/pull/115))
+
+In the existing Edit notes panel, a populated Notes-mode step exposes a labeled native select with Default and 0–100% options. Mouse/touch or native keyboard selection commits through the normal validated parameter edit command; Undo/Redo restores the saved slot value. Focus in the select excludes piano capture, recording disables editing, and Rest/Tie or Pitch-only mode hides the control. No new gestures or node layout changes. Source: `PerformanceKeyboard.razor`; regression: `tests/browser/PublishedPlaybackSmoke.mjs` (desktop and narrow viewport).
