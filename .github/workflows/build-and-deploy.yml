@@ -139,7 +139,7 @@ jobs:
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
           node scripts/benchmark-live.mjs "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/live-report.json"
       - name: Benchmark large-patch editor smoke
-        timeout-minutes: 10
+        timeout-minutes: 15
         env:
           ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
           ORBIT_EDITOR_REPEATS: '1'
@@ -147,7 +147,9 @@ jobs:
         run: |
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
           dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj --configuration Release -- --editor-benchmark "$RUNNER_TEMP/orbit-editor-benchmark"
-          node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-report.json" editor-50
+          node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-report.json" editor-50 editor-200
+          ORBIT_EDITOR_PLAYBACK=0 node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-500-stopped.json" editor-500
+          ORBIT_EDITOR_VIEWPORT=mobile ORBIT_EDITOR_PLAYBACK=0 node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-mobile-stopped.json" editor-200
       - name: Upload editor benchmark baseline
         uses: actions/upload-artifact@v4
         with:
