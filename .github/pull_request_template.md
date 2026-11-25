@@ -1,3 +1,5 @@
+<!-- Mandatory PR title: [DOC], [UI], [ENGINE], or [UI][ENGINE] followed by a concise description and roadmap slice when applicable. See docs/agents/contributor-instructions.md#pull-request-title-prefixes-mandatory. -->
+
 ## Scope
 
 <!-- What changes and why? Include the roadmap slice if applicable. -->
