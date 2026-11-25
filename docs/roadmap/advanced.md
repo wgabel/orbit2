@@ -159,6 +159,21 @@ S1 initial tooling and expanded CI baseline merged; physical-device follow-up re
 7.3.9-S3d owns demand-filtered telemetry collection/transfer; any proposal to alter DSP meter execution additionally requires the 7.3.10 gate. No duplicate telemetry work. Candidate slices can be reordered or deferred based on measured costs; the audit and tests cannot be skipped.
 
 
+<a id="7311-gpu-renderer"></a>
+
+- **7.3.11 — Evidence-first full GPU-rendered editor (planned):** target a fully WebGL-rendered visible editor, including expanded nodes and workspace controls, with minimal native browser adapters. Preserve the existing application and audio architecture. Full migration requires measured benefit, reviewed architecture/pattern decisions, regression coverage and owner go/no-go. See [mandatory design and migration contract](../editor/gpu-renderer.md).
+
+| Slice | Depends on | Scope and acceptance / verification |
+| --- | --- | --- |
+| 7.3.11-S1 (Planned) | 7.3.9 baseline infrastructure | Read-only source audit: inventory subsystem owners, dependencies, data flows, interaction/telemetry/lifecycle contracts and measured hotspots; deliver source-linked diagrams, risk matrix and fixture proposal. Verify audit against code/tests; no production changes. |
+| 7.3.11-S2 (Planned) | S1; optimized 7.3.9 baseline | Capture controlled DOM/SVG baseline and establish parity workloads, agreed gain thresholds and resource budgets. Verify reproducible reports on reference desktop/Android; split fixture work as needed. |
+| 7.3.11-S3 (Planned) | S1, S2 | Evaluate architectural alternatives and programming patterns, inter-system contracts, dependencies and test strategy; deliver reviewed ADRs, sequence diagrams and migration design. No production renderer changes. |
+| 7.3.11-S4a (Planned) | S2, S3 | Isolated Canvas 2D benchmark prototype; verify comparable visuals/workloads and collect raw repeated metrics. |
+| 7.3.11-S4b (Planned) | S2, S3 | Isolated WebGL prototype (PixiJS candidate); same fixtures, workloads, device measurements and parity checks; assess WebGPU/worker options only if justified. |
+| 7.3.11-S5 (Planned) | S3, S4a, S4b | Review architecture, passing pre-change tests, comparative performance and audio reliability, dependency/license/support audit, and explicit owner go/no-go. Record rejected alternatives and stop if gate fails. |
+
+**Later delivery (planned, gated by S5; split into small actionable slices before coding):** renderer-neutral projection/backend and incremental interop; shared scene/layout primitives and input state machines; nodes/ports/cables; reusable graphical controls and expanded nodes; composite/presets/annotations; sequencers/automation/visualizations; workspace/menus/piano; native input/accessibility and GPU lifecycle parity throughout; final paired desktop/Android comparison, legacy cleanup and rollback readiness. Each production slice requires focused pre/post benchmarks, regression tests, full runtime CI and code quality review. Existing 7.3.9 before/after rules apply. DSP optimization remains under 7.3.10.
+
 Deliverable: a musician can inspect audio latency and reliability while safely editing a patch, identify performance pressure and distinguish it from clipping or DSP discontinuities; developers can reproduce and compare performance regressions without changing sound. The first four increments do not depend on NoteSource, ADSR or polyphony. No ordinary browser API is assumed to expose an exact whole-renderer CPU or physical key-to-speaker latency measurement.
 
 **Priority for Phase 7.5:** implement 7.3.1, 7.3.2 and the baseline benchmark workflow in 7.3.4 before adding unison or stereo; characterize the existing mono system and measure each subsequent DSP change. 7.3.3 is recommended for editor work; 7.3.5 and 7.3.6 need not delay Phase 7.5. Benchmark profile additions and limits are specified in [stereo/unison performance first](../audio/stereo-panning-and-unison.md#1-performance-first).
