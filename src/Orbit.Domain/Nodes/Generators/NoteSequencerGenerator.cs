@@ -24,11 +24,14 @@ public sealed class NoteSequencerGenerator : SignalNode, IGenerator
     public const string VelocityKey = "pattern-velocity";
     public const int RestCode = 129;
     public const double InheritVelocity = -1;
+    public const int MaximumTimingOffsetPercent = 45;
     public static string StepKey(int index) => "pattern-step-" + (index + 1).ToString("00", System.Globalization.CultureInfo.InvariantCulture);
     public static string StepGateLengthKey(int index) => "pattern-step-gate-length-" + (index + 1).ToString("00", System.Globalization.CultureInfo.InvariantCulture);
     public static bool IsStepGateLengthParameter(string key) => key.StartsWith("pattern-step-gate-length-", StringComparison.Ordinal);
     public static string StepVelocityKey(int index) => "pattern-step-velocity-" + (index + 1).ToString("00", System.Globalization.CultureInfo.InvariantCulture);
     public static bool IsStepVelocityParameter(string key) => key.StartsWith("pattern-step-velocity-", StringComparison.Ordinal);
+    public static string StepTimingOffsetKey(int index) => "pattern-step-timing-offset-" + (index + 1).ToString("00", System.Globalization.CultureInfo.InvariantCulture);
+    public static bool IsStepTimingOffsetParameter(string key) => key.StartsWith("pattern-step-timing-offset-", StringComparison.Ordinal);
     public static bool IsPatternParameter(string key) => key.StartsWith("pattern-", StringComparison.Ordinal);
 
     private static ParameterDefinition Choice(string key, string name, int value, IReadOnlyList<ParameterChoice> choices) =>
@@ -39,6 +42,10 @@ public sealed class NoteSequencerGenerator : SignalNode, IGenerator
     private static IReadOnlyList<ParameterChoice> StepVelocities { get; } = Array.AsReadOnly(
         new[] { new ParameterChoice(InheritVelocity, "Default") }.Concat(Enumerable.Range(0, 101)
             .Select(percent => new ParameterChoice(percent / 100d, percent.ToString(System.Globalization.CultureInfo.InvariantCulture) + "%"))).ToArray());
+    // Signed fractions of the step; the bound leaves room between adjacent onsets.
+    private static IReadOnlyList<ParameterChoice> StepTimingOffsets { get; } = Array.AsReadOnly(
+        Enumerable.Range(-MaximumTimingOffsetPercent, 2 * MaximumTimingOffsetPercent + 1)
+            .Select(percent => new ParameterChoice(percent / 100d, percent.ToString(System.Globalization.CultureInfo.InvariantCulture) + "%")).ToArray());
     public static IReadOnlyList<ParameterDefinition> PatternDefinitions { get; } = Array.AsReadOnly(new[] {
         Choice(LoopKey, "Pattern mode", 0, [new(0, "Live"), new(1, "Loop")]),
         Choice(CountKey, "Step count", 16, Integers(1, Capacity)),
@@ -54,7 +61,10 @@ public sealed class NoteSequencerGenerator : SignalNode, IGenerator
         new ParameterDefinition(StepGateLengthKey(i), $"Step {i + 1} note length", 0, 0, 1, ParameterUnit.Normalized,
             ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None))).Concat(Enumerable.Range(0, Capacity).Select(i =>
         new ParameterDefinition(StepVelocityKey(i), $"Step {i + 1} velocity", InheritVelocity, InheritVelocity, 1, ParameterUnit.Normalized,
-            ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None) { Choices = StepVelocities })).ToArray());
+            ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None) { Choices = StepVelocities })).Concat(Enumerable.Range(0, Capacity).Select(i =>
+        new ParameterDefinition(StepTimingOffsetKey(i), $"Step {i + 1} timing offset", 0,
+            -MaximumTimingOffsetPercent / 100d, MaximumTimingOffsetPercent / 100d, ParameterUnit.Ratio,
+            ParameterScale.Linear, false, Smoothing: ParameterSmoothing.None) { Choices = StepTimingOffsets })).ToArray());
 
     public NoteSequencerGenerator(Guid id) : base(id, NodeType, "Note Sequencer",
         new[] { new Parameter(Guid.NewGuid(), new ParameterDefinition(ReferenceKey, "Reference note", MusicalPitch.ReferenceMidiNote, 0, 127,
