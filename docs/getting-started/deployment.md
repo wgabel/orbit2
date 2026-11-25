@@ -6,7 +6,7 @@ The main-branch GitHub Actions workflow builds and tests the graph, Faust DSP, U
 
 ## Documentation-only CI
 
-Implementation: [PR #132](https://github.com/wgabel/orbit2/pull/132) (in review).
+Implementation: [PR #132](https://github.com/wgabel/orbit2/pull/132) (merged; [full PR CI passed](https://github.com/wgabel/orbit2/actions/runs/45661056344), including classifier and actual deployment shell guard tests against a local Git remote). [Agent compliance passed](https://github.com/wgabel/orbit2/actions/runs/45661056372). The first post-merge main build was [started](https://github.com/wgabel/orbit2/actions/runs/45662482468); its deployment result has not yet been verified.
 
 The build workflow always reports the existing `build` check, runs the change-classifier tests and validates documentation links. The separate agent-compliance workflow is unchanged. The shared [change-scope policy](../../scripts/ci-change-scope.mjs) excludes only Markdown under `docs/`, root AGENTS.md, the Copilot instructions, PR template and non-executable agent routing JSON. Reference-patch JSON, unknown paths, tests, workflow files and runtime code require full CI; PR titles do not determine skipping. Renames consider both paths. PRs compare merge base to head; main pushes compare before and after, including all commits in the push. Mixed PRs still build on documentation closeout commits. Manual runs, uncertain or unavailable history and forced pushes trigger full CI.
 
