@@ -157,6 +157,42 @@ public sealed class SignalGraph
         return result;
     }
 
+    /// <summary>Preview a normalized macro's base-value changes without mutating the child graph.</summary>
+    public IReadOnlyList<ParameterValueChange> PreviewCompositeMacro(CompositeMacroMapping mapping, double value) =>
+        Array.AsReadOnly(PrepareCompositeMacro(mapping, value).Select(entry => entry.Change).ToArray());
+
+    /// <summary>Apply a one-shot macro mapping atomically; ordinary parameter edits remain independent.</summary>
+    public IReadOnlyList<ParameterValueChange> ApplyCompositeMacro(CompositeMacroMapping mapping, double value)
+    {
+        var changes = PrepareCompositeMacro(mapping, value);
+        foreach (var entry in changes)
+            entry.Parameter.SetBaseValue(entry.Change.CurrentValue);
+        return Array.AsReadOnly(changes.Select(entry => entry.Change).ToArray());
+    }
+
+    private List<(Parameter Parameter, ParameterValueChange Change)> PrepareCompositeMacro(
+        CompositeMacroMapping mapping, double value)
+    {
+        ArgumentNullException.ThrowIfNull(mapping);
+        if (Owner is null)
+            throw new GraphValidationException("Macro targets must belong to a composite child graph.");
+        CompositeMacroMapping.ValidateValue(value);
+        var changes = new List<(Parameter, ParameterValueChange)>();
+        foreach (var binding in mapping.Bindings)
+        {
+            var parameter = GetParameter(binding.Target);
+            var definition = parameter.Definition;
+            if (definition.RequiresRecompile || definition.Choices is not null || definition.ActiveWhen is not null ||
+                !definition.IsValidBaseValue(binding.AtZero) || !definition.IsValidBaseValue(binding.AtOne))
+                throw new GraphValidationException("Macro targets must be unconditional continuous parameters with valid range endpoints.");
+            var mapped = CompositeMacroMapping.Map(binding, value);
+            parameter.ValidateBaseValue(mapped);
+            if (parameter.BaseValue != mapped)
+                changes.Add((parameter, new ParameterValueChange(binding.Target, parameter.BaseValue, mapped)));
+        }
+        return changes;
+    }
+
     public void SetNodeMuted(Guid nodeId, bool muted)
     {
         if (GetNode(nodeId) is not SignalNode { SupportsMute: true } node)

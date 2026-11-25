@@ -31,6 +31,7 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
             SetPitchPatternStepsCommand set => SetPitchPatternSteps(graph, set),
             HumanizePitchPatternCommand humanize => HumanizePitchPattern(graph, humanize, revision),
             ApplyNodePresetCommand apply => ApplyNodePreset(graph, apply),
+            ApplyCompositeMacroCommand macro => ApplyCompositeMacro(graph, macro),
             SetNodeMutedCommand mute => SetNodeMuted(graph, mute),
             SetNodeBypassedCommand bypass => SetNodeBypassed(graph, bypass),
             AddBoundaryPortCommand add => BoundaryFacts(graph.Id, graph.AddBoundaryPort(add.Direction,
@@ -118,6 +119,11 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
             .Select(change => (IGraphEvent)new ParameterChanged(graph.Id, change.Address,
                 change.PreviousValue, change.CurrentValue)).ToArray();
     }
+
+    private static IReadOnlyList<IGraphEvent> ApplyCompositeMacro(SignalGraph graph, ApplyCompositeMacroCommand command) =>
+        graph.ApplyCompositeMacro(command.Mapping, command.Value)
+            .Select(change => (IGraphEvent)new ParameterChanged(graph.Id, change.Address,
+                change.PreviousValue, change.CurrentValue)).ToArray();
 
     private static IReadOnlyList<IGraphEvent> SetPitchPatternSteps(SignalGraph graph, SetPitchPatternStepsCommand command)
     {
