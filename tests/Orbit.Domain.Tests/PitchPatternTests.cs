@@ -135,6 +135,72 @@ public sealed class PitchPatternTests
     }
 
     [Fact]
+    public void TimingOffsetsMigratePreserveIdentityAndRoundTripWithUndo()
+    {
+        var registry = BuiltInNodes.CreateRegistry();
+        using var session = new PatchSession(registry);
+        var id = session.GraphId;
+        var node = session.Execute(new AddNodeCommand(id, NoteSequencerGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        var serializer = new PatchDocumentSerializer();
+        var document = serializer.Capture(session, 120, id, []);
+        var saved = document.RootGraph.Nodes.Single();
+        var legacy = saved with { Parameters = saved.Parameters.Where(p => !NoteSequencerGenerator.IsStepTimingOffsetParameter(p.Key)).ToArray() };
+        using var restored = serializer.Restore(document with { RootGraph = document.RootGraph with { Nodes = [legacy] } }, registry);
+        var migrated = restored.Snapshot.GetNode(node.Id);
+        Assert.All(legacy.Parameters, p => Assert.Contains(migrated.Parameters, a => a.Id == p.Id && a.BaseValue == p.BaseValue));
+        var baseline = PitchPattern.FromNode(migrated);
+        Assert.Equal(NoteSequencerGenerator.Capacity, baseline.TimingOffsets!.Count);
+        Assert.All(baseline.TimingOffsets!, value => Assert.Equal(0d, value));
+        Assert.True(baseline.Matches(baseline with { TimingOffsets = null }));
+        var validator = new NodePresetValidator(registry);
+        var preset = new NodePreset(1, "old-offset", node.TypeKey, "Old offsets", "Custom", null, legacy.Parameters.ToDictionary(p => p.Key, p => p.BaseValue));
+        validator.Validate(preset);
+        Assert.Equal(0d, preset.Parameters[NoteSequencerGenerator.StepTimingOffsetKey(0)]);
+
+        var first = new Orbit.Domain.Parameters.ParameterAddress(node.Id, node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.StepTimingOffsetKey(0)).Id);
+        var hidden = new Orbit.Domain.Parameters.ParameterAddress(node.Id, node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.StepTimingOffsetKey(63)).Id);
+        session.Execute(new SetParameterValueCommand(id, hidden, .45));
+        session.Execute(new SetParameterValueCommand(id, first, -.45));
+        var edited = PitchPattern.FromNode(session.Snapshot.GetNode(node.Id));
+        Assert.False(baseline.Matches(edited));
+        Assert.Equal(-.45, edited.TimingOffsets![0]);
+        Assert.Equal(.45, edited.TimingOffsets![63]);
+        Assert.Equal(16, edited.Count);
+        var current = serializer.Capture(session, 120, id, []);
+        using var roundtrip = serializer.Restore(serializer.Deserialize(serializer.Serialize(current)), registry);
+        Assert.True(edited.Matches(PitchPattern.FromNode(roundtrip.Snapshot.GetNode(node.Id))));
+        session.Undo();
+        Assert.Equal(0d, PitchPattern.FromNode(session.Snapshot.GetNode(node.Id)).TimingOffsets![0]);
+        session.Redo();
+        Assert.True(edited.Matches(PitchPattern.FromNode(session.Snapshot.GetNode(node.Id))));
+
+        var partial = current.RootGraph.Nodes.Single();
+        partial = partial with { Parameters = partial.Parameters.Where(p => p.Key != NoteSequencerGenerator.StepTimingOffsetKey(0)).ToArray() };
+        Assert.Throws<ArgumentException>(() => serializer.Restore(current with { RootGraph = current.RootGraph with { Nodes = [partial] } }, registry));
+        Assert.Throws<ArgumentException>(() => validator.Validate(new NodePreset(1, "partial-offset", node.TypeKey, "Partial offsets", "Custom", null, partial.Parameters.ToDictionary(p => p.Key, p => p.BaseValue))));
+    }
+
+    [Theory]
+    [InlineData(-.46)]
+    [InlineData(.46)]
+    [InlineData(.123)]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    public void InvalidTimingOffsetsAreRejectedWithoutHistory(double value)
+    {
+        var registry = BuiltInNodes.CreateRegistry();
+        using var session = new PatchSession(registry);
+        var id = session.GraphId;
+        var node = session.Execute(new AddNodeCommand(id, NoteSequencerGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        var parameter = node.Parameters.Single(p => p.Definition.Key == NoteSequencerGenerator.StepTimingOffsetKey(0));
+        var revision = session.Snapshot.Revision;
+        Assert.False(parameter.Definition.IsValidBaseValue(value));
+        Assert.Throws<ArgumentOutOfRangeException>(() => session.Execute(new SetParameterValueCommand(id, new(node.Id, parameter.Id), value)));
+        Assert.Equal(revision, session.Snapshot.Revision);
+        Assert.Equal(0d, PitchPattern.FromNode(session.Snapshot.GetNode(node.Id)).TimingOffsets![0]);
+    }
+
+    [Fact]
     public void FixedSlotsMigratePreserveInactiveNotesAndUndoAtomically()
     {
         var registry = BuiltInNodes.CreateRegistry();
