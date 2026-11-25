@@ -163,3 +163,96 @@ test('velocity follows shared beat positions across tempo changes and discontinu
     assert.equal(sample(s,7,4),1024+130); // seek into a tie: no stale held note
     assert.equal(sample(s,8,4.5),31*32768+256+46);
 });
+
+test('signed timing offsets preserve order, gate duration, velocity and rests', () => {
+    const p = pattern({notes:true,count:4,ticks:4,gateFraction:.5,
+        steps:[46,46,129,53,...Array(60).fill(0)],
+        timingOffsets:[.2,-.2,.45,.1,...Array(60).fill(0)],
+        velocityOverrides:[.2,0,-1,.8,...Array(60).fill(-1)]});
+    const s = new PitchPatternScheduler(p);
+    assert.equal(sample(s,0,0),256+130);
+    assert.equal(sample(s,.19,.095),0);
+    assert.equal(sample(s,.2,.1),21*32768+256+46);
+    assert.equal(sample(s,.7,.35),256+130);
+    assert.equal(sample(s,.79,.395),0);
+    assert.equal(sample(s,.8,.4),32768+512+46);
+    assert.equal(sample(s,1, .5),0);
+    assert.equal(sample(s,1.3,.65),512+130);
+    assert.equal(sample(s,2,1),768+130);
+    assert.equal(sample(s,3,1.5),0);
+    assert.equal(sample(s,3.1,1.55),81*32768+1024+53);
+    assert.equal(sample(s,3.6,1.8),1024+130);
+    assert.equal(sample(s,4,2),0);
+    assert.equal(sample(s,4.2,2.1),21*32768+256+46);
+    assert.equal(sample(s,0,0,1),256+130);
+    assert.equal(sample(s,.2,.1,1),21*32768+256+46);
+});
+test('early first note clips at reset, anticipates wrap, and shifted ties retain duration', () => {
+    const p = pattern({notes:true,count:4,ticks:4,gateFraction:.25,
+        steps:[46,0,53,129,...Array(60).fill(0)],
+        timingOffsets:[-.4,.45,-.4,0,...Array(60).fill(0)]});
+    const s = new PitchPatternScheduler(p);
+    assert.equal(sample(s,0,0),256+46);
+    assert.equal(sample(s,1,.5),512);
+    assert.equal(sample(s,1.25,.625),512+130);
+    assert.equal(sample(s,1.6,.8),768+53);
+    assert.equal(sample(s,1.85,.925),768+130);
+    assert.equal(sample(s,3,1.5),1024+130);
+    assert.equal(sample(s,3.6,1.8),256+46);
+    assert.equal(sample(s,4,2),0);
+    assert.equal(sample(s,4.85,2.425),256+130); // shifted note ends before final tie boundary
+    assert.equal(sample(s,5,2.5),512);
+    assert.equal(sample(s,5.2,2.6,1),512+130); // reset into tie releases
+});
+test('live timing edits neither duplicate a sounded onset nor replay one moved into the past', () => {
+    const p = pattern({notes:true,count:3,ticks:4,gateFraction:.5,
+        steps:[46,53,58,...Array(61).fill(0)],
+        timingOffsets:[0,-.2,.2,...Array(61).fill(0)]});
+    const s = new PitchPatternScheduler(p);
+    assert.equal(sample(s,0,0),256+46);
+    assert.equal(sample(s,.5,.25),256+130);
+    assert.equal(sample(s,.8,.4),512+53);
+    const edited = {...p,timingOffsets:[0,.2,.2,...Array(61).fill(0)]};
+    assert.equal(s.setPattern(edited),true);
+    assert.equal(sample(s,.9,.45),0);
+    assert.equal(sample(s,1.2,.6),0);
+    assert.equal(sample(s,1.3,.65),512+130);
+    assert.equal(sample(s,2.1,1.05),0);
+    assert.equal(s.setPattern({...edited,timingOffsets:[0,.2,-.2,...Array(61).fill(0)]}),true);
+    assert.equal(sample(s,2.11,1.055),768+130);
+    assert.equal(sample(s,2.2,1.1),0);
+    assert.equal(sample(s,3,1.5),256+46);
+});
+test('offset validation and zero-offset/pitch-only compatibility', () => {
+    const p = pattern({notes:true,count:4,ticks:4,steps:[46,0,53,129,...Array(60).fill(0)]});
+    for (const v of [-.46,.46,.123,NaN,Infinity,null])
+        assert.equal(validPitchPattern({...p,timingOffsets:[v,...Array(63).fill(0)]}),false);
+    assert.equal(validPitchPattern({...p,timingOffsets:[0]}),false);
+    assert.equal(validPitchPattern({...p,timingOffsets:null}),true);
+    const legacy = new PitchPatternScheduler(p);
+    const zero = new PitchPatternScheduler({...p,timingOffsets:Array(64).fill(0)});
+    const drone = new PitchPatternScheduler({...p,notes:false,timingOffsets:Array(64).fill(.45)});
+    const oldDrone = new PitchPatternScheduler({...p,notes:false});
+    for (const beat of [0,.5,1,1.9,2,2.9,3,4,5,8,0]) {
+        assert.equal(sample(legacy,beat,beat/2),sample(zero,beat,beat/2));
+        assert.equal(sample(drone,beat,beat/2),sample(oldDrone,beat,beat/2));
+    }
+});
+for (const rate of [44100,48000]) test(`free and beat offsets schedule at sample resolution at ${rate}`, () => {
+    for (const free of [true,false]) {
+        const p = pattern({notes:true,free,count:3,ticks:1,seconds:.1,gateFraction:.25,
+            steps:[46,53,58,...Array(61).fill(0)],timingOffsets:[.2,-.2,.4,...Array(61).fill(0)]});
+        const duration = free ? .1 : .125; // 120 BPM sixteenth
+        const n = Math.ceil(rate * duration * 3.5);
+        const channels = Array.from({length:7},()=>new Float32Array(n));
+        for(let i=0;i<n;i++) {
+            const seconds=i/rate,beat=seconds*2;
+            channels[2][i]=Math.floor(beat); channels[3][i]=beat%1;
+            channels[4][i]=Math.floor(seconds); channels[5][i]=seconds%1;
+        }
+        const output = new Float32Array(n);
+        new PitchPatternScheduler(p).render(output,channels);
+        const onsets = [...output.entries()].filter(([,v])=>v%256>=1&&v%256<=128).map(([i])=>i);
+        assert.deepEqual(onsets,[.2,.8,2.4,3.2].map(u=>Math.ceil(u*duration*rate-1e-7)));
+    }
+});
