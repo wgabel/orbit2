@@ -19,7 +19,7 @@ internal static class EditorBenchmarkFixtures
         var serializer = new PatchDocumentSerializer();
         var compiler = FaustGraphCompiler.CreateBuiltIn();
         var fixtures = new List<object>();
-        foreach (var count in new[] { 50, 200, 500 })
+        foreach (var count in new[] { 50, 200, 500, 102 })
         {
             using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
             var graph = session.GraphId;
@@ -70,35 +70,66 @@ internal static class EditorBenchmarkFixtures
                 lane++;
             }
 
+            // Keep two root nodes outside the 100 authored leaf-node group.
+            // Use the real grouping command so the generated fixture has the same
+            // rack routing and validation as a user-created composite.
+            GraphNodeSnapshot? wrapper = null;
+            if (count == 102)
+            {
+                var selected = session.Snapshot.Nodes
+                    .Where(node => node.Id != outputGain.Id && node.Id != master.Id)
+                    .Select(node => node.Id).ToArray();
+                if (selected.Length != 100)
+                    throw new InvalidOperationException("Unexpected composite fixture size.");
+                wrapper = session.Execute(new GroupNodesCommand(graph, selected, "Benchmark composite",
+                    session.Snapshot.Revision)).ChangeSet!.Events.OfType<NodesGrouped>().Single().Composite;
+            }
             var root = session.Snapshot;
+            var child = wrapper?.Composite?.Graph;
+            if (wrapper is not null && (root.Nodes.Count != 3 || child?.Nodes.Count != 102))
+                throw new InvalidOperationException("Composite fixture must have 100 authored nodes and two racks.");
             // Dense desktop layout at the minimum supported zoom. Mobile views
             // intentionally contain a smaller subset of the same world.
             var columns = count == 50 ? 10 : 20;
-            var positions = root.Nodes.Select((node, index) =>
-                new SavedNodePosition(node.Id, 80 + index % columns * 360,
-                    80 + index / columns * 380)).ToArray();
-            var layout = new SavedCanvas(graph, 0, 0, 0.25, positions);
-            var id = $"editor-{count}";
+            SavedCanvas Layout(GraphSnapshot snapshot) => new(snapshot.Id, 0, 0, 0.25,
+                snapshot.Nodes.Select((node, index) => new SavedNodePosition(node.Id,
+                    80 + index % columns * 360, 80 + index / columns * 380)).ToArray());
+            SavedCanvas[] layouts = child is null ? [Layout(root)] : [Layout(root), Layout(child)];
+            var id = child is null ? $"editor-{count}" : "editor-composite-100";
             var patch = id + ".orbit2.json";
-            var document = serializer.Capture(session, 120, graph, [layout],
-                SavedPatchOverview.Create($"EDITOR BENCH v1 — {count} nodes",
+            var document = serializer.Capture(session, 120, graph, layouts,
+                SavedPatchOverview.Create($"EDITOR BENCH v1 — {id}",
                     "Synthetic editor workload; not a musical composition.",
                     "Start with low output volume. Preserve this file for exact repeat measurements.", ["benchmark"]));
             var json = serializer.Serialize(document);
             var decoded = serializer.Deserialize(json);
             using var restored = serializer.Restore(decoded, BuiltInNodes.CreateEditorRegistry());
-            if (restored.Snapshot.Nodes.Count != count ||
-                restored.Snapshot.Connections.Count != root.Connections.Count ||
-                decoded.CanvasLayouts.Single().Positions.Length != count ||
-                decoded.CanvasLayouts.Single().Zoom != 0.25)
-                throw new InvalidOperationException("Editor fixture round trip changed topology or layout.");
+            if (decoded.CanvasLayouts.Length != layouts.Length)
+                throw new InvalidOperationException("Editor fixture round trip changed canvas count.");
+            foreach (var snapshot in child is null ? new[] { root } : new[] { root, child })
+            {
+                var restoredGraph = restored.Snapshot.GetGraph(snapshot.Id);
+                var restoredLayout = decoded.CanvasLayouts.Single(canvas => canvas.GraphId == snapshot.Id);
+                if (!restoredGraph.Nodes.Select(node => node.Id).ToHashSet().SetEquals(snapshot.Nodes.Select(node => node.Id)) ||
+                    restoredGraph.Connections.Count != snapshot.Connections.Count ||
+                    restoredLayout.Positions.Length != snapshot.Nodes.Count || restoredLayout.Zoom != 0.25)
+                    throw new InvalidOperationException("Editor fixture round trip changed topology or layout.");
+            }
             var program = compiler.Compile(root);
             var restoredProgram = compiler.Compile(restored.Snapshot);
             if (program.Source != restoredProgram.Source)
                 throw new InvalidOperationException("Editor fixture round trip changed DSP source.");
             File.WriteAllText(Path.Combine(directory, patch), json);
-            fixtures.Add(new { id, patch, nodes = count, connections = root.Connections.Count,
-                reachableLeafNodes = program.ReachableLeafNodes, columns, zoom = 0.25 });
+            if (child is null)
+                fixtures.Add(new { id, patch, nodes = count, connections = root.Connections.Count,
+                    reachableLeafNodes = program.ReachableLeafNodes, columns, zoom = 0.25 });
+            else
+                fixtures.Add(new { id, patch, nodes = root.Nodes.Count, connections = root.Connections.Count,
+                    reachableLeafNodes = program.ReachableLeafNodes, columns, zoom = 0.25,
+                    composite = new { wrapperId = wrapper!.Id, name = wrapper.Name,
+                        rootNodeIds = root.Nodes.Select(node => node.Id).ToArray(),
+                        childNodeIds = child.Nodes.Select(node => node.Id).ToArray(),
+                        childConnections = child.Connections.Count } });
 
             GraphNodeSnapshot Add(string type) =>
                 session.Execute(new AddNodeCommand(graph, type)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
