@@ -75,30 +75,9 @@
         <div class="node-inputs">
             @foreach (var port in Node.Inputs)
             {
-                <div class="node-modulation-slot" @key="port.Id">
-                    <PortConnector NodeId="@Node.Id" Port="@port" HintText="@NodeHelpCatalog.PortHint(Node.TypeKey, port)" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
-                                   WireCandidate="@(WireTargets?.Contains(new PortAddress(Node.Id, port.Id)))"
-                                   OnOutputPointerDown="OnOutputPointerDown" OnInputPointerDown="OnInputPointerDown" />
-                    @if (Compactable && CompactModulationPortMap.ForInput(Node, port.Id) is { } parameter)
-                    {
-                        <CompactParameterValue @key="parameter.Id" ParameterId="@parameter.Id"
-                                               Definition="@parameter.Definition" Value="@parameter.BaseValue"
-                                               IsModulated="@IsModulated(parameter.Id)" EffectiveValue="@GetEffective(parameter.Id)"
-                                               ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))" />
-                    }
-                </div>
-            }
-            @if (Compactable)
-            {
-                @foreach (var parameter in CompactModulationPortMap.WithoutInput(Node))
-                {
-                    <div class="node-modulation-slot node-unmapped-parameter" @key="parameter.Id">
-                        <span class="node-unmapped-parameter-label">@parameter.Definition.Name</span>
-                        <CompactParameterValue ParameterId="@parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue"
-                                               IsModulated="@IsModulated(parameter.Id)" EffectiveValue="@GetEffective(parameter.Id)"
-                                               ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))" />
-                    </div>
-                }
+                <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port" HintText="@NodeHelpCatalog.PortHint(Node.TypeKey, port)" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
+                               WireCandidate="@(WireTargets?.Contains(new PortAddress(Node.Id, port.Id)))"
+                               OnOutputPointerDown="OnOutputPointerDown" OnInputPointerDown="OnInputPointerDown" />
             }
         </div>
         <div class="node-outputs">
@@ -124,26 +103,28 @@
                     @onclick="() => OnEditRack.InvokeAsync(Node.Id)">Edit ports</button>
         </div>
     }
-    @if (ShowFullControls && Node.Parameters.Count > 0 && Node.TypeKey != NoteSequencerGenerator.NodeType)
+    @if (Node.TypeKey != NoteSequencerGenerator.NodeType && Node.Parameters.Any(ShowParameter))
     {
         <div class="node-parameters">
-            @foreach (var parameter in Node.Parameters.Where(Node.IsParameterActive).Where(p => Node.TypeKey != NoteSequencerGenerator.NodeType || !NoteSequencerGenerator.IsPatternParameter(p.Definition.Key)).OrderByDescending(parameter => parameter.Definition.Choices is not null))
+            @foreach (var parameter in Node.Parameters.Where(ShowParameter).OrderByDescending(parameter => parameter.Definition.Choices is not null))
             {
-                @if (parameter.Definition.Choices is not null)
-                {
-                    <ParameterChoiceEditor @key="parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue"
-                          Readout="@ParameterReadout.ForChoice(Node, parameter, BeatsPerMinute)"
-                          Timing="@CycleTiming.ForParameter(Node, parameter, BeatsPerMinute)"
-                          ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))" />
-                }
-                else
-                {
-                    <ParameterSlider @key="parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue" Step="0.01"
-                                 IsModulated="@IsModulated(parameter.Id)" ModulationRange="@GetRange(parameter.Id)" EffectiveValue="@GetEffective(parameter.Id)"
-                                 Timing="@CycleTiming.ForParameter(Node, parameter, BeatsPerMinute)"
-                                 ValueChanged="@(edit => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), edit.Value, edit.GestureId)))"
-                                 GestureEnded="OnParameterGestureEnded" />
-                }
+                <div @key="parameter.Id" class="@(Node.IsParameterActive(parameter) ? null : "node-parameter-inactive")">
+                    @if (parameter.Definition.Choices is not null)
+                    {
+                        <ParameterChoiceEditor Definition="@parameter.Definition" Value="@parameter.BaseValue"
+                              Readout="@ParameterReadout.ForChoice(Node, parameter, BeatsPerMinute)"
+                              Timing="@CycleTiming.ForParameter(Node, parameter, BeatsPerMinute)"
+                              ValueChanged="@(value => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), value)))" />
+                    }
+                    else
+                    {
+                        <ParameterSlider Definition="@parameter.Definition" Value="@parameter.BaseValue" Step="0.01"
+                                     IsModulated="@IsModulated(parameter.Id)" ModulationRange="@GetRange(parameter.Id)" EffectiveValue="@(ShowFullControls ? GetEffective(parameter.Id) : null)"
+                                     Timing="@CycleTiming.ForParameter(Node, parameter, BeatsPerMinute)"
+                                     ValueChanged="@(edit => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), edit.Value, edit.GestureId)))"
+                                     GestureEnded="OnParameterGestureEnded" />
+                    }
+                </div>
             }
         </div>
     }
@@ -154,3 +135,9 @@
                                 ExpandedElsewhere="@VisualizationExpanded" SettingsChanged="OnVisualizationChange" OnExpand="OnExpandVisualization" />
     }
 </article>
+
+@code {
+    private bool ShowParameter(Orbit.Application.Graphs.Snapshots.ParameterSnapshot parameter) =>
+        (ShowFullControls && Node.IsParameterActive(parameter)) ||
+        (Compactable && parameter.Definition.CanModulate);
+}

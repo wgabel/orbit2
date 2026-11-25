@@ -27,19 +27,12 @@ test("expansion has a dedicated accessible button and preserves native connector
     assert.match(component, /OnToggleExpand\.InvokeAsync\(Node.Id\)/);
 });
 
-const compactValue = await readFile(new URL("../../src/Orbit.UI/Components/Parameters/CompactParameterValue.razor", import.meta.url), "utf8");
-const compactValueLogic = await readFile(new URL("../../src/Orbit.UI/Components/Parameters/CompactParameterValue.razor.cs", import.meta.url), "utf8");
-
-test("every modulatable input keeps a direct editor outside the collapsible details", () => {
-    assert.match(component, /CompactModulationPortMap\.ForInput\(Node, port\.Id\)/);
-    assert.match(component, /CompactModulationPortMap\.WithoutInput\(Node\)/);
-    assert.match(component, /CompactParameterValue/);
-    assert.match(component, /ValueChanged="@\(value => OnParameterEdit\.InvokeAsync/);
-    assert.match(compactValue, /data-modulation-parameter-id="@ParameterId"/);
-    assert.match(compactValue, /aria-label="@\(\$"\{Definition\.Name\} base value"\)"/);
-    assert.match(compactValue, /@onpointerdown:stopPropagation="true"/);
-    assert.match(compactValue, /@onkeydown:stopPropagation="true"/);
-    assert.match(compactValue, /aria-live="off"/);
-    assert.match(compactValueLogic, /Definition\.IsValidBaseValue\(value\)/);
-    assert.match(compactValueLogic, /await ValueChanged\.InvokeAsync\(value\)/);
+test("folded and expanded nodes share the original parameter editors", () => {
+    assert.doesNotMatch(component, /CompactParameterValue|CompactModulationPortMap|node-modulation-slot/);
+    assert.doesNotMatch(styling, /node-compact-value|node-unmapped-parameter/);
+    assert.match(component, /Node\.Parameters\.Where\(ShowParameter\)/);
+    assert.match(component, /Compactable && parameter\.Definition\.CanModulate/);
+    assert.equal((component.match(/<ParameterSlider\b/g) ?? []).length, 1);
+    assert.equal((component.match(/<ParameterChoiceEditor\b/g) ?? []).length, 1);
+    assert.match(component, /EffectiveValue="@\(ShowFullControls \? GetEffective\(parameter\.Id\) : null\)"/);
 });
