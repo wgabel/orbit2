@@ -14,6 +14,7 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
     const mode = process.env.ORBIT_EDITOR_VIEWPORT ?? "desktop";
     const playback = process.env.ORBIT_EDITOR_PLAYBACK !== "0";
     const countRenders = process.env.ORBIT_EDITOR_RENDER_COUNTS === "1";
+    const expansionMatrix = process.env.ORBIT_EDITOR_EXPANSION_MATRIX === "1";
     assert.ok(Number.isInteger(repeats) && repeats >= 1 && repeats <= 5);
     assert.ok(Number.isInteger(idleMs) && idleMs >= 500 && idleMs <= 10000);
     assert.ok(["desktop", "mobile"].includes(mode));
@@ -74,7 +75,7 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
             const renderCounts = () => page.locator(".canvas-world [data-node-render-count]").evaluateAll(nodes =>
                 Object.fromEntries(nodes.map(node => [node.dataset.nodeId, Number(node.dataset.nodeRenderCount)])));
             if (countRenders) assert.equal(Object.keys(await renderCounts()).length, profile.nodes);
-            async function measure(state, workload, action) {
+            async function measure(state, workload, action, expansion = null) {
                 const beforeRenders = countRenders ? await renderCounts() : null;
                 const before = await metrics();
                 await page.evaluate(() => {
@@ -129,7 +130,7 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                         assert.ok(nodeRenders.affectedNodes > 0 && nodeRenders.affectedNodes <= 2,
                             "Dragging must rerender only moved/previously selected frames");
                 }
-                measurements.push({ state, workload, nodeRenders, elapsedMs: sample.elapsedMs,
+                measurements.push({ state, workload, expansion, nodeRenders, elapsedMs: sample.elapsedMs,
                     ...(workload === "parameter-edit" ? { parameterAccess: actionResult } : {}),
                     frameGapsMs: sample.gaps.length ? summarize(sample.gaps) : null,
                     observedFps: sample.gaps.length ? 1000 * sample.gaps.length / sample.gaps.reduce((a, b) => a + b, 0) : null,
@@ -249,9 +250,52 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                     await measure(state, "parameter-edit", () => editParameter(state));
                 }
             }
+            // Use the real fold toggles, including for dense/offscreen leaves. Do not
+            // edit the graph or measure the transition as steady-state performance.
+            async function exerciseExpansionMatrix(state) {
+                const eligible = await canvas.locator("article.node-compactable[data-node-id]")
+                    .evaluateAll(nodes => nodes.map(node => node.dataset.nodeId));
+                assert.ok(eligible.length >= 5, "Expansion matrix requires at least five eligible leaves");
+                assert.equal(new Set(eligible).size, eligible.length);
+                const revision = (await status.innerText()).trim();
+                async function setExpanded(ids) {
+                    const desired = new Set(ids);
+                    for (const id of eligible) {
+                        const toggle = canvas.locator(`article[data-node-id="${id}"] .node-expand-toggle`);
+                        const expanded = String(desired.has(id));
+                        if (await toggle.getAttribute("aria-expanded") !== expanded) {
+                            await toggle.evaluate(button => button.click());
+                            await canvas.locator(`article[data-node-id="${id}"] .node-expand-toggle[aria-expanded="${expanded}"]`)
+                                .waitFor({ state: "attached", timeout: 60000 });
+                        }
+                    }
+                    const actual = await canvas.locator('article.node-compactable[data-node-id]:has(.node-expand-toggle[aria-expanded="true"])')
+                        .evaluateAll(nodes => nodes.map(node => node.dataset.nodeId));
+                    assert.deepEqual([...actual].sort(), [...ids].sort());
+                    await delay(1000);
+                    assert.equal((await status.innerText()).trim(), revision, "Expansion must preserve playback state/revision");
+                }
+                const cases = [
+                    ["all-expanded", eligible],
+                    ["five-expanded", eligible.slice(0, 5)],
+                    ["one-expanded", eligible.slice(0, 1)],
+                    ["all-folded", []]
+                ];
+                for (const [name, ids] of cases) {
+                    await setExpanded(ids);
+                    const expansion = { name, eligibleLeaves: eligible.length, expandedNodeIds: [...ids].sort() };
+                    for (let i = 0; i < repeats; i++) {
+                        await measure(state, "idle", () => delay(idleMs), expansion);
+                        await measure(state, "pan", pan, expansion);
+                        await measure(state, "wheel-zoom", zoom, expansion);
+                    }
+                }
+                await setExpanded(eligible);
+            }
+            const runWorkloads = state => expansionMatrix ? exerciseExpansionMatrix(state) : exercise(state);
             // Desktop pointer workloads on a narrow viewport are not physical
             // touch/pinch measurements; label that limitation in the report.
-            await exercise("stopped");
+            await runWorkloads("stopped");
             let initialPlayWallMs = null, foldedTelemetry = null;
             if (playback) {
                 const start = performance.now();
@@ -259,14 +303,14 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                 await status.filter({ hasText: /^Playing revision \d+$/ }).waitFor({ timeout: 120000 });
                 initialPlayWallMs = performance.now() - start;
                 await delay(1000);
-                if (countRenders) {
+                if (countRenders && !expansionMatrix) {
                     // Require actual finite effective readouts before checking render scope.
                     await page.waitForFunction(() => [...document.querySelectorAll('.canvas-world .parameter-slider output[aria-label="Live effective value"]')]
                         .some(output => Number.isFinite(Number.parseFloat(output.textContent.trim()))),
                         null, { timeout: 60000 });
                 }
-                await exercise("playing");
-                if (countRenders) {
+                await runWorkloads("playing");
+                if (countRenders && !expansionMatrix) {
                     foldedTelemetry = await verifyFoldedTelemetry({ page, canvas, status, renderCounts, idleMs });
                     console.log("EDITOR FOLDED TELEMETRY " + JSON.stringify(foldedTelemetry));
                 }
@@ -287,7 +331,7 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
             // CI hardware varies; these are observations, never timing gates.
             for (const m of measurements) {
                 const fixed = value => Number.isFinite(value) ? value.toFixed(2) : "N/A";
-                console.log(`EDITOR BENCH ${profile.id} ${mode} ${m.state} ${m.workload} ` +
+                console.log(`EDITOR BENCH ${profile.id} ${mode} ${m.state} ${m.workload} ${m.expansion?.name ?? "default"} ` +
                     `fps=${fixed(m.observedFps)} p95ms=${fixed(m.frameGapsMs?.p95)} ` +
                     `scriptMs=${fixed(m.cdp.ScriptDuration === null ? null : m.cdp.ScriptDuration * 1000)} ` +
                     `layoutMs=${fixed(m.cdp.LayoutDuration === null ? null : m.cdp.LayoutDuration * 1000)} ` +
@@ -301,10 +345,11 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
     await writeFile(outputFile, JSON.stringify({ schemaVersion: 1, fixtureVersion: 1,
         kind: "external-editor-benchmark", revision: process.env.ORBIT_REVISION ?? process.env.GITHUB_SHA ?? null,
         timestampUtc: new Date().toISOString(),
+        harnessFingerprint: createHash("sha256").update(await readFile(new URL(import.meta.url))).digest("hex"),
         environment: { chrome: browser.version(), node: process.version, headless, muted: true,
             platform: platform(), release: release(), arch: arch(), cpuModel: cpus()[0]?.model ?? null, logicalCpuCount: cpus().length },
         settings: { repeats, idleMs, viewport, mode, playback, input: "scripted mouse; mobile is viewport emulation",
-            monitorOpen: false, countRenders, warmupMs: 1000, cdpDurationUnit: "seconds" },
+            monitorOpen: false, countRenders, expansionMatrix, warmupMs: 1000, cdpDurationUnit: "seconds" },
         limitations: ["rAF callback gaps are not GPU paint timings", "CDP durations are renderer counters, not component render counts",
             "No physical Android, touch, or audio underrun measurement", "Import wall time includes file selection and dialog dismissal",
             "Parameter edits may use scripted focus on an occluded in-viewport editor; access method is reported and does not establish pointer usability"],
