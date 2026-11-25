@@ -126,7 +126,7 @@ Phase 6.19.1 (implemented) extends the same canvas projection with graph-scoped 
 
 ### Expandable node layout (Phase 6.21.5, design approved; not implemented)
 
-The agreed [compact/expanded node contract](expandable-nodes.md) applies equally to desktop and mobile. All sockets stay individually visible in either state; all modulation-capable parameter base readouts stay visible and directly editable, with a separate passive effective-value reading when live telemetry is available. The editing body expands below the fixed port/readout section. Composite nodes and instrument composites retain their current full appearance in both nominal states. Do not treat this specification as shipped functionality or substitute the previous optional compact-port anchors.
+The agreed [compact/expanded node contract](expandable-nodes.md) applies equally to desktop and mobile. All sockets stay individually visible in either state; all modulation-capable parameter base readouts stay visible and directly editable, with a separate passive effective-value reading only in expanded nodes when live telemetry is available. Folded leaves are static with respect to playback telemetry; see the linked contract for lifecycle and independent consumer exceptions. The editing body expands below the fixed port/readout section. Composite nodes and instrument composites retain their current full appearance in both nominal states. Do not treat this specification as shipped functionality or substitute the previous optional compact-port anchors.
 
 ### First visible editor implementation
 
