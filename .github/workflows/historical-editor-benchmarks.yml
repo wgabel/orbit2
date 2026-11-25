@@ -39,7 +39,6 @@ jobs:
       ORBIT_EDITOR_PLAYBACK: '1'
       ORBIT_EDITOR_RENDER_COUNTS: '0'
       PROFILE: ${{ inputs.profile || 'editor-50' }}
-      ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/historical-browser/node_modules/playwright-core
     steps:
       - uses: actions/checkout@v4
         with:
@@ -97,6 +96,7 @@ jobs:
       - name: Measure historical revisions sequentially and compare
         run: |
           set -euo pipefail
+          export ORBIT_PLAYWRIGHT_DIR="$RUNNER_TEMP/historical-browser/node_modules/playwright-core"
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
           test -x "$ORBIT_CHROME"
           case "$PROFILE" in editor-50|editor-200|editor-500) ;; *) exit 1;; esac
