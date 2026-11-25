@@ -40,6 +40,7 @@ public static class BuiltInNodes
         registry.Register(DelayProcessor.NodeType, id => new DelayProcessor(id), "Delay");
         registry.Register(ReverbProcessor.NodeType, id => new ReverbProcessor(id), "Reverb");
         registry.Register(ResonatorProcessor.NodeType, id => new ResonatorProcessor(id), "Resonator");
+        registry.Register(DistortionProcessor.NodeType, id => new DistortionProcessor(id), "Distortion");
         registry.Register(ChorusProcessor.NodeType, id => new ChorusProcessor(id), "Chorus");
         registry.Register(RotarySpeakerProcessor.NodeType, id => new RotarySpeakerProcessor(id), "Rotary Speaker");
         registry.Register(MasterOutput.NodeType, id => new MasterOutput(id), "Master output");
