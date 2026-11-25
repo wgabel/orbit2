@@ -109,13 +109,19 @@ async function verifyManualCompactShell(page, touch) {
     assert.deepEqual(await anchors(), before, "Reopening must not move connector anchors");
 }
 
-async function verifyCompactModulationValueEdit(page, touch) {
+async function verifyFoldedPropertiesAndExpandedEdit(page, touch) {
     // The default patch contains an oscillator with an editable Frequency socket.
     // Exercise the real command path, not only the numeric field's local draft.
-    const node = canvas(page).locator("article.node-compactable:has(.node-compact-value)").first();
+    const nodeId = await canvas(page).locator('article.node-compactable:has(.parameter-slider input[type=range][aria-label="Frequency"])').first().getAttribute("data-node-id");
+    assert.ok(nodeId, "Expected an oscillator with a Frequency editor");
+    // Use the stable node identity: a locator requiring a slider stops matching after folding.
+    const node = canvas(page).locator(`article[data-node-id="${nodeId}"]`);
     const toggle = node.locator(".node-expand-toggle");
-    const base = node.locator(".node-compact-value input[type='number']").first();
+    const editor = node.locator('.parameter-slider:has(input[type=range][aria-label="Frequency"])');
+    const base = editor.locator('.parameter-heading > input[type="number"][id^="parameter-"]');
     await base.waitFor();
+    assert.equal(await editor.count(), 1);
+    assert.equal(await node.locator(".node-compact-value").count(), 0);
     const anchors = () => node.evaluate(element => {
         const rect = element.getBoundingClientRect();
         return [...element.querySelectorAll("[data-port-id]")].map(port => {
@@ -134,31 +140,33 @@ async function verifyCompactModulationValueEdit(page, touch) {
     if (touch) await toggle.tap();
     else await toggle.click();
     await node.locator('.node-expand-toggle[aria-expanded="false"]').waitFor();
-    assert.equal(await base.isVisible(), true, "Compact values must survive detail collapse");
+    await node.locator(".node-parameters").waitFor({ state: "detached" });
+    assert.equal(await node.locator("input, select, textarea, .parameter-slider, .node-compact-value").count(), 0, "Folded leaf must have no property editors");
+    assert.deepEqual(await anchors(), startAnchors, "Folding must keep every socket");
+    if (touch) await toggle.tap();
+    else await toggle.click();
+    await node.locator('.node-expand-toggle[aria-expanded="true"]').waitFor();
+    await base.waitFor();
+    assert.equal(Number(await base.inputValue()), original);
     await base.fill(String(candidate));
-    await base.press("Enter");
-    await node.locator('.node-compact-value input[aria-invalid="false"]').first().waitFor();
+    await editor.locator('.parameter-heading > input[type=number][id^="parameter-"][aria-invalid="false"]').waitFor();
     assert.equal(Number(await base.inputValue()), candidate);
-    assert.equal(await toggle.getAttribute("aria-expanded"), "false", "Inline edits must not expand the node");
+    assert.equal(await toggle.getAttribute("aria-expanded"), "true", "Original editor remains expanded");
     assert.deepEqual(await anchors(), startAnchors, "Editing the base value must not move sockets");
 
     const invalid = max + Math.max(1, Math.abs(max));
     await base.fill(String(invalid));
-    await base.press("Enter");
-    assert.equal(await base.getAttribute("aria-invalid"), "true");
-    await base.press("Escape");
+    await editor.locator('.parameter-heading > input[type=number][id^="parameter-"][aria-invalid="true"]').waitFor();
+    await base.fill(String(candidate));
+    await editor.locator('.parameter-heading > input[type=number][id^="parameter-"][aria-invalid="false"]').waitFor();
     assert.equal(Number(await base.inputValue()), candidate);
     assert.equal(await base.getAttribute("aria-invalid"), "false");
 
-    if (touch) await toggle.tap();
-    else await toggle.click();
-    await node.locator('.node-expand-toggle[aria-expanded="true"]').waitFor();
     assert.deepEqual(await anchors(), startAnchors, "Opening details must not move sockets");
-    assert.ok(await node.locator(".node-parameters input[type='number']").evaluateAll(
-        (inputs, expected) => inputs.some(input => Number(input.value) === expected), candidate
-    ), "The full parameter editor must display the compact edit's committed base value");
+    assert.equal(await editor.count(), 1, "The original editor must not be duplicated when expanded");
+    assert.equal(Number(await base.inputValue()), candidate);
 
-    // Native compact edits must share graph undo/redo, not a presentation-only copy.
+    // Expanded edits must retain the original graph undo/redo behavior.
     const editPanel = page.locator('[data-mobile-trigger="edit"]');
     const history = async action => {
         await editPanel.click();
@@ -169,13 +177,13 @@ async function verifyCompactModulationValueEdit(page, touch) {
     await history("Undo");
     await page.waitForFunction(({ id, expected }) => {
         const node = document.querySelector(`article[data-node-id="${id}"]`);
-        return node && Number(node.querySelector('.node-compact-value input').value) === expected;
-    }, { id: await node.getAttribute("data-node-id"), expected: original });
+        return node && Number(node.querySelector('.parameter-slider:has(input[type=range][aria-label="Frequency"]) .parameter-heading > input[type=number][id^="parameter-"]').value) === expected;
+    }, { id: nodeId, expected: original });
     await history("Redo");
     await page.waitForFunction(({ id, expected }) => {
         const node = document.querySelector(`article[data-node-id="${id}"]`);
-        return node && Number(node.querySelector('.node-compact-value input').value) === expected;
-    }, { id: await node.getAttribute("data-node-id"), expected: candidate });
+        return node && Number(node.querySelector('.parameter-slider:has(input[type=range][aria-label="Frequency"]) .parameter-heading > input[type=number][id^="parameter-"]').value) === expected;
+    }, { id: nodeId, expected: candidate });
 }
 
 async function verifyCoveredNodePinch(page) {
@@ -189,7 +197,7 @@ async function verifyCoveredNodePinch(page) {
     await page.locator('.canvas-context-menu').getByRole('button', { name: 'Focus node', exact: true }).click();
 
     // Zoom around a REAL range control, not the viewport center: on large
-    // nodes, persistent compact rows push all sliders far below that center.
+    // nodes, the parameter section can be below that center.
     // The test still asserts that the node covers the viewport at 400% and
     // then starts a genuine two-finger gesture on that slider.
     const anchor = await node.evaluate(element => {
@@ -261,7 +269,7 @@ export async function verifyCanvasNavigation(browser, url) {
         await canvas(desktop).locator("article[data-node-id]").nth(3).waitFor();
         await fitCanvas(desktop);
         await verifyManualCompactShell(desktop, false);
-        await verifyCompactModulationValueEdit(desktop, false);
+        await verifyFoldedPropertiesAndExpandedEdit(desktop, false);
         const fitted = await currentViewport(desktop);
         const [point] = await emptyPoints(desktop);
         await desktop.mouse.move(point.x, point.y);
@@ -281,7 +289,7 @@ export async function verifyCanvasNavigation(browser, url) {
             await canvas(page).locator("article[data-node-id]").nth(3).waitFor();
             await fitCanvas(page);
             await verifyManualCompactShell(page, true);
-            await verifyCompactModulationValueEdit(page, true);
+            await verifyFoldedPropertiesAndExpandedEdit(page, true);
             const fitted = await currentViewport(page);
             const positions = () => canvas(page).locator("article[data-node-id]").evaluateAll(nodes =>
                 nodes.map(node => [node.dataset.nodeId, node.getAttribute("style")]));

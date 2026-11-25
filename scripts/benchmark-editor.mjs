@@ -100,9 +100,9 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                         return { gaps, longTasks: supported ? longTasks : null, elapsedMs: performance.now() - start };
                     };
                 });
-                let sample;
+                let sample, actionResult;
                 try {
-                    await action();
+                    actionResult = await action();
                     await delay(150);
                 } finally {
                     sample = await page.evaluate(() => globalThis.__orbitEditorBenchmarkStop());
@@ -129,6 +129,7 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                             "Dragging must rerender only moved/previously selected frames");
                 }
                 measurements.push({ state, workload, nodeRenders, elapsedMs: sample.elapsedMs,
+                    ...(workload === "parameter-edit" ? { parameterAccess: actionResult } : {}),
                     frameGapsMs: sample.gaps.length ? summarize(sample.gaps) : null,
                     observedFps: sample.gaps.length ? 1000 * sample.gaps.length / sample.gaps.reduce((a, b) => a + b, 0) : null,
                     longTasksMs: sample.longTasks,
@@ -175,28 +176,56 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                 await page.mouse.up();
             }
             async function editParameter(state) {
-                // Find a frequency control actually inside the current viewport;
-                // do not let Playwright scroll the canvas to an offscreen node.
-                const id = await canvas.evaluate(view => {
+                // Prefer a hit-testable carrier input. In dense layouts the original
+                // expanded editor may be covered by another node, so allow scripted
+                // focus on an in-viewport field without changing world geometry.
+                const target = await canvas.evaluate(view => {
                     const v = view.getBoundingClientRect();
-                    for (const input of view.querySelectorAll('input[aria-label="Frequency base value"]')) {
+                    // Match only the original Frequency slider's own base input.
+                    // The adjacent cycle-period editor is a different control.
+                    const selector = '.parameter-slider:has(> .parameter-track > input[aria-label="Frequency"]) > .parameter-heading > input[type="number"][id^="parameter-"]';
+                    let fallback = null;
+                    for (const input of view.querySelectorAll(selector)) {
+                        const value = Number(input.value);
+                        if (!Number.isFinite(value) || value < 100 || input.disabled || input.readOnly) continue;
                         const r = input.getBoundingClientRect();
+                        const left = Math.max(r.left, v.left, 0), right = Math.min(r.right, v.right, innerWidth);
+                        const top = Math.max(r.top, v.top, 0), bottom = Math.min(r.bottom, v.bottom, innerHeight);
+                        if (right <= left || bottom <= top || getComputedStyle(input).visibility !== "visible") continue;
                         const x = (r.left + r.right) / 2, y = (r.top + r.bottom) / 2;
-                        if (r.width > 0 && r.height > 0 && x > v.left && x < v.right && y > v.top && y < v.bottom &&
-                            document.elementFromPoint(x, y) === input && Number(input.value) >= 100)
-                            return input.id;
+                        if (x > left && x < right && y > top && y < bottom && document.elementFromPoint(x, y) === input)
+                            return { id: input.id, access: "pointer-hit-testable" };
+                        fallback ??= { id: input.id, access: "scripted-focus-in-viewport" };
                     }
-                    return null;
+                    return fallback;
                 });
-                assert.ok(id, "No visible carrier frequency base editor");
+                assert.ok(target, "No in-viewport carrier frequency base editor (including occluded fields)");
+                const { id, access } = target;
                 const input = page.locator("#" + id);
+                if (access === "scripted-focus-in-viewport") {
+                    // Focus the real native field without scrolling, not a graph command
+                    // or an offscreen edit. This measures editing cost, not pointer usability.
+                    assert.ok(await input.evaluate(element => {
+                        element.focus({ preventScroll: true });
+                        return document.activeElement === element;
+                    }), "Could not focus the in-viewport carrier frequency editor");
+                }
                 const original = Number(await input.inputValue());
                 assert.ok(Number.isFinite(original) && original >= 100);
                 async function commit(value) {
                     const current = state === "playing" ? Number((await status.innerText()).match(/\d+$/)?.[0]) : null;
                     if (state === "playing") assert.ok(Number.isInteger(current), "Expected active playback revision");
                     await input.fill(String(value));
-                    await input.press("Enter");
+                    // The original ParameterSlider commits on input, not Enter.
+                    // Wait for the sibling range's model-backed value, not just the input draft.
+                    await page.waitForFunction(({ id, value }) => {
+                        const field = document.getElementById(id);
+                        const slider = field?.closest(".parameter-slider");
+                        const range = slider?.querySelector(':scope > .parameter-track > input[type="range"]');
+                        const committed = range?.getAttribute("aria-valuetext");
+                        return committed != null && Number.parseFloat(committed) === value &&
+                            field.getAttribute("aria-invalid") === "false";
+                    }, { id, value }, { timeout: 60000 });
                     if (state === "playing") {
                         await status.filter({ hasText: new RegExp("^Playing revision " + (current + 1) + "$") })
                             .waitFor({ timeout: 60000 });
@@ -208,6 +237,7 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                 }
                 await commit(original + 1);
                 await commit(original);
+                return access;
             }
             async function exercise(state) {
                 for (let i = 0; i < repeats; i++) {
@@ -230,16 +260,17 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                 await delay(1000);
                 if (countRenders) {
                     // Require actual finite effective readouts before checking render scope.
-                    await page.waitForFunction(() => [...document.querySelectorAll(".node-compact-effective")]
-                        .some(output => output.textContent.trim() !== "—" && output.textContent.trim().length > 0),
+                    await page.waitForFunction(() => [...document.querySelectorAll('.canvas-world .parameter-slider output[aria-label="Live effective value"]')]
+                        .some(output => Number.isFinite(Number.parseFloat(output.textContent.trim()))),
                         null, { timeout: 60000 });
                 }
                 await exercise("playing");
                 await page.getByRole("button", { name: "Stop", exact: true }).click();
                 await ready();
-                if (countRenders) await page.waitForFunction(() =>
-                    [...document.querySelectorAll(".node-compact-effective")]
-                        .every(output => output.textContent.trim() === "—"), null, { timeout: 60000 });
+                if (countRenders) await page.waitForFunction(() => {
+                    const outputs = [...document.querySelectorAll('.canvas-world .parameter-slider output[aria-label="Live effective value"]')];
+                    return outputs.length > 0 && outputs.every(output => output.textContent.trim() === "—");
+                }, null, { timeout: 60000 });
             }
             const finalGeometry = await geometry();
             assert.equal(finalGeometry.renderedNodes, profile.nodes);
@@ -257,7 +288,8 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                     `layoutMs=${fixed(m.cdp.LayoutDuration === null ? null : m.cdp.LayoutDuration * 1000)} ` +
                     `styleMs=${fixed(m.cdp.RecalcStyleDuration === null ? null : m.cdp.RecalcStyleDuration * 1000)} ` +
                     `longTasks=${m.longTasksMs?.length ?? "N/A"} nodes=${m.geometry.intersectingNodes} dom=${m.geometry.domElements}` +
-                    (m.nodeRenders ? ` frameRenders=${m.nodeRenders.total} affectedFrames=${m.nodeRenders.affectedNodes}` : ""));
+                    (m.nodeRenders ? ` frameRenders=${m.nodeRenders.total} affectedFrames=${m.nodeRenders.affectedNodes}` : "") +
+                    (m.parameterAccess ? ` parameterAccess=${m.parameterAccess}` : ""));
             }
         } finally { await context.close(); }
     }
@@ -269,6 +301,7 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
         settings: { repeats, idleMs, viewport, mode, playback, input: "scripted mouse; mobile is viewport emulation",
             monitorOpen: false, countRenders, warmupMs: 1000, cdpDurationUnit: "seconds" },
         limitations: ["rAF callback gaps are not GPU paint timings", "CDP durations are renderer counters, not component render counts",
-            "No physical Android, touch, or audio underrun measurement", "Import wall time includes file selection and dialog dismissal"],
+            "No physical Android, touch, or audio underrun measurement", "Import wall time includes file selection and dialog dismissal",
+            "Parameter edits may use scripted focus on an occluded in-viewport editor; access method is reported and does not establish pointer usability"],
         rows }, null, 2) + "\n");
 }
