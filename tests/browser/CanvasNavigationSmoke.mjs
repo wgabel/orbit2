@@ -109,7 +109,7 @@ async function verifyManualCompactShell(page, touch) {
     assert.deepEqual(await anchors(), before, "Reopening must not move connector anchors");
 }
 
-async function verifyCompactModulationValueEdit(page, touch) {
+async function verifyFoldedPropertiesAndExpandedEdit(page, touch) {
     // The default patch contains an oscillator with an editable Frequency socket.
     // Exercise the real command path, not only the numeric field's local draft.
     const node = canvas(page).locator("article.node-compactable:has(.parameter-slider input[type=range][aria-label=\"Frequency\"])").first();
@@ -137,11 +137,18 @@ async function verifyCompactModulationValueEdit(page, touch) {
     if (touch) await toggle.tap();
     else await toggle.click();
     await node.locator('.node-expand-toggle[aria-expanded="false"]').waitFor();
-    assert.equal(await base.isVisible(), true, "Compact values must survive detail collapse");
+    await node.locator(".node-parameters").waitFor({ state: "detached" });
+    assert.equal(await node.locator("input, select, textarea, .parameter-slider, .node-compact-value").count(), 0, "Folded leaf must have no property editors");
+    assert.deepEqual(await anchors(), startAnchors, "Folding must keep every socket");
+    if (touch) await toggle.tap();
+    else await toggle.click();
+    await node.locator('.node-expand-toggle[aria-expanded="true"]').waitFor();
+    await base.waitFor();
+    assert.equal(Number(await base.inputValue()), original);
     await base.fill(String(candidate));
     await editor.locator('input[type=number][aria-invalid="false"]').waitFor();
     assert.equal(Number(await base.inputValue()), candidate);
-    assert.equal(await toggle.getAttribute("aria-expanded"), "false", "Inline edits must not expand the node");
+    assert.equal(await toggle.getAttribute("aria-expanded"), "true", "Original editor remains expanded");
     assert.deepEqual(await anchors(), startAnchors, "Editing the base value must not move sockets");
 
     const invalid = max + Math.max(1, Math.abs(max));
@@ -152,14 +159,11 @@ async function verifyCompactModulationValueEdit(page, touch) {
     assert.equal(Number(await base.inputValue()), candidate);
     assert.equal(await base.getAttribute("aria-invalid"), "false");
 
-    if (touch) await toggle.tap();
-    else await toggle.click();
-    await node.locator('.node-expand-toggle[aria-expanded="true"]').waitFor();
     assert.deepEqual(await anchors(), startAnchors, "Opening details must not move sockets");
     assert.equal(await editor.count(), 1, "The original editor must not be duplicated when expanded");
     assert.equal(Number(await base.inputValue()), candidate);
 
-    // Native compact edits must share graph undo/redo, not a presentation-only copy.
+    // Expanded edits must retain the original graph undo/redo behavior.
     const editPanel = page.locator('[data-mobile-trigger="edit"]');
     const history = async action => {
         await editPanel.click();
@@ -262,7 +266,7 @@ export async function verifyCanvasNavigation(browser, url) {
         await canvas(desktop).locator("article[data-node-id]").nth(3).waitFor();
         await fitCanvas(desktop);
         await verifyManualCompactShell(desktop, false);
-        await verifyCompactModulationValueEdit(desktop, false);
+        await verifyFoldedPropertiesAndExpandedEdit(desktop, false);
         const fitted = await currentViewport(desktop);
         const [point] = await emptyPoints(desktop);
         await desktop.mouse.move(point.x, point.y);
@@ -282,7 +286,7 @@ export async function verifyCanvasNavigation(browser, url) {
             await canvas(page).locator("article[data-node-id]").nth(3).waitFor();
             await fitCanvas(page);
             await verifyManualCompactShell(page, true);
-            await verifyCompactModulationValueEdit(page, true);
+            await verifyFoldedPropertiesAndExpandedEdit(page, true);
             const fitted = await currentViewport(page);
             const positions = () => canvas(page).locator("article[data-node-id]").evaluateAll(nodes =>
                 nodes.map(node => [node.dataset.nodeId, node.getAttribute("style")]));

@@ -19,7 +19,7 @@ With [PR #61](https://github.com/wgabel/orbit2/pull/61), close a tool via its Cl
 
 ### Editable compact modulation values (6.21.5-S2)
 
-S3a (in review, [PR #135](https://github.com/wgabel/orbit2/pull/135)) replaces the separate port-side Base fields from [PR #101](https://github.com/wgabel/orbit2/pull/101) with the original property editors. Use the header chevron to fold or expand a leaf node; all sockets remain visible. Modulation-capable properties retain their original editable controls when folded. Their live values are withheld while folded; graph edits and undo/redo use the same original command path. Expanded nodes retain live telemetry. Full view remains the default. Essential compact metadata, property pins and render-level telemetry gating remain planned.
+S3a (in review, [PR #135](https://github.com/wgabel/orbit2/pull/135)) replaces the separate port-side Base fields from [PR #101](https://github.com/wgabel/orbit2/pull/101) with the original property editors. Use the header chevron to fold or expand a leaf node; all sockets remain visible. No property editors or live values are displayed when folded, even for modulated properties. Expand the node to edit; graph edits and undo/redo use the original command path. Expanded nodes retain live telemetry. Full view remains the default. Render-level telemetry gating comes next; essential compact metadata and property pins are deferred until after performance improvements.
 
 ### Inline node and connector help
 

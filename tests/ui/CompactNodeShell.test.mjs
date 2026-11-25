@@ -27,12 +27,12 @@ test("expansion has a dedicated accessible button and preserves native connector
     assert.match(component, /OnToggleExpand\.InvokeAsync\(Node.Id\)/);
 });
 
-test("folded and expanded nodes share the original parameter editors", () => {
+test("folded nodes mount no property editors; expanded nodes use the originals once", () => {
     assert.doesNotMatch(component, /CompactParameterValue|CompactModulationPortMap|node-modulation-slot/);
     assert.doesNotMatch(styling, /node-compact-value|node-unmapped-parameter/);
-    assert.match(component, /Node\.Parameters\.Where\(ShowParameter\)/);
-    assert.match(component, /Compactable && parameter\.Definition\.CanModulate/);
+    assert.match(component, /@if \(ShowFullControls && Node\.Parameters\.Count > 0[^\n]*\)\s*\{\s*<div class="node-parameters">/);
+    assert.match(component, /Node\.Parameters\.Where\(Node\.IsParameterActive\)/);
     assert.equal((component.match(/<ParameterSlider\b/g) ?? []).length, 1);
     assert.equal((component.match(/<ParameterChoiceEditor\b/g) ?? []).length, 1);
-    assert.match(component, /EffectiveValue="@\(ShowFullControls \? GetEffective\(parameter\.Id\) : null\)"/);
+    assert.match(component, /EffectiveValue="@GetEffective\(parameter\.Id\)"/);
 });

@@ -94,4 +94,3 @@
 .node-frame.node-compactable > :not(.node-header):not(.node-ports) { order: 2; }
 .node-frame.node-compactable.node-expanded { z-index: 1; }
 
-.node-parameter-inactive { opacity: var(--semantic-opacity-disabled); }

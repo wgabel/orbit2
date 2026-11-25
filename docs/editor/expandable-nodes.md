@@ -1,6 +1,6 @@
 # Phase 6.21.5 — Expandable node design contract (approved; staged implementation)
 
-Status: revised design approved; S1 and S2 merged ([PR #100](https://github.com/wgabel/orbit2/pull/100), [PR #101](https://github.com/wgabel/orbit2/pull/101)). Their compact-specific value editors are superseded by the staged refactor. S3a ([PR #135](https://github.com/wgabel/orbit2/pull/135)) removes the duplicate port-side editors, mapping and styles and uses the shared parameter editors; additional essential compact metadata, property pins and telemetry render gating remain follow-up work (in review). Track implementation and verification in [the editor roadmap](../roadmap/editor-and-effects.md).
+Status: revised design approved; S1 and S2 merged ([PR #100](https://github.com/wgabel/orbit2/pull/100), [PR #101](https://github.com/wgabel/orbit2/pull/101)). Their compact-specific value editors are superseded by the staged refactor. S3a ([PR #135](https://github.com/wgabel/orbit2/pull/135)) removes the duplicate port-side editors, mapping and styles and mounts no properties when folded (including modulated ones). This owner-approved clean baseline precedes performance improvements; revisit compact property selection and pins only afterwards (in review). Track implementation and verification in [the editor roadmap](../roadmap/editor-and-effects.md).
 
 This document supersedes the earlier Phase 6.21.5 proposal in [the editor roadmap](../roadmap/editor-and-effects.md). It describes the agreed target rather than claiming existing product behavior. Implementation must cross-check the actual registered node definitions and their active parameter/port rules.
 
@@ -9,10 +9,9 @@ This document supersedes the earlier Phase 6.21.5 proposal in [the editor roadma
 - Use the same **compact-by-default, click/tap-to-expand** node behavior on desktop and mobile. Do not introduce a separate inspector.
 - **All nodes remain visible on the canvas at all times. No inactive-node visibility filtering, hiding or collapsing entire nodes.**
 - **Every input and output port remains individually visible in both states**, whether connected, disconnected, active or inactive. Do not collapse, aggregate, dynamically hide or substitute a port with an ambiguous anchor.
-- **Every parameter with a modulation capability remains visible in the compact node** even without a cable or when the parameter is temporarily inactive. Keep its original property editor, base value, unit and label; visually distinguish inactive state without removing the corresponding port.
-- **Compact base values are directly editable**, with an appropriate numeric editor or choice control. Use the original editor directly without expanding the node. Live effective values are read-only.
-- **Folded nodes are static with respect to playback telemetry by default.** Keep the editable base value, unit, label and modulation/connection state for default-visible properties. Every eligible original property editor has an independent pin toggle: pinning forces it to remain visible when folded and opts that property into live effective-value updates if modulated. Unpinned folded properties never show instantaneous effective values. Expanded nodes show **base → effective** when valid live telemetry is available. Never display a frozen value as current. Keep base values when stopped or telemetry is absent/stale; predicted ranges are authored-graph estimates, not live telemetry.
-- Show essential non-modulatable type-specific information in compact nodes, as enumerated below.
+- **Clean performance baseline: folded eligible leaves show no property editors or values, including modulated properties.** Only the existing shell and all real ports remain mounted. Expand to edit using the unchanged original controls.
+- **Folded nodes must become static with respect to playback telemetry** in 7.3.9-S3b. Property visibility and pin UX below are deferred design candidates, not requirements for the clean baseline. Every eligible original property editor has an independent pin toggle: pinning forces it to remain visible when folded and opts that property into live effective-value updates if modulated. Unpinned folded properties never show instantaneous effective values. Expanded nodes show **base → effective** when valid live telemetry is available. Never display a frozen value as current. Keep base values when stopped or telemetry is absent/stale; predicted ranges are authored-graph estimates, not live telemetry.
+- Revisit essential compact settings after the performance work; the inventory below is deferred, not the current visibility rule.
 - **Composite nodes are exempt from the redesign.** Preserve their existing appearance, controls, port labels, exposed ports and Open action in both nominal presentation states. Do not collapse any composite content. Preset instrument templates that instantiate a composite follow this rule. Likewise do not needlessly redesign Input/Output Rack or Master Output shells in this milestone.
 - All sockets and labels form a persistent top section, separate from property editors. Natural node height changes and endpoint movement are permitted; measure actual socket geometry.
 
@@ -20,15 +19,15 @@ This document supersedes the earlier Phase 6.21.5 proposal in [the editor roadma
 
 One shared NodeFrame renderer presents (1) icon/name title row, (2) buttons-only action row, (3) persistent top port section, and (4) the original property editors in their existing order. Folded and expanded states share a single renderer and property state.
 
-- Folded visibility is driven by per-property importance metadata, modulation capability or explicit property pinning. Hide only less important original controls; never create duplicate base-value boxes, compact-specific editors or alternate summaries of existing controls. Preserve appropriate static previews, presets and actions; no animated previews or live playheads in folded nodes.
-- Show base values in either state and read-only live effective values only in expanded nodes or explicitly pinned folded properties when applicable; retain existing units, validation, undo/redo, draft protection, audio updates and inactive styling. Resolve port identity by stable IDs, not labels. Missing telemetry must not invent live values.
+- Future design candidate (deferred): folded visibility may be driven by per-property importance metadata or explicit property pinning. Hide only less important original controls; never create duplicate base-value boxes, compact-specific editors or alternate summaries of existing controls. Preserve appropriate static previews, presets and actions; no animated previews or live playheads in folded nodes.
+- For the baseline, show base and live effective values only in expanded nodes; later, explicitly pinned folded properties may opt in. In either case, retain existing units, validation, undo/redo, draft protection, audio updates and inactive styling. Resolve port identity by stable IDs, not labels. Missing telemetry must not invent live values.
 - Remove category text from the header; strengthen existing shared category accents by approximately 5%, retaining semantic port/cable colors. Preserve accessible action labels and existing button behavior.
 - Remove the duplicate icon and visible Preset label from the preset selector; give the dropdown the recovered width, retain accessible naming and management actions, and move no-match explanatory text into the menu.
 - Remove replaced code as each slice lands. A mandatory post-refactor audit removes obsolete compact renderers, flags, components, bindings, event handlers, CSS, geometry calculations and stale tests/docs. Retain fallback code only with documented justification; preserve regression coverage and a single source of truth.
 
-## 3. Per-node compact inventory (original editors to retain in addition to all routable ports)
+## 3. Per-node compact inventory (deferred design candidates)
 
-The definitive source for modulatable parameters is each node's ParameterDefinition and associated ModulationPortId; **all of those values must be shown regardless of the essential-settings column below**. Each property editor must appear exactly once.
+The definitive source for modulatable parameters is each node's ParameterDefinition and associated ModulationPortId; the following inventory is retained for later design review, not an instruction to display those values now. Each eventual property editor must appear exactly once.
 
 | Registered leaf node(s) | Additional essential compact information |
 | --- | --- |
@@ -62,7 +61,7 @@ The definitive source for modulatable parameters is each node's ParameterDefinit
 | Composite node / instrument composites | **Unchanged full current node UI in both states.** Exposed ports and Open action never hidden. |
 | Input Rack / Output Rack / Master Output | Retain existing routing UI, individual sockets, labels and actions without inventing parameter summaries. |
 
-Future leaf node registrations must add or verify their compact metadata; a safe generic fallback lists **every** modulation-capable parameter and **every** socket rather than silently hiding either.
+For the clean baseline, future leaf nodes also show every socket and no folded properties. Reassess compact metadata after performance verification.
 
 ## 4. Expansion, pinning and state
 
