@@ -1,8 +1,8 @@
-# Waveform Layer Labs I–IV — richness, interaction and space
+# Waveform Layer Labs I–V — richness, interaction, space and expression
 
 [Foundation catalogue](catalogue.md) · [Voice design](../sound-quality-and-voice-design.md) · [Contextual balance](../contextual-layer-balance.md) · [Composition development](../compositional-development.md)
 
-Evidence: listener-approved independent DSP previews, 25 November 2026; not native Faust validation or universal quality claims. All 22 ratings were Great, with qualifications below. The experiments were short excerpts, not validated full-length compositions. Archive fingerprints identify the exact delivered files; the binary/audio and patch archives remain in the original conversation, not committed here.
+Evidence: listener-approved independent DSP previews, 25 November 2026; not native Faust validation or universal quality claims. Labs I–IV received 22 Great ratings, with qualifications below; Lab V produced mixed ratings and explicit criticism of excessive pitch modulation. The experiments were short excerpts, not validated full-length compositions. Archive fingerprints identify the exact delivered files; the binary/audio and patch archives remain in the original conversation, not committed here.
 
 ## Lab I — waveform layering
 Fixed phrase, four oscillator layers (sine sub, triangle body, detuned saw growl, square transient), 80 BPM, 24 s, -20 dBFS RMS, dry. Static Stack — Great; Temporal Layers — Great; Spectral Motion — Great; Living Voice — Great. Listener: “They were all very good. The richness of the sound generated is what we must strive to achieve in all layers of a musical piece.”
@@ -31,12 +31,30 @@ Same D minor framework at 100 BPM, 19.2 s, exact Lab III voice graphs reused wit
 
 Listener: “They were all great. The first one was clear and the last one was rich.” Activity uses 100 ms windows within 30 dB of each group's maximum RMS. Midband proxy is median active lead against quadrature sum of other group energies in 250–2000 Hz, not a perceptual masking metric or universal target. Multiple arrangement and mix variables changed together, so no causal isolation. Ducking example: kick pitch envelope → bass Gain modulation amount -0.75, base 1. Preserve intentional kick/sub timing; don't automatically duck every bass.
 
+## Lab V — expressiveness and humanization
+
+Same Lab III bass, drums, lead and answer source graphs; fixed bass and drums, 100 BPM, D minor, 19.2-second independent DSP previews, approximately -21 dBFS RMS. The lead and answer performance controls were implemented in the offline renderer, not serialized into new Orbit 2 patches.
+
+| Candidate | Listener rating | Change |
+| --- | --- | --- |
+| Control | OK | Grid timing, fixed strength and nominal gate |
+| Expressive Dynamics | Good | Note strength and brightness coupled |
+| Variable Articulation | Good | Gate durations varied |
+| Microtiming | Great | Deterministic onset offsets -13 to +23 ms |
+| Pitch Expression | Good | 14-cent delayed vibrato, 5.1 Hz, approach bends up to 21 cents |
+| Musical Conversation | Good | Dynamics, articulation and answer delays |
+| Organic Performance | Great | Combined performance techniques |
+
+Listener: “Although I did not hear the difference in timings I felt that this piece is so much better. The pitch modulation was too strong it felt like beginners attempt”
+
+Interpretation: the listener preferred the microtimed and combined versions, even without consciously identifying timing changes. This is evidence for testing subtle, intentional timing relationships, not a universal finding about random offsets. Pitch expression received a positive rating but the modulation intensity was explicitly criticized. Keep pitch stable by default; test smaller, selective bends and delayed vibrato on sustained notes rather than indiscriminate pitch movement. Phrase-based dynamics and articulation remain useful candidates. Preserve the grid/unchanged backing as a comparison; do not equate adding modulation with expression. Proposed next comparison: subtle offsets, laid-back phrasing, anticipatory phrasing, contrasting timing by role, restrained pitch, phrase-level dynamics/articulation and their combination. Smaller pitch settings are hypotheses pending listening, not listener-validated values.
+
 ## Apply to new music
 1. Assign musical roles and a genre-appropriate density before designing instruments. Choose sparse, dense or changing density intentionally; never equate more parts with better music.
 2. Give important voices a deliberate internal identity: fundamental/body, selected harmonics, articulation and texture as appropriate. Consider static complementary stacks, independent envelopes, filter movement, detuning or bounded feed-forward audio-rate interactions. Use simple tones when musically appropriate. Compare at matched levels; prefer physical or composite models when their role warrants them.
 3. Separate roles through register, temporal rests and dialogue, transient shape, dynamics, filtering and spatial placement where supported. Remove competing material before boosting a masked voice. Reserve low-end space for bass and kick; don't filter away the intended identity.
 4. Audition solo and context; compare sparse and dense passages at representative windows, preserve motif and musical development independently from density automation. Report actual listener feedback, structural checks, native audio evidence and independent preview measurements separately.
-5. Next research: note-dependent dynamics/brightness, articulation, microtiming, pitch expression and dialogue. These are hypotheses, not findings from Labs I–IV; verify available controls before claiming a patch implements them.
+5. Treat performance expression as separate from sound design: compare deliberate microtiming and phrase-based accents against a grid reference; maintain pitch stability and introduce vibrato or approach bends selectively. Lab V's excessive pitch modulation is a negative finding. Verify available event controls before claiming native patch support.
 
 ## Evidence archive manifest
 SHA-256 of original delivered ZIPs (conversation artifacts; no repository copies yet):
@@ -44,5 +62,6 @@ SHA-256 of original delivered ZIPs (conversation artifacts; no repository copies
 - Waveform-Layer-Lab-II.zip: aa42cb347018e3bc21a7d4e9ea08e08903599a7e70d2c37316ef1a5907e51bed
 - Waveform-Layer-Lab-III.zip: 1add1fe03464ebe090a26702cbbef21e6dd26e32d25b214eacc175496ccd4d3a
 - Waveform-Layer-Lab-IV.zip: 998e5f1ac452246b2da224e9406f03d391b513b0bcd4d06cc6ba0eb4ce948ca0
+- Waveform-Layer-Lab-V.zip: 2623f0e3cf137d0368825366cc63e462ce46e8293a6381cfecb0056ff5047266
 
-Each archive contains exact JSONs and previews, with experiment/measurement metadata. Native import, actual Faust render, runtime performance and full-length composition validation remain pending. Do not reconstruct a graph from these prose notes and label it the original.
+Each archive contains source JSONs and previews (Lab V expression variants are offline render scripts, not new serialized graphs), with experiment/measurement metadata. Native import, actual Faust render, runtime performance and full-length composition validation remain pending. Do not reconstruct a graph from these prose notes and label it the original.
