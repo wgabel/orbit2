@@ -1,5 +1,7 @@
 using Orbit.Application.Graphs.Events;
 using Orbit.Application.Graphs.Snapshots;
+using Orbit.Application.Models;
+using Orbit.Domain.Nodes.Generators;
 using Orbit.Application.Presets;
 using Orbit.Domain.Graphs;
 using Orbit.Domain.Nodes.Composites;
@@ -27,6 +29,7 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
             SetConnectionAmountCommand amount => SetConnectionAmount(graph, amount),
             SetParameterValueCommand set => SetParameterValue(graph, set),
             SetPitchPatternStepsCommand set => SetPitchPatternSteps(graph, set),
+            HumanizePitchPatternCommand humanize => HumanizePitchPattern(graph, humanize, revision),
             ApplyNodePresetCommand apply => ApplyNodePreset(graph, apply),
             SetNodeMutedCommand mute => SetNodeMuted(graph, mute),
             SetNodeBypassedCommand bypass => SetNodeBypassed(graph, bypass),
@@ -125,6 +128,22 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
         for (var i = 0; i < command.Steps.Count; i++) values[Orbit.Domain.Nodes.Generators.NoteSequencerGenerator.StepKey(i)] = command.Steps[i];
         return graph.SetNodeParameterValues(command.NodeId, node.TypeKey, values)
             .Select(change => (IGraphEvent)new ParameterChanged(graph.Id, change.Address, change.PreviousValue, change.CurrentValue)).ToArray();
+    }
+
+    private static IReadOnlyList<IGraphEvent> HumanizePitchPattern(SignalGraph graph, HumanizePitchPatternCommand command, long revision)
+    {
+        var node = graph.GetNode(command.NodeId);
+        if (node is not NoteSequencerGenerator)
+            throw new GraphValidationException("Humanization requires a Note Sequencer.");
+        ArgumentNullException.ThrowIfNull(command.Profile);
+        var pattern = PitchPattern.FromNode(GraphNodeSnapshot.Capture(node, revision));
+        var changes = command.Profile.CreateChanges(pattern, command.FirstSlot, command.SlotCount);
+        if (changes.Count == 0) return [];
+        var values = node.Parameters.ToDictionary(p => p.Definition.Key, p => p.BaseValue);
+        foreach (var change in changes) values[change.Key] = change.Value;
+        return graph.SetNodeParameterValues(node.Id, node.TypeKey, values)
+            .Select(change => (IGraphEvent)new ParameterChanged(graph.Id, change.Address,
+                change.PreviousValue, change.CurrentValue)).ToArray();
     }
 
     private static IReadOnlyList<IGraphEvent> SetConnectionAmount(SignalGraph graph, SetConnectionAmountCommand command)
