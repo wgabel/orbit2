@@ -29,8 +29,10 @@ public sealed class NodeEffectiveValuesProjection
         previous = values;
     }
 
-    public IReadOnlyDictionary<ParameterAddress, double> ForNode(Guid nodeId) =>
-        nodes.GetValueOrDefault(nodeId, Empty);
+    // Folded frames receive the same immutable empty dictionary on every tick.
+    // Keep the latest active-canvas projection for immediate rebind on expansion.
+    public IReadOnlyDictionary<ParameterAddress, double> ForNode(Guid nodeId, bool consumesTelemetry = true) =>
+        consumesTelemetry ? nodes.GetValueOrDefault(nodeId, Empty) : Empty;
 
     public void Reset()
     {

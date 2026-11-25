@@ -42,6 +42,27 @@ public sealed class NodeEffectiveValuesProjectionTests
     }
 
     [Fact]
+    public void FoldedConsumersGetStableEmptyValuesAndRebindToLatestFrame()
+    {
+        var a = new ParameterAddress(Guid.NewGuid(), Guid.NewGuid());
+        var b = new ParameterAddress(Guid.NewGuid(), Guid.NewGuid());
+        var cache = new NodeEffectiveValuesProjection();
+        cache.Update(new Dictionary<ParameterAddress, double> { [a] = 120, [b] = 10 });
+        var empty = cache.ForNode(a.NodeId, false);
+        var other = cache.ForNode(b.NodeId);
+        Assert.Empty(empty);
+        Assert.Same(empty, cache.ForNode(Guid.NewGuid()));
+        cache.Update(new Dictionary<ParameterAddress, double> { [a] = 125, [b] = 10 });
+        Assert.Same(empty, cache.ForNode(a.NodeId, false));
+        Assert.Same(other, cache.ForNode(b.NodeId, true));
+        Assert.Equal(125d, cache.ForNode(a.NodeId, true)[a]);
+        cache.Update(new Dictionary<ParameterAddress, double> { [b] = 10 });
+        Assert.Same(empty, cache.ForNode(a.NodeId, true));
+        cache.Reset();
+        Assert.Same(empty, cache.ForNode(a.NodeId, false));
+    }
+
+    [Fact]
     public void RepeatedFramesAreStableAndResetDiscardsCanvasState()
     {
         var a = new ParameterAddress(Guid.NewGuid(), Guid.NewGuid());

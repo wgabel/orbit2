@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { platform, release, arch, cpus } from "node:os";
 import { summarize } from "./benchmark-metrics.mjs";
+import { verifyFoldedTelemetry } from "./benchmark-folded-telemetry.mjs";
 
 export async function runEditorBenchmark({ browser, baseUrl, directory, outputFile, profiles, headless }) {
     const repeats = Number(process.env.ORBIT_EDITOR_REPEATS ?? 3);
@@ -251,7 +252,7 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
             // Desktop pointer workloads on a narrow viewport are not physical
             // touch/pinch measurements; label that limitation in the report.
             await exercise("stopped");
-            let initialPlayWallMs = null;
+            let initialPlayWallMs = null, foldedTelemetry = null;
             if (playback) {
                 const start = performance.now();
                 await play.click();
@@ -265,6 +266,10 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                         null, { timeout: 60000 });
                 }
                 await exercise("playing");
+                if (countRenders) {
+                    foldedTelemetry = await verifyFoldedTelemetry({ page, canvas, status, renderCounts, idleMs });
+                    console.log("EDITOR FOLDED TELEMETRY " + JSON.stringify(foldedTelemetry));
+                }
                 await page.getByRole("button", { name: "Stop", exact: true }).click();
                 await ready();
                 if (countRenders) await page.waitForFunction(() => {
@@ -275,7 +280,7 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
             const finalGeometry = await geometry();
             assert.equal(finalGeometry.renderedNodes, profile.nodes);
             assert.equal(finalGeometry.renderedConnections, profile.connections);
-            rows.push({ ...profile, fingerprint, importWallMs, initialPlayWallMs, initialGeometry, finalGeometry, measurements });
+            rows.push({ ...profile, fingerprint, importWallMs, initialPlayWallMs, initialGeometry, finalGeometry, measurements, foldedTelemetry });
             console.log(profile.id + ": " + initialGeometry.intersectingNodes + " viewport-intersecting nodes, " +
                 measurements.length + " measured interaction windows");
             // Log compact results as well as preserving the detailed artifact.
