@@ -186,6 +186,10 @@ public sealed class PatchDocumentSerializer
                     if (velocities.All(p => !parameters.ContainsKey(p.Definition.Key)))
                         foreach (var velocity in velocities)
                             parameters.Add(velocity.Definition.Key, (velocity.Id, velocity.BaseValue));
+                    var offsets = leaf.Parameters.Where(p => NoteSequencerGenerator.IsStepTimingOffsetParameter(p.Definition.Key)).ToArray();
+                    if (offsets.All(p => !parameters.ContainsKey(p.Definition.Key)))
+                        foreach (var offset in offsets)
+                            parameters.Add(offset.Definition.Key, (offset.Id, offset.BaseValue));
                     foreach (var output in leaf.Outputs.Where(p => p.Key != "pitch-out"))
                         ports.TryAdd(output.Key, output.Id);
                 }
