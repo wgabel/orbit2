@@ -22,6 +22,8 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
     const viewport = mobile ? { width: 390, height: 844 } : { width: 1920, height: 1080 };
     const rows = [];
     for (const profile of profiles) {
+        if (profile.composite) assert.ok(!countRenders && !expansionMatrix,
+            "Composite fixture uses its own navigation matrix; run separately from flat expansion/render-count modes");
         const context = await browser.newContext({ viewport, isMobile: mobile, hasTouch: mobile,
             deviceScaleFactor: 1 });
         try {
@@ -292,7 +294,54 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                 }
                 await setExpanded(eligible);
             }
-            const runWorkloads = state => expansionMatrix ? exerciseExpansionMatrix(state) : exercise(state);
+            async function exerciseCompositeMatrix(state) {
+                const { wrapperId, name, rootNodeIds, childNodeIds, childConnections } = profile.composite;
+                assert.equal(rootNodeIds.length, 3);
+                assert.equal(childNodeIds.length, 102);
+                assert.equal(new Set([...rootNodeIds, ...childNodeIds]).size, 105);
+                const path = page.getByRole("navigation", { name: "Canvas path" });
+                const revision = (await status.innerText()).trim();
+                const rootButton = () => path.getByRole("button").first();
+                async function checkCanvas(ids, connections) {
+                    await page.waitForFunction(({ ids, connections }) => {
+                        const world = document.querySelector(".canvas-world");
+                        if (!world) return false;
+                        const actual = [...world.querySelectorAll("[data-node-id]")].map(node => node.dataset.nodeId);
+                        return actual.length === ids.length && new Set(actual).size === ids.length &&
+                            ids.every(id => actual.includes(id)) &&
+                            world.querySelectorAll(".connection-hit").length === connections;
+                    }, { ids, connections }, { timeout: 120000 });
+                    assert.equal((await status.innerText()).trim(), revision,
+                        "Canvas navigation must preserve playback state/revision");
+                }
+                async function runCase(name, ids, connections) {
+                    await checkCanvas(ids, connections);
+                    await delay(1000);
+                    const scope = { name, canvasNodeIds: [...ids].sort() };
+                    if (state === "playing" && ids === childNodeIds) {
+                        await page.waitForFunction(() => [...document.querySelectorAll(
+                            '.canvas-world .parameter-slider output[aria-label="Live effective value"]')]
+                            .some(output => Number.isFinite(Number.parseFloat(output.textContent.trim()))),
+                            null, { timeout: 60000 });
+                    }
+                    for (let i = 0; i < repeats; i++) {
+                        await measure(state, "idle", () => delay(idleMs), scope);
+                        await measure(state, "pan", pan, scope);
+                        await measure(state, "wheel-zoom", zoom, scope);
+                        await checkCanvas(ids, connections);
+                    }
+                }
+                await runCase("composite-closed", rootNodeIds, profile.connections);
+                const open = canvas.locator(`article[data-node-id="${wrapperId}"]`)
+                    .getByRole("button", { name: "Open " + name, exact: true });
+                await open.evaluate(button => button.click());
+                await path.locator('[aria-current="page"]').filter({ hasText: name }).waitFor({ timeout: 60000 });
+                await runCase("composite-open", childNodeIds, childConnections);
+                await rootButton().click();
+                await runCase("composite-reclosed", rootNodeIds, profile.connections);
+            }
+            const runWorkloads = state => profile.composite ? exerciseCompositeMatrix(state) :
+                expansionMatrix ? exerciseExpansionMatrix(state) : exercise(state);
             // Desktop pointer workloads on a narrow viewport are not physical
             // touch/pinch measurements; label that limitation in the report.
             await runWorkloads("stopped");
