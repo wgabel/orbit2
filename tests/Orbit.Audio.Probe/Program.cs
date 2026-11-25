@@ -590,6 +590,27 @@ File.WriteAllText(Path.Combine(args[0], "chorus.json"), JsonSerializer.Serialize
     mix = ChorusControl(chorus, "mix"), modulation = ChorusControl(modulation, "amplitude")
 }));
 
+filterSession.Execute(new RemoveNodeCommand(filterRoot, chorus.Id));
+var distortion = FilterAdd(DistortionProcessor.NodeType);
+FilterSet(carrier, "frequency", 440);
+FilterSet(carrier, "amplitude", 0.1);
+FilterSet(modulation, "amplitude", 0);
+FilterConnect(carrier, distortion, "audio-in", 1);
+FilterConnect(modulation, distortion, "drive-modulation-in", 16);
+FilterConnect(modulation, distortion, "mix-modulation-in", 1);
+FilterConnect(modulation, distortion, "gain-modulation-in", 1);
+FilterConnect(distortion, filterMaster, "audio-in", 1);
+var distortionProgram = FaustGraphCompiler.CreateBuiltIn().Compile(filterSession.Snapshot);
+string DistortionControl(GraphNodeSnapshot node, string key) => distortionProgram.Controls.Single(c => c.Address == Address(node, key)).Name;
+File.WriteAllText(Path.Combine(args[0], "distortion.json"), JsonSerializer.Serialize(new
+{
+    source = distortionProgram.Source, values = distortionProgram.InitialControlValues(),
+    drive = DistortionControl(distortion, "drive"), mix = DistortionControl(distortion, "mix"),
+    gain = DistortionControl(distortion, "gain"), amplitude = DistortionControl(carrier, "amplitude"),
+    modulation = DistortionControl(modulation, "amplitude"),
+    bypass = distortionProgram.AuditionControls.Single(control => control.NodeId == distortion.Id && control.Kind == NodeAuditionKind.Bypass).Name
+}));
+
 // Shared pitch control drives a three-oscillator bank through ordinary modulation edges.
 using var pitchSession = new PatchSession(registry);
 var pitchGraph = pitchSession.GraphId;

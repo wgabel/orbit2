@@ -69,6 +69,29 @@ public sealed class FaustGraphCompilerTests
     }
 
     [Fact]
+    public void DistortionParametersAreLiveAndModulatable()
+    {
+        using var session = new PatchSession(BuiltInNodes.CreateRegistry());
+        var source = Add(session, OscillatorGenerator.NodeType);
+        var distortion = Add(session, DistortionProcessor.NodeType);
+        var output = Add(session, MasterOutput.NodeType);
+        Connect(session, source, distortion, distortion.Inputs.Single(p => p.Key == "audio-in").Id, 1);
+        foreach (var parameter in distortion.Parameters)
+            Connect(session, source, distortion, parameter.ModulationPortId!.Value, 0.1);
+        Connect(session, distortion, output, output.Inputs.Single().Id, 1);
+        var initial = compiler.Compile(session.Snapshot);
+        Assert.False(initial.RequiresTransport);
+        foreach (var parameter in distortion.Parameters)
+        {
+            Assert.NotNull(Control(initial, distortion, parameter.Definition.Key).MeterName);
+            var value = parameter.BaseValue == parameter.Definition.Maximum
+                ? parameter.BaseValue - 0.1 : parameter.BaseValue + 0.1;
+            session.Execute(new SetParameterValueCommand(session.GraphId, new ParameterAddress(distortion.Id, parameter.Id), value));
+        }
+        Assert.Equal(initial.Source, compiler.Compile(session.Snapshot).Source);
+    }
+
+    [Fact]
     public void ChorusAllParametersAreLiveAndModulatable()
     {
         using var session = new PatchSession(BuiltInNodes.CreateEditorRegistry());
