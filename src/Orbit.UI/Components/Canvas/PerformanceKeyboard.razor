@@ -48,6 +48,7 @@
             <nav class="pitch-editor-tabs" aria-label="Sequencer tools">
                 <button type="button" class="secondary" aria-pressed="@(panel == "edit")" @onclick='() => panel = "edit"'>Edit notes</button>
                 <button type="button" class="secondary" aria-pressed="@(panel == "record")" @onclick='() => panel = "record"'>Record</button>
+                <button type="button" class="secondary" aria-pressed="@(panel == "humanize")" @onclick='() => panel = "humanize"'>Humanize</button>
                 <button type="button" class="secondary" aria-pressed="@(panel == "settings")" @onclick='() => panel = "settings"'>Settings</button>
             </nav>
             @if (panel == "edit")
@@ -184,6 +185,78 @@
                     <p class="pitch-editor-help">Continuous pitch keeps the last note indefinitely. To make the sequencer play instruments on its own, choose “Notes · trigger instrument” above.</p>
                 }
             }
+            else if (panel == "humanize")
+            {
+                <div class="pitch-record-view" role="region" aria-label="Note humanization">
+                    @if (!IsArticulated)
+                    {
+                        <p class="pitch-editor-help">Choose Notes playback in Edit notes to humanize note onsets.</p>
+                    }
+                    else
+                    {
+                        <p>Apply repeatable timing and velocity variations to saved notes. Applying again adds variation to the current values. Undo restores the previous pattern.</p>
+                        <div class="pitch-editor-primary">
+                            <label>Timing profile
+                                <select aria-label="Humanization timing profile" disabled="@RecordingLocked" @bind="humanizeTiming">
+                                    <option value="@HumanizationTiming.Centered">Centered</option>
+                                    <option value="@HumanizationTiming.Ahead">Ahead of beat</option>
+                                    <option value="@HumanizationTiming.Behind">Behind the beat</option>
+                                </select>
+                            </label>
+                            <label>Timing amount (% of step)
+                                <select aria-label="Humanization timing amount" disabled="@RecordingLocked" @bind="humanizeTimingPercent">
+                                    @foreach (var amount in Enumerable.Range(0, NoteSequencerGenerator.MaximumTimingOffsetPercent + 1))
+                                    {
+                                        <option value="@amount">@amount%</option>
+                                    }
+                                </select>
+                            </label>
+                            <label>Velocity variation (percentage points)
+                                <select aria-label="Humanization velocity amount" disabled="@RecordingLocked" @bind="humanizeVelocityPercent">
+                                    @foreach (var amount in Enumerable.Range(0, 101))
+                                    {
+                                        <option value="@amount">@amount</option>
+                                    }
+                                </select>
+                            </label>
+                            <label>Seed
+                                <input type="number" step="1" min="@int.MinValue" max="@int.MaxValue" aria-label="Humanization seed" disabled="@RecordingLocked" @bind="humanizeSeed" />
+                            </label>
+                            <label>Scope
+                                <select aria-label="Humanization scope" disabled="@RecordingLocked" @bind="humanizeScope">
+                                    <option value="selected">Selected step @(selectedStep + 1)</option>
+                                    <option value="range">Step range</option>
+                                    <option value="all">Whole pattern</option>
+                                </select>
+                            </label>
+                            @if (humanizeScope == "range")
+                            {
+                                <label>First step
+                                    <select aria-label="Humanization first step" disabled="@RecordingLocked" @bind="humanizeFirst">
+                                        @foreach (var slot in Enumerable.Range(1, StepCount))
+                                        {
+                                            <option value="@slot">@slot</option>
+                                        }
+                                    </select>
+                                </label>
+                                <label>Last step
+                                    <select aria-label="Humanization last step" disabled="@RecordingLocked" @bind="humanizeLast">
+                                        @foreach (var slot in Enumerable.Range(1, StepCount))
+                                        {
+                                            <option value="@slot">@slot</option>
+                                        }
+                                    </select>
+                                </label>
+                            }
+                        </div>
+                        <div class="pitch-record-actions">
+                            <button type="button" disabled="@(!CanHumanize)" @onclick="ApplyHumanizationAsync">Apply humanization</button>
+                            <output aria-label="Humanization eligible notes">@HumanizationEligibleNotes eligible notes</output>
+                        </div>
+                        @if (humanizeNotice is not null) { <p class="workspace-notice" role="status">@humanizeNotice</p> }
+                    }
+                </div>
+            }
             else if (panel == "record")
             {
                 <div class="pitch-record-view">
@@ -282,6 +355,7 @@
     [Parameter] public EventCallback<ParameterEditRequest> Edit { get; set; }
     [Parameter] public EventCallback ClearPattern { get; set; }
     [Parameter, EditorRequired] public Func<PitchRecordingTake, bool> CommitTake { get; set; } = default!;
+    [Parameter, EditorRequired] public Func<int, int, PitchHumanization, bool> Humanize { get; set; } = default!;
     private ElementReference root;
     private IJSObjectReference? module, adapter;
     private DotNetObjectReference<PerformanceKeyboard>? reference;
@@ -299,6 +373,45 @@
     private PitchRecordingTake? take;
     private bool recordingOperation;
     private int takeMode, quantizeSpacing = 1, pendingNotes;
+    private HumanizationTiming humanizeTiming = HumanizationTiming.Centered;
+    private int humanizeTimingPercent = 5, humanizeVelocityPercent = 5, humanizeSeed = 1;
+    private string humanizeScope = "selected";
+    private int humanizeFirst = 1, humanizeLast = 1;
+    private string? humanizeNotice;
+    private bool humanizing;
+    private (int First, int Count) HumanizationRange => humanizeScope switch
+    {
+        "all" => (0, StepCount),
+        "range" => (humanizeFirst - 1, humanizeLast - humanizeFirst + 1),
+        _ => (selectedStep, 1)
+    };
+    private int HumanizationEligibleNotes
+    {
+        get
+        {
+            var (first, count) = HumanizationRange;
+            if (first < 0 || count <= 0 || first + count > StepCount) return 0;
+            return Enumerable.Range(first, count).Count(slot => StepCode(slot) is >= 1 and <= 128);
+        }
+    }
+    private bool CanHumanize => IsArticulated && !RecordingLocked && !humanizing &&
+        (humanizeTimingPercent != 0 || humanizeVelocityPercent != 0) && HumanizationEligibleNotes > 0;
+    private Task ApplyHumanizationAsync()
+    {
+        if (!CanHumanize) return Task.CompletedTask;
+        humanizing = true;
+        try
+        {
+            var (first, count) = HumanizationRange;
+            var profile = new PitchHumanization(humanizeTiming, humanizeTimingPercent, humanizeVelocityPercent, humanizeSeed);
+            if (profile.CreateChanges(PitchPattern.FromNode(Node), first, count).Count == 0)
+                humanizeNotice = "No values changed.";
+            else
+                humanizeNotice = Humanize(first, count, profile) ? "Humanization applied. Undo restores the previous values." : "Humanization not applied.";
+        }
+        finally { humanizing = false; }
+        return Task.CompletedTask;
+    }
     private bool RecordingLocked => take is not null || recordingOperation;
     private bool EditingNotes => showPattern && panel == "edit" && armed && !IsNoteSource;
     private bool IsNoteSource => Node.TypeKey == NoteSourceGenerator.NodeType;
@@ -435,6 +548,8 @@
         previousReference = Reference;
         if (IsNoteSource) return;
         selectedStep = Math.Clamp(selectedStep, 0, StepCount - 1);
+        humanizeFirst = Math.Clamp(humanizeFirst, 1, StepCount);
+        humanizeLast = Math.Clamp(humanizeLast, 1, StepCount);
         if (StepCount % quantizeSpacing != 0) quantizeSpacing = 1;
         if (take is { } current && !current.MatchesSource(PitchPattern.FromNode(Node), Reference))
             CancelTake("Take cancelled: pattern or reference changed.");
