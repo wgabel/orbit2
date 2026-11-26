@@ -1,4 +1,5 @@
 """Read-only validation of current-format native root leaf documents."""
+from copy import deepcopy
 from dataclasses import dataclass
 import re
 from uuid import UUID
@@ -47,7 +48,7 @@ class _Validator:
                             if n["metadataStatus"] == "leaf-definition"}
 
     def error(self, code, path, message, expected=None, actual=None):
-        self.errors.append(Diagnostic(code, path, message, expected, actual))
+        self.errors.append(Diagnostic(code, path, message, deepcopy(expected), deepcopy(actual)))
 
     def obj(self, value, path, required=()):
         if not isinstance(value, dict):
