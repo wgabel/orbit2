@@ -22,8 +22,8 @@ if len(sys.argv) > 3:
 
     if len(sys.argv) > 4:
         output = next(node for node in native.list_nodes() if node.type_key == "output.master")
+        native.remove_node(oscillator)
         replacement = native.add_node("generator.oscillator", frequency=220)
         edge = native.connect(replacement, "signal-out", output, "audio-in", amount=0.1)
         native.set_connection_amount(edge, 0.25)
-        native.remove_node(oscillator)
         native.save(sys.argv[4])
