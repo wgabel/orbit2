@@ -97,7 +97,8 @@ public sealed class PatchDocumentSerializer
                     composite.Graph.GetNode(composite.OutputRackId).Inputs.Select(ToExposed).ToArray(),
                     CaptureGraph(composite.Graph))
                     { Macros = composite.Macros.Select(macro => new SavedCompositeMacro(macro.Id, macro.Name,
-                        macro.DefaultValue, macro.BaseValue, macro.Mapping.Bindings.ToArray())).ToArray() } : null) { IsMuted = node.IsMuted, IsBypassed = node.IsBypassed }).ToArray(), graph.Connections.ToArray());
+                        macro.DefaultValue, macro.BaseValue, macro.Mapping.Bindings.ToArray())
+                        { ModulationInputId = macro.ModulationInputId }).ToArray() } : null) { IsMuted = node.IsMuted, IsBypassed = node.IsBypassed }).ToArray(), graph.Connections.ToArray());
 
     private static ExposedPort ToExposed(PortDefinition port) => new(port.Id, port.Name, port.SignalType, port.ChannelCount, port.FanIn);
 
@@ -115,7 +116,7 @@ public sealed class PatchDocumentSerializer
                 if (composite.Macros is null || composite.Macros.Any(macro => macro is null || macro.Bindings is null))
                     throw new GraphValidationException("Invalid saved macro configuration.");
                 restored.ReplaceMacros(composite.Macros.Select(macro => new CompositeMacroDefinition(macro.Id,
-                    macro.Name, macro.DefaultValue, macro.BaseValue, new CompositeMacroMapping(macro.Bindings))));
+                    macro.Name, macro.DefaultValue, macro.BaseValue, new CompositeMacroMapping(macro.Bindings), macro.ModulationInputId)));
                 graph.AddNode(restored);
             }
             else
