@@ -44,7 +44,7 @@ If scope changes, resolve additional documentation requirements before affected 
 
 ## Pull request title prefixes (mandatory)
 
-Every new PR must start with one or more of the uppercase, bracketed scope prefixes below, followed by a space and a concise description of what changes. Retain the roadmap slice ID after the prefix when applicable.
+Every new PR must start with one or more of the uppercase, bracketed scope prefixes below. For roadmap slices, use the mandatory title format `[SCOPE] <slice ID> <short feature name>: <specific slice topic>`. Use the same short, plain-language feature name across all slices of a feature (normally 2–5 words); the topic after the colon describes only the actual slice. Do not put the colon immediately after the slice ID. When the feature is enabling a distinct originating user goal, include that goal before the feature name: `[SCOPE] <slice ID> <originating goal> – <short feature name>: <specific slice topic>`. Preserve the same goal and feature labels across related slices and handoffs until the originating goal is delivered. Derive the goal from the owning roadmap/design or explicit owner direction; do not invent a goal or repeat it when it is identical to the feature name. A later unrelated use of a general-purpose feature need not retain its earlier originating goal. For work without a roadmap slice, use `[SCOPE] <short feature or work area name>: <specific change>`; do not invent a slice ID.
 
 - `[DOC]` — documentation, specifications, roadmap, agent instructions or other documentation-only work.
 - `[UI]` — user interface, editor, presentation, interaction, canvas, visualization or UI performance changes, including their supporting tests/tooling.
@@ -52,7 +52,7 @@ Every new PR must start with one or more of the uppercase, bracketed scope prefi
 
 Classify by actual PR scope, not the branch name or roadmap number. Use `[UI][ENGINE]` when both runtime areas change; split independently deliverable changes into focused PRs when practical. Ordinary supporting documentation and roadmap closeout in a code PR do not require an extra `[DOC]` prefix. For shared infrastructure or tests, use the runtime area(s) they support; documentation-only process changes use `[DOC]`. If the scope expands, update the title before handoff/merge to keep it accurate. This rule applies to all agents and every newly opened PR, including fixes and refactors; do not rename historical merged PRs.
 
-Examples: `[DOC] Define audio optimization test requirements`, `[UI] 7.3.9-S3b: gate live values by property pins`, `[ENGINE] 7.3.10-S6: suspend eligible idle voices`, `[UI][ENGINE] Scope telemetry at the playback bridge`.
+Examples: `[ENGINE] 7.4.6-S4d.2b Kick Drum – Composite Macros: Offline DSP verification`, `[UI] 6.19.5-S2a Connection amount slider: Add guarded draft commit`, `[UI] 7.3.9-S3b Node performance: Gate live parameter updates`, `[ENGINE] 7.3.10-S6 Audio engine optimization: Suspend eligible idle voices`, `[DOC] Agent workflow: Standardize PR titles`. Check the title before opening or handing off a PR. Normalize existing open PR titles when requested; leave closed and merged history unchanged.
 
 ## Domain policies
 

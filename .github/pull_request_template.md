@@ -1,4 +1,4 @@
-<!-- Mandatory PR title: [DOC], [UI], [ENGINE], or [UI][ENGINE] followed by a concise description and roadmap slice when applicable. See docs/agents/contributor-instructions.md#pull-request-title-prefixes-mandatory. -->
+<!-- Mandatory PR title: [SCOPE] <slice ID> <short feature name>: <specific slice topic>. For a supporting feature with a distinct originating goal use [SCOPE] <slice ID> <originating goal> – <short feature name>: <specific slice topic>. For unsliced work omit the slice ID. Use [DOC], [UI], [ENGINE], or [UI][ENGINE]. See docs/agents/contributor-instructions.md#pull-request-title-prefixes-mandatory. -->
 
 ## Scope
 
