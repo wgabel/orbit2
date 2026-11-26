@@ -9,6 +9,8 @@ on:
       - '.github/workflows/historical-editor-benchmarks.yml'
       - 'scripts/plan-editor-pairs.mjs'
       - 'tests/benchmarks/EditorPairPlan.test.mjs'
+      - 'src/Orbit.UI/Components/Canvas/GraphWorkspace.razor.cs'
+      - 'src/Orbit.Presentation/Canvas/NodeExpansionState.cs'
   workflow_dispatch:
     inputs:
       before_revision:
@@ -52,16 +54,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      PAIR_BEFORE: ${{ inputs.before_revision || '' }}
-      PAIR_AFTER: ${{ inputs.after_revision || '' }}
-      PAIR_SMOKE: ${{ github.event_name == 'pull_request' }}
+      PAIR_BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || inputs.before_revision || '' }}
+      PAIR_AFTER: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || inputs.after_revision || '' }}
+      PAIR_SMOKE: 'false'
       WORKLOAD: ${{ inputs.workload || 'expansion' }}
       ORBIT_EDITOR_REPEATS: ${{ inputs.repeats || '3' }}
       ORBIT_EDITOR_IDLE_MS: '1500'
       ORBIT_EDITOR_VIEWPORT: ${{ inputs.viewport || 'desktop' }}
       ORBIT_EDITOR_PLAYBACK: ${{ github.event_name == 'pull_request' && '1' || (inputs.playback && '1' || '0') }}
       ORBIT_EDITOR_RENDER_COUNTS: '0'
-      PROFILE: ${{ inputs.profile || 'editor-composite-100' }}
+      PROFILE: ${{ inputs.profile || 'editor-50' }}
     steps:
       - uses: actions/checkout@v4
         with:
