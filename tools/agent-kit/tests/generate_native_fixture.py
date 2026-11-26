@@ -36,3 +36,19 @@ if len(sys.argv) > 5:
                            NoteStep("hold"), NoteStep("rest"), NoteStep(64, velocity=0)],
                            articulation=1, division=2, reference_note=60)
     patch.save(sys.argv[5])
+
+# Exercise native loop automation, with a dormant event route retained.
+if len(sys.argv) > 6:
+    from orbit2 import configure_envelope
+    automation_patch = Patch.create("Python envelope smoke", catalog=catalog)
+    env = automation_patch.add_node("generator.envelope")
+    clock = automation_patch.add_node("generator.clock")
+    carrier = automation_patch.add_node("generator.oscillator", amplitude=0.1)
+    master = automation_patch.add_node("output.master")
+    configure_envelope(env, mode="ad", trigger_source=1)
+    automation_patch.connect(clock, "clock-out", env, "event-trigger-in")
+    automation_patch.connect(env, "envelope-out", carrier, "amplitude-modulation-in", amount=0.5)
+    automation_patch.connect(carrier, "signal-out", master, "audio-in", amount=0.2)
+    configure_envelope(env, mode="loop", attack_ms=250, decay_ms=1200,
+                       rest_ms=500, attack_curve=2, decay_curve=3)
+    automation_patch.save(sys.argv[6])

@@ -192,9 +192,9 @@ Merged [PR #170](https://github.com/wgabel/orbit2/pull/170); [CI](https://github
 
 Deletion is intentionally conservative: on current S5-supported root leaf documents it checks an explicit cleanup-scope allowlist of understood native DTO fields, not another schema or catalog. Any opaque field anywhere in the document rejects deletion with a structured diagnostic; unknown fields remain supported for non-destructive edits. Nonempty presentation collections, nested graphs and legacy migrations remain out of scope. CI retains created and parameter-edited native import gates and adds a structural edit of the native-origin fixture. S7 owns sequence helpers.
 
-## S7a note sequencer pattern adapter (candidate)
+## S7a note sequencer pattern adapter
 
-Implementation: [PR #174](https://github.com/wgabel/orbit2/pull/174) (CI pending).
+Merged [PR #174](https://github.com/wgabel/orbit2/pull/174); [CI](https://github.com/wgabel/orbit2/actions/runs/45829952802) passed at `fc34c8b687b05261246ddd6378a382ed039b7607`.
 
 `NoteStep`, `configure_note_pattern(node, steps, **settings)` and `read_note_pattern(node)` wrap the existing native fixed-slot parameter families. See [native sequencer contract](../instruments/note-sequencer.md). MIDI integers 0–127 encode note+1, Hold is zero, Rest is 129. Gate length None encodes native zero (inherit); velocity None encodes -1 (inherit) while explicit zero means silent strength; timing offset is a signed step fraction. Values are validated against native exported bounds/choices by one atomic parameter batch. The adapter replaces active slots and their overrides, enables Loop, and preserves inactive slots, IDs, cables, layout and unspecified global settings. No rounding, implicit humanization, audio generation or variable step lengths/polyphony. Reading returns the active slots including stored overrides even for Hold/Rest; native scheduling ignores inapplicable overrides.
 
@@ -208,6 +208,22 @@ print(read_note_pattern(seq))
 ~~~
 
 Settings are optional native numeric values: reference_note, initial_pitch, timing (0 sync/1 seconds), division (1/2/4/8/16 quarter-beat units), multiplier, seconds, glide, articulation (0 pitch-only/1 notes), gate_length and velocity. Omitted values remain unchanged. The native reference-relative pitch clamp still applies. Current metadata drives capacity and all ordinary constraints; the small semantic encoding is tied to the audited native keys. CI imports a fourth Python-created fixture with populated pattern values; this verifies persistence, not scheduled playback. Automation adapter follows in S7b.
+
+## S7b envelope automation adapter (candidate)
+
+Implementation: [PR #176](https://github.com/wgabel/orbit2/pull/176) (CI pending).
+
+The current native registry has no arbitrary breakpoint automation or general value-step sequencer. The native [Envelope contract](../audio/envelopes.md) implements AD, AR, ADSR and Loop with independent power curves and durations; this is the supported automation subset. `configure_envelope(node, mode=None, **settings)` and `read_envelope(node)` expose that configuration using native mode choices and one atomic parameter batch. Durations use milliseconds (`attack_ms`, `decay_ms`, `release_ms`, `rest_ms`), curves use native exponents (`attack_curve`, `decay_curve`, `release_curve`), sustain is normalized and trigger_source is the native numeric selector. All are optional; dormant values and cables are retained. The helper does not implicitly connect, activate or simulate any port. Unsupported modes and settings (including arbitrary points/steps) fail explicitly.
+
+~~~python
+from orbit2 import configure_envelope, read_envelope
+env = patch.add_node("generator.envelope")
+configure_envelope(env, mode="loop", attack_ms=250, decay_ms=1200,
+                   rest_ms=500, attack_curve=2, decay_curve=3)
+print(read_envelope(env))
+~~~
+
+CI imports a connected loop-envelope fixture with a retained dormant trigger cable. Python tests check modes, bounds, round trips and atomic rejection. General automation/step-sequencer adapters are deferred until native implementations exist (see planned automation in [advanced roadmap](../roadmap/advanced.md)); no invented patch fields or approximation through a second DSP engine. S8 owns conditional-port discovery and modulation helpers.
 
 ## Non-goals and gates
 
