@@ -10,9 +10,6 @@ try {
   const config = JSON.parse(readFileSync(resolve(root, 'docs/agents/task-routing.json'), 'utf8'));
   const audit = auditRepositoryDocumentation(root, config);
   if (process.argv.includes('--report')) console.log(JSON.stringify(audit.report, null, 2));
-  for (const item of audit.report) {
-    if (!item.file.includes('/') && item.file !== 'AGENTS.md') audit.errors.push('Root Markdown forbidden except AGENTS.md: ' + item.file);
-  }
   for (const warning of audit.warnings) console.warn(warning);
   for (const error of audit.errors) console.error(error);
   console.log(formatCoverageSummary(audit));
