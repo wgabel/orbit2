@@ -81,6 +81,11 @@ public partial class GraphWorkspace : IAsyncDisposable
     // is mounting. The new canvas starts expanded by design.
     private GraphCanvas? ActiveTelemetryCanvas => canvasView is { } view &&
         view.OwnsTelemetryState(Canvas) ? view : null;
+    private readonly MacroOwnershipProjection macroOwnership = new();
+    private IReadOnlyDictionary<Guid, IReadOnlyList<MacroOwnership>> CanvasMacroOwnership =>
+        macroOwnership.Update(session.Snapshot, Canvas.Snapshot.GraphId,
+            Navigation.Path.Count > 1 ? Navigation.Path[^2].GraphId : null);
+
     private IReadOnlyDictionary<ParameterAddress, double> CanvasEffectiveValues =>
         ActiveTelemetryCanvas?.FilterTelemetry(EffectiveValues, static address => address.NodeId, EmptyValues) ?? EffectiveValues;
     private IReadOnlyDictionary<Guid, EnvelopePlayhead> CanvasEnvelopePlayheads =>

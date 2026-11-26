@@ -15,6 +15,7 @@ public partial class ParameterSlider
     [Parameter] public EventCallback<ParameterValueEdit> ValueChanged { get; set; }
     [Parameter] public EventCallback<Guid> GestureEnded { get; set; }
     [Parameter] public double Step { get; set; } = 1;
+    [Parameter] public MacroOwnership? Ownership { get; set; }
     [Parameter] public bool IsModulated { get; set; }
     [Parameter] public ParameterRange? ModulationRange { get; set; }
     [Parameter] public double? EffectiveValue { get; set; }

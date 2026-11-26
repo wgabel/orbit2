@@ -131,11 +131,21 @@
                 else
                 {
                     <ParameterSlider @key="parameter.Id" Definition="@parameter.Definition" Value="@parameter.BaseValue" Step="0.01"
+                                 Ownership="@MacroOwnerships.FirstOrDefault(owner => owner.Address.ParameterId == parameter.Id)"
                                  IsModulated="@IsModulated(parameter.Id)" ModulationRange="@GetRange(parameter.Id)" EffectiveValue="@GetEffective(parameter.Id)"
                                  Timing="@CycleTiming.ForParameter(Node, parameter, BeatsPerMinute)"
                                  ValueChanged="@(edit => OnParameterEdit.InvokeAsync(new ParameterEditRequest(new ParameterAddress(Node.Id, parameter.Id), edit.Value, edit.GestureId)))"
                                  GestureEnded="OnParameterGestureEnded" />
                 }
+            }
+        </div>
+    }
+    @if (ShowFullControls && MacroOwnerships.Any(owner => !owner.IsActive || Node.TypeKey == NoteSequencerGenerator.NodeType))
+    {
+        <div class="node-parameters" role="group" aria-label="Other macro-owned parameters">
+            @foreach (var owner in MacroOwnerships.Where(owner => !owner.IsActive || Node.TypeKey == NoteSequencerGenerator.NodeType))
+            {
+                <MacroOwnershipReadout @key="owner.Address.ParameterId" Ownership="@owner" />
             }
         </div>
     }
