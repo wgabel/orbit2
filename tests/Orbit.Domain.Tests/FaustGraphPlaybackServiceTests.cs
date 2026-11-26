@@ -607,6 +607,74 @@ public sealed class FaustGraphPlaybackServiceTests
         await playing;
     }
 
+    // Pre-live-control baseline: retain these counts in the baseline report;
+    // the candidate implementation must replace this assertion with the
+    // expected stable-generation/control-update counts for the same workload.
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public async Task ConnectionAmountBaselineReplacesVoiceForEveryAcceptedEdit(int edgeIndex)
+    {
+        using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings(440, 0.5, 100));
+        var engine = new RecordingEngine();
+        var service = new FaustGraphPlaybackService(FaustGraphCompiler.CreateBuiltIn(), engine);
+        service.SetPerformanceCollection(true);
+        var original = session.Snapshot;
+        var edge = original.Connections[edgeIndex];
+        var playing = service.PlayAsync(original);
+        try
+        {
+            await service.GetStateAsync(session.GraphId);
+            var prior = Assert.IsType<PlaybackRequest>(engine.Request);
+            double[] edits = [-0.5, 0, 0.25, 1, 2];
+            foreach (var amount in edits)
+            {
+                session.Execute(new SetConnectionAmountCommand(session.GraphId, edge.Id, amount));
+                var accepted = await service.UpdateAsync(session.Snapshot);
+                var replacement = engine.Replacements.Last();
+                Assert.Equal(session.Snapshot.Revision, accepted.AppliedRevision);
+                Assert.Equal(session.Snapshot.Revision, replacement.GraphRevision);
+                Assert.NotEqual(prior.Generation, replacement.Generation);
+                Assert.NotEqual(prior.Source, replacement.Source);
+                Assert.Equal(edge with { Amount = amount }, session.Snapshot.Connections[edgeIndex]);
+                prior = replacement;
+            }
+            var diagnostics = service.GetGraphPerformanceSnapshot(session.GraphId)!;
+            Assert.Equal(1L + edits.Length, diagnostics.SourceBuilds);
+            Assert.Equal((long)edits.Length, diagnostics.AcceptedReplacements);
+            Assert.Equal(0L, diagnostics.ControlUpdates);
+            Assert.Equal(0L, diagnostics.ReusedUpdates);
+            Assert.Equal(edits.Length, engine.Replacements.Count);
+            Assert.Empty(engine.Updates);
+        }
+        finally
+        {
+            await service.StopAsync(session.GraphId);
+            await playing;
+        }
+    }
+
+    [Fact]
+    public void ConnectionAmountBaselineObservationAliasDependsOnUnity()
+    {
+        using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings(440, 0.5, 100));
+        var graph = session.Snapshot;
+        var edge = graph.Connections[1];
+        var source = new SignalObservationAddress(graph.Id, graph.Id, edge.Source.NodeId,
+            edge.Source.PortId, PortDirection.Output);
+        var target = new SignalObservationAddress(graph.Id, graph.Id, edge.Destination.NodeId,
+            edge.Destination.PortId, PortDirection.Input);
+        var compiler = FaustGraphCompiler.CreateBuiltIn();
+        var initial = compiler.Compile(graph, SignalTapManifest.MaxAuxiliaryChannels, dynamicTaps: true);
+        Assert.Equal(initial.SignalTaps.ObservationIds[source], initial.SignalTaps.ObservationIds[target]);
+        foreach (var amount in new[] { 0.5, 0d, -0.5 })
+        {
+            session.Execute(new SetConnectionAmountCommand(graph.Id, edge.Id, amount));
+            var changed = compiler.Compile(session.Snapshot, SignalTapManifest.MaxAuxiliaryChannels, dynamicTaps: true);
+            Assert.NotEqual(changed.SignalTaps.ObservationIds[source], changed.SignalTaps.ObservationIds[target]);
+        }
+    }
+
     [Fact]
     public async Task DiagnosticsSeparateSourceBuildReuseAndAcceptedReplacements()
     {
