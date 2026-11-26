@@ -114,7 +114,7 @@ Baseline verified using [PR #153 build job](https://github.com/wgabel/orbit2/act
 
 ## S2 catalog exporter
 
-Candidate implementation in `tools/agent-kit/exporter/` is a standalone .NET 10 console executable referencing only Orbit.Application and its domain dependency. Generate the catalog locally (SDK required only for the publisher, not consumers):
+Merged implementation ([PR #157](https://github.com/wgabel/orbit2/pull/157)) in `tools/agent-kit/exporter/` is a standalone .NET 10 console executable referencing only Orbit.Application and its domain dependency. Generate the catalog locally (SDK required only for the publisher, not consumers):
 
 ~~~powershell
 dotnet run --project tools/agent-kit/exporter/Orbit.AgentKit.Exporter.csproj --configuration Release -- catalog.json
@@ -122,7 +122,19 @@ dotnet run --project tools/agent-kit/exporter/Orbit.AgentKit.Exporter.csproj --c
 
 Format 1 has `catalogFormatVersion` and an ordinal-keyed `nodes` object. Each entry identifies its creation key, persisted type key, label, native marker category and metadata status. Leaf entries include every parameter and port (including dormant controls), factory base values versus definition defaults, bounds, choices, units/scales/smoothing, structural flags, display anchors, modulation port keys, and activation as an array of OR alternatives containing AND conditions. Enum names in this catalog are descriptive strings, not the native persisted enum encoding. No instance GUIDs or timestamps are exported. Composite registrations are discoverable with explicit deferred status; GUID-derived boundary keys and nested graphs are intentionally not serialized in S2. Human usage metadata, routing matrices, patch fixtures, selective packaging and composite creation remain later slices.
 
-`AgentKitCatalogTests` in the existing native domain suite checks independent registry determinism, complete key coverage, native leaf values and socket associations, conditional pitch controls, sequencer slots and composite preset aliases. Run `dotnet test tests/Orbit.Domain.Tests/Orbit.Domain.Tests.csproj --configuration Release --filter FullyQualifiedName~AgentKitCatalogTests`. Candidate verification pending; do not claim a generated release catalog until CI executes the exporter tests. The existing CI path classification conservatively treats tooling/test changes as runtime builds; separate tooling-only release orchestration remains S12.
+`AgentKitCatalogTests` in the existing native domain suite checks independent registry determinism, complete key coverage, native leaf values and socket associations, conditional pitch controls, sequencer slots and composite preset aliases. Run `dotnet test tests/Orbit.Domain.Tests/Orbit.Domain.Tests.csproj --configuration Release --filter FullyQualifiedName~AgentKitCatalogTests`. The full domain and presentation suites and build passed in [PR #157 CI](https://github.com/wgabel/orbit2/actions/runs/45787315377/job/139797257750) at head `dfab9ecc10dd58ac333684b2edf8328c7d68300b`; exporter merged. Later main changes do not alter exporter files. A release catalog is not yet published. The existing CI path classification conservatively treats tooling/test changes as runtime builds; separate tooling-only release orchestration remains S12.
+
+## S3a connection rules exporter
+
+Generate the versioned rules JSON independently of the catalog:
+
+~~~powershell
+dotnet run --project tools/agent-kit/exporter/Orbit.AgentKit.Exporter.csproj --configuration Release -- --connection-rules connection-rules.json
+~~~
+
+Format 1 exports all native signal types and directed compatible signal pairs, the equal-channel rule, mono/single-input event constraints, per-destination amount rules (`finite-signed` or `unity-only`), fan-in behavior, and graph topology constraints (existing same-graph output/input endpoints, unique IDs and endpoint pairs, no dependency cycles). Pair and fan-in tables are derived via native RoutingRejection probes. Channel equality and amount classifications are audited native contracts with runtime probe guards against changed behavior. These are structural rules for already valid ports, not DSP semantics, not a claim that all synthetic channel combinations are supported by the editor, and not a substitute for endpoint ownership/graph validation. The native graph remains authoritative. Dormant socket activation is a separate S8 concern; do not reject stored inactive edges solely on activation.
+
+`AgentKitConnectionRulesTests` exercises deterministic output and compares exported pair/amount/fan-in decisions with actual SignalGraph connections, including rejected routes. Existing SignalGraphTests cover IDs, direction, missing endpoints and cycles. CI verification pending. S3b owns native patch document shape and serialized fixtures, including navigation validation; Python builder remains S4.
 
 ## Non-goals and gates
 
