@@ -218,6 +218,8 @@ Deliverable: position any voice or composite in stereo, build evolving rich timb
 
 <a id="phase-76--instrument-and-sound-design-and-audition"></a>
 
+<a id="phase-76--instrument-and-sound-design--repeatable-audition"></a>
+
 #### Phase 7.6 — Instrument and sound design — repeatable audition (design/reference fixture available; remaining work planned)
 
 Authoritative musical design and workflow: [instrument-design-and-audition.md](../examples/instrument-design-and-audition.md). Original case study: Prism Rush listener approval of its melody and composition, but rejection of its individual retro/childish timbres. Preserve successful scores and isolate sound design. This is a general-purpose workflow for any suitable voice, instrument, drone, texture, percussion or effect; the Prism Rush example is not a genre restriction. These increments do not require completion of all earlier phase numbers; (1)–(5) can begin with existing nodes now. Continue prioritizing 7.3.1, 7.3.2 and 7.3.4 before 7.5 and costly DSP expansions. Use the same benchmark approach for new processing and sample/polyphonic models.
