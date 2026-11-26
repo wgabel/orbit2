@@ -8,7 +8,7 @@ namespace Orbit.Domain.Nodes.Composites;
 public sealed class CompositeMacroDefinition
 {
     public CompositeMacroDefinition(Guid id, string name, double defaultValue, double baseValue,
-        CompositeMacroMapping mapping)
+        CompositeMacroMapping mapping, Guid? modulationInputId = null)
     {
         if (id == Guid.Empty || string.IsNullOrWhiteSpace(name) || name.Trim().Length > 100)
             throw new GraphValidationException("A macro needs an identity and a name of 1–100 characters.");
@@ -20,6 +20,9 @@ public sealed class CompositeMacroDefinition
         DefaultValue = defaultValue;
         BaseValue = baseValue;
         Mapping = mapping;
+        if (modulationInputId == Guid.Empty)
+            throw new GraphValidationException("A macro modulation input needs a valid identity.");
+        ModulationInputId = modulationInputId;
     }
 
     public Guid Id { get; }
@@ -27,6 +30,7 @@ public sealed class CompositeMacroDefinition
     public double DefaultValue { get; }
     public double BaseValue { get; }
     public CompositeMacroMapping Mapping { get; }
+    public Guid? ModulationInputId { get; }
 
     /// <summary>Resolve the stored base through the same curve used by one-shot mappings.</summary>
     public IEnumerable<(ParameterAddress Target, double Value)> ResolveBaseValues() =>
@@ -34,5 +38,5 @@ public sealed class CompositeMacroDefinition
 
     internal bool HasSameConfiguration(CompositeMacroDefinition other) =>
         Id == other.Id && Name == other.Name && DefaultValue == other.DefaultValue &&
-        BaseValue == other.BaseValue && Mapping.Bindings.SequenceEqual(other.Mapping.Bindings);
+        BaseValue == other.BaseValue && ModulationInputId == other.ModulationInputId && Mapping.Bindings.SequenceEqual(other.Mapping.Bindings);
 }

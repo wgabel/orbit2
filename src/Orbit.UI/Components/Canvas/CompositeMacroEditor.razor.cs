@@ -16,9 +16,10 @@ public partial class CompositeMacroEditor
     [Parameter, EditorRequired] public Func<CompositeMacroDraft, ReplaceCompositeMacrosCommand, string?> Dispatch { get; set; } = default!;
     [Parameter] public EventCallback OnCancel { get; set; }
 
-    private sealed class MacroRow(Guid id, string name, string defaultValue, string baseValue)
+    private sealed class MacroRow(Guid id, string name, string defaultValue, string baseValue, Guid? modulationInputId = null)
     {
         public Guid Id { get; } = id;
+        public Guid? ModulationInputId { get; } = modulationInputId;
         public string Name { get; set; } = name;
         public string Default { get; set; } = defaultValue;
         public string Base { get; set; } = baseValue;
@@ -46,7 +47,7 @@ public partial class CompositeMacroEditor
     {
         foreach (var original in Draft.OriginalMacros)
         {
-            var row = new MacroRow(original.Id, original.Name, Format(original.DefaultValue), Format(original.BaseValue));
+            var row = new MacroRow(original.Id, original.Name, Format(original.DefaultValue), Format(original.BaseValue), original.ModulationInputId);
             row.Bindings.AddRange(original.Mapping.Bindings.Select(binding =>
                 new BindingRow(binding.Target, Format(binding.AtZero), Format(binding.AtOne), Format(binding.Exponent))));
             Macros.Add(row);
@@ -117,7 +118,7 @@ public partial class CompositeMacroEditor
             var proposed = Macros.Select(macro => new CompositeMacroDefinition(macro.Id, macro.Name,
                 Parse(macro.Default), Parse(macro.Base),
                 new CompositeMacroMapping(macro.Bindings.Select(binding => new CompositeMacroBinding(binding.Address,
-                    Parse(binding.AtZero), Parse(binding.AtOne), Parse(binding.Exponent)))))).ToArray();
+                    Parse(binding.AtZero), Parse(binding.AtOne), Parse(binding.Exponent)))), macro.ModulationInputId)).ToArray();
             Previews = Draft.Preview(proposed);
             Prepared = Draft.CreateCommand(proposed);
         }

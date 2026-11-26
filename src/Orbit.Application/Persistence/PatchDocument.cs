@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Orbit.Domain.Graphs;
 using Orbit.Domain.Nodes.Composites;
 
@@ -26,7 +27,11 @@ public sealed record SavedComposite(string Name, Guid InputRackId, Guid OutputRa
     public SavedCompositeMacro[] Macros { get; set; } = [];
 }
 public sealed record SavedCompositeMacro(Guid Id, string Name, double DefaultValue, double BaseValue,
-    CompositeMacroBinding[] Bindings);
+    CompositeMacroBinding[] Bindings)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Guid? ModulationInputId { get; init; }
+}
 public sealed record SavedCanvas(Guid GraphId, double PanX, double PanY, double Zoom, SavedNodePosition[] Positions)
 {
     public SavedNodeVisualization[] Visualizations { get; init; } = [];

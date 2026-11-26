@@ -58,6 +58,7 @@ internal static class NodeDuplicator
                     Macros = composite.Macros.Select(macro => macro with
                     {
                         Id = Remap(macro.Id),
+                        ModulationInputId = macro.ModulationInputId is Guid input ? Remap(input) : null,
                         Bindings = macro.Bindings.Select(binding => binding with
                         {
                             Target = new(Remap(binding.Target.NodeId), Remap(binding.Target.ParameterId))

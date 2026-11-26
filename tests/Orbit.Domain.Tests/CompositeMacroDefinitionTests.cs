@@ -7,6 +7,7 @@ using Orbit.Domain.Graphs;
 using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Nodes.Generators;
 using Orbit.Domain.Parameters;
+using Orbit.Domain.Ports;
 using Xunit;
 
 namespace Orbit.Domain.Tests;
@@ -113,10 +114,59 @@ public sealed class CompositeMacroDefinitionTests
     }
 
     [Fact]
+    public void ModulationAssociationIsValidatedAndProtectsConnectedBoundaryAtomically()
+    {
+        var input = new ExposedPort(Guid.NewGuid(), "Modulation", SignalType.Modulation);
+        var audio = new ExposedPort(Guid.NewGuid(), "Audio in", SignalType.Audio);
+        var output = new ExposedPort(Guid.NewGuid(), "Mod out", SignalType.Modulation);
+        var registry = BuiltInNodes.CreateRegistry();
+        registry.Register(CompositeNode.NodeType, id => new CompositeNode(id, "Test", [input, audio], [output]));
+        using var session = new PatchSession(registry);
+        var root = session.GraphId;
+        var wrapper = session.Execute(new AddNodeCommand(root, CompositeNode.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        var child = wrapper.Composite!.Graph.Id;
+        var osc = session.Execute(new AddNodeCommand(child, OscillatorGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        var lfo = session.Execute(new AddNodeCommand(root, OscillatorGenerator.NodeType)).ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
+        session.Execute(new ConnectNodesCommand(root, new(lfo.Id, lfo.Outputs[0].Id), new(wrapper.Id, input.Id)));
+        var frequency = new ParameterAddress(osc.Id, osc.Parameters.Single(p => p.Definition.Key == "frequency").Id);
+        var amplitude = new ParameterAddress(osc.Id, osc.Parameters.Single(p => p.Definition.Key == "amplitude").Id);
+        var id = Guid.NewGuid();
+        CompositeMacroDefinition Macro(Guid? port) => new(id, "Size", 0.5, 0.5, new([new(frequency, 220, 440)]), port);
+        ReplaceCompositeMacrosCommand Set(params CompositeMacroDefinition[] macros) => new(root, wrapper.Id, macros);
+        var initial = session.Snapshot;
+        foreach (var invalid in new[] { Guid.NewGuid(), audio.Id, output.Id, Guid.Empty })
+            Assert.Throws<GraphValidationException>(() => session.Execute(Set(Macro(invalid))));
+        Assert.Same(initial, session.Snapshot);
+        var associated = Macro(input.Id);
+        var other = new CompositeMacroDefinition(Guid.NewGuid(), "Other", 0.5, 0.5,
+            new([new(amplitude, 0.2, 0.8)]), input.Id);
+        Assert.Throws<GraphValidationException>(() => session.Execute(Set(associated, other)));
+        Assert.Same(initial, session.Snapshot);
+        session.Execute(Set(associated));
+        CompositeMacroDefinition Current() => Assert.Single(session.Snapshot.GetNode(wrapper.Id).Composite!.Macros);
+        Assert.Equal(input.Id, Current().ModulationInputId);
+        session.Execute(new SetCompositeMacroValueCommand(root, wrapper.Id, id, 0.7));
+        Assert.Equal(input.Id, Current().ModulationInputId);
+        var before = session.Snapshot;
+        Assert.Throws<GraphValidationException>(() => session.Execute(new RemoveBoundaryPortCommand(child, PortDirection.Input, input.Id)));
+        Assert.Same(before, session.Snapshot);
+        Assert.Single(session.Snapshot.Connections);
+        session.Execute(Set(Macro(null)));
+        Assert.Null(Current().ModulationInputId);
+        session.Undo();
+        Assert.Equal(input.Id, Current().ModulationInputId);
+        session.Redo();
+        Assert.Null(Current().ModulationInputId);
+        session.Execute(new RemoveBoundaryPortCommand(child, PortDirection.Input, input.Id));
+        Assert.Empty(session.Snapshot.Connections);
+    }
+
+    [Fact]
     public void DefinitionsRoundTripUndoAndCloneWithRemappedTargets()
     {
         var registry = BuiltInNodes.CreateRegistry();
-        registry.Register(CompositeNode.NodeType, id => new CompositeNode(id, "Drum", [], []));
+        registry.Register(CompositeNode.NodeType, id => new CompositeNode(id, "Drum",
+            [new ExposedPort(Guid.NewGuid(), "Mod", SignalType.Modulation)], []));
         using var session = new PatchSession(registry);
         var wrapper = session.Execute(new AddNodeCommand(session.GraphId, CompositeNode.NodeType))
             .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
@@ -124,7 +174,7 @@ public sealed class CompositeMacroDefinitionTests
         var osc = session.Execute(new AddNodeCommand(child, OscillatorGenerator.NodeType))
             .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
         var address = new ParameterAddress(osc.Id, osc.Parameters.Single(p => p.Definition.Key == "frequency").Id);
-        var size = new CompositeMacroDefinition(Guid.NewGuid(), "Size", 0.5, 0.75, new([new(address, 120, 45, 2)]));
+        var size = new CompositeMacroDefinition(Guid.NewGuid(), "Size", 0.5, 0.75, new([new(address, 120, 45, 2)]), wrapper.Inputs.Single().Id);
         var before = session.Snapshot.Revision;
         var command = new ReplaceCompositeMacrosCommand(session.GraphId, wrapper.Id, [size]);
         Assert.IsType<CompositeMacrosChanged>(Assert.Single(session.Execute(command).ChangeSet!.Events));
@@ -141,6 +191,7 @@ public sealed class CompositeMacroDefinitionTests
         var loaded = Assert.Single(restored.Snapshot.GetNode(wrapper.Id).Composite!.Macros);
         Assert.Equal(size.Id, loaded.Id);
         Assert.Equal(size.BaseValue, loaded.BaseValue);
+        Assert.Equal(size.ModulationInputId, loaded.ModulationInputId);
         Assert.Equal(size.DefaultValue, loaded.DefaultValue);
         Assert.Equal(size.Mapping.Bindings.ToArray(), loaded.Mapping.Bindings.ToArray());
 
@@ -150,6 +201,8 @@ public sealed class CompositeMacroDefinitionTests
         var cloned = Assert.Single(duplicate.Macros);
         var target = Assert.Single(cloned.Mapping.Bindings).Target;
         Assert.NotEqual(size.Id, cloned.Id);
+        Assert.NotEqual(size.ModulationInputId, cloned.ModulationInputId);
+        Assert.Equal(session.Snapshot.GetNode(duplicateId).Inputs.Single().Id, cloned.ModulationInputId);
         Assert.NotEqual(address.NodeId, target.NodeId);
         Assert.NotEqual(address.ParameterId, target.ParameterId);
         Assert.Equal(440, duplicate.Graph.GetNode(target.NodeId).Parameters.Single(p => p.Id == target.ParameterId).BaseValue);

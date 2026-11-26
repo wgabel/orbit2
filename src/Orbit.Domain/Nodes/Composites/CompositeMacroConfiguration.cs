@@ -1,5 +1,6 @@
 using Orbit.Domain.Graphs;
 using Orbit.Domain.Parameters;
+using Orbit.Domain.Ports;
 
 namespace Orbit.Domain.Nodes.Composites;
 
@@ -15,7 +16,7 @@ public static class CompositeMacroConfiguration
         definition.IsValidBaseValue(binding.AtZero) && definition.IsValidBaseValue(binding.AtOne);
 
     public static void Validate(IReadOnlyList<CompositeMacroDefinition> macros,
-        Func<ParameterAddress, ParameterDefinition> resolve)
+        Func<ParameterAddress, ParameterDefinition> resolve, IEnumerable<PortDefinition> inputs)
     {
         ArgumentNullException.ThrowIfNull(macros);
         ArgumentNullException.ThrowIfNull(resolve);
@@ -24,6 +25,7 @@ public static class CompositeMacroConfiguration
             macros.Select(macro => macro.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count() != macros.Count)
             throw new GraphValidationException("A composite supports up to 64 uniquely named and identified macros.");
 
+        ValidateModulationInputs(macros, inputs);
         var targets = new HashSet<ParameterAddress>();
         foreach (var macro in macros)
         foreach (var binding in macro.Mapping.Bindings)
@@ -33,5 +35,16 @@ public static class CompositeMacroConfiguration
             if (!IsValidBinding(binding, resolve(binding.Target)))
                 throw new GraphValidationException("Macro targets must be continuous parameters with valid range endpoints.");
         }
+    }
+
+    public static void ValidateModulationInputs(IReadOnlyList<CompositeMacroDefinition> macros,
+        IEnumerable<PortDefinition> inputs)
+    {
+        var eligible = inputs.Where(port => port.Direction == PortDirection.Input &&
+            port.SignalType == SignalType.Modulation && port.ChannelCount == 1).Select(port => port.Id).ToHashSet();
+        var reserved = new HashSet<Guid>();
+        foreach (var macro in macros)
+            if (macro.ModulationInputId is Guid id && (!eligible.Contains(id) || !reserved.Add(id)))
+                throw new GraphValidationException("Macro modulation requires a unique existing mono Modulation input. Unlink the macro before removing its input.");
     }
 }

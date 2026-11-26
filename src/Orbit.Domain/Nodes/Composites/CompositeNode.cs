@@ -42,7 +42,8 @@ public sealed class CompositeNode : SignalNode, ICompositeNode
     {
         ArgumentNullException.ThrowIfNull(macros);
         var copy = macros.ToArray();
-        CompositeMacroConfiguration.Validate(copy, address => InternalGraph.GetParameter(address).Definition);
+        CompositeMacroConfiguration.Validate(copy, address => InternalGraph.GetParameter(address).Definition,
+            InputRack.Ports.Select(port => port.Project(PortDirection.Input)));
         if (Macros.Count == copy.Length && Macros.Zip(copy).All(pair => pair.First.HasSameConfiguration(pair.Second)))
             return false;
         Macros = Array.AsReadOnly(copy);
@@ -56,7 +57,7 @@ public sealed class CompositeNode : SignalNode, ICompositeNode
         var current = Macros.SingleOrDefault(macro => macro.Id == macroId)
             ?? throw new GraphValidationException("Macro does not exist in this composite.");
         if (current.BaseValue == value) return value;
-        var replacement = new CompositeMacroDefinition(current.Id, current.Name, current.DefaultValue, value, current.Mapping);
+        var replacement = new CompositeMacroDefinition(current.Id, current.Name, current.DefaultValue, value, current.Mapping, current.ModulationInputId);
         Macros = Array.AsReadOnly(Macros.Select(macro => macro.Id == macroId ? replacement : macro).ToArray());
         return current.BaseValue;
     }
@@ -65,6 +66,8 @@ public sealed class CompositeNode : SignalNode, ICompositeNode
     {
         // Materialize and validate the whole boundary before touching any view.
         var boundary = Boundary.Create(inputs, outputs);
+        CompositeMacroConfiguration.ValidateModulationInputs(Macros,
+            boundary.Inputs.Select(port => port.Project(PortDirection.Input)));
         ReplaceSockets(boundary.Inputs.Select(port => port.Project(PortDirection.Input)),
             boundary.Outputs.Select(port => port.Project(PortDirection.Output)));
         InputRack.ReplaceBoundary(boundary.Inputs);

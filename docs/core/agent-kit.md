@@ -4,6 +4,8 @@
 
 ## Scope and architectural decision
 
+Native macro input association (7.4.6-S4c.1) is a staged schema-1 extension. The current root-leaf validator/builder does not support composite editing; do not advertise macro input authoring until S4c.2 verifies the native metadata and lossless/unsupported-feature gate. See [macro modulation design](../editor/reusable-modules.md#real-time-macro-modulation-s4).
+
 Planned, owner-approved direction: agents and developers construct and edit native Orbit 2 patch JSON independently of a running Orbit 2 application. Provide a small versioned Python library, generated capability catalog, patch schema, validator, executable examples and instructions. Python standard library is preferred; no browser, AI service, .NET build, Faust compilation, DSP, audio rendering, REST, MCP, database or editor runtime is required by consumers. PowerShell can invoke Python and its CLI. Do not implement a second synthesizer, composition compiler or genre generator. The application remains the authority for playback and native import. Offline validation is not proof of audio quality.
 
 The kit is a separate tooling subsystem (proposed root `tools/agent-kit/`, subject to S1 audit); production runtime must not depend on Python or kit artifacts. The native metadata exporter may depend on existing native registry/serializer contracts, never the reverse. Use existing musical documentation and reference assets; do not duplicate their ownership.

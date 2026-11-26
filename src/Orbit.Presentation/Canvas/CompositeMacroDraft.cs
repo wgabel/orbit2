@@ -3,6 +3,7 @@ using Orbit.Application.Graphs.Snapshots;
 using Orbit.Domain.Graphs;
 using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Parameters;
+using Orbit.Domain.Ports;
 
 namespace Orbit.Presentation.Canvas;
 
@@ -18,6 +19,7 @@ public sealed class CompositeMacroDraft
     }
 
     private readonly Dictionary<ParameterAddress, Target> targets;
+    private readonly IReadOnlyList<PortDefinition> inputs;
     public Guid GraphId { get; }
     public Guid NodeId { get; }
     public long Revision { get; }
@@ -27,7 +29,9 @@ public sealed class CompositeMacroDraft
     public CompositeMacroDraft(GraphSnapshot root, Guid graphId, Guid nodeId)
     {
         ArgumentNullException.ThrowIfNull(root);
-        var composite = root.GetGraph(graphId).GetNode(nodeId).Composite
+        var wrapper = root.GetGraph(graphId).GetNode(nodeId);
+        inputs = wrapper.Inputs;
+        var composite = wrapper.Composite
             ?? throw new GraphValidationException("Macro drafts require a composite.");
         GraphId = graphId;
         NodeId = nodeId;
@@ -62,7 +66,7 @@ public sealed class CompositeMacroDraft
         ArgumentNullException.ThrowIfNull(proposed);
         var copy = proposed.ToArray();
         CompositeMacroConfiguration.Validate(copy, address => targets.TryGetValue(address, out var target)
-            ? target.Definition : throw new GraphValidationException("Select a supported parameter in the direct child graph."));
+            ? target.Definition : throw new GraphValidationException("Select a supported parameter in the direct child graph."), inputs);
         return copy;
     }
 }
