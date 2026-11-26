@@ -161,9 +161,10 @@ async function verifyMacroSliders(browser, exported, mobile) {
         assert.match(await ownership.innerText(), /Size/);
         assert.match(await ownership.innerText(), /Mapped: 385 Hz/);
         assert.equal(await ownership.getAttribute("data-macro-active"), "true");
-        const manual = ownership.locator("..").locator(".parameter-heading input[type=number]");
+        const manual = ownership.locator("..").getByRole("spinbutton", { name: "Frequency (Hz)", exact: true });
+        assert.equal(await manual.count(), 1, "Frequency editor must be distinct from the period editor");
         assert.ok(await manual.isEnabled(), "Mapped parameter keeps its editable manual input");
-        assert.match(await ownership.innerText(), new RegExp("Manual: " + Number(await manual.inputValue()) + " Hz"));
+        assert.ok((await ownership.innerText()).includes(`Manual: ${Number(await manual.inputValue())} Hz`));
         await page.getByRole("navigation", { name: "Canvas path" }).getByRole("button", { name: "Patch", exact: true }).click();
         await waitBase(0.75);
 
