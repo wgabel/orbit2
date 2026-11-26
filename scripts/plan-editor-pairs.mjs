@@ -7,11 +7,13 @@ const A = "a21198712750a9c4679ba4e451c636c68211091b";
 const B = "0356ffe183b43f6654c21266f4816fdf2c35a1b1";
 const C = "de2540b95388dc620271d348cb8d9525d74ba38a";
 
+// Keep automatic verification focused on the latest measured runtime change.
+export const verificationPair = Object.freeze({ before: "37bcb3931430d6a80695a3348ec77a5c4c401cf8", after: "9c1fc46e657960b62605d901a360f5fa4c698c9c" });
+
 export function planEditorPairs({ before = "", after = "", smoke = false } = {}) {
     if (smoke) {
         assert.ok(!before && !after, "Smoke uses fixed trusted revisions");
-        before = A;
-        after = B;
+        ({ before, after } = verificationPair);
     }
     if (!before && !after) return {
         historical: true, revisions: [A, B, C],

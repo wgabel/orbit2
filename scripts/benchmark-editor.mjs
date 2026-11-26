@@ -47,8 +47,8 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
             await cdp.send("Performance.enable");
             const metrics = async () => Object.fromEntries((await cdp.send("Performance.getMetrics")).metrics
                 .map(({ name, value }) => [name, value]));
-            await page.goto(compositeTelemetry ? baseUrl + "/?orbit-render-counts=1&orbit-canvas-telemetry=1" :
-                countRenders || foldedResources ? baseUrl + "/?orbit-render-counts=1" : baseUrl);
+            await page.goto(compositeTelemetry || foldedResources ? baseUrl + "/?orbit-render-counts=1&orbit-canvas-telemetry=1" :
+                countRenders ? baseUrl + "/?orbit-render-counts=1" : baseUrl);
             const status = page.locator(".playback-toolbar").getByRole("status");
             const ready = () => status.filter({ hasText: /Ready/ }).waitFor({ timeout: 60000 });
             const play = page.getByRole("button", { name: "Play patch" });
