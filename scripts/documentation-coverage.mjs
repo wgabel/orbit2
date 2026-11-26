@@ -157,6 +157,7 @@ export function analyzeDocumentation({ documents, files, config }) {
   const graph = new Map([...paths, ROUTING].map(path => [path, new Set()]));
   const anchors = new Map();
   for (const file of paths) {
+    if (!file.includes('/') && file !== ROOT) errors.push('Root Markdown forbidden except AGENTS.md: ' + file);
     if (!documents.has(file)) { errors.push('Unreadable tracked Markdown: ' + file); continue; }
     anchors.set(file, markdownAnchors(documents.get(file)));
   }
