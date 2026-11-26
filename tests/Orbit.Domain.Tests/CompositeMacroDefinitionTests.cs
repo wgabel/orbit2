@@ -147,6 +147,10 @@ public sealed class CompositeMacroDefinitionTests
         Assert.Equal(input.Id, Current().ModulationInputId);
         session.Execute(new SetCompositeMacroValueCommand(root, wrapper.Id, id, 0.7));
         Assert.Equal(input.Id, Current().ModulationInputId);
+        session.Execute(new RenameBoundaryPortCommand(child, PortDirection.Input, input.Id, "Renamed modulation"));
+        session.Execute(new MoveBoundaryPortCommand(child, PortDirection.Input, input.Id, 1));
+        Assert.Equal(input.Id, Current().ModulationInputId);
+        Assert.Equal(input.Id, session.Snapshot.GetNode(wrapper.Id).Inputs[1].Id);
         var before = session.Snapshot;
         Assert.Throws<GraphValidationException>(() => session.Execute(new RemoveBoundaryPortCommand(child, PortDirection.Input, input.Id)));
         Assert.Same(before, session.Snapshot);
