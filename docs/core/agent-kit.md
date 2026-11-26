@@ -182,13 +182,28 @@ Merged [PR #168](https://github.com/wgabel/orbit2/pull/168); [CI](https://github
 
 CI checks untouched parsed round trips, edited native-origin fixtures, invalid edit rollback, and independent native import of both a created and a loaded/edited patch. Advanced presentation collections, legacy migration and nested graphs remain unsupported by S5 validation.
 
-## S6b safe structural edits (candidate)
+## S6b safe structural edits
 
-Implementation: [PR #170](https://github.com/wgabel/orbit2/pull/170) (CI pending).
+Merged [PR #170](https://github.com/wgabel/orbit2/pull/170); [CI](https://github.com/wgabel/orbit2/actions/runs/45827497224) passed at `d55683c400f829abbf1406c7c4560aa55d2330cf`.
 
 `Patch.list_connections()` returns detached native edge snapshots; `set_connection_amount(connection_id, amount)` validates a candidate without changing identity, endpoint or order. `disconnect(connection_id)` and `remove_node(node)` validate a candidate before publishing changes. Node removal clears incident edges, saved positions and script aliases; surviving node handles remain usable, removed handles reject edits. Connection IDs and endpoint comparisons are case-insensitive without altering saved GUID spelling. The existing metadata-derived validator checks finite signed amounts and event unity.
 
 Deletion is intentionally conservative: on current S5-supported root leaf documents it checks an explicit cleanup-scope allowlist of understood native DTO fields, not another schema or catalog. Any opaque field anywhere in the document rejects deletion with a structured diagnostic; unknown fields remain supported for non-destructive edits. Nonempty presentation collections, nested graphs and legacy migrations remain out of scope. CI retains created and parameter-edited native import gates and adds a structural edit of the native-origin fixture. S7 owns sequence helpers.
+
+## S7a note sequencer pattern adapter (candidate)
+
+`NoteStep`, `configure_note_pattern(node, steps, **settings)` and `read_note_pattern(node)` wrap the existing native fixed-slot parameter families. See [native sequencer contract](../instruments/note-sequencer.md). MIDI integers 0–127 encode note+1, Hold is zero, Rest is 129. Gate length None encodes native zero (inherit); velocity None encodes -1 (inherit) while explicit zero means silent strength; timing offset is a signed step fraction. Values are validated against native exported bounds/choices by one atomic parameter batch. The adapter replaces active slots and their overrides, enables Loop, and preserves inactive slots, IDs, cables, layout and unspecified global settings. No rounding, implicit humanization, audio generation or variable step lengths/polyphony. Reading returns the active slots including stored overrides even for Hold/Rest; native scheduling ignores inapplicable overrides.
+
+~~~python
+from orbit2 import NoteStep, configure_note_pattern, read_note_pattern
+seq = patch.add_node("generator.note-sequencer")
+configure_note_pattern(seq, [NoteStep(60, 0.6, 0.7, -0.05),
+                            NoteStep("hold"), NoteStep("rest"), NoteStep(64)],
+                       reference_note=60, articulation=1, division=2)
+print(read_note_pattern(seq))
+~~~
+
+Settings are optional native numeric values: reference_note, initial_pitch, timing (0 sync/1 seconds), division (1/2/4/8/16 quarter-beat units), multiplier, seconds, glide, articulation (0 pitch-only/1 notes), gate_length and velocity. Omitted values remain unchanged. The native reference-relative pitch clamp still applies. Current metadata drives capacity and all ordinary constraints; the small semantic encoding is tied to the audited native keys. CI imports a fourth Python-created fixture with populated pattern values; this verifies persistence, not scheduled playback. Automation adapter follows in S7b.
 
 ## Non-goals and gates
 

@@ -27,3 +27,12 @@ if len(sys.argv) > 3:
         edge = native.connect(replacement, "signal-out", output, "audio-in", amount=0.1)
         native.set_connection_amount(edge, 0.25)
         native.save(sys.argv[4])
+
+# A distinct native-import fixture exercises note, tie, rest and expression fields.
+if len(sys.argv) > 5:
+    from orbit2 import NoteStep, configure_note_pattern
+    sequencer = patch.add_node("generator.note-sequencer")
+    configure_note_pattern(sequencer, [NoteStep(60, 0.6, 0.7, -0.05),
+                           NoteStep("hold"), NoteStep("rest"), NoteStep(64, velocity=0)],
+                           articulation=1, division=2, reference_note=60)
+    patch.save(sys.argv[5])
