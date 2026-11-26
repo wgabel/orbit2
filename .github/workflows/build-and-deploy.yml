@@ -209,6 +209,7 @@ jobs:
           ORBIT_EDITOR_REPEATS: '1'
           ORBIT_EDITOR_IDLE_MS: '1000'
           ORBIT_EDITOR_COMPOSITE_TELEMETRY: '1'
+          ORBIT_EDITOR_ASSERT_QUIET_ROOT: '1'
         run: |
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
           node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-composite-telemetry.json" editor-composite-100
