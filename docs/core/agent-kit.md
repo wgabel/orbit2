@@ -166,13 +166,21 @@ Catalog.list_nodes and describe expose actual creation keys and definitions. Nod
 
 The existing runtime CI adds a Python 3.11 step generating fresh native exports, running Python tests, constructing a simple modulated graph in Python and importing it through the new tooling-only `--validate-patch` command (Deserialize, Restore, CanvasNavigationService). This is independent native import, not Python self-validation. Native exporter remains optional for consumers. S5 owns broader offline validation/diagnostics. Merged [PR #164](https://github.com/wgabel/orbit2/pull/164); [CI](https://github.com/wgabel/orbit2/actions/runs/45802849756/job/139850272770) passed at `c19f225c91c4ea112a1ec2ff69e278ad81cab8b3`, including Python tests and actual native import.
 
-## S5 offline validation (candidate)
+## S5 offline validation
 
-Implementation: [PR #166](https://github.com/wgabel/orbit2/pull/166) (CI pending).
+Merged [PR #166](https://github.com/wgabel/orbit2/pull/166); [CI](https://github.com/wgabel/orbit2/actions/runs/45817551488) passed at `de967d03ed7b3aff63c8f5282bfe7f5fc80008c3`.
 
 `Patch.validate()` and `validate_patch(document, catalog)` return a read-only `ValidationResult` with `is_valid`, structured `errors` (code, JSON path, message, optional expected/actual) and `raise_for_errors()`. `Patch.save` checks the result before opening a temporary file. Validation uses generated leaf definitions, native tempo/zoom/overview constraints and shared builder routing checks. The native fixture manifest is independently exercised by both Python and .NET tests; the existing Python-generated graph still goes through native restore/navigation in CI.
 
 Coverage: current complete root leaf graphs, native-scoped identities, finite bounds and choices, mute/bypass support, ports, routing amounts, fan-in, cycles, overview and simple canvas/navigation. Explicitly reject composite payloads and nonempty annotation/visualization collections; do not migrate legacy node shapes or normalize orphan positions/layouts. These are conservative kit restrictions, not claims that native import rejects all such documents. Unicode tag comparison approximates native ordinal-ignore-case; exact parity for all Unicode and richer presentation contracts remains unverified. S6 owns loading and lossless editing; S7–S9 own advanced structures. No musical-quality or audio validation.
+
+## S6a lossless leaf load and parameter edits (candidate)
+
+Implementation: [PR #168](https://github.com/wgabel/orbit2/pull/168) (CI pending).
+
+`Patch.load(path, catalog=catalog)` validates the complete S5-supported document before exposing a patch, then keeps its JSON data and original IDs rather than recreating the graph. Use `list_nodes()`, `get_node_by_id(id)`, `Node.type_key`, `Node.get(key)` and the existing atomic `Node.set_parameters`. Saving preserves all unmodified JSON values, including unknown fields, layout, overview, ID spelling and optional field presence; formatting and arbitrary-precision decimal lexemes are not preserved (standard Python JSON number decoding). Duplicate JSON object properties, nonfinite numbers and unsupported S5 documents are rejected rather than silently normalized. Existing add/connect operations remain available, with GUID comparisons case-insensitive. Unknown fields are retained as opaque data, not interpreted or guaranteed compatible with future native builds. S6b owns removal, disconnection, edge updates and reference cleanup; destructive operations must reject cases where opaque references cannot be safely handled.
+
+CI checks untouched parsed round trips, edited native-origin fixtures, invalid edit rollback, and independent native import of both a created and a loaded/edited patch. Advanced presentation collections, legacy migration and nested graphs remain unsupported by S5 validation.
 
 ## Non-goals and gates
 
