@@ -69,4 +69,4 @@ Test exact destination units and signed amounts, zero versus dormant styling, ty
 
 ### Direct canvas amount slider (planned follow-up to Phase 6.19.5)
 
-The approved [direct canvas slider design](connection-amount-slider.md) replaces the eligible numeric badge with a standard horizontal range control bound to existing connection amount semantics. Until implemented, the badge and explicit Apply/Cancel editor above describe the current behavior. See the owning roadmap for slices; do not interpret this proposal as a shipped feature.
+The approved [direct canvas slider design](connection-amount-slider.md) replaces the eligible numeric badge with a standard horizontal range control bound to existing connection amount semantics. Preview is local during dragging; commit once on successful release through the existing graph command, retaining compile-time coefficients and existing playback behavior. No live DSP control redesign is part of this feature. Until implemented, the badge and explicit Apply/Cancel editor above describe the current behavior. See the owning roadmap for slices; do not interpret this proposal as a shipped feature.
