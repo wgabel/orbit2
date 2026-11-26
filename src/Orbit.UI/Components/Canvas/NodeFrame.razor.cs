@@ -5,6 +5,7 @@ using Orbit.Application.Graphs.Snapshots;
 using Orbit.Application.Persistence;
 using Orbit.Domain.Ports;
 using Orbit.Domain.Parameters;
+using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Timing;
 using Orbit.Presentation.Canvas;
 
@@ -44,6 +45,7 @@ public partial class NodeFrame
     [Parameter] public EventCallback<PortPointerStart> OnOutputPointerDown { get; set; }
     [Parameter] public EventCallback<PointerEventArgs> OnInputPointerDown { get; set; }
     [Parameter] public EventCallback<ParameterEditRequest> OnParameterEdit { get; set; }
+    [Parameter] public EventCallback<MacroEditRequest> OnMacroEdit { get; set; }
     [Parameter] public EventCallback<NodeAuditionRequest> OnAudition { get; set; }
     [Parameter] public EventCallback<NodePresetApplyRequest> OnPresetApply { get; set; }
     [Parameter] public EventCallback<Guid> OnManagePresets { get; set; }
@@ -93,6 +95,12 @@ public partial class NodeFrame
 
     private string? DiagnosticRenderCount => CountRenders
         ? renderCount.ToString(CultureInfo.InvariantCulture) : null;
+
+    // Presentation metadata only: macro identity and authored values remain
+    // in the composite snapshot, not in synthetic graph parameters.
+    private static ParameterDefinition MacroSliderDefinition(CompositeMacroDefinition macro) =>
+        new(macro.Id.ToString("N"), macro.Name, macro.DefaultValue, 0, 1,
+            ParameterUnit.Normalized, ParameterScale.Linear, false, ParameterSmoothing.None);
 
     private bool IsModulated(Guid id) => ModulationRanges.ContainsKey(new ParameterAddress(Node.Id, id));
     private ParameterRange? GetRange(Guid id) => ModulationRanges.GetValueOrDefault(new ParameterAddress(Node.Id, id));

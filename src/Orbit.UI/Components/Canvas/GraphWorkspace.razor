@@ -85,7 +85,7 @@ else
                  AnnotationActionsDisabled="@(switchingWorkspace || overviewDraft)" OnAnnotationDraftChanged="OnAnnotationDraftChanged" OnAnnotationError="@(value => Error = value)"
                  CanShowScope="@(ScopeSelection is not null || ScopeOpen)" ScopeOpen="@ScopeOpen" OnToggleScope="ToggleScopeFromToolbar"
                  MobileSelectionOpen="@(mobilePanel == "selection")" OnMobileToolCompleted="CompleteMobileCanvasTool" OnCloseMobileTools="DismissMobilePanelAsync"
-                 OnConnect="@(request => Connect(graphId, request))" OnParameterEdit="@(request => EditParameter(graphId, request))"
+                 OnConnect="@(request => Connect(graphId, request))" OnParameterEdit="@(request => EditParameter(graphId, request))" OnMacroEdit="@(request => EditMacro(graphId, request))"
                  OnParameterGestureEnded="@(id => CompleteParameterGesture(graphId, id))"
                  OnCancelParameterGesture="@(() => CancelCanvasParameterGesture(graphId))"
                  OnAudition="@(request => SetNodeAudition(graphId, request))"

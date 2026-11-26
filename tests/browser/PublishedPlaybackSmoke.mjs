@@ -82,6 +82,70 @@ async function addNode(page, key) {
     await libraryRow(page, key).locator(".node-library-add").click();
     await page.locator(".node-library-panel").waitFor({ state: "hidden" });
 }
+// Load an authored macro using the real schema-1 export/import path.
+async function verifyMacroSliders(browser, exported, mobile) {
+    const document = JSON.parse(exported.toString());
+    const wrapper = document.rootGraph.nodes.find(node => node.composite?.graph.nodes.some(
+        child => child.parameters.some(parameter => parameter.key === "frequency")));
+    assert.ok(wrapper, "Expected an exported composite with a frequency target");
+    const target = wrapper.composite.graph.nodes.find(node => node.parameters.some(parameter => parameter.key === "frequency"));
+    const frequency = target.parameters.find(parameter => parameter.key === "frequency");
+    wrapper.composite.macros = [{
+        id: "39a8a387-19d2-4420-adf6-4fcbebc7d2c1", name: "Size", defaultValue: 0.5, baseValue: 0.5,
+        bindings: [{ target: { nodeId: target.id, parameterId: frequency.id }, atZero: 220, atOne: 440, exponent: 1 }]
+    }];
+    document.activeGraphId = document.rootGraph.id;
+    const page = await browser.newPage(mobile ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } : {});
+    try {
+        await page.goto("http://127.0.0.1:" + server.address().port);
+        await page.locator(".playback-toolbar [role=status]").filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
+        await clickWorkspaceTool(page, "more", "Patches", false);
+        const manager = page.locator(".patch-manager");
+        await manager.getByLabel("Import JSON").setInputFiles({
+            name: "macro-fixture.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(document))
+        });
+        await manager.getByText("Imported patch.", { exact: true }).waitFor();
+        await manager.getByRole("button", { name: "Close" }).click();
+        await closeWorkspacePanel(page, "more");
+        const node = page.locator(`article[data-node-id="${wrapper.id}"]`);
+        const group = node.getByRole("group", { name: "Composite macro controls" });
+        const base = group.getByRole("spinbutton");
+        const range = group.getByRole("slider", { name: "Size" });
+        await base.waitFor();
+        assert.equal(await base.inputValue(), "0.5");
+        assert.equal(await range.getAttribute("min"), "0");
+        assert.equal(await range.getAttribute("max"), "1");
+        assert.equal(await group.getByRole("slider").count(), 1);
+        assert.equal(await node.locator(".node-expand-toggle").count(), 0);
+        const waitBase = value => page.waitForFunction(({ id, value }) =>
+            Number(document.querySelector(`article[data-node-id="${id}"] [aria-label="Composite macro controls"] input[type=number]`)?.value) === value,
+            { id: wrapper.id, value });
+        // Native numeric editing and normal history work on both layouts.
+        await base.fill("0.75");
+        await page.waitForFunction(id => document.querySelector(`article[data-node-id="${id}"] [aria-label="Composite macro controls"] input[type=range]`)?.value === "0.75", wrapper.id);
+        await editButton(page, "Undo").click();
+        await waitBase(0.5);
+        await editButton(page, "Redo").click();
+        await waitBase(0.75);
+        if (!mobile) {
+            // One held keyboard gesture commits multiple values but one undo entry.
+            await range.focus();
+            await page.keyboard.down("ArrowRight");
+            await page.keyboard.down("ArrowRight");
+            await page.keyboard.up("ArrowRight");
+            await waitBase(0.77);
+            await editButton(page, "Undo").click();
+            await waitBase(0.75);
+        }
+        await node.getByRole("button", { name: `Open ${wrapper.composite.name}`, exact: true }).click();
+        await page.waitForFunction(id => document.querySelector(".graph-workspace")?.dataset.activeGraph === id, wrapper.composite.graph.id);
+        assert.equal(await page.getByRole("group", { name: "Composite macro controls" }).count(), 0);
+        await page.getByRole("button", { name: "Patch", exact: true }).click();
+        await waitBase(0.75);
+    } finally {
+        await page.close();
+    }
+}
 let browser;
 try {
     browser = await chromium.launch({ executablePath: process.env.ORBIT_CHROME, headless: true,
@@ -1206,6 +1270,8 @@ try {
     assert.equal(JSON.parse(exported.toString()).beatsPerMinute, 90);
     assert.deepEqual(JSON.parse(exported.toString()).overview.tags, ["Ambient", "space"]);
     assert.equal(JSON.parse(exported.toString()).overview.title, "Distant horizon");
+    await verifyMacroSliders(browser, exported, false);
+    await verifyMacroSliders(browser, exported, true);
     await manager.getByRole("button", { name: "New patch" }).click();
     await manager.getByText("New workspace created.", { exact: true }).waitFor();
     await manager.getByRole("region", { name: "Current patch overview" }).getByText("Untitled patch", { exact: true }).waitFor();
