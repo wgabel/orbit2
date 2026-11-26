@@ -8,6 +8,8 @@ A short entry point for composing, building instruments, analyzing patches and r
 
 ## Choose a path
 
+- **[Offline Agent Kit](../core/agent-kit.md)** (planned) — versioned node discovery, Python patch building/editing and validation without running Orbit 2; native listening remains separate.
+
 - **[Find a guide for your task](task-index.md)** — instrument choice, effects, melody, harmony, mixing, genre and feedback.
 - **[End-to-end production workflow](production-workflow.md)** — plan, create, audition, measure, refine and deliver music.
 - **[Mandatory musical composition validation](musical-composition-validation.md)** — role/section audit, rendered audio checks, musical evaluation and evidence-based delivery for whole pieces.
