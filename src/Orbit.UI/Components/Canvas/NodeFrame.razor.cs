@@ -55,6 +55,7 @@ public partial class NodeFrame
     [Parameter] public EventCallback<Guid> OnEditMacros { get; set; }
     [Parameter] public EventCallback<Guid> OnEditRack { get; set; }
     [Parameter] public IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
+    [Parameter] public IReadOnlyList<MacroOwnership> MacroOwnerships { get; set; } = Array.Empty<MacroOwnership>();
     [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();
     [Parameter] public Orbit.Application.Models.EnvelopePlayhead? Playhead { get; set; }
 
@@ -73,13 +74,14 @@ public partial class NodeFrame
         double BeatsPerMinute, int? SampleRate, PortAddress? PendingSource,
         IReadOnlyDictionary<ParameterAddress, ParameterRange?> Ranges,
         IReadOnlyDictionary<ParameterAddress, double> Values,
+        IReadOnlyList<MacroOwnership> MacroOwnerships,
         Orbit.Application.Models.EnvelopePlayhead? Playhead, long PresetCatalogRevision,
         bool CountRenders);
 
     private RenderInputs CurrentInputs => new(Node, PatchId, GraphId, Position, Documentation,
         ShowSecondaryDocumentation, DocumentationEditDisabled, HelpOpen, Visualization,
         VisualizationExpanded, Role, Selected, Expanded, BeatsPerMinute, SampleRate, PendingSource,
-        ModulationRanges, EffectiveValues, Playhead, PresetCatalogRevision, CountRenders);
+        ModulationRanges, EffectiveValues, MacroOwnerships, Playhead, PresetCatalogRevision, CountRenders);
 
     // Wire candidates may change in place. Conservatively render both entry
     // and exit until dedicated wire invalidation is implemented.

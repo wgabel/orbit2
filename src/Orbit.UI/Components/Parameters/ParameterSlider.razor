@@ -12,6 +12,10 @@
                aria-describedby="@($"{DescriptionId} {ErrorId}")" />
     </div>
     <ValidationMessage Message="@Error" MessageId="@ErrorId" />
+    @if (Ownership is { } owner)
+    {
+        <MacroOwnershipReadout Ownership="@owner" />
+    }
     <div class="parameter-track">
         <div class="parameter-rail" aria-hidden="true">
             @if (ModulationRange is { } range)

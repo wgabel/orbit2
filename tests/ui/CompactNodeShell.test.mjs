@@ -59,6 +59,9 @@ test("composite macros reuse the slider only on always-full composite wrappers",
     assert.match(macroControls, /OnOpenComposite\.InvokeAsync\(Node.Id\)/);
     assert.match(macroControls, /OnEditMacros\.InvokeAsync\(Node.Id\)/);
     assert.match(canvas, /OnEditMacros="OnEditMacros"/);
+    assert.match(canvas, /MacroOwnerships="\@\(expanded \|\| !NodeExpansionState\.IsEligible\(node\)/);
+    assert.match(component, /Ownership="@MacroOwnerships\.FirstOrDefault/);
+    assert.match(component, /ShowFullControls && MacroOwnerships\.Any/);
     const editor = await readFile(new URL("../../src/Orbit.UI/Components/Canvas/CompositeMacroEditor.razor", import.meta.url), "utf8");
     const editorCode = await readFile(new URL("../../src/Orbit.UI/Components/Canvas/CompositeMacroEditor.razor.cs", import.meta.url), "utf8");
     const workspace = await readFile(new URL("../../src/Orbit.UI/Components/Canvas/GraphWorkspace.Macros.cs", import.meta.url), "utf8");

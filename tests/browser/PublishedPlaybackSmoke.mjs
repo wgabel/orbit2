@@ -155,6 +155,15 @@ async function verifyMacroSliders(browser, exported, mobile) {
         await node.getByRole("button", { name: `Open ${wrapper.composite.name}`, exact: true }).click();
         await page.waitForFunction(id => document.querySelector(".graph-workspace")?.dataset.activeGraph === id, wrapper.composite.graph.id);
         assert.equal(await page.getByRole("group", { name: "Composite macro controls" }).count(), 0);
+        const childNode = page.locator(`article[data-node-id="${target.id}"]`);
+        const ownership = childNode.locator(`[data-macro-parameter="${frequency.id}"]`);
+        await ownership.waitFor({ state: "attached" });
+        assert.match(await ownership.innerText(), /Size/);
+        assert.match(await ownership.innerText(), /Mapped: 385 Hz/);
+        assert.equal(await ownership.getAttribute("data-macro-active"), "true");
+        const manual = ownership.locator("..").locator(".parameter-heading input[type=number]");
+        assert.ok(await manual.isEnabled(), "Mapped parameter keeps its editable manual input");
+        assert.match(await ownership.innerText(), new RegExp("Manual: " + Number(await manual.inputValue()) + " Hz"));
         await page.getByRole("navigation", { name: "Canvas path" }).getByRole("button", { name: "Patch", exact: true }).click();
         await waitBase(0.75);
 
@@ -206,6 +215,18 @@ async function verifyMacroSliders(browser, exported, mobile) {
         await editor.waitFor({ state: "detached" });
         await group.getByRole("slider", { name: "Second control", exact: true }).waitFor({ state: "detached" });
         assert.equal(await group.getByRole("slider").count(), 1);
+        await node.getByRole("button", { name: `Open ${wrapper.composite.name}`, exact: true }).click();
+        await ownership.waitFor({ state: "attached" });
+        assert.match(await ownership.innerText(), /Body size/);
+        assert.match(await ownership.innerText(), /Mapped: 343\.75 Hz/);
+        await page.getByRole("navigation", { name: "Canvas path" }).getByRole("button", { name: "Patch", exact: true }).click();
+        await editMacros.click();
+        await editor.getByRole("button", { name: "Remove macro", exact: true }).click();
+        await editor.getByRole("button", { name: "Apply macros", exact: true }).click();
+        await editor.waitFor({ state: "detached" });
+        await node.getByRole("button", { name: `Open ${wrapper.composite.name}`, exact: true }).click();
+        await childNode.waitFor({ state: "attached" });
+        assert.equal(await ownership.count(), 0);
     } finally {
         await page.close();
     }

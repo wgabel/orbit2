@@ -83,6 +83,17 @@
 .parameter-details { display: flex; justify-content: space-between; gap: var(--semantic-space-compact); }
 .parameter-scale-details { position: relative; margin-inline: var(--component-slider-rail-inset); }
 .parameter-scale-tick { position: absolute; transform: translateX(-50%); }
+.macro-ownership-readout {
+    display: grid;
+    gap: var(--semantic-space-tight);
+    color: var(--semantic-color-muted);
+    border-inline-start: var(--semantic-border-width) solid var(--component-slider-modulation-color);
+    padding-inline-start: var(--semantic-space-compact);
+    font-size: var(--semantic-typography-caption);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+.macro-ownership-readout[data-macro-active="false"] { border-inline-start-color: var(--semantic-color-border); }
 .parameter-modulation {
     display: grid;
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
