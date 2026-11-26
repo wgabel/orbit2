@@ -96,6 +96,8 @@ class Node:
         self.set_parameters({key: value})
 
     def set_parameters(self, values):
+        if self._patch is None:
+            raise ValueError("Node has been removed from its patch")
         # Check the entire batch before changing any native state.
         checked = {}
         for key, value in values.items():
@@ -217,6 +219,68 @@ class Patch:
         edge = {"id": _id(), "source": src, "destination": dst, "amount": amount}
         self._connections.append(edge)
         return edge["id"]
+
+    def list_connections(self):
+        """Return independent native edge snapshots in graph order."""
+        return tuple(deepcopy(self._connections))
+
+    def _connection_index(self, connection_id):
+        if isinstance(connection_id, str):
+            for index, edge in enumerate(self._connections):
+                if edge["id"].lower() == connection_id.lower():
+                    return index
+        raise KeyError(connection_id)
+
+    def set_connection_amount(self, connection_id, amount):
+        index = self._connection_index(connection_id)
+        candidate = self.to_dict()
+        candidate["rootGraph"]["connections"][index]["amount"] = amount
+        self._validate_candidate(candidate)
+        self._connections[index]["amount"] = _number(amount, "connection amount")
+
+    def disconnect(self, connection_id):
+        index = self._connection_index(connection_id)
+        candidate = self._deletion_candidate()
+        del candidate["rootGraph"]["connections"][index]
+        self._validate_candidate(candidate)
+        del self._connections[index]
+
+    def remove_node(self, node):
+        if node not in self._nodes:
+            raise ValueError("Node must belong to this patch")
+        candidate = self._deletion_candidate()
+        graph = candidate["rootGraph"]
+        node_id = node.id.lower()
+
+        def unrelated(edge):
+            return all(edge[endpoint]["nodeId"].lower() != node_id
+                       for endpoint in ("source", "destination"))
+
+        graph["nodes"] = [n for n in graph["nodes"] if n["id"].lower() != node_id]
+        graph["connections"] = [edge for edge in graph["connections"] if unrelated(edge)]
+        for layout in candidate["canvasLayouts"]:
+            layout["positions"] = [p for p in layout["positions"]
+                                   if p["nodeId"].lower() != node_id]
+        self._validate_candidate(candidate)
+        # Keep surviving Node handles and their native identities alive.
+        self._connections[:] = [edge for edge in self._connections if unrelated(edge)]
+        self._nodes.remove(node)
+        self._aliases = {alias: item for alias, item in self._aliases.items() if item is not node}
+        if self._loaded_document is not None:
+            self._loaded_document["rootGraph"]["nodes"] = [n._data for n in self._nodes]
+            self._loaded_document["canvasLayouts"] = candidate["canvasLayouts"]
+        node._patch = None
+
+    def _validate_candidate(self, document):
+        from .validation import validate_patch
+        validate_patch(document, self._catalog).raise_for_errors()
+
+    def _deletion_candidate(self):
+        from .structural import require_known_deletion_scope
+        candidate = self.to_dict()
+        self._validate_candidate(candidate)
+        require_known_deletion_scope(candidate)
+        return candidate
 
     def to_dict(self):
         if self._loaded_document is not None:
