@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { planEditorPairs } from "../../scripts/plan-editor-pairs.mjs";
+import { planEditorPairs, verificationPair } from "../../scripts/plan-editor-pairs.mjs";
 
 test("historical mode shares the middle revision; smoke exercises the generic pair", () => {
     const history = planEditorPairs();
@@ -9,7 +9,7 @@ test("historical mode shares the middle revision; smoke exercises the generic pa
     assert.equal(history.pairs[0].after, history.pairs[1].before);
     const smoke = planEditorPairs({ smoke: true });
     assert.equal(smoke.historical, false);
-    assert.deepEqual(smoke.revisions, history.revisions.slice(0, 2));
+    assert.deepEqual(smoke.revisions, [verificationPair.before, verificationPair.after]);
 });
 test("arbitrary exact revisions preserve order and reject incomplete or unsafe inputs", () => {
     const before = "a".repeat(40), after = "b".repeat(40);
