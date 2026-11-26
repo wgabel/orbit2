@@ -140,7 +140,9 @@ jobs:
             ORBIT_REVISION="$rev" ORBIT_BENCH_PUBLISH_DIR="$RUNNER_TEMP/historical-publish-$rev/wwwroot" \
               node scripts/benchmark-live.mjs --editor "$reports/fixtures" "$reports/$rev.json" "$PROFILE"
           done < "$reports/revisions.txt"
-          while IFS=
+          while IFS=$'\t' read -r label before after; do
+            node scripts/compare-editor-benchmarks.mjs "$reports/$before.json" "$reports/$after.json" "$reports/$label.json"
+          done < "$reports/pairs.tsv"
           node --input-type=module - "$reports" <<'JS' > "$reports/summary.md"
           import { readFileSync } from "node:fs";
           import { join } from "node:path";
@@ -166,40 +168,6 @@ jobs:
           cat "$reports/summary.md" >> "$GITHUB_STEP_SUMMARY"
           cat "$reports/summary.md"
       - name: Preserve paired reports and fixtures
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: orbit-historical-editor-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/historical-editor/
-          retention-days: 90
-          if-no-files-found: warn
-\t' read -r label before after; do
-            node scripts/compare-editor-benchmarks.mjs "$reports/$before.json" "$reports/$after.json" "$reports/$label.json"
-          done < "$reports/pairs.tsv"
-          node --input-type=module - "$reports" <<'JS' > "$reports/summary.md"
-          import { readFileSync } from "node:fs";
-          import { join } from "node:path";
-          const dir = process.argv[2];
-          const display = n => Number.isFinite(n) ? n.toFixed(2) : "N/A";
-          const pair = m => display(m.before) + " → " + display(m.after);
-          console.log("# Historical editor performance (same-runner diagnostic)");
-          for (const pr of [135, 137]) {
-            const r = JSON.parse(readFileSync(join(dir, "pr-" + pr + ".json"), "utf8"));
-            console.log("\n## PR #" + pr);
-            console.log("\nBuilt revisions: " + r.beforeRevision + " → " + r.afterRevision);
-            console.log("\nProfile: " + Object.keys(r.fixtures).join(", ") + "; viewport: " + r.settings.mode + "; repeats: " + r.settings.repeats);
-            console.log("\n| State | Expansion | Workload | FPS before → after | P95 ms before → after | DOM before → after |");
-            console.log("| --- | --- | --- | ---: | ---: | ---: |");
-            for (const row of r.rows) {
-              const c = row.changes;
-              console.log("| " + [row.state, row.expansion?.name, row.workload, pair(c.fps), pair(c.frameGapP95Ms), pair(c.domElements)].join(" | ") + " |");
-            }
-          }
-          console.log("\nShared runner, sequential build order, muted output, no physical-device or audio-underrun measurement. See JSON for all metrics, fingerprints and provenance.");
-          JS
-          cat "$reports/summary.md" >> "$GITHUB_STEP_SUMMARY"
-          cat "$reports/summary.md"
-      - name: Preserve historical reports and fixtures
         if: always()
         uses: actions/upload-artifact@v4
         with:
