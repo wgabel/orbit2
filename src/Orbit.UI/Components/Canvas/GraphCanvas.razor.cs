@@ -27,6 +27,7 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter] public Guid PatchId { get; set; }
     [Parameter] public EventCallback<PortConnectionRequest> OnConnect { get; set; }
     [Parameter] public EventCallback<ParameterEditRequest> OnParameterEdit { get; set; }
+    [Parameter] public EventCallback<MacroEditRequest> OnMacroEdit { get; set; }
     [Parameter] public EventCallback<NodeAuditionRequest> OnAudition { get; set; }
     [Parameter] public EventCallback<NodePresetApplyRequest> OnPresetApply { get; set; }
     [Parameter] public EventCallback<Guid> OnManagePresets { get; set; }

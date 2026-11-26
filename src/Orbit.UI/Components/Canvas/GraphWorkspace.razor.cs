@@ -569,6 +569,13 @@ public partial class GraphWorkspace : IAsyncDisposable
         }
     }
 
+    private void EditMacro(Guid graphId, MacroEditRequest request)
+    {
+        if (switchingWorkspace || graphId != Canvas.Snapshot.GraphId) return;
+        canvasParameterGesture = request.GestureId is Guid id ? (graphId, id) : null;
+        Execute(new SetCompositeMacroValueCommand(graphId, request.NodeId, request.MacroId, request.Value), request.GestureId);
+    }
+
     private void CancelCanvasParameterGesture(Guid graphId)
     {
         if (switchingWorkspace || graphId != Canvas.Snapshot.GraphId || canvasParameterGesture is not { } gesture || gesture.GraphId != graphId) return;

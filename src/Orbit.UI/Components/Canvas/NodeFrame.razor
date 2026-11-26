@@ -89,8 +89,19 @@
             }
         </div>
     </div>
-    @if (Node.Composite is not null)
+    @if (Node.Composite is { } composite)
     {
+        @if (composite.Macros.Count > 0)
+        {
+            <div class="node-parameters" role="group" aria-label="Composite macro controls">
+                @foreach (var macro in composite.Macros)
+                {
+                    <ParameterSlider @key="macro.Id" Definition="@MacroSliderDefinition(macro)" Value="@macro.BaseValue" Step="0.01"
+                                     ValueChanged="@(edit => OnMacroEdit.InvokeAsync(new MacroEditRequest(Node.Id, macro.Id, edit.Value, edit.GestureId)))"
+                                     GestureEnded="OnParameterGestureEnded" />
+                }
+            </div>
+        }
         <div class="node-actions">
             <button type="button" class="secondary" @onpointerdown:stopPropagation="true"
                     @onclick="() => OnOpenComposite.InvokeAsync(Node.Id)">Open @Node.Name</button>
