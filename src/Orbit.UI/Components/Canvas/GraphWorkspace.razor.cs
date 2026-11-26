@@ -77,6 +77,34 @@ public partial class GraphWorkspace : IAsyncDisposable
         telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision &&
         frame.EnvelopePlayheads.TryGetValue(Canvas.Snapshot.GraphId, out var playheads)
             ? playheads : EmptyPlayheads;
+    // Do not use the previous graph's fold state while the new keyed canvas
+    // is mounting. The new canvas starts expanded by design.
+    private GraphCanvas? ActiveTelemetryCanvas => canvasView is { } view &&
+        view.OwnsTelemetryState(Canvas) ? view : null;
+    private IReadOnlyDictionary<ParameterAddress, double> CanvasEffectiveValues =>
+        ActiveTelemetryCanvas?.FilterTelemetry(EffectiveValues, static address => address.NodeId, EmptyValues) ?? EffectiveValues;
+    private IReadOnlyDictionary<Guid, EnvelopePlayhead> CanvasEnvelopePlayheads =>
+        ActiveTelemetryCanvas?.FilterTelemetry(EnvelopePlayheads, static id => id, EmptyPlayheads) ?? EnvelopePlayheads;
+
+    private bool HasCanvasTelemetryDemand(GraphCanvas? view) => view is null
+        ? EffectiveValues.Count != 0 || EnvelopePlayheads.Count != 0
+        : EffectiveValues.Keys.Any(address => view.IsTelemetryNodeExpanded(address.NodeId)) ||
+          EnvelopePlayheads.Keys.Any(view.IsTelemetryNodeExpanded);
+
+    // Waveform/spectrum/level capture is independently owned by SignalScope.
+    // Only response and envelope overlays need workspace parameter/playhead data.
+    private bool HasOverlayTelemetryDemand()
+    {
+        var snapshot = Canvas.Snapshot;
+        if (snapshot.ExpandedVisualizationNodeId is not Guid nodeId) return false;
+        return snapshot.VisualizationFor(nodeId).Mode switch
+        {
+            "response" => EffectiveValues.Keys.Any(address => address.NodeId == nodeId),
+            "envelope" => EnvelopePlayheads.ContainsKey(nodeId),
+            _ => false
+        };
+    }
+
     private IPatchSession session = default!;
     private IDisposable? subscription;
     private CanvasNavigationService Navigation { get; set; } = default!;
@@ -323,13 +351,19 @@ public partial class GraphWorkspace : IAsyncDisposable
         // Keep the latest valid root frame for navigation and newly opened consumers.
         // Empty active-graph samples do not warrant a whole-workspace render.
         // Still render a non-empty -> empty transition to clear stale readouts.
-        var hadCanvasTelemetry = EffectiveValues.Count != 0 || EnvelopePlayheads.Count != 0;
+        var view = ActiveTelemetryCanvas;
+        // Use the last actually delivered canvas inputs to clear them once
+        // after the last consumer folds, even when its old raw frame is nonempty.
+        var hadCanvasTelemetry = view is null
+            ? HasCanvasTelemetryDemand(null)
+            : view.EffectiveValues.Count != 0 || view.EnvelopePlayheads.Count != 0;
+        var hadOverlayTelemetry = HasOverlayTelemetryDemand();
         telemetry = frame is { } current && current.GraphId == session.GraphId &&
             current.Revision == session.Snapshot.Revision ? current : null;
         // The keyboard is independently armed, potentially in a different graph.
         // Preserve its existing update cadence; narrower demand is a later slice.
-        if (hadCanvasTelemetry || EffectiveValues.Count != 0 || EnvelopePlayheads.Count != 0 ||
-            performanceAddress is not null)
+        if (hadCanvasTelemetry || HasCanvasTelemetryDemand(view) || hadOverlayTelemetry ||
+            HasOverlayTelemetryDemand() || performanceAddress is not null)
             StateHasChanged();
     }
 
