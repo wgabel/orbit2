@@ -57,4 +57,6 @@ Complete the existing `docs/agents/contributor-instructions.md` quality and docu
 3. Tests actually run, failures and what could not be verified.
 4. One blocker/decision only if needed, and the **next ready slice ID** with its dependency.
 
+For every task divided into steps or slices, include the [mandatory visual progress summary](compliance-reports.md#mandatory-visual-progress-summary-for-multi-step-tasks) at each user-facing handoff. Show the full known feature plan, not just the slice being delivered; reconcile actual verification and merge status and preserve IDs. This tracker is additional to the compact prose handoff, even when the current run is blocked or only one slice is implemented.
+
 Persist durable decisions in the closest authoritative feature document and work status in the milestone register; **do not paste chat transcripts, full diffs or detailed session notes into the roadmap**. The next agent should be able to continue from the roadmap, PR, source and tests without replaying the old conversation. Keep the [standard compliance report](compliance-reports.md), without repeating the full context. Update the cumulative PR evidence block after each slice on a shared branch.
