@@ -94,6 +94,9 @@ public sealed class PatchSession : IPatchSession
                 if (command is SetParameterValueCommand && historyGestureId is Guid gestureId &&
                     events.Count == 1 && events[0] is ParameterChanged parameter)
                     history.RecordParameterGesture(gestureId, before, snapshot, parameter);
+                else if (command is SetCompositeMacroValueCommand && historyGestureId is Guid macroGestureId &&
+                    events.Count == 1 && events[0] is CompositeMacroValueChanged macro)
+                    history.RecordMacroGesture(macroGestureId, before, snapshot, macro);
                 else
                     history.Record(before, snapshot, events.Select(fact => fact.GraphId).Append(targetGraph.Id).Distinct().ToArray());
                 var changeSet = new GraphChangeSet(PatchId, targetGraph.Id, snapshot, Array.AsReadOnly(events.ToArray()));

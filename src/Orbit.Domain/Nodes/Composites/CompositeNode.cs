@@ -60,6 +60,18 @@ public sealed class CompositeNode : SignalNode, ICompositeNode
         return true;
     }
 
+    /// <summary>Change only one normalized macro base, preserving its mapping and identity.</summary>
+    public double SetMacroBaseValue(Guid macroId, double value)
+    {
+        CompositeMacroMapping.ValidateValue(value);
+        var current = Macros.SingleOrDefault(macro => macro.Id == macroId)
+            ?? throw new GraphValidationException("Macro does not exist in this composite.");
+        if (current.BaseValue == value) return value;
+        var replacement = new CompositeMacroDefinition(current.Id, current.Name, current.DefaultValue, value, current.Mapping);
+        Macros = Array.AsReadOnly(Macros.Select(macro => macro.Id == macroId ? replacement : macro).ToArray());
+        return current.BaseValue;
+    }
+
     internal void ReplaceBoundary(IEnumerable<ExposedPort> inputs, IEnumerable<ExposedPort> outputs)
     {
         // Materialize and validate the whole boundary before touching any view.

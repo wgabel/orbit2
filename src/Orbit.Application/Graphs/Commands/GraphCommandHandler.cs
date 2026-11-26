@@ -33,6 +33,7 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
             ApplyNodePresetCommand apply => ApplyNodePreset(graph, apply),
             ApplyCompositeMacroCommand macro => ApplyCompositeMacro(graph, macro),
             ReplaceCompositeMacrosCommand macros => ReplaceCompositeMacros(graph, macros),
+            SetCompositeMacroValueCommand macroValue => SetCompositeMacroValue(graph, macroValue),
             SetNodeMutedCommand mute => SetNodeMuted(graph, mute),
             SetNodeBypassedCommand bypass => SetNodeBypassed(graph, bypass),
             AddBoundaryPortCommand add => BoundaryFacts(graph.Id, graph.AddBoundaryPort(add.Direction,
@@ -126,6 +127,15 @@ internal sealed class GraphCommandHandler(NodeRegistry registry)
         if (graph.GetNode(command.NodeId) is not CompositeNode composite)
             throw new GraphValidationException("Macro definitions require a composite.");
         return composite.ReplaceMacros(command.Macros) ? [new CompositeMacrosChanged(graph.Id, composite.Id)] : [];
+    }
+
+    private static IReadOnlyList<IGraphEvent> SetCompositeMacroValue(SignalGraph graph, SetCompositeMacroValueCommand command)
+    {
+        if (graph.GetNode(command.NodeId) is not CompositeNode composite)
+            throw new GraphValidationException("Macro values require a composite.");
+        var previous = composite.SetMacroBaseValue(command.MacroId, command.Value);
+        return previous == command.Value ? [] :
+            [new CompositeMacroValueChanged(graph.Id, composite.Id, command.MacroId, previous, command.Value)];
     }
 
     private static IReadOnlyList<IGraphEvent> ApplyCompositeMacro(SignalGraph graph, ApplyCompositeMacroCommand command) =>
