@@ -41,6 +41,78 @@ public sealed class CompositeMacroDefinitionTests
     }
 
     [Fact]
+    public void MacroValueCommandsPreserveDefinitionsAndGroupHistoryWithoutChangingManualValues()
+    {
+        using var patch = new NestedFaustPatch();
+        var session = patch.Session;
+        var wrapper = session.Snapshot.GetGraph(patch.OuterId).Nodes.Single(n => n.Composite?.Graph.Id == patch.ChildId);
+        var macro = new CompositeMacroDefinition(Guid.NewGuid(), "Size", 0.5, 0.5, new([new(patch.Frequency, 200, 400)]));
+        session.Execute(new ReplaceCompositeMacrosCommand(patch.OuterId, wrapper.Id, [macro]));
+        CompositeMacroDefinition Current() => Assert.Single(session.Snapshot.GetGraph(patch.OuterId).GetNode(wrapper.Id).Composite!.Macros);
+        SetCompositeMacroValueCommand Set(double value) => new(patch.OuterId, wrapper.Id, macro.Id, value);
+        var initial = session.Snapshot;
+        Assert.False(session.Execute(Set(0.5)).Changed);
+        foreach (var invalid in new[] { -0.1, 1.1, double.NaN, double.PositiveInfinity })
+            Assert.Throws<GraphValidationException>(() => session.Execute(Set(invalid)));
+        Assert.Throws<GraphValidationException>(() => session.Execute(Set(0.7) with { MacroId = Guid.NewGuid() }));
+        Assert.Same(initial, session.Snapshot);
+
+        var gesture = Guid.NewGuid();
+        var changes = new List<CompositeMacroValueChanged>();
+        using var subscription = session.Subscribe<CompositeMacroValueChanged>(changes.Add);
+        var first = session.Execute(Set(0.25), gesture).ChangeSet!;
+        Assert.False(first.TopologyChanged);
+        session.Execute(Set(0.75), gesture);
+        session.CompleteHistoryGesture(gesture);
+        Assert.Equal(2, changes.Count);
+        Assert.Equal(0.5, changes[0].PreviousValue);
+        Assert.Equal(0.75, changes[1].CurrentValue);
+        Assert.Equal(initial.Revision + 2, session.Snapshot.Revision);
+        Assert.Equal(macro.Id, Current().Id);
+        Assert.Equal(macro.DefaultValue, Current().DefaultValue);
+        Assert.Same(macro.Mapping, Current().Mapping);
+        Assert.Equal(0.5, Assert.Single(initial.GetGraph(patch.OuterId).GetNode(wrapper.Id).Composite!.Macros).BaseValue);
+        Assert.Equal(440, session.Snapshot.GetGraph(patch.ChildId).GetNode(patch.Frequency.NodeId)
+            .Parameters.Single(p => p.Id == patch.Frequency.ParameterId).BaseValue);
+        var program = Orbit.Audio.Compilation.FaustGraphCompiler.CreateBuiltIn().Compile(session.Snapshot);
+        Assert.Equal(350, program.Controls.Single(c => c.GraphId == patch.ChildId && c.Address == patch.Frequency).InitialValue);
+
+        session.Undo();
+        Assert.Equal(0.5, Current().BaseValue);
+        session.Redo();
+        Assert.Equal(0.75, Current().BaseValue);
+        session.Undo();
+        var cancel = Guid.NewGuid();
+        session.Execute(Set(0.1), cancel);
+        Assert.False(session.CancelParameterGesture(Guid.NewGuid()).Changed);
+        Assert.Equal(0.1, Current().BaseValue);
+        Assert.IsType<CompositeMacroValueChanged>(Assert.Single(session.CancelParameterGesture(cancel).ChangeSet!.Events));
+        Assert.Equal(0.5, Current().BaseValue);
+        Assert.True(session.CanRedo);
+        session.Redo();
+        Assert.Equal(0.75, Current().BaseValue);
+    }
+
+    [Fact]
+    public void MacroAndParameterGesturesWithSameIdentityStaySeparate()
+    {
+        using var patch = new NestedFaustPatch();
+        var session = patch.Session;
+        var wrapper = session.Snapshot.GetGraph(patch.OuterId).Nodes.Single(n => n.Composite?.Graph.Id == patch.ChildId);
+        var macro = new CompositeMacroDefinition(Guid.NewGuid(), "Size", 0.5, 0.5, new([new(patch.Frequency, 200, 400)]));
+        session.Execute(new ReplaceCompositeMacrosCommand(patch.OuterId, wrapper.Id, [macro]));
+        var gesture = Guid.NewGuid();
+        session.Execute(new SetCompositeMacroValueCommand(patch.OuterId, wrapper.Id, macro.Id, 0.75), gesture);
+        session.Execute(new SetParameterValueCommand(patch.ChildId, patch.Frequency, 330), gesture);
+        session.Undo();
+        Assert.Equal(440, session.Snapshot.GetGraph(patch.ChildId).GetNode(patch.Frequency.NodeId)
+            .Parameters.Single(p => p.Id == patch.Frequency.ParameterId).BaseValue);
+        Assert.Equal(0.75, Assert.Single(session.Snapshot.GetGraph(patch.OuterId).GetNode(wrapper.Id).Composite!.Macros).BaseValue);
+        session.Undo();
+        Assert.Equal(0.5, Assert.Single(session.Snapshot.GetGraph(patch.OuterId).GetNode(wrapper.Id).Composite!.Macros).BaseValue);
+    }
+
+    [Fact]
     public void DefinitionsRoundTripUndoAndCloneWithRemappedTargets()
     {
         var registry = BuiltInNodes.CreateRegistry();

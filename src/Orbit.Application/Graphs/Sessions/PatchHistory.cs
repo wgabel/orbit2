@@ -1,6 +1,5 @@
 using Orbit.Application.Graphs.Snapshots;
 using Orbit.Application.Graphs.Events;
-using Orbit.Domain.Parameters;
 using Orbit.Application.Graphs.Commands;
 
 namespace Orbit.Application.Graphs.Sessions;
@@ -14,7 +13,8 @@ internal sealed class PatchHistory
     private PendingGesture? pending;
 
     internal sealed record Entry(GraphSnapshot Before, GraphSnapshot After, Guid[] AffectedGraphs);
-    private sealed record PendingGesture(Guid Id, Guid GraphId, ParameterAddress Address,
+    private sealed record GestureTarget(Guid GraphId, Guid NodeId, Guid ControlId, bool IsMacro);
+    private sealed record PendingGesture(Guid Id, GestureTarget Target, IGraphCommand RestoreCommand,
         double InitialValue, double FinalValue, Entry Entry)
     {
         public bool HasNetChange => InitialValue != FinalValue;
@@ -23,16 +23,27 @@ internal sealed class PatchHistory
     public bool CanUndo => pending?.HasNetChange == true || undo.Count != 0;
     public bool CanRedo => pending?.HasNetChange != true && redo.Count != 0;
 
-    public void RecordParameterGesture(Guid id, GraphSnapshot before, GraphSnapshot after, ParameterChanged change)
+    public void RecordParameterGesture(Guid id, GraphSnapshot before, GraphSnapshot after, ParameterChanged change) =>
+        RecordGesture(id, before, after, new(change.GraphId, change.Address.NodeId, change.Address.ParameterId, false),
+            new SetParameterValueCommand(change.GraphId, change.Address, change.PreviousValue),
+            change.PreviousValue, change.CurrentValue);
+
+    public void RecordMacroGesture(Guid id, GraphSnapshot before, GraphSnapshot after, CompositeMacroValueChanged change) =>
+        RecordGesture(id, before, after, new(change.GraphId, change.NodeId, change.MacroId, true),
+            new SetCompositeMacroValueCommand(change.GraphId, change.NodeId, change.MacroId, change.PreviousValue),
+            change.PreviousValue, change.CurrentValue);
+
+    private void RecordGesture(Guid id, GraphSnapshot before, GraphSnapshot after, GestureTarget target,
+        IGraphCommand restoreCommand, double previousValue, double currentValue)
     {
-        if (pending is { } previous && previous.Id == id && previous.GraphId == change.GraphId && previous.Address == change.Address)
+        if (pending is { } previous && previous.Id == id && previous.Target == target)
         {
-            pending = previous with { FinalValue = change.CurrentValue, Entry = previous.Entry with { After = after } };
+            pending = previous with { FinalValue = currentValue, Entry = previous.Entry with { After = after } };
             return;
         }
         CompleteGesture();
-        pending = new PendingGesture(id, change.GraphId, change.Address, change.PreviousValue, change.CurrentValue,
-            new Entry(before, after, [change.GraphId]));
+        pending = new PendingGesture(id, target, restoreCommand, previousValue, currentValue,
+            new Entry(before, after, [target.GraphId]));
     }
 
     public void CompleteGesture(Guid? id = null)
@@ -42,8 +53,8 @@ internal sealed class PatchHistory
         if (gesture.HasNetChange) Append(gesture.Entry);
     }
 
-    public SetParameterValueCommand? RestoreGesture(Guid id) => pending is { } gesture && gesture.Id == id
-        ? new(gesture.GraphId, gesture.Address, gesture.InitialValue) : null;
+    public IGraphCommand? RestoreGesture(Guid id) => pending is { } gesture && gesture.Id == id
+        ? gesture.RestoreCommand : null;
 
     public void Record(GraphSnapshot before, GraphSnapshot after, Guid[] affectedGraphs)
     {
