@@ -56,6 +56,18 @@ public static class PatchContractExporter
                     defaultValue = MusicalTransport.DefaultTempo },
                 zoom = new { minimum = CanvasViewport.MinimumZoom, maximum = CanvasViewport.MaximumZoom,
                     defaultValue = CanvasViewport.Initial.Zoom },
+                overview = new
+                {
+                    maxTitleLength = SavedPatchOverview.MaxTitleLength,
+                    maxTextLength = SavedPatchOverview.MaxTextLength,
+                    maxTags = SavedPatchOverview.MaxTags,
+                    maxTagLength = SavedPatchOverview.MaxTagLength
+                },
+                canvasPreferences = new
+                {
+                    annotationVisibility = Enum.GetValues<AnnotationVisibility>().Select(value => (int)value),
+                    connectionLabels = Enum.GetValues<ConnectionLabelMode>().Select(value => (int)value)
+                },
                 fixtures = fixtures.Select(fixture => new
                 {
                     file = fixture.File,

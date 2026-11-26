@@ -32,6 +32,32 @@ def _bounded(value, limits, label):
     return value
 
 
+def _check_route(src, output, dst, input_port, amount, connections, pairs, amount_rules, fan_in):
+    pair = (output["signalType"], input_port["signalType"])
+    if pair not in pairs or output["channelCount"] != input_port["channelCount"]:
+        raise ValueError("Incompatible signal types or channels")
+    amount = _number(amount, "connection amount")
+    if amount_rules[pair[1]] == "unity-only" and amount != 1:
+        raise ValueError("Event connections require unity amount")
+    for edge in connections:
+        if edge["destination"] == dst:
+            if edge["source"] == src:
+                raise ValueError("Duplicate connection")
+            if not fan_in[input_port["fanIn"]]:
+                raise ValueError("Input accepts only one connection")
+    # Existing audio and modulation edges share one dependency graph.
+    pending, visited = [dst["nodeId"]], set()
+    while pending:
+        current = pending.pop()
+        if current == src["nodeId"]:
+            raise ValueError("Connection would create a dependency cycle")
+        if current not in visited:
+            visited.add(current)
+            pending.extend(e["destination"]["nodeId"] for e in connections
+                           if e["source"]["nodeId"] == current)
+    return amount
+
+
 class Node:
     def __init__(self, patch, definition):
         self._patch = patch
@@ -127,28 +153,8 @@ class Patch:
             raise ValueError("Both nodes must belong to this patch")
         src, output = source._endpoint(source_port, "Output")
         dst, input_port = destination._endpoint(destination_port, "Input")
-        pair = (output["signalType"], input_port["signalType"])
-        if pair not in self._pairs or output["channelCount"] != input_port["channelCount"]:
-            raise ValueError("Incompatible signal types or channels")
-        amount = _number(amount, "connection amount")
-        if self._amount_rules[pair[1]] == "unity-only" and amount != 1:
-            raise ValueError("Event connections require unity amount")
-        for edge in self._connections:
-            if edge["destination"] == dst:
-                if edge["source"] == src:
-                    raise ValueError("Duplicate connection")
-                if not self._fan_in[input_port["fanIn"]]:
-                    raise ValueError("Input accepts only one connection")
-        # Existing audio and modulation edges share one dependency graph.
-        pending, visited = [destination.id], set()
-        while pending:
-            current = pending.pop()
-            if current == source.id:
-                raise ValueError("Connection would create a dependency cycle")
-            if current not in visited:
-                visited.add(current)
-                pending.extend(e["destination"]["nodeId"] for e in self._connections
-                               if e["source"]["nodeId"] == current)
+        amount = _check_route(src, output, dst, input_port, amount, self._connections,
+                              self._pairs, self._amount_rules, self._fan_in)
         edge = {"id": _id(), "source": src, "destination": dst, "amount": amount}
         self._connections.append(edge)
         return edge["id"]
@@ -167,7 +173,12 @@ class Patch:
                          "instructions": "", "tags": []},
         })
 
+    def validate(self):
+        from .validation import validate_patch
+        return validate_patch(self.to_dict(), self._catalog)
+
     def save(self, path):
+        self.validate().raise_for_errors()
         path = Path(path)
         payload = json.dumps(self.to_dict(), ensure_ascii=True, allow_nan=False, indent=2)
         temporary = None
