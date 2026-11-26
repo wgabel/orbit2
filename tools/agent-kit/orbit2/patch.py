@@ -32,6 +32,11 @@ def _bounded(value, limits, label):
     return value
 
 
+def _address_key(address):
+    # GUID equality is case-insensitive; preserve original spelling on disk.
+    return (address["nodeId"].lower(), address["portId"].lower())
+
+
 def _check_route(src, output, dst, input_port, amount, connections, pairs, amount_rules, fan_in):
     pair = (output["signalType"], input_port["signalType"])
     if pair not in pairs or output["channelCount"] != input_port["channelCount"]:
@@ -40,30 +45,30 @@ def _check_route(src, output, dst, input_port, amount, connections, pairs, amoun
     if amount_rules[pair[1]] == "unity-only" and amount != 1:
         raise ValueError("Event connections require unity amount")
     for edge in connections:
-        if edge["destination"] == dst:
-            if edge["source"] == src:
+        if _address_key(edge["destination"]) == _address_key(dst):
+            if _address_key(edge["source"]) == _address_key(src):
                 raise ValueError("Duplicate connection")
             if not fan_in[input_port["fanIn"]]:
                 raise ValueError("Input accepts only one connection")
     # Existing audio and modulation edges share one dependency graph.
-    pending, visited = [dst["nodeId"]], set()
+    pending, visited = [dst["nodeId"].lower()], set()
     while pending:
         current = pending.pop()
-        if current == src["nodeId"]:
+        if current == src["nodeId"].lower():
             raise ValueError("Connection would create a dependency cycle")
         if current not in visited:
             visited.add(current)
-            pending.extend(e["destination"]["nodeId"] for e in connections
-                           if e["source"]["nodeId"] == current)
+            pending.extend(e["destination"]["nodeId"].lower() for e in connections
+                           if e["source"]["nodeId"].lower() == current)
     return amount
 
 
 class Node:
-    def __init__(self, patch, definition):
+    def __init__(self, patch, definition, *, saved=None):
         self._patch = patch
         self._definitions = {p["key"]: p for p in definition["parameters"]}
         self._ports = {p["key"]: p for p in definition["ports"]}
-        self._data = {
+        self._data = saved if saved is not None else {
             "id": _id(), "typeKey": definition["persistedTypeKey"],
             "parameters": [{"key": p["key"], "id": _id(),
                             "baseValue": p["factoryBaseValue"]}
@@ -77,6 +82,15 @@ class Node:
     @property
     def id(self):
         return self._data["id"]
+
+    @property
+    def type_key(self):
+        return self._data["typeKey"]
+
+    def get(self, key):
+        if key not in self._definitions:
+            raise ValueError(f"Unknown parameter: {key}")
+        return next(p["baseValue"] for p in self._data["parameters"] if p["key"] == key)
 
     def set(self, key, value):
         self.set_parameters({key: value})
@@ -117,6 +131,7 @@ class Patch:
                                limits, "tempo")
         self._title = title
         self._patch_id, self._graph_id = _id(), _id()
+        self._loaded_document = None
         self._nodes = []
         self._aliases = {}
         self._connections = []
@@ -130,6 +145,50 @@ class Patch:
     @classmethod
     def create(cls, title, *, catalog, tempo=None):
         return cls(title, catalog, tempo)
+
+    @classmethod
+    def load(cls, path, *, catalog):
+        """Load a validated current-format leaf patch without regenerating identities."""
+        def unique_object(pairs):
+            obj = {}
+            for key, value in pairs:
+                if key in obj:
+                    raise ValueError(f"Duplicate JSON property: {key}")
+                obj[key] = value
+            return obj
+
+        def reject_constant(value):
+            raise ValueError(f"Invalid JSON number: {value}")
+
+        document = json.loads(Path(path).read_text(encoding="utf-8-sig"),
+                              object_pairs_hook=unique_object, parse_constant=reject_constant)
+        from .validation import validate_patch
+        validate_patch(document, catalog).raise_for_errors()
+        # Even unknown fields must be serializable without losing numeric data.
+        json.dumps(document, allow_nan=False)
+        patch = cls("", catalog, document["beatsPerMinute"])
+        patch._loaded_document = document
+        patch._patch_id = document["patchId"]
+        graph = document["rootGraph"]
+        patch._graph_id = graph["id"]
+        definitions = {}
+        for definition in catalog._nodes.values():
+            if definition["metadataStatus"] == "leaf-definition":
+                definitions[definition["persistedTypeKey"]] = definition
+        patch._nodes = [Node(patch, definitions[node["typeKey"]], saved=node)
+                        for node in graph["nodes"]]
+        patch._connections = graph["connections"]
+        return patch
+
+    def list_nodes(self):
+        return tuple(self._nodes)
+
+    def get_node_by_id(self, node_id):
+        if isinstance(node_id, str):
+            for node in self._nodes:
+                if node.id.lower() == node_id.lower():
+                    return node
+        raise KeyError(node_id)
 
     def add_node(self, creation_key, *, alias=None, **parameters):
         if alias is not None and (not isinstance(alias, str) or not alias
@@ -160,6 +219,11 @@ class Patch:
         return edge["id"]
 
     def to_dict(self):
+        if self._loaded_document is not None:
+            document = deepcopy(self._loaded_document)
+            document["rootGraph"]["nodes"] = deepcopy([n._data for n in self._nodes])
+            document["rootGraph"]["connections"] = deepcopy(self._connections)
+            return document
         # Empty canvas layout list delegates initial placement to native import.
         return deepcopy({
             "schemaVersion": self._catalog._contract["patchSchemaVersion"],

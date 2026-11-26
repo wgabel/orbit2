@@ -10,3 +10,12 @@ output = patch.add_node("output.master")
 patch.connect(lfo, "signal-out", oscillator, "frequency-modulation-in", amount=2)
 patch.connect(oscillator, "signal-out", output, "audio-in", amount=0.2)
 patch.save(sys.argv[2])
+
+# Independent native import of an edited, native-origin patch with saved layout.
+if len(sys.argv) > 3:
+    from pathlib import Path
+    native = Patch.load(Path(sys.argv[1]) / "valid-leaf.json", catalog=catalog)
+    oscillator = next(node for node in native.list_nodes()
+                      if node.type_key == "generator.oscillator")
+    oscillator.set("frequency", 330)
+    native.save(sys.argv[3])
