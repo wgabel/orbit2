@@ -245,7 +245,7 @@ CI imports a sixth fixture with multiple signed sources and a retained dormant p
 
 ## S9a portable native composite templates
 
-Candidate exporter command:
+Exporter command:
 
 ~~~powershell
 dotnet run --project tools/agent-kit/exporter/Orbit.AgentKit.Exporter.csproj -c Release -- --composite-templates composite-templates.json
@@ -253,7 +253,7 @@ dotnet run --project tools/agent-kit/exporter/Orbit.AgentKit.Exporter.csproj -c 
 
 Format 1 contains `compositeTemplatesFormatVersion`, `patchSchemaVersion`, and an ordinal-keyed `templates` map. Every registered composite creation key (including the default composite factory) is captured through native PatchSession and PatchDocumentSerializer. Each entry contains creationKey, persistedTypeKey, label and the actual native SavedNode wire payload. The template contains no canvas layout. Deterministic local placeholder GUIDs replace native factory-generated IDs through the entire nested graph, mirrored boundary sockets, derived boundary keys, edges, parameters, macro bindings and optional macro modulation associations. IDs are local to a template and **must be replaced with fresh identities at instantiation**, never used directly as patch-instance IDs. The exporter checks native restore and navigation for each exported template; tests check deterministic output, registry coverage, native round trips and macro reference remapping.
 
-S9a is metadata only; existing Python catalog/validator still explicitly defer composite authoring and editing. S9b adds recursive graph validation and lossless loading; S9c adds independent preset instantiation and scoped graph access; S9d adds supported static macro editing and association preservation, not DSP macro modulation. No changes to native runtime or release packaging. Verification pending.
+S9a is metadata only; existing Python catalog/validator still explicitly defer composite authoring and editing. S9b adds recursive graph validation and lossless loading; S9c adds independent preset instantiation and scoped graph access; S9d adds supported static macro editing and association preservation, not DSP macro modulation. No changes to native runtime or release packaging. [PR #182](https://github.com/wgabel/orbit2/pull/182) merged; [CI](https://github.com/wgabel/orbit2/actions/runs/45870517895/job/140084407552) passed at `757719fadae076b4bf681fdf5ebc5d5e38a6e4e3`, including native domain/presentation and Python/native import checks. Alternative PR #183 was closed as duplicate without merging.
 
 ## Non-goals and gates
 
