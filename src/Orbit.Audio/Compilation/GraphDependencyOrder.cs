@@ -6,9 +6,12 @@ namespace Orbit.Audio.Compilation;
 /// Unconnected components do not consume DSP resources. The domain normally guarantees a DAG.</summary>
 internal static class GraphDependencyOrder
 {
-    public static IReadOnlyList<GraphNodeSnapshot> Get(GraphSnapshot graph, Guid outputId, out int reachableEdges)
+    public static IReadOnlyList<GraphNodeSnapshot> Get(GraphSnapshot graph, Guid outputId, out int reachableEdges,
+        IEnumerable<(Guid Source, Guid Destination)>? implicitDependencies = null)
     {
-        var incoming = graph.Connections.ToLookup(edge => edge.Destination.NodeId);
+        var links = graph.Connections.Select(edge => (Source: edge.Source.NodeId, Destination: edge.Destination.NodeId));
+        if (implicitDependencies is not null) links = links.Concat(implicitDependencies);
+        var incoming = links.ToLookup(edge => edge.Destination);
         var nodes = graph.Nodes.ToDictionary(node => node.Id);
         var reachable = new HashSet<Guid>();
         var pending = new Stack<Guid>();
@@ -22,13 +25,13 @@ internal static class GraphDependencyOrder
             foreach (var edge in incoming[id])
             {
                 reachableEdges++;
-                pending.Push(edge.Source.NodeId);
+                pending.Push(edge.Source);
             }
         }
 
         var dependencies = reachable.ToDictionary(id => id, id => incoming[id].Count());
-        var outgoing = graph.Connections.Where(edge => reachable.Contains(edge.Destination.NodeId))
-            .ToLookup(edge => edge.Source.NodeId);
+        var outgoing = incoming.SelectMany(group => group).Where(edge => reachable.Contains(edge.Destination))
+            .ToLookup(edge => edge.Source);
         var ready = new SortedSet<Guid>(dependencies.Where(pair => pair.Value == 0).Select(pair => pair.Key));
         var result = new List<GraphNodeSnapshot>();
         while (ready.Count > 0)
@@ -38,8 +41,8 @@ internal static class GraphDependencyOrder
             result.Add(nodes[id]);
             foreach (var edge in outgoing[id])
             {
-                if (--dependencies[edge.Destination.NodeId] == 0)
-                    ready.Add(edge.Destination.NodeId);
+                if (--dependencies[edge.Destination] == 0)
+                    ready.Add(edge.Destination);
             }
         }
 

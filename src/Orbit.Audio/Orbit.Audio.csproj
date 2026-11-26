@@ -7,5 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Orbit.Application/Orbit.Application.csproj" />
+    <InternalsVisibleTo Include="Orbit.Domain.Tests" />
   </ItemGroup>
 </Project>
