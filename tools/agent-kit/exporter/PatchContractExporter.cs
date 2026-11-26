@@ -6,6 +6,7 @@ using Orbit.Application.Graphs;
 using Orbit.Application.Persistence;
 using Orbit.Domain.Graphs;
 using Orbit.Domain.Nodes.Generators;
+using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Ports;
 using Orbit.Domain.Timing;
@@ -44,6 +45,21 @@ public static class PatchContractExporter
                     { Destination = new PortAddress(Guid.Empty, Guid.Empty) }] } }, "endpoint")
         };
 
+        // Native-accepted structural fixtures are deliberately separate from the
+        // root-leaf parity manifest: offline support must not be inferred from schema.
+        var deferred = new[]
+        {
+            (File: "deferred-static-macro.json", Document: CreateMacroExample(document, false)),
+            (File: "deferred-macro-input.json", Document: CreateMacroExample(document, true))
+        };
+        foreach (var fixture in deferred)
+        {
+            var native = serializer.Deserialize(serializer.Serialize(fixture.Document));
+            using var restored = serializer.Restore(native, registry);
+            using var canvas = new CanvasNavigationService(restored, layouts: native.CanvasLayouts,
+                activeGraphId: native.ActiveGraphId);
+        }
+
         var files = new SortedDictionary<string, string>(StringComparer.Ordinal)
         {
             ["patch-schema.json"] = ExportSchema(),
@@ -68,6 +84,26 @@ public static class PatchContractExporter
                     annotationVisibility = Enum.GetValues<AnnotationVisibility>().Select(value => (int)value),
                     connectionLabels = Enum.GetValues<ConnectionLabelMode>().Select(value => (int)value)
                 },
+                deferredFeatures = new
+                {
+                    compositeMacroModulation = new
+                    {
+                        field = "modulationInputId",
+                        nativePersistence = true,
+                        runtimeModulation = false,
+                        offlineAuthoring = false,
+                        offlineEditing = false,
+                        rejection = "unsupported-composite",
+                        roadmap = "7.4.6-S4d / 7.7-S9"
+                    }
+                },
+                deferredFixtures = deferred.Select(fixture => new
+                {
+                    file = fixture.File,
+                    nativeAccepted = true,
+                    offlineAccepted = false,
+                    offlineRejection = "unsupported-composite"
+                }).ToArray(),
                 fixtures = fixtures.Select(fixture => new
                 {
                     file = fixture.File,
@@ -79,7 +115,48 @@ public static class PatchContractExporter
 
         foreach (var fixture in fixtures)
             files.Add(fixture.File, serializer.Serialize(fixture.Document));
+        foreach (var fixture in deferred)
+            files.Add(fixture.File, serializer.Serialize(fixture.Document));
         return files;
+    }
+
+    private static PatchDocument CreateMacroExample(PatchDocument leaf, bool associated)
+    {
+        // IDs in this range are reserved for the structural fixture; leaf IDs
+        // are assigned below from 1. Both variants use identical topology.
+        Guid Id(int value) => new(value, 0, 0, new byte[8]);
+        var oscillator = leaf.RootGraph.Nodes.Single(n => n.TypeKey == OscillatorGenerator.NodeType);
+        var master = leaf.RootGraph.Nodes.Single(n => n.TypeKey == MasterOutput.NodeType);
+        var input = new ExposedPort(Id(1001), "Modulation", SignalType.Modulation);
+        var output = new ExposedPort(Id(1002), "Audio", SignalType.Audio);
+        var wrapperId = Id(1003);
+        var childId = Id(1004);
+        var inputRack = Id(1005);
+        var outputRack = Id(1006);
+        var child = new SavedGraph(childId, [oscillator], [
+            new SignalConnection(Id(1007),
+                new PortAddress(oscillator.Id, oscillator.Ports.Single(p => p.Key == "signal-out").Id),
+                new PortAddress(outputRack, output.Id), 1)
+        ]);
+        var frequency = oscillator.Parameters.Single(p => p.Key == "frequency");
+        var macro = new SavedCompositeMacro(Id(1008), "Size", 0.5, 0.5,
+            [new(new(oscillator.Id, frequency.Id), 220, 440, 2)])
+        { ModulationInputId = associated ? input.Id : null };
+        var wrapper = new SavedNode(wrapperId, CompositeNode.NodeType, [], [],
+            new SavedComposite("Macro reference", inputRack, outputRack, [input], [output], child)
+            { Macros = [macro] });
+        return leaf with
+        {
+            RootGraph = leaf.RootGraph with
+            {
+                Nodes = [wrapper, master],
+                Connections = [leaf.RootGraph.Connections[0] with { Source = new PortAddress(wrapperId, output.Id) }]
+            },
+            CanvasLayouts = [leaf.CanvasLayouts[0] with
+            {
+                Positions = [new SavedNodePosition(wrapperId, 0, 0), new SavedNodePosition(master.Id, 320, 0)]
+            }]
+        };
     }
 
     private static string ExportSchema()

@@ -91,6 +91,30 @@ class LoadTests(unittest.TestCase):
                     Patch.load(path, catalog=self.catalog)
                 self.assertEqual(payload, path.read_text())
 
+    def test_native_macro_fixtures_fail_closed_without_touching_source(self):
+        manifest = json.loads((self.data / "patch-contract.json").read_text())
+        fixtures = manifest["deferredFixtures"]
+        self.assertEqual({"deferred-static-macro.json", "deferred-macro-input.json"},
+                         {f["file"] for f in fixtures})
+        for fixture in fixtures:
+            with self.subTest(fixture=fixture["file"]), tempfile.TemporaryDirectory() as directory:
+                self.assertTrue(fixture["nativeAccepted"])
+                self.assertFalse(fixture["offlineAccepted"])
+                path = Path(directory) / fixture["file"]
+                original = (self.data / fixture["file"]).read_bytes()
+                path.write_bytes(original)
+                with self.assertRaises(PatchValidationError) as error:
+                    Patch.load(path, catalog=self.catalog)
+                self.assertIn(fixture["offlineRejection"], {d.code for d in error.exception.diagnostics})
+                self.assertEqual(original, path.read_bytes())
+        patch = Patch.create("Unsupported", catalog=self.catalog)
+        before = patch.to_dict()
+        for key in self.catalog.list_nodes():
+            if self.catalog.describe(key)["metadataStatus"] == "deferred-composite":
+                with self.assertRaises(ValueError):
+                    patch.add_node(key)
+        self.assertEqual(before, patch.to_dict())
+
     def test_append_to_loaded_graph(self):
         patch = Patch.load(self.data / "valid-leaf.json", catalog=self.catalog)
         old = patch.to_dict()

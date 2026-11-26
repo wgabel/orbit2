@@ -17,6 +17,28 @@ class ValidationTests(unittest.TestCase):
         cls.catalog = Catalog.load(cls.data)
         cls.contract = json.loads((cls.data / "patch-contract.json").read_text())
 
+    def test_deferred_macro_contract_is_native_shape_not_offline_support(self):
+        feature = self.contract["deferredFeatures"]["compositeMacroModulation"]
+        self.assertEqual("modulationInputId", feature["field"])
+        self.assertTrue(feature["nativePersistence"])
+        self.assertFalse(feature["runtimeModulation"])
+        self.assertFalse(feature["offlineAuthoring"])
+        self.assertFalse(feature["offlineEditing"])
+        for fixture in self.contract["deferredFixtures"]:
+            with self.subTest(fixture=fixture["file"]):
+                document = json.loads((self.data / fixture["file"]).read_text())
+                original = deepcopy(document)
+                wrapper = next(n for n in document["rootGraph"]["nodes"] if n["composite"] is not None)
+                macro = wrapper["composite"]["macros"][0]
+                if fixture["file"] == "deferred-macro-input.json":
+                    self.assertEqual(wrapper["composite"]["inputs"][0]["id"], macro["modulationInputId"])
+                else:
+                    self.assertNotIn("modulationInputId", macro)
+                result = validate_patch(document, self.catalog)
+                self.assertFalse(result.is_valid)
+                self.assertIn(fixture["offlineRejection"], {d.code for d in result.errors})
+                self.assertEqual(original, document)
+
     def test_native_fixture_manifest(self):
         for fixture in self.contract["fixtures"]:
             with self.subTest(fixture=fixture["file"]):
