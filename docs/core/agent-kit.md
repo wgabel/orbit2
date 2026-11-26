@@ -227,6 +227,8 @@ CI imports a connected loop-envelope fixture with a retained dormant trigger cab
 
 ## S8 modulation and conditional-port discovery (candidate)
 
+Implementation: [PR #179](https://github.com/wgabel/orbit2/pull/179) (CI pending).
+
 Node helpers `is_parameter_active(key)`, `is_port_active(key)`, `describe_parameter(key)`, `describe_port(key)` and `list_ports(active_only=False)` project current stored base settings and detached native metadata. Evaluate exported activation as OR-of-AND equality clauses; a modulation input also follows all associated parameter conditions, as native GraphNodeSnapshot.IsInputActive does. No runtime signal evaluation. `Patch.is_connection_active(id)` reports endpoint configuration activity, not audibility, reachability, bypass or mute state.
 
 `Patch.modulate(source, source_port, destination, parameter_key, amount=1, allow_dormant=False)` resolves the native modulationPortKey, exposes destination unit/scale through describe_parameter, and delegates to existing connect validation (signed finite depth, compatible types/channels, fan-in, duplicate and cycle rules). Does not silently normalize depth, change base value or enable a structural selector. By default this convenience helper rejects dormant endpoints; explicitly permit them with allow_dormant=True. Low-level connect and validation still accept structurally legal dormant cables as native persistence does. Switching selectors never deletes edges or stored values. All routes, including dormant ones, participate in native graph topology checks.
