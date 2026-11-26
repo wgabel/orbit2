@@ -101,6 +101,15 @@ jobs:
           dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj --configuration Release -- "$ORBIT_GRAPH_PROBE_DIR"
           npm exec --yes --package=@grame/faustwasm@0.19.0 -- faust2wasm-ts "$ORBIT_GRAPH_PROBE_DIR/program.dsp" "$ORBIT_GRAPH_PROBE_DIR/compiled"
           node --test tests/compiler/*.test.mjs
+      - name: Upload static macro audio reference
+        if: steps.changes.outputs.runtime == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-macro-audio-reference
+          path: |
+            ${{ runner.temp }}/orbit-graph-probe/static-macro-baseline.json
+            ${{ runner.temp }}/orbit-graph-probe/static-macro-report.json
+          if-no-files-found: error
       # Timings are informational; deterministic output and graph contracts are the gates.
       - name: Benchmark offline DSP baseline
         if: steps.changes.outputs.runtime == 'true'
