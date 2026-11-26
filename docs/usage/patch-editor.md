@@ -2,7 +2,7 @@
 
 [Usage index](README.md) · [Canvas architecture](../editor/canvas.md) · [Persistence](../editor/persistence-and-history.md)
 
-## Composite macro controls (7.4.6-S3b, in review)
+## Composite macro controls (7.4.6-S3b, merged)
 
 [PR #161](https://github.com/wgabel/orbit2/pull/161): A composite containing saved macro definitions displays their named normalized sliders directly on its wrapper. Drag the range or enter a value from 0 to 1 in the numeric field. Undo/Redo applies to the macro value (one entry per completed range gesture). Two-finger pinch cancels an unfinished range edit using the same rule as ordinary parameters. Choose **Open** to edit the internal graph; returning to the parent retains the macro value. Composites without saved macros look unchanged. Creating or editing mappings and connecting macro modulation are subsequent slices; at this stage use a patch containing existing macro definitions.
 

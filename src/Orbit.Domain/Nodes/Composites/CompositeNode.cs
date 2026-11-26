@@ -42,18 +42,7 @@ public sealed class CompositeNode : SignalNode, ICompositeNode
     {
         ArgumentNullException.ThrowIfNull(macros);
         var copy = macros.ToArray();
-        if (copy.Length > 64 || copy.Any(macro => macro is null) ||
-            copy.Select(macro => macro.Id).Distinct().Count() != copy.Length ||
-            copy.Select(macro => macro.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count() != copy.Length)
-            throw new GraphValidationException("A composite supports up to 64 uniquely named and identified macros.");
-        var targets = new HashSet<Orbit.Domain.Parameters.ParameterAddress>();
-        foreach (var macro in copy)
-        foreach (var binding in macro.Mapping.Bindings)
-        {
-            if (!targets.Add(binding.Target))
-                throw new GraphValidationException("An internal parameter cannot be owned by several macros.");
-            InternalGraph.ValidateCompositeMacroBinding(binding, requireActive: false);
-        }
+        CompositeMacroConfiguration.Validate(copy, address => InternalGraph.GetParameter(address).Definition);
         if (Macros.Count == copy.Length && Macros.Zip(copy).All(pair => pair.First.HasSameConfiguration(pair.Second)))
             return false;
         Macros = Array.AsReadOnly(copy);
