@@ -256,6 +256,25 @@ Authoritative musical design and workflow: [instrument-design-and-audition.md](.
 
 Deliverable: compare independently editable candidate instruments and other sounds against suitable repeatable musical or audio-input tests; retain a curated, evidence-labelled palette for future composition agents; support any intended character, including intentional chiptune and experimental sounds. The musical design/fixture work is a documentation and asset track, not a claim that planned processors or module features have shipped.
 
+#### Phase 7.7 — Offline Agent Kit (planned)
+
+Owner-approved patch-only approach; [technical design](../core/agent-kit.md). Independent of audio rendering and editor redesign. All implementation slices below are Planned; no runtime implementation or compatibility claim yet. Each slice requires a focused PR, actual verification and roadmap closeout; split further if inspection reveals more than one independently testable result.
+
+- **7.7-S1 — Native contract audit (Planned)** — Depends: none. Locate actual registry/factories, serializer, validation, complex payloads and CI fixtures; record extraction gaps, proposed module ownership, Python support and compatibility plan. Done: traceable code/test references and native fixture baseline; Verify: audit and focused native fixture tests before implementation.
+- **7.7-S2 — Catalog exporter (Planned)** — Depends: S1. Export stable keys, defaults, parameter/port metadata and capability index from native owners. Done: every supported registry entry accounted for; Verify: deterministic generation and registry coverage tests.
+- **7.7-S3 — Native schema and connection rules (Planned)** — Depends: S2. Export versioned persistence shapes, conversion/amount/fan-in and constraints with canonical fixtures. Done: fixtures represent native accepted/rejected cases; Verify: native contract and regeneration tests.
+- **7.7-S4 — Minimal Python graph builder (Planned)** — Depends: S3. Create patches, nodes, parameters, connections and JSON without runtime. Done: simple fixture imports through actual native serializer; Verify: Python unit and native import tests.
+- **7.7-S5 — Offline validation (Planned)** — Depends: S4. Add structured diagnostics and native constraint parity for supported simple graphs. Done: negative fixtures rejected without mutation; Verify: Python/native cross-validation tests.
+- **7.7-S6 — Load and edit (Planned)** — Depends: S5. Preserve unmodified fields, IDs and layout; support safe node/edge edits. Done: lossless normalized round trip and invalid edit rollback; Verify: native import and round-trip tests.
+- **7.7-S7 — Sequencers and automation (Planned)** — Depends: S6. Implement native sequence/configuration helpers. Done: existing supported timing and articulation fields preserved; Verify: representative native sequence fixtures and unsupported-input rejection.
+- **7.7-S8 — Modulation and conditional ports (Planned)** — Depends: S7. Expose native modulation mapping, multiple sources and structural variants. Done: amount and activation rules match native behavior; Verify: positive/negative native graph fixtures.
+- **7.7-S9 — Composite graphs and presets (Planned)** — Depends: S8. Support nested graphs, rack identity, preset instantiation and supported macros. Done: independent clone and preserved boundary references; Verify: nested native round-trip/import tests. Split further by contract if needed.
+- **7.7-S10 — CLI and optional layout (Planned)** — Depends: S6; complete supported advanced operations after S9. Done: discovery, inspect, validate and explicit layout run from PowerShell with structured output; Verify: subprocess tests, layout bounds and no unintended rearrangement.
+- **7.7-S11 — Agent instructions and executable examples (Planned)** — Depends: S9–S10. Package selective API documentation, generation scripts and existing evidence-labeled musical references. Done: examples execute and import, workflow reports validation versus audition separately; Verify: example and native compatibility tests.
+- **7.7-S12 — Versioned publication and drift gate (Planned)** — Depends: S11. Publish matching immutable kit and manifest with deployed build; enforce regeneration and compatibility on relevant changes. Done: clean offline extraction works and mismatched versions fail clearly; Verify: release artifact smoke test and CI compatibility checks.
+
+Later optional graph tracing, patch merging and additional convenience operations are not prerequisites for first release. Offline Faust rendering is explicitly outside this milestone.
+
 ### Phase 8 — Audio assets and sample-based synthesis (planned)
 
 - **8.1 — Audio asset library (planned):** import browser-decodable audio files, validate size/format, store original binary assets and metadata in IndexedDB, list and resolve by stable ID, and verify reload and deduplication. Prototype the FaustWasm soundfile binding and measure decoded memory requirements.
