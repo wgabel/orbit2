@@ -31,6 +31,7 @@ if (args.Length is 2 or 3 && args[0] == "--benchmark" && (args.Length == 2 || ar
 if (args.Length != 1)
     throw new ArgumentException("Pass an output directory for the generated probe.");
 Directory.CreateDirectory(args[0]);
+MacroBaselineFixtures.Write(args[0]);
 var registry = BuiltInNodes.CreateRegistry();
 registry.Register(CompositeNode.NodeType, id => new CompositeNode(id, "Drone",
     [new ExposedPort(Guid.NewGuid(), "Pitch", SignalType.Modulation),
