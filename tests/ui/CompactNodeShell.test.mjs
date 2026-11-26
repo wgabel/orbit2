@@ -43,3 +43,12 @@ test("folded node frames receive no changing playback telemetry", () => {
     assert.match(canvas, /Playhead="@\(expanded \? EnvelopePlayheads\.GetValueOrDefault\(node.Id\) : null\)"/);
     assert.match(canvas, /SampleRate="@\(expanded \? SampleRate : null\)"/);
 });
+
+test("canvas telemetry diagnostics are opt-in and use the active graph", async () => {
+    const code = await readFile(new URL("../../src/Orbit.UI/Components/Canvas/GraphCanvas.razor.cs", import.meta.url), "utf8");
+    assert.ok(code.includes('Contains("orbit-canvas-telemetry=1", StringComparer.Ordinal)'));
+    assert.ok(code.includes("if (CountCanvasTelemetry) RecordCanvasTelemetry();"));
+    assert.ok(code.includes("Snapshot.Graph.Nodes.Select(node => node.Id).ToHashSet()"));
+    for (const name of ["graph", "deliveries", "effective", "playheads", "foreign-effective", "foreign-playheads"])
+        assert.ok(canvas.includes('data-telemetry-' + name + '="@(CountCanvasTelemetry ?'));
+});
