@@ -102,6 +102,17 @@ export async function verifyFoldedResources({ page, canvas, status, idleMs }) {
             expandedFrameRenders: after.filter(n => n.expanded).reduce((sum, n) => sum + n.renders - prior.get(n.id), 0) };
         steps.push(step);
         console.log("EDITOR FOLDED RESOURCES " + JSON.stringify(step));
+        if (process.env.ORBIT_EDITOR_ASSERT_FOLDED_DEMAND === "1") {
+            if (expandedIds.length === 0) {
+                assert.equal(step.effectiveValues + step.playheads, 0, name + ": folded canvas has unwanted telemetry");
+                assert.equal(step.parameterDeliveries, 0, name + ": folded canvas receives periodic updates");
+            } else {
+                assert.ok(step.effectiveValues > 0 && step.effectiveValues < 13,
+                    name + ": only the selected carrier's effective values should be delivered");
+                assert.ok(step.parameterDeliveries > 0 && step.expandedFrameRenders > 0,
+                    name + ": expanded carrier must keep updating");
+            }
+        }
     }
     await setCollection(true);
     try {
