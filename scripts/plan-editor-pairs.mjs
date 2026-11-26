@@ -6,7 +6,6 @@ import { pathToFileURL } from "node:url";
 const A = "a21198712750a9c4679ba4e451c636c68211091b";
 const B = "0356ffe183b43f6654c21266f4816fdf2c35a1b1";
 const C = "de2540b95388dc620271d348cb8d9525d74ba38a";
-export const historicalMiddleParent = "c7d3a32b6d6cd2796fa667b0317a39a1688ec906";
 
 export function planEditorPairs({ before = "", after = "", smoke = false } = {}) {
     if (smoke) {
@@ -18,7 +17,7 @@ export function planEditorPairs({ before = "", after = "", smoke = false } = {})
         historical: true, revisions: [A, B, C],
         pairs: [{ label: "pr-135", before: A, after: B }, { label: "pr-137", before: B, after: C }]
     };
-    assert.ok(/^[a-f0-9]{40}$/.test(before) && /^[a-f0-9]{40}$/.test(after),
+    assert.ok(before.length === 40 && after.length === 40 && /^[a-f0-9]{40}$/.test(before) && /^[a-f0-9]{40}$/.test(after),
         "Provide both exact lowercase 40-character commit SHAs, or leave both blank for historical mode");
     assert.notEqual(before, after, "Baseline and candidate must be different commits");
     return { historical: false, revisions: [before, after], pairs: [{ label: "comparison", before, after }] };
