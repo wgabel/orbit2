@@ -68,6 +68,8 @@ For code changes, follow the [development quality checklist](development-instruc
 
 ## Task handoff: documentation feedback
 
+**Mandatory for every multi-step task, regardless of size:** include the [visual progress summary](compliance-reports.md#mandatory-visual-progress-summary-for-multi-step-tasks) in every user-facing summary, including resumed slices, partial results and blockers. Show the full known plan, evidence-based statuses and next action; use the plain-text fallback when graphical rendering is unavailable.
+
 At the end of every Orbit 2 response, including simple questions and follow-ups, follow the [completion and PR evidence formats](compliance-reports.md). Include a short documentation report in the user-facing summary (or to the coordinating agent when delegated):
 
 - **Documentation consulted:** List the repository-relative paths of documentation and routing files actually read for the task, including this file and any selected domain policies, overview, roadmap or feature modules consulted. If only specific sections were read, indicate that when useful. Do not claim to have read files you did not inspect. If none were consulted, say so.

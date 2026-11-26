@@ -28,6 +28,28 @@ Illustrative footer (not an attestation of actual reads):
 
 List all actually applicable prerequisites in a real report, not just those in this illustration. Keep the existing full PR evidence format for repository changes; it does not replace the conversational report.
 
+### Mandatory visual progress summary for multi-step tasks
+
+Whenever work is divided into multiple steps, subfeatures, milestones, work slices or a checklist of deliverables, **include a visible graphical progress tracker in every user-facing task summary and handoff**, regardless of the task's size. This applies to implementation, planning, research, documentation, reviews, experiments, bug fixes, delegated work, resumed tasks and blocked or partial deliveries. A response reporting one current slice of a larger feature must still show the full known feature roadmap. Ordinary questions and genuinely single-step tasks need no tracker; do not invent unnecessary steps merely to show one.
+
+- Prefer a compact rendered card/box, segmented progress bar and rows with status icons, stable step/slice identifiers, names and explicit textual statuses. Use the available client-native rich response components when supported. Color must supplement, never replace, text or icons. When graphical components are unavailable (e.g. a terminal or plain Markdown client), use a visually distinct Markdown or text block with a Unicode/ASCII progress bar, status symbols and labels.
+- Show the completed count / total known steps and percentage, based on actual completed steps, not estimated effort. Include all known feature steps (completed, current and future); if the plan is still being elaborated, identify the denominator as currently known and do not invent missing slices. Update the tracker after each reported step, continuation or status change; retain IDs and reconcile roadmap, PR and verification evidence before reporting.
+- Use consistent status semantics: green/check = completed (for repository implementation, required verification passed and actually merged); blue/in-progress icon = underway; orange/clock = implemented but verification pending, verified awaiting merge, or other pending approval (label these separately); red/error = failed or blocked; gray/empty circle = planned. Partial, unverified, awaiting-merge, failed and blocked items do not count as complete. For non-code or documentation-only work apply its actual acceptance and verification policy; never pretend waived verification was executed. Label deferred steps separately and explain any exclusion from the denominator.
+- Link real PRs or relevant evidence where applicable and identify the next actionable step or blocker. Never imply progress from an open PR alone or claim success without evidence. Use the tracker for communication, not as a replacement for the canonical roadmap or machine-readable PR compliance report. The compact prose handoff length guideline does not exclude or limit the tracker.
+
+Illustrative plain-text fallback (not actual task evidence):
+
+~~~text
+Feature progress: 1/4 (25%)  [█░░░]
+✓ S1  Contract audit       Completed / merged
+◷ S2  Catalog exporter     Verified; awaiting merge
+▶ S3  Patch builder        In progress
+○ S4  Compatibility        Planned
+Next: merge S2, then finish S3.
+~~~
+
+This is a mandatory agent response-format requirement. It applies even if a client cannot render color; it is not automatically enforced by the existing PR compliance checker.
+
 ## Pull request evidence
 
 For every PR, maintain one machine-readable block in the PR description. CI cannot reliably distinguish human-authored from agent-authored changes, so the structural check applies uniformly to both. Keep normal scope and test summaries outside it. Use the exact marker and JSON fence shown in the [PR template](../../.github/pull_request_template.md). Replace placeholders, do not duplicate blocks, do not use comments or trailing commas inside JSON.
