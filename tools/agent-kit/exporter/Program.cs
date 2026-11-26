@@ -5,10 +5,11 @@ using Orbit.Presentation.Canvas;
 
 var exportRules = args.Length == 2 && args[0] == "--connection-rules";
 var exportPatch = args.Length == 2 && args[0] == "--patch-contract";
+var exportTemplates = args.Length == 2 && args[0] == "--composite-templates";
 var validatePatch = args.Length == 2 && args[0] == "--validate-patch";
-if (!exportRules && !exportPatch && !validatePatch && (args.Length != 1 || args[0].StartsWith("--", StringComparison.Ordinal)))
+if (!exportRules && !exportPatch && !exportTemplates && !validatePatch && (args.Length != 1 || args[0].StartsWith("--", StringComparison.Ordinal)))
 {
-    Console.Error.WriteLine("Usage: Orbit.AgentKit.Exporter <catalog.json> or --connection-rules <rules.json> or --patch-contract <directory> or --validate-patch <patch.json>");
+    Console.Error.WriteLine("Usage: Orbit.AgentKit.Exporter <catalog.json> or --connection-rules <rules.json> or --patch-contract <directory> or --composite-templates <templates.json> or --validate-patch <patch.json>");
     return 2;
 }
 
@@ -35,7 +36,8 @@ try
         return 0;
     }
 
-    var json = exportRules ? ConnectionRulesExporter.Export() : CatalogExporter.Export(BuiltInNodes.CreateEditorRegistry());
+    var json = exportTemplates ? CompositeTemplateExporter.Export() :
+        exportRules ? ConnectionRulesExporter.Export() : CatalogExporter.Export(BuiltInNodes.CreateEditorRegistry());
     var path = Path.GetFullPath(args[^1]);
     Directory.CreateDirectory(Path.GetDirectoryName(path)!);
     File.WriteAllText(path, json);
