@@ -110,7 +110,19 @@ dotnet test tests/Orbit.Domain.Tests/Orbit.Domain.Tests.csproj --configuration R
 dotnet test tests/Orbit.Presentation.Tests/Orbit.Presentation.Tests.csproj --configuration Release --filter "FullyQualifiedName~PatchPersistenceTests"
 ~~~
 
-Baseline status: **not executed**. This environment has neither dotnet nor a network-accessible Git checkout; connector reads succeeded. Do not claim a passing baseline. S1 source audit is recorded; its verification gate remains pending. Use the commands on a matching checkout or actual CI evidence for the same runtime revision before S2. For later slices generate positive/negative native fixtures and test Python-produced JSON via Deserialize → Restore → CanvasNavigationService; compare normalized recaptured documents, record exact tested revision and reject unsupported features explicitly. Build/CI scope must eventually include `tools/agent-kit/` without triggering unrelated app deployment; inspect CI change-scope policy when implementing that integration, not in this audit.
+Baseline verified using [PR #153 build job](https://github.com/wgabel/orbit2/actions/runs/45778891772/job/139769217160) at tested PR head `2fb17a43ca7f442ab9b91610c2e643e22741c83f`: both full native domain and presentation test steps succeeded. [Comparison to current main](https://github.com/wgabel/orbit2/compare/2fb17a43ca7f442ab9b91610c2e643e22741c83f...6fd63c4de3d0416d99bbabd564e3a5f988085f92) shows documentation-only changes (including routing metadata); no native source, test or workflow differences. This is existing CI evidence, not a newly executed local baseline. S1 is complete with merged audit [PR #155](https://github.com/wgabel/orbit2/pull/155). For later slices generate positive/negative native fixtures and test Python-produced JSON via Deserialize → Restore → CanvasNavigationService; compare normalized recaptured documents, record exact tested revision and reject unsupported features explicitly. Build/CI scope must eventually include `tools/agent-kit/` without triggering unrelated app deployment; inspect CI change-scope policy when implementing that integration, not in this audit.
+
+## S2 catalog exporter
+
+Candidate implementation in `tools/agent-kit/exporter/` is a standalone .NET 10 console executable referencing only Orbit.Application and its domain dependency. Generate the catalog locally (SDK required only for the publisher, not consumers):
+
+~~~powershell
+dotnet run --project tools/agent-kit/exporter/Orbit.AgentKit.Exporter.csproj --configuration Release -- catalog.json
+~~~
+
+Format 1 has `catalogFormatVersion` and an ordinal-keyed `nodes` object. Each entry identifies its creation key, persisted type key, label, native marker category and metadata status. Leaf entries include every parameter and port (including dormant controls), factory base values versus definition defaults, bounds, choices, units/scales/smoothing, structural flags, display anchors, modulation port keys, and activation as an array of OR alternatives containing AND conditions. Enum names in this catalog are descriptive strings, not the native persisted enum encoding. No instance GUIDs or timestamps are exported. Composite registrations are discoverable with explicit deferred status; GUID-derived boundary keys and nested graphs are intentionally not serialized in S2. Human usage metadata, routing matrices, patch fixtures, selective packaging and composite creation remain later slices.
+
+`AgentKitCatalogTests` in the existing native domain suite checks independent registry determinism, complete key coverage, native leaf values and socket associations, conditional pitch controls, sequencer slots and composite preset aliases. Run `dotnet test tests/Orbit.Domain.Tests/Orbit.Domain.Tests.csproj --configuration Release --filter FullyQualifiedName~AgentKitCatalogTests`. Candidate verification pending; do not claim a generated release catalog until CI executes the exporter tests. The existing CI path classification conservatively treats tooling/test changes as runtime builds; separate tooling-only release orchestration remains S12.
 
 ## Non-goals and gates
 

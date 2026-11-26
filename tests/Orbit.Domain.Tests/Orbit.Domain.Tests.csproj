@@ -11,6 +11,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2" PrivateAssets="all" />
+    <ProjectReference Include="../../tools/agent-kit/exporter/Orbit.AgentKit.Exporter.csproj" />
     <ProjectReference Include="../../src/Orbit.Domain/Orbit.Domain.csproj" />
     <ProjectReference Include="../../src/Orbit.Application/Orbit.Application.csproj" />
     <ProjectReference Include="../../src/Orbit.Audio/Orbit.Audio.csproj" />
