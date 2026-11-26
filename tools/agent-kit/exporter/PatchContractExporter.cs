@@ -62,12 +62,20 @@ public static class PatchContractExporter
 
         var files = new SortedDictionary<string, string>(StringComparer.Ordinal)
         {
+            [CompositePresetExporter.FileName] = CompositePresetExporter.Export(registry),
             ["patch-schema.json"] = ExportSchema(),
             ["patch-contract.json"] = JsonSerializer.Serialize(new
             {
                 patchContractFormatVersion = FormatVersion,
                 patchSchemaVersion = PatchDocument.CurrentVersion,
                 structuralSchema = "patch-schema.json",
+                compositePresets = new
+                {
+                    file = CompositePresetExporter.FileName,
+                    formatVersion = CompositePresetExporter.FormatVersion,
+                    offlineAuthoring = false,
+                    offlineEditing = false
+                },
                 tempo = new { minimum = MusicalTransport.MinimumTempo, maximum = MusicalTransport.MaximumTempo,
                     defaultValue = MusicalTransport.DefaultTempo },
                 zoom = new { minimum = CanvasViewport.MinimumZoom, maximum = CanvasViewport.MaximumZoom,

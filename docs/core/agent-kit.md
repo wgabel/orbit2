@@ -225,9 +225,9 @@ print(read_envelope(env))
 
 CI imports a connected loop-envelope fixture with a retained dormant trigger cable. Python tests check modes, bounds, round trips and atomic rejection. General automation/step-sequencer adapters are deferred until native implementations exist (see planned automation in [advanced roadmap](../roadmap/advanced.md)); no invented patch fields or approximation through a second DSP engine. S8 owns conditional-port discovery and modulation helpers.
 
-## S8 modulation and conditional-port discovery (candidate)
+## S8 modulation and conditional-port discovery (merged)
 
-Implementation: [PR #179](https://github.com/wgabel/orbit2/pull/179) (CI pending).
+Implementation: [PR #179](https://github.com/wgabel/orbit2/pull/179), merged; [CI](https://github.com/wgabel/orbit2/actions/runs/45835466018/job/139963038358) passed at `c63650d8`, including offline Python and native import tests.
 
 Node helpers `is_parameter_active(key)`, `is_port_active(key)`, `describe_parameter(key)`, `describe_port(key)` and `list_ports(active_only=False)` project current stored base settings and detached native metadata. Evaluate exported activation as OR-of-AND equality clauses; a modulation input also follows all associated parameter conditions, as native GraphNodeSnapshot.IsInputActive does. No runtime signal evaluation. `Patch.is_connection_active(id)` reports endpoint configuration activity, not audibility, reachability, bypass or mute state.
 
@@ -242,6 +242,14 @@ print(patch.is_connection_active(edge))
 ~~~
 
 CI imports a sixth fixture with multiple signed sources and a retained dormant pitch route. Python tests cover activation conjunctions/alternatives, associated parameters, metadata detachment, multiple-source mapping and rejection without mutation. Nested boundaries remain S9. No application or DSP changes.
+
+## S9a native composite preset export
+
+The existing `--patch-contract` export additionally produces `composite-presets.json`, with `compositePresetFormatVersion`, `patchSchemaVersion`, and `presets` keyed by registered creation key. Each value is a native layout-free root patch containing the single factory-created composite, captured through PatchSession and PatchDocumentSerializer. Entries are templates, not playable complete patches, and native import acceptance is not audio verification. Factory state (nested graph, parameters, signed amounts, boundary definitions, rack identities, static macro bindings and optional modulationInputId) is retained. The creation key is not a persisted node type.
+
+The exporter normalizes all native identities deterministically using template-local GUIDs, preserving mirrored boundary references, GUID-derived boundary keys, edge endpoints and macro targets. It verifies native Restore before returning the serialized export. IDs may repeat across different templates: never insert them directly in a destination patch. Future S9c must allocate fresh instance identities and verify native import; S9b must first add nested offline validation, including implicit rack endpoints. Native template export is not Python authoring or editing support. The existing catalog deferred-composite status and deferred macro fixture rejection are unchanged. Static macro mapping authoring and editing are separately gated; real-time macro modulation is not implemented by this export.
+
+`AgentKitCompositePresetTests` checks deterministic regeneration, complete factory coverage, native import and recapture, child navigation, nested test factory and native macro-reference normalization. The existing patch-contract regeneration test also covers the new file. No production code, CI workflow or Python consumer changes. Candidate verification pending.
 
 ## Non-goals and gates
 
