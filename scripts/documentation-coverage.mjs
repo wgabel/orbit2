@@ -266,7 +266,12 @@ export function auditRepositoryDocumentation(root, config) {
     const absolute = resolve(root, path);
     if (lstatSync(absolute).isFile()) documents.set(path, readFileSync(absolute, 'utf8'));
   }
-  return analyzeDocumentation({ documents, files, config });
+  const audit = analyzeDocumentation({ documents, files, config });
+  for (const entry of [ROOT, ROUTING, 'docs/README.md', 'docs/roadmap/overview.md',
+    'docs/agents/contributor-instructions.md', '.github/copilot-instructions.md']) {
+    if (!files.includes(entry)) audit.errors.push('Missing canonical documentation entry: ' + entry);
+  }
+  return audit;
 }
 
 export function formatCoverageSummary(audit) {
