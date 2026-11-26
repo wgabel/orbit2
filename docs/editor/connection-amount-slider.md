@@ -85,3 +85,28 @@ The S1b service baseline passed and merged in [PR #178](https://github.com/wgabe
 The offline test uses the pinned Faust WASM distribution at 44.1/48 kHz, 128 frames per block and 32768 frames per repeat, three independent renders per program/rate. It records source and sample hashes, factory compilation time on first use, raw render timings, omitted control names, RMS and peak, environment and output count, and stores raw Float32 master samples. It asserts finite samples, repeatability, silence for zero audio weights, sign inversion for ±unity audio weights, nontrivial modulation and exact master identity with idle observations. No event inputs. CI uploads the exact fixture, report and raw samples as `connection-amount-audio-reference`. Preserve the reference artifact from this pre-change revision rather than regenerating the oracle after production changes. Timings are diagnostic offline measurements, not live renderer or physical device results.
 
 Remaining S1c work: real browser edit-series and active tap measurement, additional dormant/unreachable and stateful/percussion reference cases, physical device evidence and reviewed control encoding/tolerance. This slice does not authorize production changes.
+
+### S1c.1 — Verified offline results
+
+[PR #180](https://github.com/wgabel/orbit2/pull/180) merged; [build run 45835525797](https://github.com/wgabel/orbit2/actions/runs/45835525797) and agent compliance passed. [Reference artifact 15125825600](https://github.com/wgabel/orbit2/actions/runs/45835525797/artifacts/15125825600) retains exact pre-change fixtures and raw samples (GitHub retention applies). All 18 case/rate rows passed repeatability and idle-observation sample-hash equality. Audio weights zero were exactly silent and ±unity inverted correctly. Representative 48 kHz mono results (32768 frames, median of three repeats, hosted runner):
+
+| Case | Amount | Peak | RMS | Median offline render ms |
+| --- | ---: | ---: | ---: | ---: |
+| Root audio | 0 | 0 | 0 | 0.138 |
+| Root audio | +1 | 0.1000 | 0.07034 | 3.377 |
+| Nested audio | 0 | 0 | 0 | 0.098 |
+| Nested audio | +1 | 0.1500 | 0.09638 | 3.414 |
+
+These are measured offline render-call timings, including allocations/copy, not live DSP load or a guaranteed speed difference. Literal-zero specialization is a risk for live controls: static zero's low cost may not be retained by dynamic zero. The first dynamic observation catalog also changes channel count at unity (root audio: 6 at zero versus 5 at unity, nested audio: 8 versus 7). Preserve the artifact rather than regenerating reference samples as a post-change oracle.
+
+### S1c.2a — Root live edit-series baseline
+
+Extend the existing published-browser benchmark with a focused `--connection-amount` mode. It imports the exact root modulation (100 Hz) and root audio (unity) cases exported by the static probe, using graph-qualified fixture edge IDs for the ordinary amount inspector. A fresh browser context per profile/repeat, three repeats per profile by default, records initial Play and steady renderer samples, then opens a new performance monitor session before the five explicit Apply edits (−0.5, 0, 0.25, 1, 2). The edit counts exclude the initial Play and must show five source builds, five accepted replacements, five voice preparation attempts and zero live control updates on the old path. Record each accepted revision, wall time from Apply to accepted status, monitor snapshot (including source/worker timing, resource counts, latency and available underrun metrics), stop cleanup and replay; retain patch JSON/hash and environment in the report. The timing scope includes browser automation; it is not speaker latency. Plots remain closed, and steady-state renderer samples are collected with monitor closed. Report unsupported metrics as unavailable.
+
+Run with the published build and existing Chromium configuration:
+
+```sh
+node scripts/benchmark-live.mjs --connection-amount "$RUNNER_TEMP/orbit-graph-probe" "$RUNNER_TEMP/orbit-graph-probe/connection-amount-live-report.json"
+```
+
+CI uploads `connection-amount-playback-reference` containing the exact source fixture and report. This is a hosted, muted browser measurement; physical Android/desktop runs, active tap and nested/stateful/event cases, numeric control encoding and owner review remain separate gate work. Do not silently substitute this workload for those requirements or enable production controls before the gate is satisfied.

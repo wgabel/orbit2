@@ -205,6 +205,25 @@ jobs:
         run: |
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
           node scripts/benchmark-live.mjs "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/live-report.json"
+      - name: Benchmark connection amount edits (external renderer)
+        if: steps.changes.outputs.runtime == 'true'
+        timeout-minutes: 10
+        env:
+          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
+          ORBIT_BENCH_LIVE_SECONDS: '5'
+          ORBIT_CONNECTION_REPEATS: '3'
+        run: |
+          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
+          node scripts/benchmark-live.mjs --connection-amount "$RUNNER_TEMP/orbit-graph-probe" "$RUNNER_TEMP/orbit-graph-probe/connection-amount-live-report.json"
+      - name: Upload connection amount playback reference
+        if: steps.changes.outputs.runtime == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: connection-amount-playback-reference
+          path: |
+            ${{ runner.temp }}/orbit-graph-probe/connection-amount-baseline.json
+            ${{ runner.temp }}/orbit-graph-probe/connection-amount-live-report.json
+          if-no-files-found: error
       - name: Benchmark large-patch editor smoke
         if: steps.changes.outputs.runtime == 'true'
         timeout-minutes: 15
