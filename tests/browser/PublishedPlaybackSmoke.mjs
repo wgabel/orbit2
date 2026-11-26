@@ -95,6 +95,13 @@ async function verifyMacroSliders(browser, exported, mobile) {
         bindings: [{ target: { nodeId: target.id, parameterId: frequency.id }, atZero: 220, atOne: 440, exponent: 1 }]
     }];
     document.activeGraphId = document.rootGraph.id;
+    // Keep the wrapper accessible independently of the source desktop viewport.
+    const layout = document.canvasLayouts.find(canvas => canvas.graphId === document.rootGraph.id);
+    assert.ok(layout, "Expected exported root layout");
+    Object.assign(layout, { panX: 0, panY: 0, zoom: 1 });
+    layout.positions = document.rootGraph.nodes.map((node, index) => ({
+        nodeId: node.id, x: node.id === wrapper.id ? 24 : 1000 + index * 350, y: 24
+    }));
     const page = await browser.newPage(mobile ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } : {});
     try {
         await page.goto("http://127.0.0.1:" + server.address().port);
@@ -131,16 +138,22 @@ async function verifyMacroSliders(browser, exported, mobile) {
             // One held keyboard gesture commits multiple values but one undo entry.
             await range.focus();
             await page.keyboard.down("ArrowRight");
+            await waitBase(0.76);
             await page.keyboard.down("ArrowRight");
             await page.keyboard.up("ArrowRight");
             await waitBase(0.77);
+            await editButton(page, "Undo").click();
+            await waitBase(0.75);
+        } else {
+            await range.tap({ position: { x: 12, y: 10 } });
+            await page.waitForFunction(id => Number(document.querySelector(`article[data-node-id="${id}"] [aria-label="Composite macro controls"] input[type=number]`)?.value) < 0.5, wrapper.id);
             await editButton(page, "Undo").click();
             await waitBase(0.75);
         }
         await node.getByRole("button", { name: `Open ${wrapper.composite.name}`, exact: true }).click();
         await page.waitForFunction(id => document.querySelector(".graph-workspace")?.dataset.activeGraph === id, wrapper.composite.graph.id);
         assert.equal(await page.getByRole("group", { name: "Composite macro controls" }).count(), 0);
-        await page.getByRole("button", { name: "Patch", exact: true }).click();
+        await page.getByRole("navigation", { name: "Canvas path" }).getByRole("button", { name: "Patch", exact: true }).click();
         await waitBase(0.75);
     } finally {
         await page.close();
