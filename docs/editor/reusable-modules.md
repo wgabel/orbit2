@@ -220,7 +220,7 @@ Use an explicit typed macro control address (graph, wrapper node, macro ID) in t
 
 Range estimator: sum signed intervals, clamp normalized range, transform both endpoints through each monotone curve and sort; combine with existing target-native modulation and multiplier rules. Unknown sources conservatively remain unknown (or a proved full [0,1] bound clearly distinguished from a precise prediction). Meter macro normalized effective value and actual target effective value, with graph-qualified accepted revision/generation; do not replace manual or mapped static UI values with live readings. Preserve no polling or rendering for inactive/folded consumers.
 
-#### Static macro reference (S4b, in review)
+#### Static macro reference (S4b, in review, [PR #171](https://github.com/wgabel/orbit2/pull/171))
 
 Baseline production revision [`58fa1d6`](https://github.com/wgabel/orbit2/commit/58fa1d629a4fe1ef80e991727ce9f5e31a167a0c). The existing native probe generates an importable nested composite fixture with an unused Modulation boundary input, one oscillator and gain, and static curved frequency, reversed amplitude, constant gain and conditional pulse-width mappings. For each normalized base 0, 0.5 and 1, plus square-wave activation and mapping removal, compare the authored macro snapshot to the identical graph with the same physical values set manually. Preserve independent authored bases; check graph-qualified control origins, exact source equality between paired cases, and unchanged source across sine base edits. The legacy fixture has no input association field. S4d must add the explicit associated-but-unconnected comparison when that contract exists.
 
