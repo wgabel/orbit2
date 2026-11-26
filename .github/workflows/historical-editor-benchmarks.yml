@@ -106,7 +106,8 @@ jobs:
       - name: Publish selected exact runtimes
         run: |
           set -euo pipefail
-          while IFS= read -r rev; do
+          mapfile -t revisions < "$RUNNER_TEMP/historical-editor/revisions.txt"
+          for rev in "${revisions[@]}"; do
             checkout="$RUNNER_TEMP/historical-src-$rev"
             output="$RUNNER_TEMP/historical-publish-$rev"
             git worktree add --detach "$checkout" "$rev"
@@ -124,7 +125,7 @@ jobs:
               test -s "audio-$rev/generated/compiler/index.js"
             )
             git worktree remove --force "$checkout"
-          done < "$RUNNER_TEMP/historical-editor/revisions.txt"
+          done
       - name: Measure selected revisions sequentially and compare
         run: |
           set -euo pipefail
@@ -136,10 +137,11 @@ jobs:
           if [[ "$PROFILE" != editor-composite-100 && "$WORKLOAD" == expansion ]]; then
             export ORBIT_EDITOR_EXPANSION_MATRIX=1
           fi
-          while IFS= read -r rev; do
+          mapfile -t revisions < "$reports/revisions.txt"
+          for rev in "${revisions[@]}"; do
             ORBIT_REVISION="$rev" ORBIT_BENCH_PUBLISH_DIR="$RUNNER_TEMP/historical-publish-$rev/wwwroot" \
               node scripts/benchmark-live.mjs --editor "$reports/fixtures" "$reports/$rev.json" "$PROFILE"
-          done < "$reports/revisions.txt"
+          done
           while IFS=$'\t' read -r label before after; do
             node scripts/compare-editor-benchmarks.mjs "$reports/$before.json" "$reports/$after.json" "$reports/$label.json"
           done < "$reports/pairs.tsv"
