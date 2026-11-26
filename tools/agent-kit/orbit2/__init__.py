@@ -2,4 +2,7 @@
 from .catalog import Catalog
 from .patch import Patch, Node
 
-__all__ = ["Catalog", "Patch", "Node"]
+from .validation import Diagnostic, ValidationResult, PatchValidationError, validate_patch
+
+__all__ = ["Catalog", "Patch", "Node", "Diagnostic", "ValidationResult",
+           "PatchValidationError", "validate_patch"]
