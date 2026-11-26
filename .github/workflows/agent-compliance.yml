@@ -24,6 +24,6 @@ jobs:
         with:
           node-version: '24'
       - name: Test compliance validator
-        run: node --test tests/tooling/AgentCompliance.test.mjs
+        run: node --test tests/tooling/AgentCompliance.test.mjs tests/tooling/DocumentationCoverage.test.mjs
       - name: Check routing and PR declaration
         run: node scripts/check-agent-compliance.mjs
