@@ -199,6 +199,23 @@ public partial class GraphCanvas : IAsyncDisposable
     private bool CountNodeRenders => countNodeRenders ??= new Uri(NavigationManager.Uri).Query
         .TrimStart('?').Split('&').Contains("orbit-render-counts=1", StringComparer.Ordinal);
 
+    // Dedicated benchmark-only counters. Count deliveries at the canvas
+    // boundary, not DSP reads or worklet messages.
+    private bool? countCanvasTelemetry;
+    private bool CountCanvasTelemetry => countCanvasTelemetry ??= new Uri(NavigationManager.Uri).Query
+        .TrimStart('?').Split('&').Contains("orbit-canvas-telemetry=1", StringComparer.Ordinal);
+    private long canvasParameterDeliveries;
+    private int foreignEffectiveValues;
+    private int foreignPlayheads;
+
+    private void RecordCanvasTelemetry()
+    {
+        canvasParameterDeliveries++;
+        var localIds = Snapshot.Graph.Nodes.Select(node => node.Id).ToHashSet();
+        foreignEffectiveValues = EffectiveValues.Keys.Count(address => !localIds.Contains(address.NodeId));
+        foreignPlayheads = EnvelopePlayheads.Keys.Count(id => !localIds.Contains(id));
+    }
+
     private IReadOnlyList<NodeFrameProjection.Entry> NodeProjection =>
         nodeProjection.Update(Snapshot.Graph, ModulationRanges);
     private string? Hint => pendingSource is not null
@@ -212,6 +229,7 @@ public partial class GraphCanvas : IAsyncDisposable
     {
         if (!ReferenceEquals(State, subscribedState)) effectiveProjection.Reset();
         effectiveProjection.Update(EffectiveValues);
+        if (CountCanvasTelemetry) RecordCanvasTelemetry();
         if (ReferenceEquals(State, subscribedState)) return;
         subscription?.Dispose();
         subscribedState = State;

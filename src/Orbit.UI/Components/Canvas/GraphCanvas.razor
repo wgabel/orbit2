@@ -8,6 +8,12 @@
 @{ var wires = Wires; }
 <div class="graph-canvas">
     <div class="canvas-viewport" @ref="viewportElement" tabindex="0" aria-label="Graph canvas"
+         data-telemetry-graph="@(CountCanvasTelemetry ? Snapshot.GraphId.ToString() : null)"
+         data-telemetry-deliveries="@(CountCanvasTelemetry ? canvasParameterDeliveries.ToString() : null)"
+         data-telemetry-effective="@(CountCanvasTelemetry ? EffectiveValues.Count.ToString() : null)"
+         data-telemetry-playheads="@(CountCanvasTelemetry ? EnvelopePlayheads.Count.ToString() : null)"
+         data-telemetry-foreign-effective="@(CountCanvasTelemetry ? foreignEffectiveValues.ToString() : null)"
+         data-telemetry-foreign-playheads="@(CountCanvasTelemetry ? foreignPlayheads.ToString() : null)"
          aria-keyshortcuts="F 0 Shift+F10" data-fit-sequence="@fitSequence" data-port-hints-suppressed="@(drawingWire || pendingSource is not null || helpNodeId is not null ? "true" : "false")" data-pinching="@(pinchOrigin is not null ? "true" : "false")"
          @onpointerdown="BeginBackground" @onpointerdown:preventDefault="true"
          @onpointermove="PointerMoved" @onpointerup="PointerReleasedAsync"
