@@ -184,6 +184,8 @@ CI checks untouched parsed round trips, edited native-origin fixtures, invalid e
 
 ## S6b safe structural edits (candidate)
 
+Implementation: [PR #170](https://github.com/wgabel/orbit2/pull/170) (CI pending).
+
 `Patch.list_connections()` returns detached native edge snapshots; `set_connection_amount(connection_id, amount)` validates a candidate without changing identity, endpoint or order. `disconnect(connection_id)` and `remove_node(node)` validate a candidate before publishing changes. Node removal clears incident edges, saved positions and script aliases; surviving node handles remain usable, removed handles reject edits. Connection IDs and endpoint comparisons are case-insensitive without altering saved GUID spelling. The existing metadata-derived validator checks finite signed amounts and event unity.
 
 Deletion is intentionally conservative: on current S5-supported root leaf documents it checks an explicit cleanup-scope allowlist of understood native DTO fields, not another schema or catalog. Any opaque field anywhere in the document rejects deletion with a structured diagnostic; unknown fields remain supported for non-destructive edits. Nonempty presentation collections, nested graphs and legacy migrations remain out of scope. CI retains created and parameter-edited native import gates and adds a structural edit of the native-origin fixture. S7 owns sequence helpers.
