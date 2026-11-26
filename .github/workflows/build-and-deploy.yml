@@ -112,6 +112,16 @@ jobs:
             ${{ runner.temp }}/orbit-graph-probe/static-macro-baseline.json
             ${{ runner.temp }}/orbit-graph-probe/static-macro-report.json
           if-no-files-found: error
+      - name: Upload connection amount audio reference
+        if: steps.changes.outputs.runtime == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: connection-amount-audio-reference
+          path: |
+            ${{ runner.temp }}/orbit-graph-probe/connection-amount-baseline.json
+            ${{ runner.temp }}/orbit-graph-probe/connection-amount-report.json
+            ${{ runner.temp }}/orbit-graph-probe/connection-amount-*.f32
+          if-no-files-found: error
       # Timings are informational; deterministic output and graph contracts are the gates.
       - name: Benchmark offline DSP baseline
         if: steps.changes.outputs.runtime == 'true'

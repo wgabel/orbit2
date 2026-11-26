@@ -55,6 +55,10 @@ Connect(child, composite.InputRackId, drone.Inputs[1].Id, gain.Id, gain.Paramete
 Connect(child, oscillator.Id, oscillator.Outputs[0].Id, gain.Id, gain.Inputs[0].Id);
 Connect(child, gain.Id, gain.Outputs[0].Id, composite.OutputRackId, drone.Outputs[0].Id);
 Connect(root, drone.Id, drone.Outputs[0].Id, master.Id, master.Inputs[0].Id);
+// Restore the nested coefficient after generating references, before other probes.
+ConnectionAmountBaselineFixtures.Write(args[0], session, child,
+    session.Snapshot.GetGraph(child).Connections.Single(edge =>
+        edge.Destination.NodeId == composite.OutputRackId).Id);
 var program = FaustGraphCompiler.CreateBuiltIn().Compile(session.Snapshot);
 var frequency = program.Controls.Single(control => control.Address == new ParameterAddress(oscillator.Id,
     oscillator.Parameters.Single(parameter => parameter.Definition.Key == "frequency").Id));
