@@ -192,6 +192,8 @@ Deletion is intentionally conservative: on current S5-supported root leaf docume
 
 ## S7a note sequencer pattern adapter (candidate)
 
+Implementation: [PR #174](https://github.com/wgabel/orbit2/pull/174) (CI pending).
+
 `NoteStep`, `configure_note_pattern(node, steps, **settings)` and `read_note_pattern(node)` wrap the existing native fixed-slot parameter families. See [native sequencer contract](../instruments/note-sequencer.md). MIDI integers 0–127 encode note+1, Hold is zero, Rest is 129. Gate length None encodes native zero (inherit); velocity None encodes -1 (inherit) while explicit zero means silent strength; timing offset is a signed step fraction. Values are validated against native exported bounds/choices by one atomic parameter batch. The adapter replaces active slots and their overrides, enables Loop, and preserves inactive slots, IDs, cables, layout and unspecified global settings. No rounding, implicit humanization, audio generation or variable step lengths/polyphony. Reading returns the active slots including stored overrides even for Hold/Rest; native scheduling ignores inapplicable overrides.
 
 ~~~python
