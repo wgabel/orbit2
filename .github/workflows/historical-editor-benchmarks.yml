@@ -56,12 +56,12 @@ jobs:
       PAIR_AFTER: ${{ inputs.after_revision || '' }}
       PAIR_SMOKE: ${{ github.event_name == 'pull_request' }}
       WORKLOAD: ${{ inputs.workload || 'expansion' }}
-      ORBIT_EDITOR_REPEATS: ${{ inputs.repeats || '1' }}
+      ORBIT_EDITOR_REPEATS: ${{ inputs.repeats || '3' }}
       ORBIT_EDITOR_IDLE_MS: '1500'
       ORBIT_EDITOR_VIEWPORT: ${{ inputs.viewport || 'desktop' }}
       ORBIT_EDITOR_PLAYBACK: ${{ github.event_name == 'pull_request' && '1' || (inputs.playback && '1' || '0') }}
       ORBIT_EDITOR_RENDER_COUNTS: '0'
-      PROFILE: ${{ inputs.profile || 'editor-50' }}
+      PROFILE: ${{ inputs.profile || 'editor-composite-100' }}
     steps:
       - uses: actions/checkout@v4
         with:
