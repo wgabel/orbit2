@@ -50,6 +50,47 @@ public sealed class AgentKitPatchContractTests
     }
 
     [Fact]
+    public void NativeMacroAssociationIsExportedButOfflineSupportIsExplicitlyDeferred()
+    {
+        var files = PatchContractExporter.Export();
+        using var manifest = JsonDocument.Parse(files["patch-contract.json"]);
+        var feature = manifest.RootElement.GetProperty("deferredFeatures").GetProperty("compositeMacroModulation");
+        Assert.Equal("modulationInputId", feature.GetProperty("field").GetString());
+        Assert.True(feature.GetProperty("nativePersistence").GetBoolean());
+        Assert.False(feature.GetProperty("runtimeModulation").GetBoolean());
+        Assert.False(feature.GetProperty("offlineAuthoring").GetBoolean());
+        Assert.False(feature.GetProperty("offlineEditing").GetBoolean());
+        Assert.Contains("\"modulationInputId\"", files["patch-schema.json"]);
+        var serializer = new PatchDocumentSerializer();
+        var registry = BuiltInNodes.CreateEditorRegistry();
+        foreach (var fixture in manifest.RootElement.GetProperty("deferredFixtures").EnumerateArray())
+        {
+            var name = fixture.GetProperty("file").GetString()!;
+            Assert.True(fixture.GetProperty("nativeAccepted").GetBoolean());
+            Assert.False(fixture.GetProperty("offlineAccepted").GetBoolean());
+            Assert.Equal("unsupported-composite", fixture.GetProperty("offlineRejection").GetString());
+            var json = files[name];
+            var document = serializer.Deserialize(json);
+            using var session = serializer.Restore(document, registry);
+            using var navigation = new CanvasNavigationService(session, layouts: document.CanvasLayouts,
+                activeGraphId: document.ActiveGraphId);
+            var wrapper = session.Snapshot.Nodes.Single(n => n.Composite is not null);
+            var macro = Assert.Single(wrapper.Composite!.Macros);
+            var associated = name == "deferred-macro-input.json";
+            if (associated)
+                Assert.Equal(wrapper.Inputs.Single().Id, macro.ModulationInputId);
+            else
+                Assert.Null(macro.ModulationInputId);
+            Assert.Equal(associated, json.Contains("\"modulationInputId\"", StringComparison.Ordinal));
+            var captured = serializer.Capture(session, document.BeatsPerMinute, document.ActiveGraphId,
+                navigation.CaptureLayouts(), document.Overview);
+            var saved = Assert.Single(captured.RootGraph.Nodes.Single(n => n.Id == wrapper.Id).Composite!.Macros);
+            Assert.Equal(macro.ModulationInputId, saved.ModulationInputId);
+            Assert.Equal(macro.Mapping.Bindings.ToArray(), saved.Bindings);
+        }
+    }
+
+    [Fact]
     public void ManifestRejectionsMatchNativeImport()
     {
         var files = PatchContractExporter.Export();
