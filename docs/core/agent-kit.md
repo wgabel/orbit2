@@ -134,7 +134,19 @@ dotnet run --project tools/agent-kit/exporter/Orbit.AgentKit.Exporter.csproj --c
 
 Format 1 exports all native signal types and directed compatible signal pairs, the equal-channel rule, mono/single-input event constraints, per-destination amount rules (`finite-signed` or `unity-only`), fan-in behavior, and graph topology constraints (existing same-graph output/input endpoints, unique IDs and endpoint pairs, no dependency cycles). Pair and fan-in tables are derived via native RoutingRejection probes. Channel equality and amount classifications are audited native contracts with runtime probe guards against changed behavior. These are structural rules for already valid ports, not DSP semantics, not a claim that all synthetic channel combinations are supported by the editor, and not a substitute for endpoint ownership/graph validation. The native graph remains authoritative. Dormant socket activation is a separate S8 concern; do not reject stored inactive edges solely on activation.
 
-`AgentKitConnectionRulesTests` exercises deterministic output and compares exported pair/amount/fan-in decisions with actual SignalGraph connections, including rejected routes. Existing SignalGraphTests cover IDs, direction, missing endpoints and cycles. CI verification pending. S3b owns native patch document shape and serialized fixtures, including navigation validation; Python builder remains S4.
+`AgentKitConnectionRulesTests` exercises deterministic output and compares exported pair/amount/fan-in decisions with actual SignalGraph connections, including rejected routes. Existing SignalGraphTests cover IDs, direction, missing endpoints and cycles. Merged [PR #160](https://github.com/wgabel/orbit2/pull/160); [native CI](https://github.com/wgabel/orbit2/actions/runs/45793774226/job/139819085764) passed at `5e8615405223f853c1e78ff7bafb81e5cc94a02a`. S3b owns native patch document shape and serialized fixtures, including navigation validation; Python builder remains S4.
+
+## S3b native patch contract and fixtures
+
+~~~powershell
+dotnet run --project tools/agent-kit/exporter/Orbit.AgentKit.Exporter.csproj --configuration Release -- --patch-contract ./patch-contract
+~~~
+
+The output directory contains `patch-schema.json` (structural JSON Schema generated from native persistence DTOs using the tooling-only .NET schema exporter and the native serializer's camelCase/default numeric enum convention), `patch-contract.json` (format/schema versions, native tempo/zoom limits and fixture manifest), and one accepted leaf patch plus five intentionally rejected fixtures (schema version, tempo, viewport, active graph and endpoint). Fixtures use factory-derived complete leaf parameter/port sets and deterministic nonempty identities; serialize via the actual native serializer. The accepted fixture must restore through native graph and navigation before the export returns. CI verifies all negative expectations separately and checks deterministic regeneration and native normalized recapture.
+
+The schema describes serialized shape, not full native acceptance: it is generated from reflection DTO metadata in tooling rather than the internal source-generated serializer context; native tests compare the actual wire shape and exercise the independent restore path. Semantic version, range, node keys, topology, layout and nested graph validation remain native responsibilities, with offline coverage developed in S4–S9. Composite fixture generation and editing remain S9. This slice extends the exporter dependency to framework-neutral Orbit.Presentation solely to reuse actual viewport constraints and navigation checks; it has no dependency on Razor, browser, UI runtime or Faust. Production projects never reference the exporter.
+
+Run `dotnet test tests/Orbit.Presentation.Tests/Orbit.Presentation.Tests.csproj --configuration Release --filter FullyQualifiedName~AgentKitPatchContractTests`. Candidate tests pending CI; no generated release package claimed.
 
 ## Non-goals and gates
 

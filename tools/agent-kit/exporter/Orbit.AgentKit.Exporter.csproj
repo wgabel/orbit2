@@ -7,5 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../../src/Orbit.Application/Orbit.Application.csproj" />
+    <ProjectReference Include="../../../src/Orbit.Presentation/Orbit.Presentation.csproj" />
   </ItemGroup>
 </Project>
