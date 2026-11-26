@@ -59,9 +59,10 @@ jobs:
           dotnet run --project "$exporter" -c Release -- "$ORBIT_AGENT_KIT_DATA/catalog.json"
           dotnet run --project "$exporter" -c Release -- --connection-rules "$ORBIT_AGENT_KIT_DATA/connection-rules.json"
           python -m unittest discover -s tools/agent-kit/tests -p 'test_*.py' -v
-          python tools/agent-kit/tests/generate_native_fixture.py "$ORBIT_AGENT_KIT_DATA" "$ORBIT_AGENT_KIT_DATA/python-patch.json" "$ORBIT_AGENT_KIT_DATA/python-edited.json"
+          python tools/agent-kit/tests/generate_native_fixture.py "$ORBIT_AGENT_KIT_DATA" "$ORBIT_AGENT_KIT_DATA/python-patch.json" "$ORBIT_AGENT_KIT_DATA/python-edited.json" "$ORBIT_AGENT_KIT_DATA/python-structural.json"
           dotnet run --project "$exporter" -c Release -- --validate-patch "$ORBIT_AGENT_KIT_DATA/python-patch.json"
           dotnet run --project "$exporter" -c Release -- --validate-patch "$ORBIT_AGENT_KIT_DATA/python-edited.json"
+          dotnet run --project "$exporter" -c Release -- --validate-patch "$ORBIT_AGENT_KIT_DATA/python-structural.json"
       # Rebuild the tracked stylesheet and reject stale output or invalid tokens.
       - name: Generate and test design tokens
         if: steps.changes.outputs.runtime == 'true'

@@ -174,13 +174,21 @@ Merged [PR #166](https://github.com/wgabel/orbit2/pull/166); [CI](https://github
 
 Coverage: current complete root leaf graphs, native-scoped identities, finite bounds and choices, mute/bypass support, ports, routing amounts, fan-in, cycles, overview and simple canvas/navigation. Explicitly reject composite payloads and nonempty annotation/visualization collections; do not migrate legacy node shapes or normalize orphan positions/layouts. These are conservative kit restrictions, not claims that native import rejects all such documents. Unicode tag comparison approximates native ordinal-ignore-case; exact parity for all Unicode and richer presentation contracts remains unverified. S6 owns loading and lossless editing; S7–S9 own advanced structures. No musical-quality or audio validation.
 
-## S6a lossless leaf load and parameter edits (candidate)
+## S6a lossless leaf load and parameter edits
 
-Implementation: [PR #168](https://github.com/wgabel/orbit2/pull/168) (CI pending).
+Merged [PR #168](https://github.com/wgabel/orbit2/pull/168); [CI](https://github.com/wgabel/orbit2/actions/runs/45821494299) passed at `532e2074f697c977702cb399600b1f72b19791d8`.
 
 `Patch.load(path, catalog=catalog)` validates the complete S5-supported document before exposing a patch, then keeps its JSON data and original IDs rather than recreating the graph. Use `list_nodes()`, `get_node_by_id(id)`, `Node.type_key`, `Node.get(key)` and the existing atomic `Node.set_parameters`. Saving preserves all unmodified JSON values, including unknown fields, layout, overview, ID spelling and optional field presence; formatting and arbitrary-precision decimal lexemes are not preserved (standard Python JSON number decoding). Duplicate JSON object properties, nonfinite numbers and unsupported S5 documents are rejected rather than silently normalized. Existing add/connect operations remain available, with GUID comparisons case-insensitive. Unknown fields are retained as opaque data, not interpreted or guaranteed compatible with future native builds. S6b owns removal, disconnection, edge updates and reference cleanup; destructive operations must reject cases where opaque references cannot be safely handled.
 
 CI checks untouched parsed round trips, edited native-origin fixtures, invalid edit rollback, and independent native import of both a created and a loaded/edited patch. Advanced presentation collections, legacy migration and nested graphs remain unsupported by S5 validation.
+
+## S6b safe structural edits (candidate)
+
+Implementation: [PR #170](https://github.com/wgabel/orbit2/pull/170) (CI pending).
+
+`Patch.list_connections()` returns detached native edge snapshots; `set_connection_amount(connection_id, amount)` validates a candidate without changing identity, endpoint or order. `disconnect(connection_id)` and `remove_node(node)` validate a candidate before publishing changes. Node removal clears incident edges, saved positions and script aliases; surviving node handles remain usable, removed handles reject edits. Connection IDs and endpoint comparisons are case-insensitive without altering saved GUID spelling. The existing metadata-derived validator checks finite signed amounts and event unity.
+
+Deletion is intentionally conservative: on current S5-supported root leaf documents it checks an explicit cleanup-scope allowlist of understood native DTO fields, not another schema or catalog. Any opaque field anywhere in the document rejects deletion with a structured diagnostic; unknown fields remain supported for non-destructive edits. Nonempty presentation collections, nested graphs and legacy migrations remain out of scope. CI retains created and parameter-edited native import gates and adds a structural edit of the native-origin fixture. S7 owns sequence helpers.
 
 ## Non-goals and gates
 
