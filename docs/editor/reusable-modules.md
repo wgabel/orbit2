@@ -56,6 +56,8 @@ Open **Selection**, select 1–512 eligible nodes, enter a composite name and ex
 
 `CanvasNavigationService` creates a child layout with translated relative positions, rack placement, node/edge descriptions and visualization preferences; existing descendant canvases are retained. The parent layout keeps unrelated positions. One graph Undo restores the nodes and retained parent metadata; Redo restores the composite and retained child layout using existing bounded history caches. Grouping requires the normal structural recompile/crossfade, not guaranteed uninterrupted oscillator phase. Undo is not a general ungroup action: use the explicit expansion below for a composite's current edited routing. The independent Module Library is 7.4.3.
 
+<a id="implementation-ungroup-composite-742b-in-review"></a>
+
 ### Implementation: ungroup composite (7.4.2b, implemented)
 
 Implementation: [PR #48](https://github.com/wgabel/orbit2/pull/48).
