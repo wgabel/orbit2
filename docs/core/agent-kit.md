@@ -211,6 +211,8 @@ Settings are optional native numeric values: reference_note, initial_pitch, timi
 
 ## S7b envelope automation adapter (candidate)
 
+Implementation: [PR #176](https://github.com/wgabel/orbit2/pull/176) (CI pending).
+
 The current native registry has no arbitrary breakpoint automation or general value-step sequencer. The native [Envelope contract](../audio/envelopes.md) implements AD, AR, ADSR and Loop with independent power curves and durations; this is the supported automation subset. `configure_envelope(node, mode=None, **settings)` and `read_envelope(node)` expose that configuration using native mode choices and one atomic parameter batch. Durations use milliseconds (`attack_ms`, `decay_ms`, `release_ms`, `rest_ms`), curves use native exponents (`attack_curve`, `decay_curve`, `release_curve`), sustain is normalized and trigger_source is the native numeric selector. All are optional; dormant values and cables are retained. The helper does not implicitly connect, activate or simulate any port. Unsupported modes and settings (including arbitrary points/steps) fail explicitly.
 
 ~~~python
