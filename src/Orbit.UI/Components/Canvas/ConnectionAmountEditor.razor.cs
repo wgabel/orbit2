@@ -40,10 +40,10 @@ public partial class ConnectionAmountEditor : IAsyncDisposable
     private GraphNodeSnapshot Destination => Graph.GetNode(Connection.Destination.NodeId);
     private PortDefinition SourcePort => Source.Outputs.Single(port => port.Id == Connection.Source.PortId);
     private PortDefinition DestinationPort => Destination.Inputs.Single(port => port.Id == Connection.Destination.PortId);
-    private ParameterSnapshot? TargetParameter => Destination.Parameters.SingleOrDefault(parameter =>
-        parameter.ModulationPortId == Connection.Destination.PortId);
-    private bool IsModulation => DestinationPort.SignalType == SignalType.Modulation;
-    private bool IsEvent => DestinationPort.SignalType.IsEvent();
+    private ConnectionAmountSemantics semantics = default!;
+    private ParameterSnapshot? TargetParameter => semantics.TargetParameter;
+    private bool IsModulation => semantics.IsModulation;
+    private bool IsEvent => semantics.IsEvent;
     private string RouteName => $"{Source.Name}: {SourcePort.Name} → {Destination.Name}: {DestinationPort.Name}";
     private string AmountLabel => IsModulation ? "Modulation depth" : "Audio gain";
     private string UnitLabel => TargetParameter is { } target
@@ -54,6 +54,7 @@ public partial class ConnectionAmountEditor : IAsyncDisposable
 
     protected override void OnParametersSet()
     {
+        semantics = ConnectionAmountSemantics.Resolve(Graph, Connection);
         // Other graph updates and live telemetry must not erase an unfinished edit.
         if (committedAmount == Connection.Amount) return;
         committedAmount = Connection.Amount;
