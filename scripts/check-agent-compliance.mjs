@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { validateRouting, extractReport, validateReport } from './agent-compliance.mjs';
 
+import { auditRepositoryDocumentation, formatCoverageSummary } from './documentation-coverage.mjs';
+
 const root = realpathSync(fileURLToPath(new URL('..', import.meta.url)));
 function fileExists(path) {
   try {
@@ -17,6 +19,12 @@ function fileExists(path) {
 try {
   const config = JSON.parse(readFileSync(resolve(root, 'docs/agents/task-routing.json'), 'utf8'));
   const errors = validateRouting(config, fileExists);
+  if (!errors.length) {
+    const audit = auditRepositoryDocumentation(root, config);
+    console.log(formatCoverageSummary(audit));
+    for (const warning of audit.warnings) console.warn(warning);
+    errors.push(...audit.errors);
+  }
   if (!errors.length && process.env.GITHUB_EVENT_NAME === 'pull_request') {
     const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
     const pr = event.pull_request;
