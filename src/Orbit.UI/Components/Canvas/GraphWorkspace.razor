@@ -98,7 +98,7 @@ else
                  OnContextAddNode="OpenContextLibrary" OnContextSelection="OpenContextSelection"
                  OnContextDelete="DeleteSelection" OnContextDuplicate="@(nodeId => DuplicateNode(graphId, nodeId))" OnContextUndo="Undo" OnContextRedo="Redo"
                  ContextCanUndo="@session.CanUndo" ContextCanRedo="@session.CanRedo"
-                 ModulationRanges="@ModulationRanges" EffectiveValues="@EffectiveValues" EnvelopePlayheads="@EnvelopePlayheads" BeatsPerMinute="@tempo" SampleRate="@responseSampleRate" />
+                 ModulationRanges="@ModulationRanges" EffectiveValues="@CanvasEffectiveValues" EnvelopePlayheads="@CanvasEnvelopePlayheads" BeatsPerMinute="@tempo" SampleRate="@responseSampleRate" />
     @if (performanceAddress is { } address && PerformanceTarget is { } target)
     {
         <PerformanceKeyboard @key="(workspaceGeneration, address.GraphId, target.Id, performanceEpoch)" Node="@target" TargetGraph="@session.Snapshot.GetGraph(address.GraphId)" TargetLabel="@(performanceLabel ?? target.Name)" PatchId="@session.GraphId" GraphId="@address.GraphId" Offset="@PerformanceOffset(address.GraphId, target.Id)" Playhead="@PerformanceStep(address.GraphId, target.Id)" Tempo="@tempo" Edit="@(request => EditPerformanceParameter(address.GraphId, target.Id, request))" ClearPattern="@(() => ClearPitchPattern(address.GraphId, target.Id))" CommitTake="@(take => CommitPitchTake(address.GraphId, target.Id, take))" Humanize="@((first, count, profile) => HumanizePitchPattern(address.GraphId, target.Id, first, count, profile))" />
