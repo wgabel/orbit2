@@ -57,6 +57,8 @@ test("composite macros reuse the slider only on always-full composite wrappers",
     assert.match(macroControls, /OnMacroEdit\.InvokeAsync\(new MacroEditRequest\(Node.Id, macro.Id, edit.Value, edit.GestureId\)\)/);
     assert.match(macroControls, /GestureEnded="OnParameterGestureEnded"/);
     assert.match(macroControls, /OnOpenComposite\.InvokeAsync\(Node.Id\)/);
+    assert.match(macroControls, /OnEditMacros\.InvokeAsync\(Node.Id\)/);
+    assert.match(canvas, /OnEditMacros="OnEditMacros"/);
     const expansion = await readFile(new URL("../../src/Orbit.Presentation/Canvas/NodeExpansionState.cs", import.meta.url), "utf8");
     assert.match(expansion, /IsEligible\(GraphNodeSnapshot node\) =>\s*node.Composite is null/);
 });

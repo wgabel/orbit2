@@ -1,0 +1,71 @@
+@namespace Orbit.UI.Components.Canvas
+@using Orbit.UI.Components.Parameters
+@using Orbit.Presentation.Canvas
+
+<section class="workspace-library-panel composite-macro-editor" role="region" aria-label="Composite macro editor">
+    <div class="workspace-toolbar">
+        <strong>Edit composite macros</strong>
+        <button type="button" class="secondary" @onclick="OnCancel">Cancel</button>
+        <button type="button" disabled="@(Stale || Prepared is null)" @onclick="Apply">Apply macros</button>
+    </div>
+    <p class="workspace-notice">Changes are previews until Apply. Each target belongs to at most one macro.</p>
+    @if (Stale)
+    {
+        <p class="parameter-error" role="alert">The patch changed. Cancel and reopen the editor.</p>
+    }
+    <label>Macro
+        <select value="@SelectedId" @onchange="SelectMacro">
+            <option value="">Select a macro</option>
+            @foreach (var item in Macros)
+            {
+                <option value="@item.Id">@item.Name</option>
+            }
+        </select>
+    </label>
+    <button type="button" class="secondary" disabled="@(Macros.Count >= 64 || Stale || !AvailableTargets(null).Any())" @onclick="AddMacro">Add macro</button>
+    @if (Selected is { } macro)
+    {
+        <fieldset @key="macro.Id" disabled="@Stale">
+            <legend>Macro configuration</legend>
+            <label>Macro name <input type="text" maxlength="100" @bind="macro.Name" @bind:event="oninput" @bind:after="Refresh" /></label>
+            <div class="macro-binding-values">
+                <label>Default value <input type="number" min="0" max="1" step="any" @bind="macro.Default" @bind:event="oninput" @bind:after="Refresh" /></label>
+                <label>Base value <input type="number" min="0" max="1" step="any" @bind="macro.Base" @bind:event="oninput" @bind:after="Refresh" /></label>
+            </div>
+            <button type="button" class="secondary" @onclick="() => RemoveMacro(macro)">Remove macro</button>
+            @foreach (var binding in macro.Bindings)
+            {
+                var target = Draft.Targets.Single(t => t.Address == binding.Address);
+                var unit = ParameterUnitLabel.Format(target.Definition.Unit);
+                var preview = Previews.FirstOrDefault(row => row.MacroId == macro.Id && row.Target.Address == binding.Address);
+                <div class="macro-binding-editor" @key="binding.Id" role="group" aria-label="Macro binding">
+                    <label>Target parameter
+                        <select value="@TargetKey(binding.Address)" @onchange="args => ChangeTarget(binding, args)">
+                            @foreach (var option in AvailableTargets(binding))
+                            {
+                                <option value="@TargetKey(option.Address)">@TargetLabel(option)</option>
+                            }
+                        </select>
+                    </label>
+                    <p class="workspace-notice">Allowed: @Format(target.Definition.Minimum) – @Format(target.Definition.Maximum) @unit</p>
+                    <div class="macro-binding-values">
+                        <label>At zero (@unit) <input type="number" step="any" @bind="binding.AtZero" @bind:event="oninput" @bind:after="Refresh" /></label>
+                        <label>At one (@unit) <input type="number" step="any" @bind="binding.AtOne" @bind:event="oninput" @bind:after="Refresh" /></label>
+                        <label>Curve exponent <input type="number" min="0.125" max="8" step="any" @bind="binding.Exponent" @bind:event="oninput" @bind:after="Refresh" /></label>
+                    </div>
+                    @if (preview is not null)
+                    {
+                        <output aria-label="Mapped preview">@Format(preview.MappedBase) @unit</output>
+                        <p class="workspace-notice">Manual: @Format(target.ManualBase) @unit · @(target.IsActive ? "Active" : "Dormant") · Effective base: @Format(preview.EffectiveBase) @unit</p>
+                    }
+                    <button type="button" class="secondary" @onclick="() => RemoveBinding(macro, binding)">Remove binding</button>
+                </div>
+            }
+            <button type="button" class="secondary" disabled="@(!AvailableTargets(null).Any())" @onclick="() => AddBinding(macro)">Add binding</button>
+        </fieldset>
+    }
+    @if (Error is not null)
+    {
+        <p class="parameter-error" role="alert">@Error</p>
+    }
+</section>

@@ -4,7 +4,9 @@
 
 ## Composite macro controls (7.4.6-S3b, merged)
 
-[PR #161](https://github.com/wgabel/orbit2/pull/161): A composite containing saved macro definitions displays their named normalized sliders directly on its wrapper. Drag the range or enter a value from 0 to 1 in the numeric field. Undo/Redo applies to the macro value (one entry per completed range gesture). Two-finger pinch cancels an unfinished range edit using the same rule as ordinary parameters. Choose **Open** to edit the internal graph; returning to the parent retains the macro value. Composites without saved macros look unchanged. Creating or editing mappings and connecting macro modulation are subsequent slices; at this stage use a patch containing existing macro definitions.
+[PR #161](https://github.com/wgabel/orbit2/pull/161): A composite containing saved macro definitions displays their named normalized sliders directly on its wrapper. Drag the range or enter a value from 0 to 1 in the numeric field. Undo/Redo applies to the macro value (one entry per completed range gesture). Two-finger pinch cancels an unfinished range edit using the same rule as ordinary parameters. Choose **Open** to edit the internal graph; returning to the parent retains the macro value. Composites without saved macros look unchanged. Connecting macro modulation is a subsequent slice.
+
+**Mapping editor (7.4.6-S3c.2, in review):** choose **Edit macros** on any composite. Add a macro, select it, edit its name, default/base (0–1), add targets and set their endpoint values and curve exponent. Each binding shows native units and mapped preview; dormant targets retain their manual base. Apply saves the entire draft as one undoable edit; Cancel discards it. Leaving the canvas, opening another workspace tool or using history also discards the draft. An intervening patch edit makes Apply unavailable until you reopen the editor.
 
 ## Responsive workspace
 
