@@ -33,9 +33,32 @@ test("folded nodes mount no property editors; expanded nodes use the originals o
     assert.doesNotMatch(styling, /node-compact-value|node-unmapped-parameter/);
     assert.match(component, /@if \(ShowFullControls && Node\.Parameters\.Count > 0[^\n]*\)\s*\{\s*<div class="node-parameters">/);
     assert.match(component, /Node\.Parameters\.Where\(Node\.IsParameterActive\)/);
-    assert.equal((component.match(/<ParameterSlider\b/g) ?? []).length, 1);
+    const start = component.indexOf("@if (ShowFullControls && Node.Parameters.Count > 0");
+    const end = component.indexOf("@if (ShowFullControls)", start + 1);
+    assert.ok(start >= 0 && end > start);
+    const leafControls = component.slice(start, end);
+    assert.equal((leafControls.match(/<ParameterSlider\b/g) ?? []).length, 1);
+    assert.equal((leafControls.match(/<ParameterChoiceEditor\b/g) ?? []).length, 1);
     assert.equal((component.match(/<ParameterChoiceEditor\b/g) ?? []).length, 1);
-    assert.match(component, /EffectiveValue="@GetEffective\(parameter\.Id\)"/);
+    assert.match(leafControls, /EffectiveValue="@GetEffective\(parameter\.Id\)"/);
+});
+
+test("composite macros reuse the slider only on always-full composite wrappers", async () => {
+    const start = component.indexOf("@if (Node.Composite is { } composite)");
+    const end = component.indexOf("@if (Node.TypeKey is InputRack.NodeType or OutputRack.NodeType)", start);
+    assert.ok(start >= 0 && end > start);
+    const macroControls = component.slice(start, end);
+    assert.match(macroControls, /@if \(composite\.Macros\.Count > 0\)\s*\{\s*<div class="node-parameters" role="group" aria-label="Composite macro controls">/);
+    assert.match(macroControls, /@foreach \(var macro in composite\.Macros\)/);
+    assert.equal((macroControls.match(/<ParameterSlider\b/g) ?? []).length, 1);
+    assert.equal((component.match(/<ParameterSlider\b/g) ?? []).length, 2,
+        "Exactly one original parameter slider declaration and one composite macro slider declaration");
+    assert.match(macroControls, /<ParameterSlider @key="macro.Id" Definition="@MacroSliderDefinition\(macro\)" Value="@macro.BaseValue"/);
+    assert.match(macroControls, /OnMacroEdit\.InvokeAsync\(new MacroEditRequest\(Node.Id, macro.Id, edit.Value, edit.GestureId\)\)/);
+    assert.match(macroControls, /GestureEnded="OnParameterGestureEnded"/);
+    assert.match(macroControls, /OnOpenComposite\.InvokeAsync\(Node.Id\)/);
+    const expansion = await readFile(new URL("../../src/Orbit.Presentation/Canvas/NodeExpansionState.cs", import.meta.url), "utf8");
+    assert.match(expansion, /IsEligible\(GraphNodeSnapshot node\) =>\s*node.Composite is null/);
 });
 
 test("folded node frames receive no changing playback telemetry", () => {
