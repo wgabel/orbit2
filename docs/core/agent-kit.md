@@ -168,6 +168,8 @@ The existing runtime CI adds a Python 3.11 step generating fresh native exports,
 
 ## S5 offline validation (candidate)
 
+Implementation: [PR #166](https://github.com/wgabel/orbit2/pull/166) (CI pending).
+
 `Patch.validate()` and `validate_patch(document, catalog)` return a read-only `ValidationResult` with `is_valid`, structured `errors` (code, JSON path, message, optional expected/actual) and `raise_for_errors()`. `Patch.save` checks the result before opening a temporary file. Validation uses generated leaf definitions, native tempo/zoom/overview constraints and shared builder routing checks. The native fixture manifest is independently exercised by both Python and .NET tests; the existing Python-generated graph still goes through native restore/navigation in CI.
 
 Coverage: current complete root leaf graphs, native-scoped identities, finite bounds and choices, mute/bypass support, ports, routing amounts, fan-in, cycles, overview and simple canvas/navigation. Explicitly reject composite payloads and nonempty annotation/visualization collections; do not migrate legacy node shapes or normalize orphan positions/layouts. These are conservative kit restrictions, not claims that native import rejects all such documents. Unicode tag comparison approximates native ordinal-ignore-case; exact parity for all Unicode and richer presentation contracts remains unverified. S6 owns loading and lossless editing; S7–S9 own advanced structures. No musical-quality or audio validation.
