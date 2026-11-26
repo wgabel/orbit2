@@ -45,6 +45,22 @@ jobs:
       - name: Test canvas presentation state
         if: steps.changes.outputs.runtime == 'true'
         run: dotnet test tests/Orbit.Presentation.Tests/Orbit.Presentation.Tests.csproj --configuration Release
+      - uses: actions/setup-python@v5
+        if: steps.changes.outputs.runtime == 'true'
+        with:
+          python-version: '3.11'
+      - name: Test offline Agent Kit and native import
+        if: steps.changes.outputs.runtime == 'true'
+        run: |
+          export ORBIT_AGENT_KIT_DATA="$RUNNER_TEMP/orbit-agent-kit"
+          export PYTHONPATH="$GITHUB_WORKSPACE/tools/agent-kit"
+          exporter=tools/agent-kit/exporter/Orbit.AgentKit.Exporter.csproj
+          dotnet run --project "$exporter" -c Release -- --patch-contract "$ORBIT_AGENT_KIT_DATA"
+          dotnet run --project "$exporter" -c Release -- "$ORBIT_AGENT_KIT_DATA/catalog.json"
+          dotnet run --project "$exporter" -c Release -- --connection-rules "$ORBIT_AGENT_KIT_DATA/connection-rules.json"
+          python -m unittest discover -s tools/agent-kit/tests -p 'test_*.py' -v
+          python tools/agent-kit/tests/generate_native_fixture.py "$ORBIT_AGENT_KIT_DATA" "$ORBIT_AGENT_KIT_DATA/python-patch.json"
+          dotnet run --project "$exporter" -c Release -- --validate-patch "$ORBIT_AGENT_KIT_DATA/python-patch.json"
       # Rebuild the tracked stylesheet and reject stale output or invalid tokens.
       - name: Generate and test design tokens
         if: steps.changes.outputs.runtime == 'true'
