@@ -162,9 +162,15 @@ async function verifyMacroSliders(browser, exported, mobile) {
         const editMacros = node.getByRole("button", { name: "Edit macros", exact: true });
         const editor = page.getByRole("region", { name: "Composite macro editor" });
         await editMacros.click();
+        // Missing Razor event imports can emit literal @onclick/@oninput attributes
+        // while the editor still looks interactive and the application compiles.
+        const rawEvents = await editor.locator("button, input, select").evaluateAll(controls =>
+            controls.flatMap(control => control.getAttributeNames().filter(name => /^@on/i.test(name))));
+        assert.deepEqual(rawEvents, [], "Macro editor must compile DOM event directives");
         await editor.getByLabel("Macro name").fill("Discarded");
         // Confirm the draft event has reached Blazor before activating Cancel.
-        await page.waitForFunction(() => document.querySelector('.composite-macro-editor select option:checked')?.textContent === "Discarded");
+        await editor.getByRole("combobox", { name: "Macro", exact: true })
+            .locator("option").filter({ hasText: /^Discarded$/ }).waitFor({ state: "attached" });
         await editor.getByRole("button", { name: "Cancel", exact: true }).click();
         try { await editor.waitFor({ state: "detached" }); }
         catch (error) {

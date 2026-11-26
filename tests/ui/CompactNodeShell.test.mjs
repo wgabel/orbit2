@@ -62,6 +62,8 @@ test("composite macros reuse the slider only on always-full composite wrappers",
     const editor = await readFile(new URL("../../src/Orbit.UI/Components/Canvas/CompositeMacroEditor.razor", import.meta.url), "utf8");
     const editorCode = await readFile(new URL("../../src/Orbit.UI/Components/Canvas/CompositeMacroEditor.razor.cs", import.meta.url), "utf8");
     const workspace = await readFile(new URL("../../src/Orbit.UI/Components/Canvas/GraphWorkspace.Macros.cs", import.meta.url), "utf8");
+    assert.match(editor, /^@using Microsoft\.AspNetCore\.Components\.Web$/m,
+        "Razor DOM event handlers require the Web namespace (no shared imports)");
     assert.match(editor, /@onclick="CancelAsync"/);
     assert.match(editorCode, /CancelAsync\(\) => OnCancel\.InvokeAsync\(\)/);
     assert.match(workspace, /CancelMacroEditorAsync\(\)\s*\{\s*CloseMacroEditor\(\);\s*return InvokeAsync\(StateHasChanged\);/);
