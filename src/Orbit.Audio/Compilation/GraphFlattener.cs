@@ -5,6 +5,7 @@ using Orbit.Domain.Graphs;
 using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Nodes.Outputs;
 using Orbit.Domain.Ports;
+using Orbit.Domain.Parameters;
 
 namespace Orbit.Audio.Compilation;
 
@@ -13,10 +14,20 @@ namespace Orbit.Audio.Compilation;
 internal static class GraphFlattener
 {
     internal sealed record NodeOrigin(Guid GraphId, Guid NodeId);
+    // The boundary route already applies the actual cable coefficients. Keep
+    // implicit base dependencies separate from ordinary additive input edges.
+    internal sealed record MacroSource(Guid GraphId, Guid CompositeId, Guid MacroId,
+        double DefaultValue, double BaseValue, PortAddress Signal);
+    internal sealed record MacroTarget(MacroSource Source, CompositeMacroBinding Binding);
     internal sealed record Result(GraphSnapshot Graph, IReadOnlyDictionary<Guid, NodeOrigin> Origins,
-        IReadOnlyDictionary<(Guid GraphId, PortAddress Address), PortAddress> Endpoints);
+        IReadOnlyDictionary<(Guid GraphId, PortAddress Address), PortAddress> Endpoints,
+        IReadOnlyDictionary<ParameterAddress, MacroTarget> MacroTargets)
+    {
+        public IEnumerable<(Guid Source, Guid Destination)> MacroDependencies =>
+            MacroTargets.Select(pair => (pair.Value.Source.Signal.NodeId, pair.Key.NodeId)).Distinct();
+    }
 
-    public static Result Flatten(GraphSnapshot root)
+    public static Result Flatten(GraphSnapshot root, bool includeMacroDependencies = false)
     {
         ArgumentNullException.ThrowIfNull(root);
         root = root.WithEffectiveMacroBaseValues();
@@ -24,6 +35,7 @@ internal static class GraphFlattener
         var edges = new List<SignalConnection>();
         var origins = new Dictionary<Guid, NodeOrigin>();
         var endpoints = new Dictionary<(Guid, PortAddress), PortAddress>();
+        var macroTargets = new Dictionary<ParameterAddress, MacroTarget>();
         var graphIds = new HashSet<Guid>();
         var nodeIds = new HashSet<Guid>();
         var edgeIds = new HashSet<Guid>();
@@ -97,6 +109,27 @@ internal static class GraphFlattener
                     foreach (var port in node.Outputs)
                         Route(graph, node, child, outputRack.Id, port, Match(outputRack.Inputs, port.Id));
                     Visit(child, composite);
+                    if (includeMacroDependencies)
+                    {
+                        foreach (var macro in composite.Macros)
+                        {
+                            if (macro.ModulationInputId is not Guid input ||
+                                !graph.Connections.Any(edge => edge.Destination == new PortAddress(node.Id, input)))
+                                continue;
+                            var signal = Resolve(child.Id, new PortAddress(composite.InputRackId, input));
+                            var source = new MacroSource(graph.Id, node.Id, macro.Id,
+                                macro.DefaultValue, macro.BaseValue, signal);
+                            foreach (var binding in macro.Mapping.Bindings)
+                            {
+                                var target = child.GetNode(binding.Target.NodeId);
+                                var parameter = target.Parameters.Single(p => p.Id == binding.Target.ParameterId);
+                                if (!target.IsParameterActive(parameter)) continue;
+                                var address = new ParameterAddress(StableId("node", child.Id, target.Id), parameter.Id);
+                                if (!macroTargets.TryAdd(address, new MacroTarget(source, binding)))
+                                    throw new FaustCompilationException("Ambiguous flattened macro target.");
+                            }
+                        }
+                    }
                     continue;
                 }
 
@@ -123,7 +156,7 @@ internal static class GraphFlattener
         }
 
         Visit(root, null);
-        return new Result(new GraphSnapshot(root.Id, root.Revision, nodes.AsReadOnly(), edges.AsReadOnly()), origins, endpoints);
+        return new Result(new GraphSnapshot(root.Id, root.Revision, nodes.AsReadOnly(), edges.AsReadOnly()), origins, endpoints, macroTargets);
     }
 
     private static PortDefinition Match(IReadOnlyList<PortDefinition> ports, Guid id) =>
