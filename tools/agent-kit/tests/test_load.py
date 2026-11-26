@@ -44,8 +44,20 @@ class LoadTests(unittest.TestCase):
         graph["future"] = {"data": [1, "x", None]}
         graph["nodes"][0]["future"] = {"enabled": True}
         edge = graph["connections"][0]
-        edge["source"]["nodeId"] = edge["source"]["nodeId"].upper()
-        edge["source"]["portId"] = edge["source"]["portId"].upper()
+        # Native fixture IDs use mostly digits; force alphabetic GUID digits.
+        old_node = edge["source"]["nodeId"]
+        old_port = edge["source"]["portId"]
+        node_id = "abcdef01-2345-6789-abcd-ef0123456789"
+        port_id = "abcdef02-2345-6789-abcd-ef0123456789"
+        node = next(n for n in graph["nodes"] if n["id"] == old_node)
+        node["id"] = node_id
+        next(p for p in node["ports"] if p["id"] == old_port)["id"] = port_id
+        for layout in original["canvasLayouts"]:
+            for position in layout["positions"]:
+                if position["nodeId"] == old_node:
+                    position["nodeId"] = node_id
+        edge["source"]["nodeId"] = node_id.upper()
+        edge["source"]["portId"] = port_id.upper()
         edge["source"]["future"] = 4
         original["future"] = "untouched"
         with tempfile.TemporaryDirectory() as directory:
