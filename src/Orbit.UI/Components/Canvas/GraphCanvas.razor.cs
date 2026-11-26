@@ -74,6 +74,18 @@ public partial class GraphCanvas : IAsyncDisposable
     private long measuredRevision = -1;
     private long visualizationGeometryGeneration;
     private readonly NodeExpansionState nodeExpansion = new();
+    // The workspace consults the same expansion owner as the node frames.
+    // Ignore a stale component reference during keyed canvas navigation.
+    public bool OwnsTelemetryState(ICanvasStateService state) =>
+        !disposed && ReferenceEquals(subscribedState, state);
+
+    public bool IsTelemetryNodeExpanded(Guid nodeId) => nodeExpansion.IsTelemetryVisible(nodeId);
+
+    public IReadOnlyDictionary<TKey, TValue> FilterTelemetry<TKey, TValue>(
+        IReadOnlyDictionary<TKey, TValue> values, Func<TKey, Guid> nodeId,
+        IReadOnlyDictionary<TKey, TValue> empty) where TKey : notnull =>
+        nodeExpansion.FilterTelemetry(values, nodeId, empty);
+
     private Guid? nodeTapId;
     private CanvasPoint nodeTapStart;
     private bool nodeTapEligible;
