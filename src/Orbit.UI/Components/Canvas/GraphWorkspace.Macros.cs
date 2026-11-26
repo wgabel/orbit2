@@ -23,6 +23,12 @@ public partial class GraphWorkspace
 
     private void CloseMacroEditor() => macroDraft = null;
 
+    private Task CancelMacroEditorAsync()
+    {
+        CloseMacroEditor();
+        return InvokeAsync(StateHasChanged);
+    }
+
     private string? ApplyMacroDraft(CompositeMacroDraft draft, ReplaceCompositeMacrosCommand command)
     {
         if (switchingWorkspace || annotationDraft || !ReferenceEquals(macroDraft, draft) ||
@@ -35,6 +41,7 @@ public partial class GraphWorkspace
             return error ?? "Unable to apply macro configuration.";
         }
         CloseMacroEditor();
+        StateHasChanged();
         return null;
     }
 }

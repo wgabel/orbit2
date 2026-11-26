@@ -103,6 +103,8 @@ async function verifyMacroSliders(browser, exported, mobile) {
         nodeId: node.id, x: node.id === wrapper.id ? 24 : 1000 + index * 350, y: 24
     }));
     const page = await browser.newPage(mobile ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } : {});
+    page.on("pageerror", error => console.error("Macro fixture page error:", error.stack ?? error.message));
+    page.on("console", message => { if (message.type() === "error") console.error("Macro fixture console:", message.text()); });
     try {
         await page.goto("http://127.0.0.1:" + server.address().port);
         await page.locator(".playback-toolbar [role=status]").filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
@@ -161,8 +163,14 @@ async function verifyMacroSliders(browser, exported, mobile) {
         const editor = page.getByRole("region", { name: "Composite macro editor" });
         await editMacros.click();
         await editor.getByLabel("Macro name").fill("Discarded");
+        // Confirm the draft event has reached Blazor before activating Cancel.
+        await page.waitForFunction(() => document.querySelector('.composite-macro-editor select option:checked')?.textContent === "Discarded");
         await editor.getByRole("button", { name: "Cancel", exact: true }).click();
-        await editor.waitFor({ state: "detached" });
+        try { await editor.waitFor({ state: "detached" }); }
+        catch (error) {
+            console.error("Macro editor after Cancel:", await editor.innerText().catch(() => "(detached)"));
+            throw error;
+        }
         await group.getByRole("slider", { name: "Size", exact: true }).waitFor();
         await editMacros.click();
         await editor.getByLabel("Macro name").fill("Body size");

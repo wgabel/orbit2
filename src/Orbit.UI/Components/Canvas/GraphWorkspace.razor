@@ -81,7 +81,7 @@ else
     @if (macroDraft is { } draft)
     {
         <CompositeMacroEditor @key="draft" Draft="@draft" CurrentRevision="@session.Snapshot.Revision"
-                              Dispatch="ApplyMacroDraft" OnCancel="CloseMacroEditor" />
+                              Dispatch="ApplyMacroDraft" OnCancel="CancelMacroEditorAsync" />
     }
     <GraphCanvas @key="(workspaceGeneration, graphId)" @ref="canvasView" State="@Canvas" PatchId="@session.GraphId" AutoFitOnFirstRender="@Navigation.IsFirstVisit"
                  OutlineFocus="@outlineFocus"

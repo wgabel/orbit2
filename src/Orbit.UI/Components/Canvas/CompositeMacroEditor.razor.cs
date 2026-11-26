@@ -124,6 +124,14 @@ public partial class CompositeMacroEditor
         catch (GraphValidationException exception) { Error = exception.Message; }
     }
 
+    private void EditDraft(ChangeEventArgs args, Action<string> assign)
+    {
+        assign(args.Value?.ToString() ?? "");
+        Refresh();
+    }
+
+    private Task CancelAsync() => OnCancel.InvokeAsync();
+
     private void Apply()
     {
         if (!Stale && Prepared is { } command) Error = Dispatch(Draft, command);

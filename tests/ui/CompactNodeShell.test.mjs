@@ -59,6 +59,13 @@ test("composite macros reuse the slider only on always-full composite wrappers",
     assert.match(macroControls, /OnOpenComposite\.InvokeAsync\(Node.Id\)/);
     assert.match(macroControls, /OnEditMacros\.InvokeAsync\(Node.Id\)/);
     assert.match(canvas, /OnEditMacros="OnEditMacros"/);
+    const editor = await readFile(new URL("../../src/Orbit.UI/Components/Canvas/CompositeMacroEditor.razor", import.meta.url), "utf8");
+    const editorCode = await readFile(new URL("../../src/Orbit.UI/Components/Canvas/CompositeMacroEditor.razor.cs", import.meta.url), "utf8");
+    const workspace = await readFile(new URL("../../src/Orbit.UI/Components/Canvas/GraphWorkspace.Macros.cs", import.meta.url), "utf8");
+    assert.match(editor, /@onclick="CancelAsync"/);
+    assert.match(editorCode, /CancelAsync\(\) => OnCancel\.InvokeAsync\(\)/);
+    assert.match(workspace, /CancelMacroEditorAsync\(\)\s*\{\s*CloseMacroEditor\(\);\s*return InvokeAsync\(StateHasChanged\);/);
+    assert.match(workspace, /CloseMacroEditor\(\);\s*StateHasChanged\(\);\s*return null;/);
     const expansion = await readFile(new URL("../../src/Orbit.Presentation/Canvas/NodeExpansionState.cs", import.meta.url), "utf8");
     assert.match(expansion, /IsEligible\(GraphNodeSnapshot node\) =>\s*node.Composite is null/);
 });

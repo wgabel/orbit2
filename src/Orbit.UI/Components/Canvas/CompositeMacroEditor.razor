@@ -5,7 +5,7 @@
 <section class="workspace-library-panel composite-macro-editor" role="region" aria-label="Composite macro editor">
     <div class="workspace-toolbar">
         <strong>Edit composite macros</strong>
-        <button type="button" class="secondary" @onclick="OnCancel">Cancel</button>
+        <button type="button" class="secondary" @onclick="CancelAsync">Cancel</button>
         <button type="button" disabled="@(Stale || Prepared is null)" @onclick="Apply">Apply macros</button>
     </div>
     <p class="workspace-notice">Changes are previews until Apply. Each target belongs to at most one macro.</p>
@@ -27,10 +27,10 @@
     {
         <fieldset @key="macro.Id" disabled="@Stale">
             <legend>Macro configuration</legend>
-            <label>Macro name <input type="text" maxlength="100" @bind="macro.Name" @bind:event="oninput" @bind:after="Refresh" /></label>
+            <label>Macro name <input type="text" maxlength="100" value="@macro.Name" @oninput="args => EditDraft(args, value => macro.Name = value)" /></label>
             <div class="macro-binding-values">
-                <label>Default value <input type="number" min="0" max="1" step="any" @bind="macro.Default" @bind:event="oninput" @bind:after="Refresh" /></label>
-                <label>Base value <input type="number" min="0" max="1" step="any" @bind="macro.Base" @bind:event="oninput" @bind:after="Refresh" /></label>
+                <label>Default value <input type="number" min="0" max="1" step="any" value="@macro.Default" @oninput="args => EditDraft(args, value => macro.Default = value)" /></label>
+                <label>Base value <input type="number" min="0" max="1" step="any" value="@macro.Base" @oninput="args => EditDraft(args, value => macro.Base = value)" /></label>
             </div>
             <button type="button" class="secondary" @onclick="() => RemoveMacro(macro)">Remove macro</button>
             @foreach (var binding in macro.Bindings)
@@ -49,9 +49,9 @@
                     </label>
                     <p class="workspace-notice">Allowed: @Format(target.Definition.Minimum) – @Format(target.Definition.Maximum) @unit</p>
                     <div class="macro-binding-values">
-                        <label>At zero (@unit) <input type="number" step="any" @bind="binding.AtZero" @bind:event="oninput" @bind:after="Refresh" /></label>
-                        <label>At one (@unit) <input type="number" step="any" @bind="binding.AtOne" @bind:event="oninput" @bind:after="Refresh" /></label>
-                        <label>Curve exponent <input type="number" min="0.125" max="8" step="any" @bind="binding.Exponent" @bind:event="oninput" @bind:after="Refresh" /></label>
+                        <label>At zero (@unit) <input type="number" step="any" value="@binding.AtZero" @oninput="args => EditDraft(args, value => binding.AtZero = value)" /></label>
+                        <label>At one (@unit) <input type="number" step="any" value="@binding.AtOne" @oninput="args => EditDraft(args, value => binding.AtOne = value)" /></label>
+                        <label>Curve exponent <input type="number" min="0.125" max="8" step="any" value="@binding.Exponent" @oninput="args => EditDraft(args, value => binding.Exponent = value)" /></label>
                     </div>
                     @if (preview is not null)
                     {
