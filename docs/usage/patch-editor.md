@@ -158,6 +158,8 @@ For example, select a carrier oscillator and gain processor while leaving the ex
 
 **Undo** immediately reverses the structural operation and **Redo** restores it. You can save/reload the resulting patch normally. If grouping is unavailable, exclude master/rack nodes and cables, or remove selected nodes from visual groups first. If the selection surrounds an unselected intervening processor and produces a cycle, include that processor. Grouping is within the current patch; the cross-patch Module Library is still planned. See the [grouping implementation](../editor/reusable-modules.md#implementation-create-composite-742a-implemented).
 
+<a id="ungroup-an-edited-composite-742b-in-review"></a>
+
 ### Ungroup an edited composite (7.4.2b, implemented)
 
 Implementation: [PR #48](https://github.com/wgabel/orbit2/pull/48).
