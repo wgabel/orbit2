@@ -146,7 +146,25 @@ The output directory contains `patch-schema.json` (structural JSON Schema genera
 
 The schema describes serialized shape, not full native acceptance: it is generated from reflection DTO metadata in tooling rather than the internal source-generated serializer context; native tests compare the actual wire shape and exercise the independent restore path. Semantic version, range, node keys, topology, layout and nested graph validation remain native responsibilities, with offline coverage developed in S4–S9. Composite fixture generation and editing remain S9. This slice extends the exporter dependency to framework-neutral Orbit.Presentation solely to reuse actual viewport constraints and navigation checks; it has no dependency on Razor, browser, UI runtime or Faust. Production projects never reference the exporter.
 
-Run `dotnet test tests/Orbit.Presentation.Tests/Orbit.Presentation.Tests.csproj --configuration Release --filter FullyQualifiedName~AgentKitPatchContractTests`. Candidate tests pending CI; no generated release package claimed.
+Run `dotnet test tests/Orbit.Presentation.Tests/Orbit.Presentation.Tests.csproj --configuration Release --filter FullyQualifiedName~AgentKitPatchContractTests`. Merged [PR #163](https://github.com/wgabel/orbit2/pull/163); [CI](https://github.com/wgabel/orbit2/actions/runs/45798392221/job/139834875349) passed at `2affa42fda992b53124d688020fe7615877e04fc`. No generated release package claimed.
+
+## S4 minimal Python graph builder
+
+Candidate standard-library-only Python 3.11 package lives under `tools/agent-kit/orbit2/`. Generate the three native exports into one directory (catalog.json, connection-rules.json, patch-contract.json) using S2/S3 commands. From PowerShell at the repository root set `$env:PYTHONPATH = "$PWD/tools/agent-kit"`; consumers of a future extracted kit need only Python and matching data.
+
+~~~python
+from orbit2 import Catalog, Patch
+catalog = Catalog.load("patch-contract")
+patch = Patch.create("Example", catalog=catalog, tempo=92)
+osc = patch.add_node("generator.oscillator", alias="lead", frequency=220)
+out = patch.add_node("output.master")
+patch.connect(osc, "signal-out", out, "audio-in", amount=0.2)
+patch.save("example.json")
+~~~
+
+Catalog.list_nodes and describe expose actual creation keys and definitions. Node.set and set_parameters validate finite native bounds and choices before mutation; aliases are script-only and GUIDs remain native. Patch.connect enforces basic ownership, endpoint direction, exported signal/channel/amount/fan-in constraints and duplicate/cycle rejection. Native parameter and port identities are complete even when dormant. No automatic placement algorithm yet: empty canvasLayouts delegates placement to the native editor. Leaf-only root graph construction; no load/edit, composite payloads, comprehensive structured validation, musical analysis or rendering. Schema/format versions are checked but build identity pairing is deferred to S12; use exports generated together. Title length mirrors current native overview limit; no generalized annotation API yet.
+
+The existing runtime CI adds a Python 3.11 step generating fresh native exports, running Python tests, constructing a simple modulated graph in Python and importing it through the new tooling-only `--validate-patch` command (Deserialize, Restore, CanvasNavigationService). This is independent native import, not Python self-validation. Native exporter remains optional for consumers. S5 owns broader offline validation/diagnostics. Candidate verification pending.
 
 ## Non-goals and gates
 
