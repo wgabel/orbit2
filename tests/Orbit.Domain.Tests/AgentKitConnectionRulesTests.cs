@@ -96,5 +96,7 @@ public sealed class AgentKitConnectionRulesTests
 
     private sealed class ProbeNode(PortDefinition port) : SignalNode(Guid.NewGuid(), "test.probe", "Probe", [],
         port.Direction == PortDirection.Input ? [port] : [],
-        port.Direction == PortDirection.Output ? [port] : []);
+        port.Direction == PortDirection.Output ? [port] : [])
+    {
+    }
 }
