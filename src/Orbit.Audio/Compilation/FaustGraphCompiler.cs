@@ -18,17 +18,18 @@ public sealed class FaustGraphCompiler
     public static FaustGraphCompiler CreateBuiltIn() =>
         new(BuiltInFaustEmitters.Create());
 
-    public FaustGraphProgram Compile(GraphSnapshot graph, int auxiliaryChannels = 0, bool dynamicTaps = false)
+    public FaustGraphProgram Compile(GraphSnapshot graph, int auxiliaryChannels = 0, bool dynamicTaps = false, bool enableMacroModulation = false)
     {
         if (auxiliaryChannels < 0 || auxiliaryChannels > SignalTapManifest.MaxAuxiliaryChannels)
             throw new ArgumentOutOfRangeException(nameof(auxiliaryChannels));
-        var flattened = GraphFlattener.Flatten(graph);
+        var flattened = GraphFlattener.Flatten(graph, enableMacroModulation);
         graph = flattened.Graph;
         var outputs = graph.Nodes.Where(node => node.TypeKey == MasterOutput.NodeType).ToArray();
         if (outputs.Length != 1)
             throw new FaustCompilationException("A patch must have exactly one master output.");
 
-        var ordered = GraphDependencyOrder.Get(graph, outputs[0].Id, out var reachableEdges);
+        var ordered = GraphDependencyOrder.Get(graph, outputs[0].Id, out var reachableEdges,
+            enableMacroModulation ? flattened.MacroDependencies : null);
         var incoming = graph.Connections.ToLookup(edge => edge.Destination);
         var signals = new Dictionary<PortAddress, string>();
         var inputSignals = new Dictionary<PortAddress, string>();
@@ -41,6 +42,7 @@ public sealed class FaustGraphCompiler
         }
         var controls = new List<FaustParameterControl>();
         var definitions = new List<string>();
+        var macros = enableMacroModulation ? new FaustMacroExpressions(flattened.MacroTargets, signals, definitions) : null;
         var audition = new FaustAuditionControls(definitions);
         var requiresTransportBeat = false;
         var requiresTransportTempo = false;
@@ -55,7 +57,7 @@ public sealed class FaustGraphCompiler
         foreach (var node in ordered)
         {
             if (node.TypeKey == BoundaryFaustEmitter.NodeType) boundaries++;
-            var context = new FaustNodeContext(node, incoming, signals, controls, definitions);
+            var context = new FaustNodeContext(node, incoming, signals, controls, definitions, macros);
             if (auxiliaryChannels > 0)
                 foreach (var port in node.Inputs.Where(port => node.IsInputActive(port.Id)))
                 {
@@ -79,6 +81,7 @@ public sealed class FaustGraphCompiler
 
             var name = $"n_{node.Id:N}";
             var expression = emitter.Emit(context);
+            macros?.VerifyNode(node);
             if (context.EnvelopeMeterName is { } meterName)
             {
                 var origin = flattened.Origins[node.Id];
@@ -196,6 +199,7 @@ public sealed class FaustGraphCompiler
                 ReachableEdges = reachableEdges,
                 RequiresTransport = requiresTransportBeat || requiresTransportTempo || actionInputs.Any(input => input.Input.Pattern is not null), TransportInputChannels = transportChannels,
                 RhythmicInputs = actionInputs.Select(input => input.Input).ToArray(), AuditionControls = audition.Manifest,
+                MacroControls = macros?.Manifest ?? Array.Empty<FaustMacroControl>(),
                 SignalTaps = new SignalTapManifest(tapChannels, outputExpressions.Count, selectorCount), EnvelopeMeters = envelopeMeters.AsReadOnly(), PitchMeters = pitchMeters.AsReadOnly() };
     }
 }
