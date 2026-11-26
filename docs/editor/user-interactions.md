@@ -116,3 +116,7 @@ The existing melody editor tab bar opens Humanize. Native select/number inputs c
 ### Direct canvas connection amount slider (planned, Phase 6.19.5 follow-up)
 
 See the [approved slider design](connection-amount-slider.md). The native horizontal range and inline number field will own their pointer/keyboard actions without opening the inspector. Preserve universal pinch takeover, cancellation, cable selection outside controls and performance-key isolation. Current implemented cable/badge behavior remains as recorded above until verified implementation updates this registry.
+
+### Direct canvas connection amount slider (planned, commit on release)
+
+See the [approved slider design](connection-amount-slider.md). Native range input previews only local presentation state; successful pointer release or completed keyboard gesture commits at most one graph-qualified amount command. No popup, canvas pan, wire drag, preliminary selection, long-press action or fit tap from the rail. Pinch takeover, Escape, cancellation, stale identity or unexpected capture loss discard the draft without graph/history/playback changes. Ordinary wire selection/context actions and typed event badges retain their existing owners. Inline exact value editing is a later slice. This entry is planned, not implemented.
