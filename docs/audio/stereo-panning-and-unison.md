@@ -66,6 +66,8 @@ Choose a documented symmetric blend curve, including even counts with two centra
 
 At zero detune and zero phase spread, aligned voices normalize to the original wave. At nonzero detune, even sines produce slow beating and possible temporary dips; phase spread changes early transients without introducing discontinuities. Use a deterministic seed by stable qualified node/voice identity where randomness is chosen, and never rerandomize every block or every slider update. Test stateful phase behavior on live parameter sweeps. Crossfade count changes using existing lifecycle and measure transient CPU cost.
 
+<a id="3-channel-aware-graph-and-audible-stereo"></a>
+
 ## 3. Channel-aware graph and audible stereo (7.5.2)
 
 Extend the current typed-port model to explicit mono (one channel) and stereo (two ordered channels, L/R) audio signals. Keep modulation, pitch, Trigger, Clock and Gate scalar; stereo-to-modulation must use explicit Left, Right or defined mono downmix selection. One stereo cable represents a paired signal with one stable port/edge identity and one connection amount, not two unrelated wires. Clearly label Mono/Stereo sockets and incompatible targets.
@@ -110,6 +112,8 @@ A sine LFO of 0.1 Hz produces one left-right-left auto-pan cycle every 10 second
 After verified stereo graph and Pan processor support, enable stereo mode on the existing oscillator. Pan positions the bank; stereo width controls the spread of individual voices. At width=0 all voices share the panner position; at width=100% they span the available L/R field when centered. Select a documented symmetric mapping around the pan value (e.g. constrain both sides by remaining distance to the edge) without a hidden gain boost. Apply per-voice weights and equal-power pans, then sum L and R independently. Test endpoints, even/odd voices, mono compatibility and the exact case of one voice. Mono downmix must be deliberate and check phase cancellation: wide does not automatically mean better. Use distinct stereo width and detune controls; never equate widening with pitch spread.
 
 Stereo output must be an explicit structural mode with clear downstream compatibility; do not unexpectedly turn an existing mono oscillator connected to a modulation input into a stereo signal when a slider is touched.
+
+<a id="6-effects-visualization-and-musical-examples"></a>
 
 ## 6. Effects, visualization and musical examples (7.5.5)
 
