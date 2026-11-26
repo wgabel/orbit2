@@ -14,12 +14,14 @@ public sealed record FaustGraphProgram(
     public int TransportInputChannels { get; init; }
     public IReadOnlyList<RhythmicInput> RhythmicInputs { get; init; } = [];
     public SignalTapManifest SignalTaps { get; init; } = SignalTapManifest.Empty;
+    public IReadOnlyList<FaustMacroControl> MacroControls { get; init; } = [];
     public IReadOnlyList<FaustAuditionControl> AuditionControls { get; init; } = [];
     public IReadOnlyList<FaustEnvelopeMeter> EnvelopeMeters { get; init; } = [];
     public IReadOnlyList<FaustPitchMeter> PitchMeters { get; init; } = [];
 
     public Dictionary<string, double> InitialControlValues() => Controls
         .Select(control => (control.Name, control.InitialValue))
+        .Concat(MacroControls.Select(control => (control.Name, control.InitialValue)))
         .Concat(AuditionControls.Select(control => (control.Name, control.InitialValue)))
         .ToDictionary(control => control.Name, control => control.InitialValue);
 }

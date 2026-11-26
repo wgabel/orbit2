@@ -49,6 +49,9 @@ public sealed class MacroDependencyProjectionTests
         SetMacro(inner.Inputs[0].Id);
         Assert.Equal(staticSource, compiler.Compile(session.Snapshot).Source);
         Assert.Empty(GraphFlattener.Flatten(session.Snapshot, true).MacroTargets);
+        var unconnected = compiler.Compile(session.Snapshot, enableMacroModulation: true);
+        Assert.Equal(staticSource, unconnected.Source);
+        Assert.Empty(unconnected.MacroControls);
 
         Wire(middle, lfo.Id, lfo.Outputs[0].Id, inner.Id, inner.Inputs[0].Id, -0.4);
         var authored = session.Snapshot;
@@ -74,6 +77,17 @@ public sealed class MacroDependencyProjectionTests
         Assert.Equal(flattenedLfo, weighted.Source.NodeId);
         Assert.Equal((route.NodeId, flattenedOsc), Assert.Single(lowered.MacroDependencies));
 
+        var program = compiler.Compile(authored, enableMacroModulation: true);
+        var control = Assert.Single(program.MacroControls);
+        Assert.Equal(new MacroControlAddress(middle, inner.Id, id), control.Address);
+        Assert.Equal(0.5, program.InitialControlValues()[control.Name]);
+        Assert.Contains($"hslider(\"{control.Name}\"", program.Source);
+        Assert.Contains($"hbargraph(\"{control.MeterName}\"", program.Source);
+        Assert.Contains($"pow({control.Name}_u, 2.0)", program.Source);
+        Assert.Contains($"pow({control.Name}_u, 1.0)", program.Source);
+        Assert.DoesNotContain(program.Controls, c => c.GraphId == child && (c.Address == frequency || c.Address == amplitude));
+        Assert.Empty(compiler.Compile(authored).MacroControls);
+
         var oldOrder = GraphDependencyOrder.Get(ordinary.Graph, master.Id, out _);
         Assert.DoesNotContain(oldOrder, node => node.Id == flattenedLfo);
         var ordered = GraphDependencyOrder.Get(lowered.Graph, master.Id, out _, lowered.MacroDependencies).Select(n => n.Id).ToList();
@@ -87,6 +101,9 @@ public sealed class MacroDependencyProjectionTests
         var revised = GraphFlattener.Flatten(session.Snapshot, true);
         Assert.Equal(mappedFrequency.Source with { BaseValue = 0.75 }, revised.MacroTargets[new(flattenedOsc, frequency.ParameterId)].Source);
         Assert.Equal(0.5, mappedFrequency.Source.BaseValue);
+        var updated = compiler.Compile(session.Snapshot, enableMacroModulation: true);
+        Assert.Equal(program.Source, updated.Source);
+        Assert.Equal(0.75, updated.InitialControlValues()[control.Name]);
         session.Execute(new SetParameterValueCommand(child, Address("waveform"), (int)OscillatorWaveform.Square));
         var active = GraphFlattener.Flatten(session.Snapshot, true);
         Assert.Equal(3, active.MacroTargets.Count);

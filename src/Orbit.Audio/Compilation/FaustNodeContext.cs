@@ -13,16 +13,18 @@ public sealed class FaustNodeContext
     private readonly IReadOnlyDictionary<PortAddress, string> signals;
     private readonly List<FaustParameterControl> controls;
     private readonly List<string> definitions;
+    private readonly FaustMacroBindings? macros;
 
     internal FaustNodeContext(GraphNodeSnapshot node, ILookup<PortAddress, SignalConnection> incoming,
         IReadOnlyDictionary<PortAddress, string> signals, List<FaustParameterControl> controls,
-        List<string> definitions)
+        List<string> definitions, FaustMacroBindings? macros = null)
     {
         Node = node;
         this.incoming = incoming;
         this.signals = signals;
         this.controls = controls;
         this.definitions = definitions;
+        this.macros = macros;
     }
 
     public GraphNodeSnapshot Node { get; }
@@ -106,10 +108,13 @@ public sealed class FaustNodeContext
         var minimum = FaustNumber.Format(definition.Minimum);
         var maximum = FaustNumber.Format(definition.Maximum);
         var initial = FaustNumber.Format(definition.DefaultValue);
-        var meter = baseMultiplier is not null || parameter.ModulationPortId is Guid modulationPort &&
-            incoming[new PortAddress(Node.Id, modulationPort)].Any()
+        var mapped = macros?.ResolveBase(Node, parameter);
+        // Dynamic targets have no independently writable base slider. Their
+        // graph-qualified passive target meters are added separately in S4e.
+        var meter = mapped is null && (baseMultiplier is not null || parameter.ModulationPortId is Guid modulationPort &&
+            incoming[new PortAddress(Node.Id, modulationPort)].Any())
             ? $"m_{Node.Id:N}_{parameter.Id:N}" : null;
-        if (!controls.Any(control => control.Name == name))
+        if (mapped is null && !controls.Any(control => control.Name == name))
         {
             controls.Add(new FaustParameterControl(new ParameterAddress(Node.Id, parameter.Id), name, parameter.BaseValue, meter));
             var step = definition.Choices is null ? "0.001" : "1.0";
@@ -126,7 +131,8 @@ public sealed class FaustNodeContext
         }
 
         var modulation = parameter.ModulationPortId is Guid portId ? InputSignal(portId) : "0.0";
-        var baseExpression = baseMultiplier is null ? name : $"({name} * ({baseMultiplier}))";
+        var baseSignal = mapped ?? name;
+        var baseExpression = baseMultiplier is null ? baseSignal : $"({baseSignal} * ({baseMultiplier}))";
         var effective = $"max({minimum}, min({maximum}, {baseExpression} + {modulation}))";
         if (signalMaximum is not null)
             effective = $"min({signalMaximum}, {effective})";
