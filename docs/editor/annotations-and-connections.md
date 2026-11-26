@@ -66,3 +66,7 @@ flowchart TD
 ~~~
 
 Test exact destination units and signed amounts, zero versus dormant styling, typed-event restrictions when available, stable graph-qualified IDs, Bézier midpoint anchoring under node drag/pan/zoom, all four display modes, nested canvas persistence and legacy documents, accessible selection and keyboard isolation, no graph/audio changes for display actions, and exactly one validated graph/history entry on Apply with badge refresh after undo/redo. Verify that hidden labels do not disable cable hit testing, that long labels or dense patches do not create layout overflow, and that the floating editor remains in the visible canvas while panning, preserves the uncommitted draft, and closes without a graph command on Cancel or Escape. The initial badges can be delivered independently of notes, descriptions and groups; preserve the planned 6.19 numbering.
+
+### Direct canvas amount slider (planned follow-up to Phase 6.19.5)
+
+The approved [direct canvas slider design](connection-amount-slider.md) replaces the eligible numeric badge with a standard horizontal range control bound to existing connection amount semantics. Until implemented, the badge and explicit Apply/Cancel editor above describe the current behavior. See the owning roadmap for slices; do not interpret this proposal as a shipped feature.

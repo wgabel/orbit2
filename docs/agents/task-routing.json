@@ -57,6 +57,7 @@
     {"id":"faust-bowed-brass-guitar","when":"Physical Violin, Physical Brass, Physical Electric Guitar or their tuning and model behavior","required":["docs/instruments/faust-violin-brass-guitar.md"],"recommended":[],"reference":[]},
     {"id":"performance-collection","when":"Performance monitor instrumentation, collection lifecycle, diagnostics subscriptions or metric implementation","required":["docs/quality/performance-implementation.md"],"recommended":[],"reference":[]},
     {"id":"agent-kit","when":"Offline Agent Kit, Python patch library, programmatic native patch JSON creation or modification (including musical patch generation), node catalog export, patch validation tooling or PowerShell CLI","required":["docs/core/agent-kit.md","docs/editor/persistence-and-history.md","docs/core/graph-model.md","docs/core/signals-and-ports.md","docs/core/parameters-and-modulation.md"],"recommended":["docs/agents/music-instructions.md"],"reference":["docs/roadmap/advanced.md"]},
+    {"id":"connection-amount-slider","when":"Direct canvas connection amount slider, cable amount or modulation-depth editing controls, numeric connection badges or their inline editing","required":["docs/editor/connection-amount-slider.md","docs/editor/annotations-and-connections.md","docs/editor/user-interactions.md"],"recommended":["docs/editor/design-system.md","docs/editor/canvas.md"],"reference":["docs/roadmap/editor-and-effects.md"]},
     {"id":"novel-topic","when":"No specific feature contract matches; select applicable general routes as well","required":["docs/architecture/task-routing.md"],"recommended":["docs/architecture/overview.md"],"reference":[]}
   ],
   "coverage": {
@@ -97,6 +98,7 @@
       {"task":"Change performance collection lifetime","routes":["performance","performance-collection"],"required":["docs/quality/performance-implementation.md"]},
       {"task":"Generate or modify a native musical patch JSON offline with Python","routes":["music","agent-kit"],"required":["docs/core/agent-kit.md","docs/editor/persistence-and-history.md"]},
       {"task":"Implement versioned Agent Kit catalog and patch validation","routes":["agent-kit","implementation","roadmap"],"required":["docs/core/agent-kit.md","docs/core/signals-and-ports.md"]},
+      {"task":"Implement or review direct canvas connection amount sliders","routes":["connection-amount-slider","editor-ui","interaction-change","roadmap"],"required":["docs/editor/connection-amount-slider.md","docs/editor/annotations-and-connections.md","docs/editor/user-interactions.md"]},
       {"task":"Review cross-system architecture decisions","routes":["architecture-decisions","implementation"],"required":["docs/core/decisions.md"]}
     ]
   }

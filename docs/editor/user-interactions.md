@@ -112,3 +112,7 @@ In Edit notes, a populated Notes-mode slot exposes a labeled native Timing offse
 ### Note Sequencer: Humanize tab (in review, [PR #121](https://github.com/wgabel/orbit2/pull/121))
 
 The existing melody editor tab bar opens Humanize. Native select/number inputs configure timing direction, amount, velocity variation, seed and selected-step/range/whole-pattern scope. Apply humanization is an explicit button; changing inputs does not edit the graph. Disabled during recording, in Pitch-only mode (no controls), on invalid or empty ranges and at zero amounts. One undo/redo entry restores all changed values. Editable focus follows the existing keyboard exclusion policy; no new gestures or global shortcuts. Source: `PerformanceKeyboard.razor`, `GraphWorkspace.razor(.cs)`; regression: `tests/browser/PublishedPlaybackSmoke.mjs`.
+
+### Direct canvas connection amount slider (planned, Phase 6.19.5 follow-up)
+
+See the [approved slider design](connection-amount-slider.md). The native horizontal range and inline number field will own their pointer/keyboard actions without opening the inspector. Preserve universal pinch takeover, cancellation, cable selection outside controls and performance-key isolation. Current implemented cable/badge behavior remains as recorded above until verified implementation updates this registry.
