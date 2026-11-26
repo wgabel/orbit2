@@ -10,6 +10,8 @@ Use three compact lines, with actual repository-relative paths, not merely docum
 - **Documentation consulted:** paths actually read; append section names only when useful.
 - **Constraints / acceptance:** the important applicable rules and intended outcome; identify missing required docs and any explicitly owner-authorized exception.
 
+For repository-changing tasks, include the [concurrent work and slice ownership](work-slices.md#concurrent-work-and-slice-ownership) check in the declaration and handoff: target revision, selected slice/work identifier, matching PRs and relevant branches or none found, claim branch and overlap resolution. Record the same evidence in the existing PR compliance report constraints/checks/limitations as appropriate; no new machine-readable fields are required.
+
 If scope changes, report only new routes, newly consulted paths and changed constraints before affected work. Do not repeat unchanged context.
 
 ## Completion (every task)
