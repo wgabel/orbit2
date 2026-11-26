@@ -13,7 +13,8 @@ public partial class GraphPlaybackControls : IAsyncDisposable
     [Inject] private IGraphPlaybackService Playback { get; set; } = default!;
     [Inject] private IMusicalTransportService Transport { get; set; } = default!;
     [Parameter, EditorRequired] public GraphSnapshot Snapshot { get; set; } = default!;
-    [Parameter] public EventCallback<GraphParameterTelemetry?> TelemetryChanged { get; set; }
+    // A passive observer notification, not a UI event: the workspace decides whether to render.
+    [Parameter] public Action<GraphParameterTelemetry?>? TelemetryChanged { get; set; }
     [Parameter] public EventCallback<double> TempoChanged { get; set; }
     [Parameter] public EventCallback<int?> SampleRateChanged { get; set; }
     [Parameter] public EventCallback PlaybackStopped { get; set; }
@@ -171,7 +172,7 @@ public partial class GraphPlaybackControls : IAsyncDisposable
     {
         if (disposed || (frame is null && !hasTelemetry)) return;
         hasTelemetry = frame is not null;
-        await InvokeAsync(() => TelemetryChanged.InvokeAsync(frame));
+        await InvokeAsync(() => TelemetryChanged?.Invoke(frame));
     }
 
     private async Task StopAsync()

@@ -40,6 +40,7 @@ public partial class GraphWorkspace : IAsyncDisposable
         ? Canvas.Snapshot.Graph.Nodes.SingleOrDefault(node => node.Id == address.NodeId) : null;
     private IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
     private static readonly IReadOnlyDictionary<ParameterAddress, double> EmptyValues = new Dictionary<ParameterAddress, double>();
+    private static readonly IReadOnlyDictionary<Guid, EnvelopePlayhead> EmptyPlayheads = new Dictionary<Guid, EnvelopePlayhead>();
     private long rangeRevision = -1;
     private Guid rangeGraphId;
     private GraphParameterTelemetry? telemetry;
@@ -75,7 +76,7 @@ public partial class GraphWorkspace : IAsyncDisposable
     private IReadOnlyDictionary<Guid, EnvelopePlayhead> EnvelopePlayheads =>
         telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision &&
         frame.EnvelopePlayheads.TryGetValue(Canvas.Snapshot.GraphId, out var playheads)
-            ? playheads : new Dictionary<Guid, EnvelopePlayhead>();
+            ? playheads : EmptyPlayheads;
     private IPatchSession session = default!;
     private IDisposable? subscription;
     private CanvasNavigationService Navigation { get; set; } = default!;
@@ -316,8 +317,21 @@ public partial class GraphWorkspace : IAsyncDisposable
         rangeGraphId = graphId;
     }
 
-    private void OnTelemetryChanged(GraphParameterTelemetry? frame) =>
-        telemetry = frame;
+    private void OnTelemetryChanged(GraphParameterTelemetry? frame)
+    {
+        if (disposed) return;
+        // Keep the latest valid root frame for navigation and newly opened consumers.
+        // Empty active-graph samples do not warrant a whole-workspace render.
+        // Still render a non-empty -> empty transition to clear stale readouts.
+        var hadCanvasTelemetry = EffectiveValues.Count != 0 || EnvelopePlayheads.Count != 0;
+        telemetry = frame is { } current && current.GraphId == session.GraphId &&
+            current.Revision == session.Snapshot.Revision ? current : null;
+        // The keyboard is independently armed, potentially in a different graph.
+        // Preserve its existing update cadence; narrower demand is a later slice.
+        if (hadCanvasTelemetry || EffectiveValues.Count != 0 || EnvelopePlayheads.Count != 0 ||
+            performanceAddress is not null)
+            StateHasChanged();
+    }
 
     private void OnSampleRateChanged(int? sampleRate) => responseSampleRate = sampleRate;
 

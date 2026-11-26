@@ -64,6 +64,15 @@ export async function measureCompositeTelemetry({ page, canvas, status, composit
             affectedFrames: frameDeltas.filter(frame => frame.renders > 0).length, frameDeltas };
         steps.push(step);
         console.log("EDITOR COMPOSITE TELEMETRY " + JSON.stringify({ ...step, frameDeltas: undefined }));
+        if (process.env.ORBIT_EDITOR_ASSERT_QUIET_ROOT === "1") {
+            assert.equal(step.foreignEffectiveValues + step.foreignPlayheads, 0, "Active canvas received foreign telemetry");
+            if (name !== "child-open") {
+                assert.equal(step.effectiveValues + step.playheads, 0, "Expected empty root telemetry");
+                assert.equal(step.parameterDeliveries, 0, "Empty active canvas must not receive periodic telemetry renders");
+            } else {
+                assert.ok(step.parameterDeliveries > 0 && step.totalFrameRenders > 0, "Live child must continue updating");
+            }
+        }
     }
     await sample("root-closed", composite.rootNodeIds);
     await canvas.locator(`article[data-node-id="${composite.wrapperId}"]`)
