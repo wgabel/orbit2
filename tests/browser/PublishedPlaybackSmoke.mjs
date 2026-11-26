@@ -103,6 +103,8 @@ async function verifyMacroSliders(browser, exported, mobile) {
         nodeId: node.id, x: node.id === wrapper.id ? 24 : 1000 + index * 350, y: 24
     }));
     const page = await browser.newPage(mobile ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } : {});
+    page.on("pageerror", error => console.error("Macro fixture page error:", error.stack ?? error.message));
+    page.on("console", message => { if (message.type() === "error") console.error("Macro fixture console:", message.text()); });
     try {
         await page.goto("http://127.0.0.1:" + server.address().port);
         await page.locator(".playback-toolbar [role=status]").filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
@@ -155,6 +157,55 @@ async function verifyMacroSliders(browser, exported, mobile) {
         assert.equal(await page.getByRole("group", { name: "Composite macro controls" }).count(), 0);
         await page.getByRole("navigation", { name: "Canvas path" }).getByRole("button", { name: "Patch", exact: true }).click();
         await waitBase(0.75);
+
+        // Author macros through the actual workspace panel, not just imported JSON.
+        const editMacros = node.getByRole("button", { name: "Edit macros", exact: true });
+        const editor = page.getByRole("region", { name: "Composite macro editor" });
+        await editMacros.click();
+        // Missing Razor event imports can emit literal @onclick/@oninput attributes
+        // while the editor still looks interactive and the application compiles.
+        const rawEvents = await editor.locator("button, input, select").evaluateAll(controls =>
+            controls.flatMap(control => control.getAttributeNames().filter(name => /^@on/i.test(name))));
+        assert.deepEqual(rawEvents, [], "Macro editor must compile DOM event directives");
+        await editor.getByLabel("Macro name").fill("Discarded");
+        // Confirm the draft event has reached Blazor before activating Cancel.
+        await editor.getByRole("combobox", { name: "Macro", exact: true })
+            .locator("option").filter({ hasText: /^Discarded$/ }).waitFor({ state: "attached" });
+        await editor.getByRole("button", { name: "Cancel", exact: true }).click();
+        try { await editor.waitFor({ state: "detached" }); }
+        catch (error) {
+            console.error("Macro editor after Cancel:", await editor.innerText().catch(() => "(detached)"));
+            throw error;
+        }
+        await group.getByRole("slider", { name: "Size", exact: true }).waitFor();
+        await editMacros.click();
+        await editor.getByLabel("Macro name").fill("Body size");
+        await editor.getByLabel("Curve exponent").fill("9");
+        await editor.getByRole("alert").waitFor();
+        assert.equal(await editor.getByRole("button", { name: "Apply macros", exact: true }).isEnabled(), false);
+        await editor.getByLabel("Curve exponent").fill("2");
+        await editor.locator('output[aria-label="Mapped preview"]').filter({ hasText: /^343\.75 Hz$/ }).waitFor();
+        await editor.getByRole("button", { name: "Add macro", exact: true }).click();
+        await editor.getByLabel("Macro name").fill("Second control");
+        assert.equal(await editor.getByRole("group", { name: "Macro binding", exact: true }).count(), 1);
+        assert.notEqual(await editor.getByLabel("Target parameter").inputValue(),
+            target.id.replaceAll("-", "") + ":" + frequency.id.replaceAll("-", ""));
+        await editor.getByRole("button", { name: "Apply macros", exact: true }).click();
+        await editor.waitFor({ state: "detached" });
+        await group.getByRole("slider", { name: "Body size", exact: true }).waitFor();
+        await group.getByRole("slider", { name: "Second control", exact: true }).waitFor();
+        await editButton(page, "Undo").click();
+        await group.getByRole("slider", { name: "Size", exact: true }).waitFor();
+        assert.equal(await group.getByRole("slider").count(), 1);
+        await editButton(page, "Redo").click();
+        await group.getByRole("slider", { name: "Second control", exact: true }).waitFor();
+        await editMacros.click();
+        await editor.getByRole("combobox", { name: "Macro", exact: true }).selectOption({ label: "Second control" });
+        await editor.getByRole("button", { name: "Remove macro", exact: true }).click();
+        await editor.getByRole("button", { name: "Apply macros", exact: true }).click();
+        await editor.waitFor({ state: "detached" });
+        await group.getByRole("slider", { name: "Second control", exact: true }).waitFor({ state: "detached" });
+        assert.equal(await group.getByRole("slider").count(), 1);
     } finally {
         await page.close();
     }

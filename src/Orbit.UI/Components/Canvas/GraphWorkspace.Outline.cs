@@ -24,6 +24,7 @@ public partial class GraphWorkspace
         session.CompleteHistoryGesture();
         CloseRackEditor();
         ClosePresetManager();
+        CloseMacroEditor();
         if (SelectedConnection is not null) Canvas.ClearSelection();
         if (!Navigation.JumpToGraph(target.GraphId))
         {

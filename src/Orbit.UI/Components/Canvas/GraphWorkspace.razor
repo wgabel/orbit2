@@ -78,6 +78,11 @@ else
         <RackPortEditor @key="(graphId, rack.Id)" GraphId="@graphId" Rack="@rack"
                         Dispatch="@DispatchRackCommand" OnClose="CloseRackEditor" />
     }
+    @if (macroDraft is { } draft)
+    {
+        <CompositeMacroEditor @key="draft" Draft="@draft" CurrentRevision="@session.Snapshot.Revision"
+                              Dispatch="ApplyMacroDraft" OnCancel="CancelMacroEditorAsync" />
+    }
     <GraphCanvas @key="(workspaceGeneration, graphId)" @ref="canvasView" State="@Canvas" PatchId="@session.GraphId" AutoFitOnFirstRender="@Navigation.IsFirstVisit"
                  OutlineFocus="@outlineFocus"
                  PatchCounts="@Navigation.PatchCounts"
@@ -91,7 +96,7 @@ else
                  OnAudition="@(request => SetNodeAudition(graphId, request))"
                  OnPresetApply="@(request => ApplyNodePreset(graphId, request))"
                  OnManagePresets="@(nodeId => OpenPresetManagerAsync(graphId, nodeId))" PresetCatalogRevision="@PresetCatalog.Revision"
-                 OnOpenComposite="@(nodeId => OpenComposite(graphId, nodeId))"
+                 OnOpenComposite="@(nodeId => OpenComposite(graphId, nodeId))" OnEditMacros="@(nodeId => OpenMacroEditor(graphId, nodeId))"
                  OnGroupNodes="GroupNodes"
                  OnUngroupComposite="UngroupComposite"
                  OnEditRack="@(nodeId => OpenRackEditor(graphId, nodeId))"

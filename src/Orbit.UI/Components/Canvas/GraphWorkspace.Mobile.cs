@@ -11,6 +11,7 @@ public partial class GraphWorkspace
     private void OpenContextLibrary(bool mobile)
     {
         if (!CanLeaveMobilePanel() || annotationDraft || addingNode) return;
+        CloseMacroEditor();
         outlineOpen = false;
         mobilePanel = "nodes";
     }
@@ -18,6 +19,7 @@ public partial class GraphWorkspace
     private void OpenContextSelection(bool mobile)
     {
         if (!CanLeaveMobilePanel() || annotationDraft) return;
+        CloseMacroEditor();
         outlineOpen = false;
         mobilePanel = "selection";
     }
@@ -48,6 +50,7 @@ public partial class GraphWorkspace
     private void ToggleMobilePanel(string panel)
     {
         if (!CanLeaveMobilePanel()) return;
+        CloseMacroEditor();
         outlineOpen = false;
         mobilePanel = mobilePanel == panel || (panel == "edit" && mobilePanel == "selection") ? null : panel;
     }
@@ -55,6 +58,7 @@ public partial class GraphWorkspace
     private void ToggleMobileOutline()
     {
         if (!CanLeaveMobilePanel()) return;
+        CloseMacroEditor();
         mobilePanel = null;
         outlineOpen = !outlineOpen;
     }

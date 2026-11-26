@@ -292,6 +292,7 @@ public partial class GraphWorkspace : IAsyncDisposable
             telemetry = null;
             editingRack = null;
             managingPresets = null;
+            CloseMacroEditor();
             Error = PersistenceError = null;
             autosaveEnabled = true;
             workspaceGeneration++;
@@ -380,6 +381,7 @@ public partial class GraphWorkspace : IAsyncDisposable
         session.CompleteHistoryGesture();
         CloseRackEditor();
         ClosePresetManager();
+        CloseMacroEditor();
         if (SelectedConnection is not null) Canvas.ClearSelection();
         Navigation.OpenChild(nodeId);
     }
@@ -392,6 +394,7 @@ public partial class GraphWorkspace : IAsyncDisposable
         session.CompleteHistoryGesture();
         CloseRackEditor();
         ClosePresetManager();
+        CloseMacroEditor();
         if (SelectedConnection is not null) Canvas.ClearSelection();
         Navigation.NavigateTo(graphId);
     }
@@ -401,6 +404,7 @@ public partial class GraphWorkspace : IAsyncDisposable
         if (graphId != Canvas.Snapshot.GraphId) return;
         var rack = Canvas.Snapshot.Graph.Nodes.SingleOrDefault(node => node.Id == nodeId);
         if (rack?.TypeKey is not (InputRack.NodeType or OutputRack.NodeType)) return;
+        CloseMacroEditor();
         editingRack = (graphId, nodeId);
     }
 
@@ -413,7 +417,11 @@ public partial class GraphWorkspace : IAsyncDisposable
         if (node is null || !PresetCatalog.Supports(node.TypeKey)) return;
         try { await PresetLibrary.LoadAsync(); PresetLibraryError = null; }
         catch (Exception exception) { PresetLibraryError = $"Custom presets could not be loaded: {exception.Message}"; }
-        if (graphId == Canvas.Snapshot.GraphId) managingPresets = (graphId, nodeId);
+        if (graphId == Canvas.Snapshot.GraphId)
+        {
+            CloseMacroEditor();
+            managingPresets = (graphId, nodeId);
+        }
     }
 
     private void ClosePresetManager() => managingPresets = null;
@@ -509,6 +517,7 @@ public partial class GraphWorkspace : IAsyncDisposable
         }
         CloseRackEditor();
         ClosePresetManager();
+        CloseMacroEditor();
         Execute(command);
     }
 
@@ -527,6 +536,7 @@ public partial class GraphWorkspace : IAsyncDisposable
         {
             CloseRackEditor();
             ClosePresetManager();
+            CloseMacroEditor();
             var result = Navigation.UngroupComposite(command);
             if (result.SubscriberErrors.Count > 0)
                 Error = "The graph was committed, but a view failed to update: " + result.SubscriberErrors[0].Message;
@@ -545,6 +555,7 @@ public partial class GraphWorkspace : IAsyncDisposable
         {
             CloseRackEditor();
             ClosePresetManager();
+            CloseMacroEditor();
             var result = operation();
             if (result.SubscriberErrors.Count > 0)
                 Error = "History was committed, but a view failed to update: " + result.SubscriberErrors[0].Message;

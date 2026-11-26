@@ -64,7 +64,7 @@
                            OnHeaderPointerDown="@(args => BeginNode(node.Id, args))"
                            OnBodyPointerDown="@(args => BeginNodeSurfaceAsync(node.Id, args))"
                            OnOutputPointerDown="BeginOutput" OnInputPointerDown="BeginInputNavigationAsync" OnPortActivate="ActivatePortAsync"
-                           OnOpenComposite="OnOpenComposite"
+                           OnOpenComposite="OnOpenComposite" OnEditMacros="OnEditMacros"
                            OnEditRack="OnEditRack"
                            OnAudition="OnAudition"
                            OnPresetApply="OnPresetApply" OnManagePresets="OnManagePresets" PresetCatalogRevision="@PresetCatalogRevision"

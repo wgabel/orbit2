@@ -52,6 +52,7 @@ public partial class NodeFrame
     [Parameter] public long PresetCatalogRevision { get; set; }
     [Parameter] public EventCallback<Guid> OnParameterGestureEnded { get; set; }
     [Parameter] public EventCallback<Guid> OnOpenComposite { get; set; }
+    [Parameter] public EventCallback<Guid> OnEditMacros { get; set; }
     [Parameter] public EventCallback<Guid> OnEditRack { get; set; }
     [Parameter] public IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
     [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();

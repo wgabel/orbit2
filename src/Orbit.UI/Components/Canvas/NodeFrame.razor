@@ -105,6 +105,8 @@
         <div class="node-actions">
             <button type="button" class="secondary" @onpointerdown:stopPropagation="true"
                     @onclick="() => OnOpenComposite.InvokeAsync(Node.Id)">Open @Node.Name</button>
+            <button type="button" class="secondary" @onpointerdown:stopPropagation="true" @onclick:stopPropagation="true"
+                    @onclick="() => OnEditMacros.InvokeAsync(Node.Id)">Edit macros</button>
         </div>
     }
     @if (Node.TypeKey is InputRack.NodeType or OutputRack.NodeType)

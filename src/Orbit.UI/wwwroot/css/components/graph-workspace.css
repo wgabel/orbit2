@@ -23,6 +23,21 @@
     border: var(--semantic-border-width) solid var(--semantic-color-border);
     border-radius: var(--semantic-radius-surface);
 }
+.composite-macro-editor {
+    width: var(--component-workspace-patch-panel-width);
+    box-sizing: border-box;
+}
+.composite-macro-editor fieldset, .macro-binding-editor {
+    display: grid;
+    min-width: 0;
+    gap: var(--semantic-space-compact);
+    padding: var(--semantic-space-compact);
+    border: var(--semantic-border-width) solid var(--semantic-color-border);
+    border-radius: var(--semantic-radius-input);
+}
+.composite-macro-editor label { display: grid; min-width: 0; gap: var(--semantic-space-tight); }
+.composite-macro-editor input, .composite-macro-editor select { box-sizing: border-box; width: 100%; min-width: 0; }
+.composite-macro-editor .macro-binding-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--semantic-space-compact); }
 .workspace-library-panel input, .workspace-library-panel select, .patch-overview-editor textarea {
     max-width: 100%;
     background: var(--semantic-color-input);
