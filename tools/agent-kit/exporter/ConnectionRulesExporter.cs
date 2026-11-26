@@ -49,6 +49,11 @@ public static class ConnectionRulesExporter
         {
             connectionRulesFormatVersion = FormatVersion,
             signalTypes = types.Select(type => type.ToString()).ToArray(),
+            boundaryEnumValues = new
+            {
+                signalType = types.ToDictionary(type => (int)type, type => type.ToString()),
+                fanIn = policies.ToDictionary(policy => (int)policy, policy => policy.ToString())
+            },
             compatibleSignalPairs = compatible,
             channelRule = "equal",
             eventPortConstraints = new { channelCount = 1, fanIn = FanInPolicy.Single.ToString() },
