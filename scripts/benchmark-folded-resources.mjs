@@ -38,6 +38,15 @@ export async function verifyFoldedResources({ page, canvas, status, idleMs }) {
             compactScopes: node.querySelectorAll(".signal-scope").length
         })));
     }
+    async function canvasCounters() {
+        return canvas.evaluate(view => {
+            const data = view.dataset;
+            const count = name => data[name] === undefined || data[name] === "" ? null : Number(data[name]);
+            return { graphId: data.telemetryGraph, deliveries: count("telemetryDeliveries"),
+                effectiveValues: count("telemetryEffective"), playheads: count("telemetryPlayheads"),
+                foreignEffectiveValues: count("telemetryForeignEffective"), foreignPlayheads: count("telemetryForeignPlayheads") };
+        });
+    }
     async function sample(name, expandedIds, expectedLeases) {
         const deadline = Date.now() + 15000;
         let value, stable = 0;
@@ -55,8 +64,17 @@ export async function verifyFoldedResources({ page, canvas, status, idleMs }) {
         assert.equal(value.processorErrors, 0);
         await delay(1000); // exclude fold/layout transitions from render deltas
         const before = await counts();
+        const canvasBefore = await canvasCounters();
         await delay(idleMs);
+        const canvasAfter = await canvasCounters();
         const after = await counts();
+        assert.ok(canvasBefore.graphId && canvasBefore.graphId === canvasAfter.graphId);
+        for (const sample of [canvasBefore, canvasAfter])
+            for (const [key, n] of Object.entries(sample))
+                if (key !== "graphId") assert.ok(Number.isSafeInteger(n) && n >= 0, "Invalid canvas counter " + key);
+        const parameterDeliveries = canvasAfter.deliveries - canvasBefore.deliveries;
+        assert.ok(parameterDeliveries >= 0);
+        assert.equal(canvasAfter.foreignEffectiveValues + canvasAfter.foreignPlayheads, 0);
         assert.deepEqual(after.map(n => n.id).sort(), original.map(n => n.id).sort());
         assert.deepEqual(after.filter(n => n.expanded).map(n => n.id).sort(), [...expandedIds].sort());
         const prior = new Map(before.map(n => [n.id, n.renders]));
@@ -77,7 +95,10 @@ export async function verifyFoldedResources({ page, canvas, status, idleMs }) {
         assert.equal(await page.locator(".signal-scope").count(), expectedLeases);
         assert.equal((await status.innerText()).trim(), revision);
         const step = { name, expanded: expandedIds.length, folded: original.length - expandedIds.length,
-            expectedLeases, ...final, foldedFrameRenders: 0,
+            expectedLeases, ...final, idleMs, parameterDeliveries,
+            effectiveValues: canvasAfter.effectiveValues, playheads: canvasAfter.playheads,
+            foreignEffectiveValues: canvasAfter.foreignEffectiveValues, foreignPlayheads: canvasAfter.foreignPlayheads,
+            foldedFrameRenders: 0,
             expandedFrameRenders: after.filter(n => n.expanded).reduce((sum, n) => sum + n.renders - prior.get(n.id), 0) };
         steps.push(step);
         console.log("EDITOR FOLDED RESOURCES " + JSON.stringify(step));
