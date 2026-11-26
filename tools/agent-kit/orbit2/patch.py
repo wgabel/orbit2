@@ -92,6 +92,40 @@ class Node:
             raise ValueError(f"Unknown parameter: {key}")
         return next(p["baseValue"] for p in self._data["parameters"] if p["key"] == key)
 
+    def _active(self, definition):
+        clauses = definition["activeWhen"]
+        return clauses is None or any(
+            all(self.get(condition["selectorKey"]) == condition["equalsValue"]
+                for condition in clause) for clause in clauses)
+
+    def is_parameter_active(self, key):
+        if key not in self._definitions:
+            raise ValueError(f"Unknown parameter: {key}")
+        return self._active(self._definitions[key])
+
+    def is_port_active(self, key):
+        if key not in self._ports:
+            raise ValueError(f"Unknown port: {key}")
+        port = self._ports[key]
+        return self._active(port) and all(
+            self._active(parameter) for parameter in self._definitions.values()
+            if parameter["modulationPortKey"] == key)
+
+    def describe_parameter(self, key):
+        """Detached native definition plus current stored base and activation."""
+        active = self.is_parameter_active(key)
+        return {**deepcopy(self._definitions[key]), "baseValue": self.get(key),
+                "isActive": active}
+
+    def describe_port(self, key):
+        """Detached native port definition plus current configuration activity."""
+        active = self.is_port_active(key)
+        return {**deepcopy(self._ports[key]), "isActive": active}
+
+    def list_ports(self, *, active_only=False):
+        return tuple(self.describe_port(key) for key in self._ports
+                     if not active_only or self.is_port_active(key))
+
     def set(self, key, value):
         self.set_parameters({key: value})
 
@@ -219,6 +253,32 @@ class Patch:
         edge = {"id": _id(), "source": src, "destination": dst, "amount": amount}
         self._connections.append(edge)
         return edge["id"]
+
+    def modulate(self, source, source_port, destination, parameter_key, *, amount=1,
+                 allow_dormant=False):
+        """Connect to a native parameter socket using destination-native amount units."""
+        if source not in self._nodes or destination not in self._nodes:
+            raise ValueError("Both nodes must belong to this patch")
+        parameter = destination.describe_parameter(parameter_key)
+        port_key = parameter["modulationPortKey"]
+        if not parameter["canModulate"] or port_key is None:
+            raise ValueError(f"Parameter cannot be modulated: {parameter_key}")
+        if not allow_dormant and (not source.is_port_active(source_port)
+                                  or not destination.is_port_active(port_key)):
+            raise ValueError("Modulation endpoint is dormant; enable it or allow_dormant")
+        return self.connect(source, source_port, destination, port_key, amount=amount)
+
+    def is_connection_active(self, connection_id):
+        """Configuration activity only; not a claim about reachability or playback."""
+        edge = self._connections[self._connection_index(connection_id)]
+        for endpoint in ("source", "destination"):
+            address = edge[endpoint]
+            node = self.get_node_by_id(address["nodeId"])
+            port_key = next(p["key"] for p in node._data["ports"]
+                            if p["id"].lower() == address["portId"].lower())
+            if not node.is_port_active(port_key):
+                return False
+        return True
 
     def list_connections(self):
         """Return independent native edge snapshots in graph order."""

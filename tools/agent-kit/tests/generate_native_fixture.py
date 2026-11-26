@@ -52,3 +52,17 @@ if len(sys.argv) > 6:
     configure_envelope(env, mode="loop", attack_ms=250, decay_ms=1200,
                        rest_ms=500, attack_curve=2, decay_curve=3)
     automation_patch.save(sys.argv[6])
+
+# Native import of multiple signed modulation sources and dormant pitch routing.
+if len(sys.argv) > 7:
+    modulation_patch = Patch.create("Python modulation smoke", catalog=catalog)
+    a = modulation_patch.add_node("generator.oscillator", frequency=0.5)
+    b = modulation_patch.add_node("generator.oscillator", frequency=0.8)
+    target = modulation_patch.add_node("generator.oscillator", frequency=220)
+    master = modulation_patch.add_node("output.master")
+    modulation_patch.modulate(a, "signal-out", target, "frequency", amount=8)
+    modulation_patch.modulate(b, "signal-out", target, "frequency", amount=-3)
+    modulation_patch.modulate(a, "signal-out", target, "pitch-offset", amount=1,
+                              allow_dormant=True)
+    modulation_patch.connect(target, "signal-out", master, "audio-in", amount=0.2)
+    modulation_patch.save(sys.argv[7])

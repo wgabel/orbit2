@@ -209,9 +209,9 @@ print(read_note_pattern(seq))
 
 Settings are optional native numeric values: reference_note, initial_pitch, timing (0 sync/1 seconds), division (1/2/4/8/16 quarter-beat units), multiplier, seconds, glide, articulation (0 pitch-only/1 notes), gate_length and velocity. Omitted values remain unchanged. The native reference-relative pitch clamp still applies. Current metadata drives capacity and all ordinary constraints; the small semantic encoding is tied to the audited native keys. CI imports a fourth Python-created fixture with populated pattern values; this verifies persistence, not scheduled playback. Automation adapter follows in S7b.
 
-## S7b envelope automation adapter (candidate)
+## S7b envelope automation adapter
 
-Implementation: [PR #176](https://github.com/wgabel/orbit2/pull/176) (CI pending).
+Merged [PR #176](https://github.com/wgabel/orbit2/pull/176); [CI](https://github.com/wgabel/orbit2/actions/runs/45832718512) passed at `a4a4863e947ad5f04e126f46844274696495d9d0`.
 
 The current native registry has no arbitrary breakpoint automation or general value-step sequencer. The native [Envelope contract](../audio/envelopes.md) implements AD, AR, ADSR and Loop with independent power curves and durations; this is the supported automation subset. `configure_envelope(node, mode=None, **settings)` and `read_envelope(node)` expose that configuration using native mode choices and one atomic parameter batch. Durations use milliseconds (`attack_ms`, `decay_ms`, `release_ms`, `rest_ms`), curves use native exponents (`attack_curve`, `decay_curve`, `release_curve`), sustain is normalized and trigger_source is the native numeric selector. All are optional; dormant values and cables are retained. The helper does not implicitly connect, activate or simulate any port. Unsupported modes and settings (including arbitrary points/steps) fail explicitly.
 
@@ -224,6 +224,22 @@ print(read_envelope(env))
 ~~~
 
 CI imports a connected loop-envelope fixture with a retained dormant trigger cable. Python tests check modes, bounds, round trips and atomic rejection. General automation/step-sequencer adapters are deferred until native implementations exist (see planned automation in [advanced roadmap](../roadmap/advanced.md)); no invented patch fields or approximation through a second DSP engine. S8 owns conditional-port discovery and modulation helpers.
+
+## S8 modulation and conditional-port discovery (candidate)
+
+Node helpers `is_parameter_active(key)`, `is_port_active(key)`, `describe_parameter(key)`, `describe_port(key)` and `list_ports(active_only=False)` project current stored base settings and detached native metadata. Evaluate exported activation as OR-of-AND equality clauses; a modulation input also follows all associated parameter conditions, as native GraphNodeSnapshot.IsInputActive does. No runtime signal evaluation. `Patch.is_connection_active(id)` reports endpoint configuration activity, not audibility, reachability, bypass or mute state.
+
+`Patch.modulate(source, source_port, destination, parameter_key, amount=1, allow_dormant=False)` resolves the native modulationPortKey, exposes destination unit/scale through describe_parameter, and delegates to existing connect validation (signed finite depth, compatible types/channels, fan-in, duplicate and cycle rules). Does not silently normalize depth, change base value or enable a structural selector. By default this convenience helper rejects dormant endpoints; explicitly permit them with allow_dormant=True. Low-level connect and validation still accept structurally legal dormant cables as native persistence does. Switching selectors never deletes edges or stored values. All routes, including dormant ones, participate in native graph topology checks.
+
+~~~python
+carrier = patch.add_node("generator.oscillator", frequency=220)
+lfo = patch.add_node("generator.oscillator", frequency=0.5)
+edge = patch.modulate(lfo, "signal-out", carrier, "frequency", amount=8)
+print(carrier.describe_parameter("frequency"))
+print(patch.is_connection_active(edge))
+~~~
+
+CI imports a sixth fixture with multiple signed sources and a retained dormant pitch route. Python tests cover activation conjunctions/alternatives, associated parameters, metadata detachment, multiple-source mapping and rejection without mutation. Nested boundaries remain S9. No application or DSP changes.
 
 ## Non-goals and gates
 
