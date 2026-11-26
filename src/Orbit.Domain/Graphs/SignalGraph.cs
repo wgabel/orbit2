@@ -197,10 +197,9 @@ public sealed class SignalGraph
         var parameter = GetParameter(binding.Target);
         var definition = parameter.Definition;
         var node = GetNode(binding.Target.NodeId);
-        if (definition.RequiresRecompile || definition.Choices is not null ||
+        if (!CompositeMacroConfiguration.IsValidBinding(binding, definition) ||
             requireActive && definition.ActiveWhen is { } condition && !condition.Matches(key =>
-                node.Parameters.SingleOrDefault(selector => selector.Definition.Key == key)?.BaseValue) ||
-            !definition.IsValidBaseValue(binding.AtZero) || !definition.IsValidBaseValue(binding.AtOne))
+                node.Parameters.SingleOrDefault(selector => selector.Definition.Key == key)?.BaseValue))
             throw new GraphValidationException("Macro targets must be continuous parameters with valid range endpoints and active when applied.");
         return parameter;
     }

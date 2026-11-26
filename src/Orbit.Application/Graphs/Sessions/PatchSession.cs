@@ -66,6 +66,9 @@ public sealed class PatchSession : IPatchSession
             executing = true;
             try
             {
+                if (command is ReplaceCompositeMacrosCommand { ExpectedRevision: long expected } &&
+                    snapshot.Revision != expected)
+                    throw new GraphValidationException("The patch changed while editing macros. Reopen the mapping editor.");
                 var nextRevision = checked(snapshot.Revision + 1);
                 // Validation happens in the domain before each mutation. A
                 // rejected command leaves the revision and snapshots untouched.
