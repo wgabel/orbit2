@@ -86,7 +86,7 @@ else
     <GraphCanvas @key="(workspaceGeneration, graphId)" @ref="canvasView" State="@Canvas" PatchId="@session.GraphId" AutoFitOnFirstRender="@Navigation.IsFirstVisit"
                  OutlineFocus="@outlineFocus"
                  PatchCounts="@Navigation.PatchCounts"
-                 DispatchConnectionAmount="@DispatchConnectionCommand"
+                 DispatchConnectionAmount="@DispatchConnectionCommand" DispatchSliderAmount="@DispatchSliderAmount" WorkspaceGeneration="@workspaceGeneration"
                  AnnotationActionsDisabled="@(switchingWorkspace || overviewDraft)" OnAnnotationDraftChanged="OnAnnotationDraftChanged" OnAnnotationError="@(value => Error = value)"
                  CanShowScope="@(ScopeSelection is not null || ScopeOpen)" ScopeOpen="@ScopeOpen" OnToggleScope="ToggleScopeFromToolbar"
                  MobileSelectionOpen="@(mobilePanel == "selection")" OnMobileToolCompleted="CompleteMobileCanvasTool" OnCloseMobileTools="DismissMobilePanelAsync"

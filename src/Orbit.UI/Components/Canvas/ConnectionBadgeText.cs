@@ -10,11 +10,12 @@ namespace Orbit.UI.Components.Canvas;
 public static class ConnectionBadgeText
 {
     public static string Format(GraphSnapshot graph, SignalConnection connection)
+        => Format(ConnectionAmountSemantics.Resolve(graph, connection), connection.Amount);
+
+    public static string Format(ConnectionAmountSemantics semantics, double amount)
     {
-        var semantics = ConnectionAmountSemantics.Resolve(graph, connection);
         if (semantics.IsEvent) return semantics.DestinationType.ToString();
         var parameter = semantics.TargetParameter;
-        var amount = connection.Amount;
         var magnitude = Math.Abs(amount).ToString("0.###", CultureInfo.InvariantCulture);
         if (parameter is null)
             return (amount < 0 ? "−" : "") + "×" + magnitude;

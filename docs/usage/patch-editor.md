@@ -58,7 +58,7 @@ On Android or another touchscreen, touch and hold for about half a second. On de
 | Empty canvas | Add node/note, create visual group, marquee select, select all module nodes, undo/redo and annotation history |
 | Node header or noninteractive surface | Duplicate node, mute/bypass, show/hide plot, scope, presets, describe/rename, focus, open/ungroup composite, rack ports, grouping and delete |
 | Selected nodes | Create composite or visual group, delete selection, clear selection |
-| Cable or amount badge | Edit amount, describe, focus either endpoint, delete connection |
+| Cable or typed event badge | Edit amount, describe, focus either endpoint, delete connection |
 | Note or visual group header/marker | Edit, delete; notes also allow collapse/expand, duplicate and visual grouping |
 
 Regular buttons, port sockets, parameter inputs, plots and note body text keep their current interactions. The menu supplements the existing controls for now; composite creation still uses its name and boundary-preview workflow. Add node opens the Node Library and uses its existing placement behavior.
@@ -69,13 +69,13 @@ Implemented ([PR #88](https://github.com/wgabel/orbit2/pull/88)). On desktop, ri
 
 ### Delete a connection on mobile
 
-Alternatively, hold a cable or its badge and choose **Delete connection** directly. To restore it, use Undo in the empty-canvas menu or Edit.
+Alternatively, hold the cable away from its rail and choose **Delete connection** directly. To restore it, use Undo in the empty-canvas menu or Edit.
 
-1. Tap the cable or its numeric amount badge. The selected cable is highlighted and, for a single connection, its amount editor opens. Do not press Cancel or Close in that editor; doing so clears the selection.
+1. Tap the cable outside its amount rail. The selected cable is highlighted and, for a single connection, its amount editor opens. Do not press Cancel or Close in that editor; doing so clears the selection.
 2. Tap **Edit** on the bottom toolbar, check that the summary shows 0 nodes and 1 connection selected, then tap **Delete selected**. Only the selected connection is removed.
 3. To restore it, tap **Undo** in Edit.
 
-If badges obscure a cable, open **View → Connection labels → Off**, close View and tap the exposed cable. Triple-tap empty canvas to fit, or zoom/pan to make it easier to reach. Setting a connection amount to zero does not delete it. See [PR #63](https://github.com/wgabel/orbit2/pull/63) for the mobile touch regression coverage.
+If amount controls obscure a cable, open **View → Connection labels → Off**, close View and tap the exposed cable. Triple-tap empty canvas to fit, or zoom/pan to make it easier to reach. Setting a connection amount to zero does not delete it. See [PR #63](https://github.com/wgabel/orbit2/pull/63) for the mobile touch regression coverage.
 
 ### Node Library
 
@@ -109,8 +109,8 @@ Implemented ([PR #73](https://github.com/wgabel/orbit2/pull/73)): on Android/tou
 **Cable appearance ([PR #90](https://github.com/wgabel/orbit2/pull/90); smooth-cubic refinement [PR #93](https://github.com/wgabel/orbit2/pull/93), merged).** Each connection leaves the output socket through a short, thicker, straight section, follows a single softly sagging Bézier curve with no forced midpoint, then enters the input socket through another straight section. Both handles belong to the curve's ends, near the rigid caps. The caps share the cable's signal color and have no metallic pieces. A new dragged cable thickens only its source end. Selection, amounts, hit targets, pan/zoom and sounds behave as before; no settings need changing.
 
 - Audio links carry sound. Modulation values add a contribution in the receiving parameter's unit. Pitch expects relative semitones; Frequency expects Hz. A unit-amplitude bipolar 0.5 Hz sine into a 440 Hz carrier's Frequency at +100 gives 340–540 Hz before constraints. A Pitch Control +12 into a semitone-tracked Pitch at unity doubles the base frequency; connecting it to Frequency instead adds 12 Hz.
-- Click the wire or its numeric badge. Edit the amount in the anchored popover and **Apply** (or Cancel). For audio paths ×0.5 halves amplitude (about −6 dB); for a modulation connection, the amount is depth, not necessarily a fader. Typed Trigger/Gate/Clock links use unity; transform continuous signals through explicit adapters. Zero amount and dormant/inactive link are different: zero is a configured contribution of zero, dormant means the current node mode does not use that port. Neither deletes the cable.
-- The **View → Connection labels** dropdown supports All/Modified/Selected/Off. This is per-canvas presentation state, independent of the graph and annotation visibility. Hiding badges does not disconnect or prevent selecting cables. [PR #1](https://github.com/wgabel/orbit2/pull/1), [PR #2](https://github.com/wgabel/orbit2/pull/2), [PR #3](https://github.com/wgabel/orbit2/pull/3); [connection contract](../editor/annotations-and-connections.md).
+- Drag the amount rail on the cable and release to apply the displayed value. With the rail focused, use the arrow keys to adjust it or Escape to cancel an in-progress edit. For an exact value, click the wire outside the rail, enter the amount in the anchored editor, and choose **Apply**. For audio paths ×0.5 halves amplitude (about −6 dB); for a modulation connection, the amount is depth, not necessarily a fader. Typed Trigger/Gate/Clock links use unity; transform continuous signals through explicit adapters. Zero amount and dormant/inactive link are different: zero is a configured contribution of zero, dormant means the current node mode does not use that port. Neither deletes the cable.
+- The **View → Connection labels** dropdown supports All/Modified/Selected/Off. This is per-canvas presentation state, independent of the graph and annotation visibility. Hiding amount controls leaves cable selection available. [PR #1](https://github.com/wgabel/orbit2/pull/1), [PR #2](https://github.com/wgabel/orbit2/pull/2), [PR #3](https://github.com/wgabel/orbit2/pull/3); [connection contract](../editor/annotations-and-connections.md).
 
 **Composite example:** add `Impact — AD percussion`, connect its Audio output to a root Mixer or Master output and play. Open the composite and follow the internal oscillator to the exposed Audio socket of the Output Rack. Use **View → Locate output rack** if the rack is offscreen or hidden behind old layout geometry. The parent Audio socket is the same boundary signal, not a second output generator; do not add another Master inside the composite. The Input Rack supplies any exposed parent inputs to the child. Use the breadcrumbs to return to the parent; Fit fits the current canvas. [PR #18](https://github.com/wgabel/orbit2/pull/18); [composite routing](../editor/composite-nodes.md).
 

@@ -42,6 +42,14 @@
 .connection-amount-badge.is-selected { border-color: var(--semantic-color-selected); }
 .connection-amount-badge.is-zero, .connection-amount-badge.is-dormant { opacity: var(--semantic-opacity-disabled); }
 .connection-amount-badge:focus-visible { outline: var(--semantic-border-focus-width) solid var(--semantic-color-selected); }
+.connection-amount-slider {
+    display: grid;
+    width: var(--component-slider-input-width);
+    text-align: center;
+    cursor: default;
+}
+.connection-amount-slider > span { overflow: hidden; text-overflow: ellipsis; }
+.connection-amount-slider input { touch-action: none; }
 .connection-badge-inactive { font-size: var(--semantic-typography-caption); }
 .connection-label-control {
     position: absolute;

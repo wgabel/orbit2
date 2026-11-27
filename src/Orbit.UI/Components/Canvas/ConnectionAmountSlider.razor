@@ -1,0 +1,137 @@
+@namespace Orbit.UI.Components.Canvas
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Web
+@using Orbit.Application.Graphs.Snapshots
+@using Orbit.Presentation.Canvas
+
+<div class="connection-amount-badge connection-amount-slider @(Wire.Selected ? "is-selected" : "") @(Wire.Dormant ? "is-dormant" : "")"
+     style="@FormattableString.Invariant($"left:{Wire.BadgeX}px;top:{Wire.BadgeY}px;transform:translate(-50%,-50%) scale({1 / Zoom})")"
+     data-connection-id="@Wire.Id" title="@Tooltip" aria-label="@Wire.Description"
+     @onpointerdown:stopPropagation @onclick:stopPropagation>
+    <span>@AmountText@if (Wire.Dormant) { <span class="connection-badge-inactive"> inactive</span> }</span>
+    <div class="parameter-track">
+        <span class="parameter-rail" aria-hidden="true"></span>
+        <input type="range" aria-label="@Wire.Description" aria-valuetext="@AmountText"
+               min="@Position(ConnectionAmountSliderRange.PositionMinimum)"
+               max="@Position(ConnectionAmountSliderRange.PositionMaximum)"
+               step="@Position(ConnectionAmountSliderRange.PositionStep)"
+               @bind:get="Position(range.ToPosition(Amount))" @bind:set="Preview" @bind:event="oninput"
+               disabled="@Disabled"
+               @onpointerdown="BeginPointer" @onpointerup="EndPointer" @onpointerup:stopPropagation
+               @onpointercancel="CancelPointer" @onlostpointercapture="CancelPointer"
+               @onkeydown="KeyDown" @onkeydown:stopPropagation @onkeyup="KeyUp" @onkeyup:stopPropagation
+               @onblur="Blur" />
+    </div>
+    @if (error is not null)
+    {
+        <span role="alert">@error</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ConnectionVisual Wire { get; set; } = default!;
+    [Parameter, EditorRequired] public GraphSnapshot Graph { get; set; } = default!;
+    [Parameter, EditorRequired] public Func<ConnectionAmountCommit, string?> Dispatch { get; set; } = default!;
+    [Parameter] public long WorkspaceGeneration { get; set; }
+    [Parameter] public double Zoom { get; set; } = 1;
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool ShowAuthoredLabel { get; set; }
+
+    private ConnectionAmountSemantics semantics = default!;
+    private ConnectionAmountSliderRange range = default!;
+    private ConnectionAmountDraft? draft;
+    private GraphSnapshot? previousGraph;
+    private long previousGeneration;
+    private long? pointerId;
+    private readonly HashSet<string> keys = [];
+    private string? error;
+    private double Amount => draft?.PreviewAmount ?? Wire.Amount;
+    private string AmountText => ConnectionBadgeText.Format(semantics, Amount);
+    private string Tooltip => !ShowAuthoredLabel || Wire.AuthoredLabel.Length == 0
+        ? Wire.Description : $"{Wire.AuthoredLabel} · {Wire.Description}";
+
+    protected override void OnParametersSet()
+    {
+        if (Disabled) Cancel();
+        if (ReferenceEquals(previousGraph, Graph) && previousGeneration == WorkspaceGeneration) return;
+        if (draft is not null && !draft.Observe(WorkspaceGeneration, Graph)) Cancel();
+        var edge = Graph.Connections.Single(connection => connection.Id == Wire.Id);
+        semantics = ConnectionAmountSemantics.Resolve(Graph, edge);
+        if (range is null || previousGraph?.Id != Graph.Id || previousGeneration != WorkspaceGeneration ||
+            !range.Contains(edge.Amount))
+            range = ConnectionAmountSliderRange.Resolve(semantics, edge.Amount)!;
+        previousGraph = Graph;
+        previousGeneration = WorkspaceGeneration;
+        error = null;
+    }
+
+    private static string Position(double value) => value.ToString("R", CultureInfo.InvariantCulture);
+    private static bool IsRangeKey(string key) => key is "ArrowLeft" or "ArrowRight" or "ArrowUp" or "ArrowDown"
+        or "Home" or "End" or "PageUp" or "PageDown";
+
+    private void Begin()
+    {
+        error = null;
+        draft ??= ConnectionAmountDraft.Begin(WorkspaceGeneration, Graph, Wire.Id, range);
+    }
+
+    private void BeginPointer(PointerEventArgs args)
+    {
+        if (Disabled || args.Button != 0 || !args.IsPrimary || pointerId is not null) return;
+        if (keys.Count != 0) Cancel();
+        pointerId = args.PointerId;
+        Begin();
+    }
+
+    private void Preview(string? value)
+    {
+        if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var position))
+            draft?.Preview(position);
+    }
+
+    private void EndPointer(PointerEventArgs args)
+    {
+        if (args.PointerId == pointerId && args.Button == 0) Complete();
+    }
+
+    private void CancelPointer(PointerEventArgs args)
+    {
+        if (args.PointerId == pointerId) Cancel();
+    }
+
+    private void KeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape") Cancel();
+        else if (!Disabled && pointerId is null && IsRangeKey(args.Key) && (!args.Repeat || keys.Contains(args.Key)))
+        {
+            keys.Add(args.Key);
+            Begin();
+        }
+    }
+
+    private void KeyUp(KeyboardEventArgs args)
+    {
+        if (keys.Remove(args.Key) && keys.Count == 0) Complete();
+    }
+
+    private void Blur()
+    {
+        if (keys.Count != 0) Complete();
+        else Cancel();
+    }
+
+    private void Complete()
+    {
+        var request = draft?.Complete();
+        Cancel();
+        if (request is not null) error = Dispatch(request);
+    }
+
+    private void Cancel()
+    {
+        draft?.Cancel();
+        draft = null;
+        pointerId = null;
+        keys.Clear();
+    }
+}

@@ -29,6 +29,10 @@ test('context hits preserve interactive controls and distinguish cables, nodes a
     assert.deepEqual(contextTarget(viewport, make('node')), { kind: 'node', id: 'target' });
     assert.equal(contextTarget(viewport, make('node', true)), null);
     assert.deepEqual(contextTarget(viewport, make('connection', true)), { kind: 'connection', id: 'target' });
+    const slider = make('connection', true);
+    const closest = slider.closest.bind(slider);
+    slider.closest = selector => selector === '.connection-amount-slider' ? slider : closest(selector);
+    assert.equal(contextTarget(viewport, slider), null);
     assert.deepEqual(contextTarget(viewport, viewport), { kind: 'canvas', id: null });
     assert.equal(contextTarget(viewport, 'outside'), null);
 });

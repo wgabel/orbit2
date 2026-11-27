@@ -929,13 +929,33 @@ try {
     await compact.getByRole("button", { name: "Hide plot" }).click();
     await compact.locator("canvas").waitFor({ state: "detached" });
     await fitCanvas(page);
-    // Select the existing modulation wire via its keyboard-accessible badge,
-    // even if a node covers it, then edit depth and retain its identity.
+    // Use the direct rail without selecting the cable or opening the inspector.
+    // The focusable wire remains the entry point for exact inspector edits.
     const wire = page.locator(".connection-modulation .connection-hit");
     const labelMode = page.locator("#connection-label-mode");
     const badges = page.locator(".connection-amount-badge");
     assert.equal(await labelMode.inputValue(), "All");
-    await badges.filter({ hasText: /^\+100 Hz$/ }).press("Enter");
+    const amountLabel = value => badges.filter({ has: page.locator(`input[aria-valuetext="${value}"]`) });
+    const rail = amountLabel("+100 Hz").getByRole("slider");
+    await rail.focus();
+    await page.keyboard.down("ArrowRight");
+    await page.keyboard.down("ArrowRight");
+    await page.locator('.connection-amount-slider input[aria-valuetext="+104 Hz"]').waitFor();
+    assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
+    assert.equal(await page.locator(".connection-amount-editor").count(), 0);
+    await page.keyboard.press("Escape");
+    await page.keyboard.up("ArrowRight");
+    await rail.waitFor();
+    assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
+    await rail.press("ArrowRight");
+    initialRevision++;
+    await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
+    await amountLabel("+102 Hz").waitFor();
+    await editButton(page, "Undo").click();
+    initialRevision++;
+    await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
+    await rail.waitFor();
+    await wire.press("Enter");
     await page.locator(".connection-modulation.connection-selected").waitFor({ state: "attached" });
     const amountEditor = page.getByRole("region", { name: "Connection amount editor" });
     const amount = amountEditor.getByRole("spinbutton", { name: "Modulation depth (Hz)" });
@@ -965,7 +985,7 @@ try {
     // authored tooltip is visible, and titles-only suppresses it without
     // changing the numeric badge, selected cable, or pending amount draft.
     await resetCanvas(page);
-    const labeledBadge = badges.filter({ hasText: /^\+100 Hz$/ });
+    const labeledBadge = amountLabel("+100 Hz");
     await labeledBadge.and(page.locator('[title*="Brightness sweep"]')).waitFor();
     const annotationDisplay = viewport.getByLabel("Annotations", { exact: true });
     await selectView(page, annotationDisplay, "TitlesOnly");
@@ -979,7 +999,7 @@ try {
     assert.equal(await amountEditor.getByText("Brightness sweep", { exact: true }).count(), 0);
     assert.equal(await amount.inputValue(), "75");
     assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
-    await badges.filter({ hasText: /^\+100 Hz$/ }).waitFor({ state: "attached" });
+    await amountLabel("+100 Hz").waitFor({ state: "attached" });
     const anchorBeforePan = await amountEditor.getAttribute("data-anchor-x");
     await panCanvas(4000);
     await page.waitForFunction(old => document.querySelector(".connection-amount-editor")?.dataset.anchorX !== old, anchorBeforePan);
@@ -990,7 +1010,7 @@ try {
     await amount.press("Escape");
     await amountEditor.waitFor({ state: "detached" });
     assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
-    await badges.filter({ hasText: /^\+100 Hz$/ }).press("Enter");
+    await wire.press("Enter");
     await amount.waitFor();
     assert.equal(await amount.inputValue(), "100", "Escape discards the draft");
     await amount.fill("");
@@ -1001,18 +1021,18 @@ try {
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
     await predictedFrequency.filter({ hasText: "415–465 Hz" }).waitFor();
-    await badges.filter({ hasText: /^\+25 Hz$/ }).waitFor({ state: "attached" });
+    await amountLabel("+25 Hz").waitFor({ state: "attached" });
     // History is a fresh committed revision even while the worklet is running.
     await editButton(page, "Undo").click();
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
     await predictedFrequency.filter({ hasText: "340–540 Hz" }).waitFor();
-    await badges.filter({ hasText: /^\+100 Hz$/ }).waitFor({ state: "attached" });
+    await amountLabel("+100 Hz").waitFor({ state: "attached" });
     await editButton(page, "Redo").click();
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
     await predictedFrequency.filter({ hasText: "415–465 Hz" }).waitFor();
-    await badges.filter({ hasText: /^\+25 Hz$/ }).waitFor({ state: "attached" });
+    await amountLabel("+25 Hz").waitFor({ state: "attached" });
     await marker.waitFor({ timeout: 10000 });
     await amountEditor.getByRole("button", { name: "Cancel", exact: true }).click();
     await amountEditor.waitFor({ state: "detached" });

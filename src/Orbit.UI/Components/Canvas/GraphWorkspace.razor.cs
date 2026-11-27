@@ -448,6 +448,14 @@ public partial class GraphWorkspace : IAsyncDisposable
         return ExecuteForEditor(command);
     }
 
+    private string? DispatchSliderAmount(ConnectionAmountCommit request)
+    {
+        if (disposed || switchingWorkspace || overviewDraft || annotationDraft)
+            return "Finish the current workspace edit first.";
+        var command = request.CreateCommand(workspaceGeneration, Canvas.Snapshot.Graph);
+        return command is null ? "This connection changed during the edit." : ExecuteForEditor(command);
+    }
+
     private string? ExecuteForEditor(IGraphCommand command)
     {
         Execute(command);

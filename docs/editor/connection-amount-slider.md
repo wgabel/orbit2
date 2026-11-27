@@ -2,7 +2,7 @@
 
 [Existing connection contract](annotations-and-connections.md) · [Roadmap](../roadmap/editor-and-effects.md#phase-619--patch-documentation-and-canvas-organization-partial-6195-core-and-6196-implemented) · [Interaction registry](user-interactions.md)
 
-## Design (planned, not implemented)
+## Commit-on-release design
 
 **Owner decision — commit on release (Option A).** This is the current approved delivery scope. The slider previews its numerical value locally while moving; audio changes only when the edit is committed. Preserve compile-time constant coefficients and existing playback behavior. The earlier live-control investigation below is retained as historical evidence for a separate, deferred feature; it is not an implementation dependency.
 
@@ -31,7 +31,7 @@ During pointer/touch adjustment keep a local presentation-only draft, with the n
 
 Test the actual metadata/range/step/unit and round-trip for supported connection categories, signed/zero values, event-only exclusions, precise numeric entry and invalid input; compare slider and inspector edits and verify save/load and undo/redo. Test midpoint positioning and constant screen size on zoom/pan/node movement, overlapping/hidden sliders and nested canvases. Cover mouse, touch, keyboard, pinch cancellation, context actions, wire drag and performance-key isolation in published browser tests. Exercise stopped and active playback: prove zero graph revisions/history entries/source builds/voice replacements during preview or cancellation, and at most one commit and one existing compile/replacement request for a changed release; a stopped edit must not start playback. Measure representative dense-patch drag responsiveness and report physical-device limitations. Update actual usage and the interaction registry when behavior ships. Keep the view model renderer-independent for the planned GPU editor; no GPU migration is required for this feature.
 
-Implementation status and ordered slices belong in the linked milestone register. This design does not change application behavior.
+See the linked milestone register for implementation and verification status. Precise inline numeric entry follows the visible rail slice.
 
 ## S1 contract audit — existing source evidence
 
