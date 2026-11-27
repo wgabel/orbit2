@@ -23,6 +23,11 @@ public sealed class AgentKitConnectionRulesTests
         Assert.Equal(types.Select(type => type.ToString()).OrderBy(value => value, StringComparer.Ordinal).ToArray(),
             root.GetProperty("signalTypes").EnumerateArray().Select(value => value.GetString()).ToArray());
         Assert.Equal("equal", root.GetProperty("channelRule").GetString());
+        var enums = root.GetProperty("boundaryEnumValues");
+        foreach (var type in types)
+            Assert.Equal(type.ToString(), enums.GetProperty("signalType").GetProperty(((int)type).ToString()).GetString());
+        foreach (var policy in Enum.GetValues<FanInPolicy>())
+            Assert.Equal(policy.ToString(), enums.GetProperty("fanIn").GetProperty(((int)policy).ToString()).GetString());
         foreach (var source in types)
         foreach (var destination in types)
         foreach (var sourceChannels in source.IsEvent() ? new[] { 1 } : new[] { 1, 2, 3 })
