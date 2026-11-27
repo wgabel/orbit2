@@ -309,6 +309,19 @@ Owner-approved patch-only approach; [technical design](../core/agent-kit.md). In
 
 Later optional graph tracing, patch merging and additional convenience operations are not prerequisites for first release. Offline Faust rendering is explicitly outside this milestone.
 
+#### Phase 7.8 — Incremental composition and analysis (planned)
+
+Owner-approved direction: [incremental AI composition and audio analysis](../examples/incremental-composition-and-analysis.md). Separate from Phase 7.7; preserve its patch-only release and no-DSP consumer contract. Start with workflow and structural evidence; acoustic execution is optional and gated by feasibility and measured value. No claim of demonstrated musical improvement.
+
+- **7.8-S1 — Incremental composition workflow trial (Planned)** — Depends: usable native patch authoring (7.7 capabilities as available). Done: agents use staged discovery, individual checkpoints, early contextual integration and whole-piece gates; compare a bounded trial with the current workflow. Verify: native-valid artifacts, evidence and recorded resource/listener outcomes.
+- **7.8-S2 — Structural analysis contract and fixtures (Planned)** — Depends: S1 findings and versioned 7.7 schema/catalog. Done: define machine-readable score/role/time/graph reports and unknown/unsupported states without DSP. Verify: hand-audited positive and negative fixtures.
+- **7.8-S3 — Structural analyzer (Planned)** — Depends: S2. Done: deterministic supported event, repetition, articulation, register, routing and role diagnostics; incremental workflow can consume concise reports. Verify: native timing parity on supported fixtures, non-mutating behavior, structural-only evaluation versus baseline.
+- **7.8-S4 — Native acoustic execution feasibility (Planned; decision gate)** — Depends: S1–S3 evidence. Audit existing Faust/WASM probes and actual patch execution/capture paths; prototype bounded native sample extraction, parity, state continuity and cost. Verify: matched native fixtures, timing/effects and resource benchmarks. Stop or limit to captured audio if unsuitable; no new renderer dependency in 7.7.
+- **7.8-S5 — Sample-based analysis (Conditional; planned)** — Depends: favorable S4 decision, or explicit captured-audio-only scope. Done: calibrated waveform/FFT/STFT, envelope, band energy and level reports; distinguish metrics from advisories. Verify: known signals and equivalent native captures, clipping/noise/attack cases.
+- **7.8-S6 — Contextual fragment and mix analysis (Conditional; planned)** — Depends: S5 and appropriate native sample access. Done: bounded role, group, section and master measurements with context/state/tap provenance; no output leakage or accidental state changes. Verify: reference fixtures and integrated musical passages; report cost.
+- **7.8-S7 — Evidence retention and agent iteration (Conditional; planned)** — Depends: S3, optional S5–S6 where justified. Done: versioned checkpoints, reference evidence and targeted before/after reports; bounded agent corrections with no false acoustic/listener passes. Verify: matched comparisons and independent listener evaluations; compare structural-only with acoustic-assisted results before expanding scope.
+- **7.8-S8 — Stereo analysis (Deferred; optional)** — Depends: Phase 7.5 genuine stereo master and successful sample-based analysis. Done: vectorscope, channel balance/correlation and mono compatibility measures. Verify: calibrated stereo/mono/anti-phase fixtures and unchanged playback.
+
 ### Phase 8 — Audio assets and sample-based synthesis (planned)
 
 - **8.1 — Audio asset library (planned):** import browser-decodable audio files, validate size/format, store original binary assets and metadata in IndexedDB, list and resolve by stable ID, and verify reload and deduplication. Prototype the FaustWasm soundfile binding and measure decoded memory requirements.

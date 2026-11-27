@@ -20,6 +20,7 @@ Orbit 2 is a browser-based modular synthesizer with a Blazor WebAssembly/C# edit
 | Understand system architecture and source ownership | [Architecture overview](architecture/overview.md), [task routing](architecture/task-routing.md) and [project structure](core/project-structure.md) |
 | Edit a patch or use nodes | [Usage home](usage/README.md), [task index](usage/task-index.md), [patch editor](usage/patch-editor.md) and [sound/instruments](usage/sound-and-instruments.md) |
 | Generate or edit native patch JSON without running Orbit 2 | [Agent Kit design](core/agent-kit.md) and [7.7 roadmap](roadmap/advanced.md#phase-77--offline-agent-kit-planned) (planned) |
+| Generate music in stages or investigate analysis without playback | [Incremental AI composition and analysis](examples/incremental-composition-and-analysis.md) · [Phase 7.8](roadmap/advanced.md#phase-78--incremental-composition-and-analysis-planned) |
 | Create or refine a musical composition | [Music creation](examples/README.md), [genres](examples/electronic-music-genres.md) and [foundations](examples/foundations/catalogue.md) |
 | Add a feature or fix code | [Agent instructions](agents/contributor-instructions.md), [coding standards](quality/coding-standards.md), [work-slice protocol](agents/work-slices.md) |
 | Modify input, gesture or node behavior | [Interaction registry](editor/user-interactions.md), [canvas](editor/canvas.md), [node expansion](editor/expandable-nodes.md) |
