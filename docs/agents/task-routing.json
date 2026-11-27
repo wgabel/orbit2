@@ -1,105 +1,1099 @@
 {
   "schemaVersion": 1,
-  "alwaysRequired": ["AGENTS.md","docs/agents/contributor-instructions.md","docs/README.md","docs/agents/task-routing.json","docs/agents/compliance-reports.md"],
+  "alwaysRequired": [
+    "AGENTS.md",
+    "docs/agents/contributor-instructions.md",
+    "docs/README.md",
+    "docs/agents/task-routing.json",
+    "docs/agents/compliance-reports.md"
+  ],
   "routes": [
-    {"id":"implementation","when":"Application, tooling or test implementation, bug fix, refactoring or code review","required":["docs/agents/development-instructions.md","docs/quality/coding-standards.md","docs/architecture/overview.md","docs/quality/testing.md"],"recommended":["docs/getting-started/development.md"],"reference":["docs/core/project-structure.md","docs/core/references-and-glossary.md"],"pathPrefixes":["src/","tests/","scripts/",".github/workflows/"]},
-    {"id":"roadmap","when":"Planning, status or executing a nontrivial work slice","required":["docs/agents/development-instructions.md","docs/agents/work-slices.md","docs/roadmap/overview.md"],"recommended":[],"reference":["docs/roadmap/foundation.md","docs/roadmap/editor-and-effects.md","docs/roadmap/advanced.md"],"pathPrefixes":["docs/roadmap/"]},
-    {"id":"documentation","when":"Authoring, moving or maintaining documentation or agent rules","required":["docs/agents/documentation-conventions.md"],"recommended":[],"reference":["docs/architecture/task-routing.md"],"pathPrefixes":["docs/"],"pathFiles":["AGENTS.md",".github/copilot-instructions.md",".github/pull_request_template.md"]},
-    {"id":"editor-ui","when":"Canvas, node presentation, layout or editor UX","required":["docs/editor/design-system.md","docs/editor/canvas.md"],"recommended":["docs/usage/patch-editor.md"],"reference":["docs/editor/annotations-and-connections.md"]},
-    {"id":"node-layout","when":"Node folding, expansion, compact properties, headers or pins","required":["docs/editor/expandable-nodes.md"],"recommended":["docs/editor/design-system.md"],"reference":[]},
-    {"id":"interaction-change","when":"Changing or reviewing input, keyboard, touch, pointer, gestures, shortcuts, menus, drag or interaction behavior","required":["docs/agents/development-instructions.md","docs/editor/user-interactions.md"],"recommended":["docs/editor/canvas.md"],"reference":[]},
-    {"id":"graph-contract","when":"Node, connection, signal, parameter or modulation contract changes","required":["docs/core/graph-model.md","docs/core/signals-and-ports.md","docs/core/parameters-and-modulation.md","docs/audio/dsp-engine.md"],"recommended":["docs/core/commands-and-events.md"],"reference":[]},
-    {"id":"dsp","when":"DSP generation, effects, Faust compilation or audio engine changes","required":["docs/audio/dsp-engine.md","docs/quality/audio-engine-optimization.md"],"recommended":["docs/audio/transport-and-timing.md","docs/quality/performance.md"],"reference":["docs/audio/effects.md","docs/audio/oscillators-and-noise.md"],"pathPrefixes":["src/Orbit.Audio/","tests/Orbit.Audio.Probe/","tests/audio/","tests/compiler/"]},
-    {"id":"performance","when":"Performance, CPU, latency, playback glitches, profiling or benchmark work","required":["docs/quality/performance.md","docs/quality/performance-metrics.md","docs/quality/performance-verification.md"],"recommended":["docs/quality/performance-troubleshooting.md","docs/audio/dsp-engine.md"],"reference":["docs/quality/dsp-profiling.md","docs/quality/performance-implementation.md"],"pathPrefixes":["tests/benchmarks/"]},
-    {"id":"stereo-unison","when":"Stereo, pan or oscillator unison","required":["docs/audio/stereo-panning-and-unison.md"],"recommended":["docs/quality/performance.md"],"reference":[]},
-    {"id":"composites","when":"Composite graphs, racks, custom modules or macros","required":["docs/editor/composite-nodes.md","docs/core/signals-and-ports.md"],"recommended":["docs/editor/reusable-modules.md","docs/core/commands-and-events.md"],"reference":[]},
-    {"id":"persistence","when":"Save/load, serialization, history, presets or imports","required":["docs/editor/persistence-and-history.md"],"recommended":["docs/core/commands-and-events.md","docs/editor/node-presets.md"],"reference":[]},
-    {"id":"visualization","when":"Plots, signal taps, spectrum or meter changes","required":["docs/editor/visualizations.md","docs/audio/signal-observation.md"],"recommended":[],"reference":[]},
-    {"id":"patch-annotations","when":"Patch notes, aliases, visual groups, outline or documentation display","required":["docs/editor/patch-annotations.md"],"recommended":["docs/editor/canvas.md","docs/editor/persistence-and-history.md"],"reference":[]},
-    {"id":"musical-control","when":"Note sequencer, keyboard, pitch, gate, trigger or transport work","required":["docs/instruments/note-sequencer.md","docs/instruments/pitch-control.md"],"recommended":["docs/audio/envelopes.md","docs/audio/transport-and-timing.md"],"reference":["docs/instruments/note-sequencer-design.md","docs/instruments/polyphony.md"]},
-    {"id":"faust-instrument","when":"Realistic acoustic/electromechanical instrument design or physical-model node implementation","required":["docs/agents/sound-design-instructions.md","docs/instruments/realistic-instrument-emulation.md"],"recommended":["docs/instruments/faust-instrument-nodes.md","docs/instruments/faust-dependency-audit.md"],"reference":["docs/instruments/physical-modelling.md","docs/audio/dsp-engine.md","docs/instruments/faust-physical-model-probes.md","docs/instruments/faust-physical-pluck.md","docs/instruments/faust-sustained-instruments.md","docs/instruments/faust-violin-brass-guitar.md"]},
-    {"id":"usage","when":"Explaining or using implemented features or documenting changed user-facing behavior","required":["docs/agents/development-instructions.md","docs/usage/README.md"],"recommended":["docs/usage/task-index.md"],"reference":["docs/usage/patch-editor.md","docs/usage/sound-and-instruments.md","docs/usage/feature-history.md"]},
-    {"id":"music","when":"Musical patch, composition, analysis or feedback","required":["docs/agents/music-instructions.md","docs/examples/README.md"],"recommended":["docs/examples/task-index.md","docs/examples/production-workflow.md"],"reference":[]},
-    {"id":"composition-development","when":"Whole-piece creation, planning, substantial arrangement revision or evaluation; monotony, motif, phrase, groove or form","required":["docs/agents/music-instructions.md","docs/examples/compositional-development.md","docs/examples/production-workflow.md","docs/examples/musical-composition-validation.md"],"recommended":["docs/examples/generative-ambient-composition.md"],"reference":["docs/examples/voice-lab-expressive-phrasing.md"]},
-    {"id":"music-theory","when":"Harmony, tuning, melody, timbre, loudness, spectral balance, depth or musical quality","required":["docs/agents/music-instructions.md","docs/examples/music-theory-and-sound-design.md"],"recommended":[],"reference":[]},
-    {"id":"pitched-composition","when":"New pitched composition or substantial melodic/harmonic passage","required":["docs/agents/music-instructions.md","docs/examples/harmony-scales-and-temperament.md","docs/examples/classical-composition-and-melody.md"],"recommended":[],"reference":[]},
-    {"id":"musical-expectation","when":"Tension/release, listener expectations, familiarity, surprise or why a piece works","required":["docs/agents/music-instructions.md","docs/examples/musical-quality-and-expectation.md"],"recommended":[],"reference":[]},
-    {"id":"genre","when":"Genre-oriented composition or sound design","required":["docs/agents/music-instructions.md","docs/examples/electronic-music-genres.md"],"recommended":["docs/examples/genres/orbit-techniques.md"],"reference":["docs/examples/genres/ambient.md","docs/examples/genres/bass-and-breaks.md","docs/examples/genres/club-and-dance.md","docs/examples/genres/experimental-and-hybrids.md"]},
-    {"id":"cinematic-orchestration","when":"Cinematic, orchestral or hybrid soundtrack composition, orchestration or expressive cue arrangement","required":["docs/agents/music-instructions.md","docs/examples/genres/cinematic-orchestration.md"],"recommended":["docs/examples/compositional-development.md","docs/examples/instrument-recipes.md"],"reference":[]},
-    {"id":"music-source-intake","when":"Extracting, consolidating or documenting musical knowledge from external tutorials, transcripts or other learning sources","required":["docs/agents/music-instructions.md","docs/examples/music-learning-sources.md"],"recommended":["docs/examples/production-workflow.md","docs/examples/task-index.md"],"reference":[]},
-    {"id":"synth-voice","when":"New music or designing/refining synthesized voices","required":["docs/agents/music-instructions.md","docs/agents/sound-design-instructions.md","docs/examples/synthesizer-patch-recipes.md"],"recommended":["docs/examples/sound-quality-and-voice-design.md"],"reference":[]},
-    {"id":"finished-voice","when":"Finished voices or presets, timbre polish or raw-noise feedback","required":["docs/agents/music-instructions.md","docs/agents/sound-design-instructions.md","docs/examples/sound-quality-and-voice-design.md"],"recommended":[],"reference":[]},
-    {"id":"instrument-selection","when":"Selecting sound generators for new composition or substantial voice redesign","required":["docs/agents/music-instructions.md","docs/agents/sound-design-instructions.md","docs/examples/instrument-recipes.md","docs/usage/sound-and-instruments.md"],"recommended":[],"reference":[]},
-    {"id":"instrument-audition","when":"Instrument or sound design, refinement, comparison or unintended artificial timbre","required":["docs/agents/music-instructions.md","docs/agents/sound-design-instructions.md","docs/examples/instrument-design-and-audition.md"],"recommended":[],"reference":["docs/examples/instrument-audition/reference.orbit2.json","docs/editor/audition.md"]},
-    {"id":"sound-foundations","when":"Evolving voices, emergent interactions or reusable musical foundations","required":["docs/agents/music-instructions.md","docs/agents/sound-design-instructions.md","docs/examples/foundations/catalogue.md"],"recommended":["docs/examples/foundations/breathing-harmonic-drone.md"],"reference":["docs/examples/drone.md","docs/examples/foundations/bass-lab-ii.md","docs/examples/foundations/waveform-layer-labs.md"]},
-    {"id":"mix-analysis","when":"Complete pieces or substantial sound-design work","required":["docs/agents/music-instructions.md","docs/agents/sound-design-instructions.md","docs/examples/mixing-mastering-and-analysis.md"],"recommended":["docs/audio/signal-observation.md"],"reference":[]},
-    {"id":"layer-balance","when":"Balancing competing musical roles in a substantial piece","required":["docs/agents/music-instructions.md","docs/agents/sound-design-instructions.md","docs/examples/contextual-layer-balance.md"],"recommended":["docs/examples/mixing-mastering-and-analysis.md"],"reference":[]},
-    {"id":"setup-deploy","when":"Installation, build or deployment tasks","required":["docs/getting-started/development.md"],"recommended":["docs/getting-started/installation.md","docs/getting-started/deployment.md"],"reference":[]},
-    {"id":"gpu-renderer","when":"Full GPU/WebGL editor, graphical UI engine, renderer migration, backend comparison, renderer architecture or GPU resource/batching optimization","required":["docs/editor/gpu-renderer.md","docs/editor/gpu-renderer-optimization.md","docs/core/project-structure.md","docs/agents/development-instructions.md","docs/quality/coding-standards.md","docs/architecture/overview.md","docs/quality/testing.md","docs/editor/user-interactions.md"],"recommended":["docs/editor/expandable-nodes.md","docs/architecture/task-routing.md"],"reference":["docs/roadmap/advanced.md"],"pathPrefixes":["src/Orbit.GpuRenderer/","tests/Orbit.GpuRenderer.Tests/"]},
-    {"id":"architecture-decisions","when":"Architectural decisions, subsystem boundaries, architectural alternatives or open design questions","required":["docs/core/decisions.md"],"recommended":["docs/core/project-structure.md"],"reference":[]},
-    {"id":"pitch-shifting","when":"Post-mixer audio pitch shift, frequency shift or audio harmonizer design/implementation","required":["docs/audio/pitch-shifter.md"],"recommended":["docs/instruments/pitch-control.md"],"reference":[]},
-    {"id":"sample-assets","when":"Sample import, sample-based synthesis, recorded audio assets or sample persistence","required":["docs/audio/sample-assets.md"],"recommended":["docs/editor/persistence-and-history.md"],"reference":[]},
-    {"id":"node-audition","when":"Node mute, processor bypass or comparing nodes using graph mute/bypass","required":["docs/editor/audition.md"],"recommended":[],"reference":[]},
-    {"id":"sequencer-design","when":"Sequencer architecture, note duration, articulation, recording, continuous transposition or sequencing contract changes","required":["docs/instruments/note-sequencer-design.md"],"recommended":["docs/instruments/note-sequencer.md"],"reference":[]},
-    {"id":"polyphony","when":"Polyphonic voices, note allocation/stealing, simultaneous pitched voices or reusable instrument voice pools","required":["docs/instruments/polyphony.md"],"recommended":[],"reference":[]},
-    {"id":"ambient-composition","when":"Ambient, atmospheric, drone composition or evolving ambient texture","required":["docs/examples/genres/ambient.md","docs/examples/generative-ambient-composition.md"],"recommended":["docs/examples/drone.md"],"reference":[]},
-    {"id":"drone-design","when":"Designing, explaining, recreating or editing a worked drone patch","required":["docs/examples/drone.md"],"recommended":["docs/examples/generative-ambient-composition.md"],"reference":[]},
-    {"id":"harmonic-drone","when":"Harmonizing oscillators, breathing harmonic drone, layered drone interval relationships or the original three-oscillator experiment","required":["docs/examples/foundations/catalogue.md","docs/examples/foundations/breathing-harmonic-drone.md"],"recommended":[],"reference":[]},
-    {"id":"waveform-layering","when":"Waveform layering, rich or flat synthesized voices, interacting layers, layered timbre, waveform lab findings or expression through layer dynamics","required":["docs/examples/foundations/catalogue.md","docs/examples/foundations/waveform-layer-labs.md"],"recommended":[],"reference":[]},
-    {"id":"bass-foundations","when":"Industrial/evolving multilayer bass, Bass Lab II, Iron Tide, Abyssal Machinery or approved bass experiments","required":["docs/examples/foundations/catalogue.md","docs/examples/foundations/bass-lab-ii.md"],"recommended":[],"reference":[]},
-    {"id":"bass-breaks","when":"Bass music, drum and bass, jungle, dubstep, hip-hop, broken rhythms or experimental bass composition","required":["docs/examples/genres/bass-and-breaks.md"],"recommended":[],"reference":[]},
-    {"id":"club-dance","when":"House, disco, techno, club, dance or DJ-oriented composition","required":["docs/examples/genres/club-and-dance.md"],"recommended":[],"reference":[]},
-    {"id":"experimental-hybrids","when":"Experimental electronic, crossover, leftfield or hybrid electronic composition (in addition to relevant genre routes)","required":["docs/examples/genres/experimental-and-hybrids.md"],"recommended":[],"reference":[]},
-    {"id":"expressive-phrasing","when":"Expressive phrasing, complementary melodies, interlocking sequences, rhythmic variation, microtiming, articulation or Voice Lab findings","required":["docs/examples/voice-lab-expressive-phrasing.md"],"recommended":[],"reference":[]},
-    {"id":"faust-model-probes","when":"Reproducing or extending offline Faust physical-model probes or assessing initial physical model evidence","required":["docs/instruments/faust-physical-model-probes.md","docs/instruments/faust-dependency-audit.md"],"recommended":[],"reference":[]},
-    {"id":"faust-pluck","when":"Physical Pluck, plucked string model or its tuning/decay/calibration","required":["docs/instruments/faust-physical-pluck.md"],"recommended":[],"reference":[]},
-    {"id":"faust-winds","when":"Physical Clarinet, Physical Flute, sustained wind model or their control and tuning","required":["docs/instruments/faust-sustained-instruments.md"],"recommended":[],"reference":[]},
-    {"id":"faust-bowed-brass-guitar","when":"Physical Violin, Physical Brass, Physical Electric Guitar or their tuning and model behavior","required":["docs/instruments/faust-violin-brass-guitar.md"],"recommended":[],"reference":[]},
-    {"id":"performance-collection","when":"Performance monitor instrumentation, collection lifecycle, diagnostics subscriptions or metric implementation","required":["docs/quality/performance-implementation.md"],"recommended":[],"reference":[]},
-    {"id":"agent-kit","when":"Offline Agent Kit, Python patch library, programmatic native patch JSON creation or modification (including musical patch generation), node catalog export, patch validation tooling or PowerShell CLI","required":["docs/core/agent-kit.md","docs/editor/persistence-and-history.md","docs/core/graph-model.md","docs/core/signals-and-ports.md","docs/core/parameters-and-modulation.md"],"recommended":["docs/agents/music-instructions.md"],"reference":["docs/roadmap/advanced.md"]},
-    {"id":"connection-amount-slider","when":"Direct canvas connection amount slider, cable amount or modulation-depth editing controls, numeric connection badges or their inline editing","required":["docs/editor/connection-amount-slider.md","docs/editor/annotations-and-connections.md","docs/editor/user-interactions.md"],"recommended":["docs/editor/design-system.md","docs/editor/canvas.md"],"reference":["docs/roadmap/editor-and-effects.md"]},
-    {"id":"novel-topic","when":"No specific feature contract matches; select applicable general routes as well","required":["docs/architecture/task-routing.md"],"recommended":["docs/architecture/overview.md"],"reference":[]}
+    {
+      "id": "implementation",
+      "when": "Application, tooling or test implementation, bug fix, refactoring or code review",
+      "required": [
+        "docs/agents/development-instructions.md",
+        "docs/quality/coding-standards.md",
+        "docs/architecture/overview.md",
+        "docs/quality/testing.md"
+      ],
+      "recommended": [
+        "docs/getting-started/development.md"
+      ],
+      "reference": [
+        "docs/core/project-structure.md",
+        "docs/core/references-and-glossary.md"
+      ],
+      "pathPrefixes": [
+        "src/",
+        "tests/",
+        "scripts/",
+        ".github/workflows/"
+      ]
+    },
+    {
+      "id": "roadmap",
+      "when": "Planning, status or executing a nontrivial work slice",
+      "required": [
+        "docs/agents/development-instructions.md",
+        "docs/agents/work-slices.md",
+        "docs/roadmap/overview.md"
+      ],
+      "recommended": [],
+      "reference": [
+        "docs/roadmap/foundation.md",
+        "docs/roadmap/editor-and-effects.md",
+        "docs/roadmap/advanced.md"
+      ],
+      "pathPrefixes": [
+        "docs/roadmap/"
+      ]
+    },
+    {
+      "id": "documentation",
+      "when": "Authoring, moving or maintaining documentation or agent rules",
+      "required": [
+        "docs/agents/documentation-conventions.md"
+      ],
+      "recommended": [],
+      "reference": [
+        "docs/architecture/task-routing.md"
+      ],
+      "pathPrefixes": [
+        "docs/"
+      ],
+      "pathFiles": [
+        "AGENTS.md",
+        ".github/copilot-instructions.md",
+        ".github/pull_request_template.md"
+      ]
+    },
+    {
+      "id": "editor-ui",
+      "when": "Canvas, node presentation, layout or editor UX",
+      "required": [
+        "docs/editor/design-system.md",
+        "docs/editor/canvas.md"
+      ],
+      "recommended": [
+        "docs/usage/patch-editor.md"
+      ],
+      "reference": [
+        "docs/editor/annotations-and-connections.md"
+      ]
+    },
+    {
+      "id": "node-layout",
+      "when": "Node folding, expansion, compact properties, headers or pins",
+      "required": [
+        "docs/editor/expandable-nodes.md"
+      ],
+      "recommended": [
+        "docs/editor/design-system.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "interaction-change",
+      "when": "Changing or reviewing input, keyboard, touch, pointer, gestures, shortcuts, menus, drag or interaction behavior",
+      "required": [
+        "docs/agents/development-instructions.md",
+        "docs/editor/user-interactions.md"
+      ],
+      "recommended": [
+        "docs/editor/canvas.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "graph-contract",
+      "when": "Node, connection, signal, parameter or modulation contract changes",
+      "required": [
+        "docs/core/graph-model.md",
+        "docs/core/signals-and-ports.md",
+        "docs/core/parameters-and-modulation.md",
+        "docs/audio/dsp-engine.md"
+      ],
+      "recommended": [
+        "docs/core/commands-and-events.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "dsp",
+      "when": "DSP generation, effects, Faust compilation or audio engine changes",
+      "required": [
+        "docs/audio/dsp-engine.md",
+        "docs/quality/audio-engine-optimization.md"
+      ],
+      "recommended": [
+        "docs/audio/transport-and-timing.md",
+        "docs/quality/performance.md"
+      ],
+      "reference": [
+        "docs/audio/effects.md",
+        "docs/audio/oscillators-and-noise.md"
+      ],
+      "pathPrefixes": [
+        "src/Orbit.Audio/",
+        "tests/Orbit.Audio.Probe/",
+        "tests/audio/",
+        "tests/compiler/"
+      ]
+    },
+    {
+      "id": "performance",
+      "when": "Performance, CPU, latency, playback glitches, profiling or benchmark work",
+      "required": [
+        "docs/quality/performance.md",
+        "docs/quality/performance-metrics.md",
+        "docs/quality/performance-verification.md"
+      ],
+      "recommended": [
+        "docs/quality/performance-troubleshooting.md",
+        "docs/audio/dsp-engine.md"
+      ],
+      "reference": [
+        "docs/quality/dsp-profiling.md",
+        "docs/quality/performance-implementation.md"
+      ],
+      "pathPrefixes": [
+        "tests/benchmarks/"
+      ]
+    },
+    {
+      "id": "stereo-unison",
+      "when": "Stereo, pan or oscillator unison",
+      "required": [
+        "docs/audio/stereo-panning-and-unison.md"
+      ],
+      "recommended": [
+        "docs/quality/performance.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "composites",
+      "when": "Composite graphs, racks, custom modules or macros",
+      "required": [
+        "docs/editor/composite-nodes.md",
+        "docs/core/signals-and-ports.md"
+      ],
+      "recommended": [
+        "docs/editor/reusable-modules.md",
+        "docs/core/commands-and-events.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "persistence",
+      "when": "Save/load, serialization, history, presets or imports",
+      "required": [
+        "docs/editor/persistence-and-history.md"
+      ],
+      "recommended": [
+        "docs/core/commands-and-events.md",
+        "docs/editor/node-presets.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "visualization",
+      "when": "Plots, signal taps, spectrum or meter changes",
+      "required": [
+        "docs/editor/visualizations.md",
+        "docs/audio/signal-observation.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "patch-annotations",
+      "when": "Patch notes, aliases, visual groups, outline or documentation display",
+      "required": [
+        "docs/editor/patch-annotations.md"
+      ],
+      "recommended": [
+        "docs/editor/canvas.md",
+        "docs/editor/persistence-and-history.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "musical-control",
+      "when": "Note sequencer, keyboard, pitch, gate, trigger or transport work",
+      "required": [
+        "docs/instruments/note-sequencer.md",
+        "docs/instruments/pitch-control.md"
+      ],
+      "recommended": [
+        "docs/audio/envelopes.md",
+        "docs/audio/transport-and-timing.md"
+      ],
+      "reference": [
+        "docs/instruments/note-sequencer-design.md",
+        "docs/instruments/polyphony.md"
+      ]
+    },
+    {
+      "id": "faust-instrument",
+      "when": "Realistic acoustic/electromechanical instrument design or physical-model node implementation",
+      "required": [
+        "docs/agents/sound-design-instructions.md",
+        "docs/instruments/realistic-instrument-emulation.md"
+      ],
+      "recommended": [
+        "docs/instruments/faust-instrument-nodes.md",
+        "docs/instruments/faust-dependency-audit.md"
+      ],
+      "reference": [
+        "docs/instruments/physical-modelling.md",
+        "docs/audio/dsp-engine.md",
+        "docs/instruments/faust-physical-model-probes.md",
+        "docs/instruments/faust-physical-pluck.md",
+        "docs/instruments/faust-sustained-instruments.md",
+        "docs/instruments/faust-violin-brass-guitar.md"
+      ]
+    },
+    {
+      "id": "usage",
+      "when": "Explaining or using implemented features or documenting changed user-facing behavior",
+      "required": [
+        "docs/agents/development-instructions.md",
+        "docs/usage/README.md"
+      ],
+      "recommended": [
+        "docs/usage/task-index.md"
+      ],
+      "reference": [
+        "docs/usage/patch-editor.md",
+        "docs/usage/sound-and-instruments.md",
+        "docs/usage/feature-history.md"
+      ]
+    },
+    {
+      "id": "music",
+      "when": "Musical patch, composition, analysis or feedback",
+      "required": [
+        "docs/agents/music-instructions.md",
+        "docs/examples/README.md"
+      ],
+      "recommended": [
+        "docs/examples/task-index.md",
+        "docs/examples/production-workflow.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "composition-development",
+      "when": "Whole-piece creation, planning, substantial arrangement revision or evaluation; monotony, motif, phrase, groove or form",
+      "required": [
+        "docs/agents/music-instructions.md",
+        "docs/examples/compositional-development.md",
+        "docs/examples/production-workflow.md",
+        "docs/examples/musical-composition-validation.md",
+        "docs/examples/incremental-composition-and-analysis.md"
+      ],
+      "recommended": [
+        "docs/examples/generative-ambient-composition.md"
+      ],
+      "reference": [
+        "docs/examples/voice-lab-expressive-phrasing.md"
+      ]
+    },
+    {
+      "id": "music-theory",
+      "when": "Harmony, tuning, melody, timbre, loudness, spectral balance, depth or musical quality",
+      "required": [
+        "docs/agents/music-instructions.md",
+        "docs/examples/music-theory-and-sound-design.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "pitched-composition",
+      "when": "New pitched composition or substantial melodic/harmonic passage",
+      "required": [
+        "docs/agents/music-instructions.md",
+        "docs/examples/harmony-scales-and-temperament.md",
+        "docs/examples/classical-composition-and-melody.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "musical-expectation",
+      "when": "Tension/release, listener expectations, familiarity, surprise or why a piece works",
+      "required": [
+        "docs/agents/music-instructions.md",
+        "docs/examples/musical-quality-and-expectation.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "genre",
+      "when": "Genre-oriented composition or sound design",
+      "required": [
+        "docs/agents/music-instructions.md",
+        "docs/examples/electronic-music-genres.md"
+      ],
+      "recommended": [
+        "docs/examples/genres/orbit-techniques.md"
+      ],
+      "reference": [
+        "docs/examples/genres/ambient.md",
+        "docs/examples/genres/bass-and-breaks.md",
+        "docs/examples/genres/club-and-dance.md",
+        "docs/examples/genres/experimental-and-hybrids.md"
+      ]
+    },
+    {
+      "id": "cinematic-orchestration",
+      "when": "Cinematic, orchestral or hybrid soundtrack composition, orchestration or expressive cue arrangement",
+      "required": [
+        "docs/agents/music-instructions.md",
+        "docs/examples/genres/cinematic-orchestration.md"
+      ],
+      "recommended": [
+        "docs/examples/compositional-development.md",
+        "docs/examples/instrument-recipes.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "music-source-intake",
+      "when": "Extracting, consolidating or documenting musical knowledge from external tutorials, transcripts or other learning sources",
+      "required": [
+        "docs/agents/music-instructions.md",
+        "docs/examples/music-learning-sources.md"
+      ],
+      "recommended": [
+        "docs/examples/production-workflow.md",
+        "docs/examples/task-index.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "synth-voice",
+      "when": "New music or designing/refining synthesized voices",
+      "required": [
+        "docs/agents/music-instructions.md",
+        "docs/agents/sound-design-instructions.md",
+        "docs/examples/synthesizer-patch-recipes.md"
+      ],
+      "recommended": [
+        "docs/examples/sound-quality-and-voice-design.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "finished-voice",
+      "when": "Finished voices or presets, timbre polish or raw-noise feedback",
+      "required": [
+        "docs/agents/music-instructions.md",
+        "docs/agents/sound-design-instructions.md",
+        "docs/examples/sound-quality-and-voice-design.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "instrument-selection",
+      "when": "Selecting sound generators for new composition or substantial voice redesign",
+      "required": [
+        "docs/agents/music-instructions.md",
+        "docs/agents/sound-design-instructions.md",
+        "docs/examples/instrument-recipes.md",
+        "docs/usage/sound-and-instruments.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "instrument-audition",
+      "when": "Instrument or sound design, refinement, comparison or unintended artificial timbre",
+      "required": [
+        "docs/agents/music-instructions.md",
+        "docs/agents/sound-design-instructions.md",
+        "docs/examples/instrument-design-and-audition.md"
+      ],
+      "recommended": [],
+      "reference": [
+        "docs/examples/instrument-audition/reference.orbit2.json",
+        "docs/editor/audition.md"
+      ]
+    },
+    {
+      "id": "sound-foundations",
+      "when": "Evolving voices, emergent interactions or reusable musical foundations",
+      "required": [
+        "docs/agents/music-instructions.md",
+        "docs/agents/sound-design-instructions.md",
+        "docs/examples/foundations/catalogue.md"
+      ],
+      "recommended": [
+        "docs/examples/foundations/breathing-harmonic-drone.md"
+      ],
+      "reference": [
+        "docs/examples/drone.md",
+        "docs/examples/foundations/bass-lab-ii.md",
+        "docs/examples/foundations/waveform-layer-labs.md"
+      ]
+    },
+    {
+      "id": "mix-analysis",
+      "when": "Complete pieces or substantial sound-design work",
+      "required": [
+        "docs/agents/music-instructions.md",
+        "docs/agents/sound-design-instructions.md",
+        "docs/examples/mixing-mastering-and-analysis.md"
+      ],
+      "recommended": [
+        "docs/audio/signal-observation.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "layer-balance",
+      "when": "Balancing competing musical roles in a substantial piece",
+      "required": [
+        "docs/agents/music-instructions.md",
+        "docs/agents/sound-design-instructions.md",
+        "docs/examples/contextual-layer-balance.md"
+      ],
+      "recommended": [
+        "docs/examples/mixing-mastering-and-analysis.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "setup-deploy",
+      "when": "Installation, build or deployment tasks",
+      "required": [
+        "docs/getting-started/development.md"
+      ],
+      "recommended": [
+        "docs/getting-started/installation.md",
+        "docs/getting-started/deployment.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "gpu-renderer",
+      "when": "Full GPU/WebGL editor, graphical UI engine, renderer migration, backend comparison, renderer architecture or GPU resource/batching optimization",
+      "required": [
+        "docs/editor/gpu-renderer.md",
+        "docs/editor/gpu-renderer-optimization.md",
+        "docs/core/project-structure.md",
+        "docs/agents/development-instructions.md",
+        "docs/quality/coding-standards.md",
+        "docs/architecture/overview.md",
+        "docs/quality/testing.md",
+        "docs/editor/user-interactions.md"
+      ],
+      "recommended": [
+        "docs/editor/expandable-nodes.md",
+        "docs/architecture/task-routing.md"
+      ],
+      "reference": [
+        "docs/roadmap/advanced.md"
+      ],
+      "pathPrefixes": [
+        "src/Orbit.GpuRenderer/",
+        "tests/Orbit.GpuRenderer.Tests/"
+      ]
+    },
+    {
+      "id": "architecture-decisions",
+      "when": "Architectural decisions, subsystem boundaries, architectural alternatives or open design questions",
+      "required": [
+        "docs/core/decisions.md"
+      ],
+      "recommended": [
+        "docs/core/project-structure.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "pitch-shifting",
+      "when": "Post-mixer audio pitch shift, frequency shift or audio harmonizer design/implementation",
+      "required": [
+        "docs/audio/pitch-shifter.md"
+      ],
+      "recommended": [
+        "docs/instruments/pitch-control.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "sample-assets",
+      "when": "Sample import, sample-based synthesis, recorded audio assets or sample persistence",
+      "required": [
+        "docs/audio/sample-assets.md"
+      ],
+      "recommended": [
+        "docs/editor/persistence-and-history.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "node-audition",
+      "when": "Node mute, processor bypass or comparing nodes using graph mute/bypass",
+      "required": [
+        "docs/editor/audition.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "sequencer-design",
+      "when": "Sequencer architecture, note duration, articulation, recording, continuous transposition or sequencing contract changes",
+      "required": [
+        "docs/instruments/note-sequencer-design.md"
+      ],
+      "recommended": [
+        "docs/instruments/note-sequencer.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "polyphony",
+      "when": "Polyphonic voices, note allocation/stealing, simultaneous pitched voices or reusable instrument voice pools",
+      "required": [
+        "docs/instruments/polyphony.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "ambient-composition",
+      "when": "Ambient, atmospheric, drone composition or evolving ambient texture",
+      "required": [
+        "docs/examples/genres/ambient.md",
+        "docs/examples/generative-ambient-composition.md"
+      ],
+      "recommended": [
+        "docs/examples/drone.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "drone-design",
+      "when": "Designing, explaining, recreating or editing a worked drone patch",
+      "required": [
+        "docs/examples/drone.md"
+      ],
+      "recommended": [
+        "docs/examples/generative-ambient-composition.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "harmonic-drone",
+      "when": "Harmonizing oscillators, breathing harmonic drone, layered drone interval relationships or the original three-oscillator experiment",
+      "required": [
+        "docs/examples/foundations/catalogue.md",
+        "docs/examples/foundations/breathing-harmonic-drone.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "waveform-layering",
+      "when": "Waveform layering, rich or flat synthesized voices, interacting layers, layered timbre, waveform lab findings or expression through layer dynamics",
+      "required": [
+        "docs/examples/foundations/catalogue.md",
+        "docs/examples/foundations/waveform-layer-labs.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "bass-foundations",
+      "when": "Industrial/evolving multilayer bass, Bass Lab II, Iron Tide, Abyssal Machinery or approved bass experiments",
+      "required": [
+        "docs/examples/foundations/catalogue.md",
+        "docs/examples/foundations/bass-lab-ii.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "bass-breaks",
+      "when": "Bass music, drum and bass, jungle, dubstep, hip-hop, broken rhythms or experimental bass composition",
+      "required": [
+        "docs/examples/genres/bass-and-breaks.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "club-dance",
+      "when": "House, disco, techno, club, dance or DJ-oriented composition",
+      "required": [
+        "docs/examples/genres/club-and-dance.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "experimental-hybrids",
+      "when": "Experimental electronic, crossover, leftfield or hybrid electronic composition (in addition to relevant genre routes)",
+      "required": [
+        "docs/examples/genres/experimental-and-hybrids.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "expressive-phrasing",
+      "when": "Expressive phrasing, complementary melodies, interlocking sequences, rhythmic variation, microtiming, articulation or Voice Lab findings",
+      "required": [
+        "docs/examples/voice-lab-expressive-phrasing.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "faust-model-probes",
+      "when": "Reproducing or extending offline Faust physical-model probes or assessing initial physical model evidence",
+      "required": [
+        "docs/instruments/faust-physical-model-probes.md",
+        "docs/instruments/faust-dependency-audit.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "faust-pluck",
+      "when": "Physical Pluck, plucked string model or its tuning/decay/calibration",
+      "required": [
+        "docs/instruments/faust-physical-pluck.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "faust-winds",
+      "when": "Physical Clarinet, Physical Flute, sustained wind model or their control and tuning",
+      "required": [
+        "docs/instruments/faust-sustained-instruments.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "faust-bowed-brass-guitar",
+      "when": "Physical Violin, Physical Brass, Physical Electric Guitar or their tuning and model behavior",
+      "required": [
+        "docs/instruments/faust-violin-brass-guitar.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "performance-collection",
+      "when": "Performance monitor instrumentation, collection lifecycle, diagnostics subscriptions or metric implementation",
+      "required": [
+        "docs/quality/performance-implementation.md"
+      ],
+      "recommended": [],
+      "reference": []
+    },
+    {
+      "id": "agent-kit",
+      "when": "Offline Agent Kit, Python patch library, programmatic native patch JSON creation or modification (including musical patch generation), node catalog export, patch validation tooling or PowerShell CLI",
+      "required": [
+        "docs/core/agent-kit.md",
+        "docs/editor/persistence-and-history.md",
+        "docs/core/graph-model.md",
+        "docs/core/signals-and-ports.md",
+        "docs/core/parameters-and-modulation.md"
+      ],
+      "recommended": [
+        "docs/agents/music-instructions.md"
+      ],
+      "reference": [
+        "docs/roadmap/advanced.md"
+      ]
+    },
+    {
+      "id": "connection-amount-slider",
+      "when": "Direct canvas connection amount slider, cable amount or modulation-depth editing controls, numeric connection badges or their inline editing",
+      "required": [
+        "docs/editor/connection-amount-slider.md",
+        "docs/editor/annotations-and-connections.md",
+        "docs/editor/user-interactions.md"
+      ],
+      "recommended": [
+        "docs/editor/design-system.md",
+        "docs/editor/canvas.md"
+      ],
+      "reference": [
+        "docs/roadmap/editor-and-effects.md"
+      ]
+    },
+    {
+      "id": "novel-topic",
+      "when": "No specific feature contract matches; select applicable general routes as well",
+      "required": [
+        "docs/architecture/task-routing.md"
+      ],
+      "recommended": [
+        "docs/architecture/overview.md"
+      ],
+      "reference": []
+    },
+    {
+      "id": "incremental-analysis",
+      "when": "Incremental AI musical generation, staged voice/group/section validation, structural music analysis, agent acoustic analysis, spectrogram or vectorscope for agent evaluation, or Phase 7.8 design/implementation",
+      "required": [
+        "docs/examples/incremental-composition-and-analysis.md",
+        "docs/core/agent-kit.md",
+        "docs/audio/signal-observation.md",
+        "docs/examples/musical-composition-validation.md",
+        "docs/agents/music-instructions.md"
+      ],
+      "recommended": [
+        "docs/examples/mixing-mastering-and-analysis.md"
+      ],
+      "reference": [
+        "docs/roadmap/advanced.md"
+      ],
+      "pathFiles": [
+        "docs/examples/incremental-composition-and-analysis.md"
+      ]
+    }
   ],
   "coverage": {
     "schemaVersion": 1,
     "maxActiveDepth": 6,
     "exceptions": [
-      {"path":"docs/archive/legacy-commands-and-canvas.md","kind":"archive","reason":"Historical superseded reference; reachable through the archive index, not a live specification."},
-      {"path":"docs/archive/legacy-compiler-and-composites.md","kind":"archive","reason":"Historical superseded reference; reachable through the archive index, not a live specification."},
-      {"path":"docs/archive/legacy-design-and-build.md","kind":"archive","reason":"Historical superseded reference; reachable through the archive index, not a live specification."},
-      {"path":"docs/archive/legacy-effects.md","kind":"archive","reason":"Historical superseded reference; reachable through the archive index, not a live specification."},
-      {"path":"docs/archive/legacy-node-features.md","kind":"archive","reason":"Historical superseded reference; reachable through the archive index, not a live specification."},
-      {"path":"docs/archive/legacy-readme.md","kind":"archive","reason":"Historical superseded reference; reachable through the archive index, not a live specification."},
-      {"path":"docs/archive/legacy-setup-and-workspace.md","kind":"archive","reason":"Historical superseded reference; reachable through the archive index, not a live specification."},
-      {"path":"docs/archive/legacy-startup-and-graph.md","kind":"archive","reason":"Historical superseded reference; reachable through the archive index, not a live specification."},
-      {"path":"docs/archive/legacy-transport-and-oscillators.md","kind":"archive","reason":"Historical superseded reference; reachable through the archive index, not a live specification."},
-      {"path":".github/copilot-instructions.md","kind":"alternate-entry","target":"AGENTS.md","reason":"Native Copilot entry point delegates to the canonical agent entry point."},
-      {"path":".github/pull_request_template.md","kind":"template","reason":"PR authoring template, discoverable from the compliance policy; not a task-domain specification."},
-      {"path":"docs/roadmap/agent-work-slices.md","kind":"redirect","target":"docs/agents/work-slices.md","reason":"Compatibility redirect for historical links; no competing policy."}
+      {
+        "path": "docs/archive/legacy-commands-and-canvas.md",
+        "kind": "archive",
+        "reason": "Historical superseded reference; reachable through the archive index, not a live specification."
+      },
+      {
+        "path": "docs/archive/legacy-compiler-and-composites.md",
+        "kind": "archive",
+        "reason": "Historical superseded reference; reachable through the archive index, not a live specification."
+      },
+      {
+        "path": "docs/archive/legacy-design-and-build.md",
+        "kind": "archive",
+        "reason": "Historical superseded reference; reachable through the archive index, not a live specification."
+      },
+      {
+        "path": "docs/archive/legacy-effects.md",
+        "kind": "archive",
+        "reason": "Historical superseded reference; reachable through the archive index, not a live specification."
+      },
+      {
+        "path": "docs/archive/legacy-node-features.md",
+        "kind": "archive",
+        "reason": "Historical superseded reference; reachable through the archive index, not a live specification."
+      },
+      {
+        "path": "docs/archive/legacy-readme.md",
+        "kind": "archive",
+        "reason": "Historical superseded reference; reachable through the archive index, not a live specification."
+      },
+      {
+        "path": "docs/archive/legacy-setup-and-workspace.md",
+        "kind": "archive",
+        "reason": "Historical superseded reference; reachable through the archive index, not a live specification."
+      },
+      {
+        "path": "docs/archive/legacy-startup-and-graph.md",
+        "kind": "archive",
+        "reason": "Historical superseded reference; reachable through the archive index, not a live specification."
+      },
+      {
+        "path": "docs/archive/legacy-transport-and-oscillators.md",
+        "kind": "archive",
+        "reason": "Historical superseded reference; reachable through the archive index, not a live specification."
+      },
+      {
+        "path": ".github/copilot-instructions.md",
+        "kind": "alternate-entry",
+        "target": "AGENTS.md",
+        "reason": "Native Copilot entry point delegates to the canonical agent entry point."
+      },
+      {
+        "path": ".github/pull_request_template.md",
+        "kind": "template",
+        "reason": "PR authoring template, discoverable from the compliance policy; not a task-domain specification."
+      },
+      {
+        "path": "docs/roadmap/agent-work-slices.md",
+        "kind": "redirect",
+        "target": "docs/agents/work-slices.md",
+        "reason": "Compatibility redirect for historical links; no competing policy."
+      }
     ],
     "scenarios": [
-      {"task":"Explain or recreate the three harmonizing oscillators","routes":["music","sound-foundations","harmonic-drone"],"required":["docs/examples/foundations/catalogue.md","docs/examples/foundations/breathing-harmonic-drone.md"]},
-      {"task":"Improve a flat synthetic voice using previous layering experiments","routes":["synth-voice","waveform-layering"],"required":["docs/examples/foundations/waveform-layer-labs.md","docs/examples/synthesizer-patch-recipes.md"]},
-      {"task":"Create a layered industrial bass","routes":["sound-foundations","bass-foundations","bass-breaks"],"required":["docs/examples/foundations/bass-lab-ii.md","docs/examples/genres/bass-and-breaks.md"]},
-      {"task":"Improve expressive rhythmic phrasing and lower complementary melody","routes":["composition-development","expressive-phrasing"],"required":["docs/examples/voice-lab-expressive-phrasing.md","docs/examples/compositional-development.md"]},
-      {"task":"Create an ambient drone","routes":["ambient-composition","drone-design"],"required":["docs/examples/genres/ambient.md","docs/examples/drone.md"]},
-      {"task":"Compose a club track","routes":["genre","club-dance"],"required":["docs/examples/genres/club-and-dance.md"]},
-      {"task":"Compose an experimental crossover","routes":["genre","experimental-hybrids"],"required":["docs/examples/genres/experimental-and-hybrids.md"]},
-      {"task":"Design an audio pitch shifter","routes":["dsp","pitch-shifting"],"required":["docs/audio/pitch-shifter.md"]},
-      {"task":"Import recorded samples","routes":["sample-assets","persistence"],"required":["docs/audio/sample-assets.md"]},
-      {"task":"Change mute and bypass","routes":["node-audition","editor-ui"],"required":["docs/editor/audition.md"]},
-      {"task":"Modify sequencer articulation and duration","routes":["musical-control","sequencer-design"],"required":["docs/instruments/note-sequencer-design.md"]},
-      {"task":"Modify polyphonic voice allocation","routes":["musical-control","polyphony"],"required":["docs/instruments/polyphony.md"]},
-      {"task":"Work on Physical Pluck","routes":["faust-instrument","faust-pluck"],"required":["docs/instruments/faust-physical-pluck.md"]},
-      {"task":"Work on Physical Flute","routes":["faust-instrument","faust-winds"],"required":["docs/instruments/faust-sustained-instruments.md"]},
-      {"task":"Work on Physical Violin","routes":["faust-instrument","faust-bowed-brass-guitar"],"required":["docs/instruments/faust-violin-brass-guitar.md"]},
-      {"task":"Reproduce Faust research probes","routes":["faust-model-probes"],"required":["docs/instruments/faust-physical-model-probes.md"]},
-      {"task":"Optimize GPU layout","routes":["gpu-renderer","performance"],"required":["docs/editor/gpu-renderer.md","docs/editor/gpu-renderer-optimization.md"]},
-      {"task":"Change performance collection lifetime","routes":["performance","performance-collection"],"required":["docs/quality/performance-implementation.md"]},
-      {"task":"Generate or modify a native musical patch JSON offline with Python","routes":["music","agent-kit"],"required":["docs/core/agent-kit.md","docs/editor/persistence-and-history.md"]},
-      {"task":"Implement versioned Agent Kit catalog and patch validation","routes":["agent-kit","implementation","roadmap"],"required":["docs/core/agent-kit.md","docs/core/signals-and-ports.md"]},
-      {"task":"Implement or review direct canvas connection amount sliders","routes":["connection-amount-slider","editor-ui","interaction-change","roadmap"],"required":["docs/editor/connection-amount-slider.md","docs/editor/annotations-and-connections.md","docs/editor/user-interactions.md"]},
-      {"task":"Review cross-system architecture decisions","routes":["architecture-decisions","implementation"],"required":["docs/core/decisions.md"]}
+      {
+        "task": "Explain or recreate the three harmonizing oscillators",
+        "routes": [
+          "music",
+          "sound-foundations",
+          "harmonic-drone"
+        ],
+        "required": [
+          "docs/examples/foundations/catalogue.md",
+          "docs/examples/foundations/breathing-harmonic-drone.md"
+        ]
+      },
+      {
+        "task": "Improve a flat synthetic voice using previous layering experiments",
+        "routes": [
+          "synth-voice",
+          "waveform-layering"
+        ],
+        "required": [
+          "docs/examples/foundations/waveform-layer-labs.md",
+          "docs/examples/synthesizer-patch-recipes.md"
+        ]
+      },
+      {
+        "task": "Create a layered industrial bass",
+        "routes": [
+          "sound-foundations",
+          "bass-foundations",
+          "bass-breaks"
+        ],
+        "required": [
+          "docs/examples/foundations/bass-lab-ii.md",
+          "docs/examples/genres/bass-and-breaks.md"
+        ]
+      },
+      {
+        "task": "Improve expressive rhythmic phrasing and lower complementary melody",
+        "routes": [
+          "composition-development",
+          "expressive-phrasing"
+        ],
+        "required": [
+          "docs/examples/voice-lab-expressive-phrasing.md",
+          "docs/examples/compositional-development.md"
+        ]
+      },
+      {
+        "task": "Create an ambient drone",
+        "routes": [
+          "ambient-composition",
+          "drone-design"
+        ],
+        "required": [
+          "docs/examples/genres/ambient.md",
+          "docs/examples/drone.md"
+        ]
+      },
+      {
+        "task": "Compose a club track",
+        "routes": [
+          "genre",
+          "club-dance"
+        ],
+        "required": [
+          "docs/examples/genres/club-and-dance.md"
+        ]
+      },
+      {
+        "task": "Compose an experimental crossover",
+        "routes": [
+          "genre",
+          "experimental-hybrids"
+        ],
+        "required": [
+          "docs/examples/genres/experimental-and-hybrids.md"
+        ]
+      },
+      {
+        "task": "Design an audio pitch shifter",
+        "routes": [
+          "dsp",
+          "pitch-shifting"
+        ],
+        "required": [
+          "docs/audio/pitch-shifter.md"
+        ]
+      },
+      {
+        "task": "Import recorded samples",
+        "routes": [
+          "sample-assets",
+          "persistence"
+        ],
+        "required": [
+          "docs/audio/sample-assets.md"
+        ]
+      },
+      {
+        "task": "Change mute and bypass",
+        "routes": [
+          "node-audition",
+          "editor-ui"
+        ],
+        "required": [
+          "docs/editor/audition.md"
+        ]
+      },
+      {
+        "task": "Modify sequencer articulation and duration",
+        "routes": [
+          "musical-control",
+          "sequencer-design"
+        ],
+        "required": [
+          "docs/instruments/note-sequencer-design.md"
+        ]
+      },
+      {
+        "task": "Modify polyphonic voice allocation",
+        "routes": [
+          "musical-control",
+          "polyphony"
+        ],
+        "required": [
+          "docs/instruments/polyphony.md"
+        ]
+      },
+      {
+        "task": "Work on Physical Pluck",
+        "routes": [
+          "faust-instrument",
+          "faust-pluck"
+        ],
+        "required": [
+          "docs/instruments/faust-physical-pluck.md"
+        ]
+      },
+      {
+        "task": "Work on Physical Flute",
+        "routes": [
+          "faust-instrument",
+          "faust-winds"
+        ],
+        "required": [
+          "docs/instruments/faust-sustained-instruments.md"
+        ]
+      },
+      {
+        "task": "Work on Physical Violin",
+        "routes": [
+          "faust-instrument",
+          "faust-bowed-brass-guitar"
+        ],
+        "required": [
+          "docs/instruments/faust-violin-brass-guitar.md"
+        ]
+      },
+      {
+        "task": "Reproduce Faust research probes",
+        "routes": [
+          "faust-model-probes"
+        ],
+        "required": [
+          "docs/instruments/faust-physical-model-probes.md"
+        ]
+      },
+      {
+        "task": "Optimize GPU layout",
+        "routes": [
+          "gpu-renderer",
+          "performance"
+        ],
+        "required": [
+          "docs/editor/gpu-renderer.md",
+          "docs/editor/gpu-renderer-optimization.md"
+        ]
+      },
+      {
+        "task": "Change performance collection lifetime",
+        "routes": [
+          "performance",
+          "performance-collection"
+        ],
+        "required": [
+          "docs/quality/performance-implementation.md"
+        ]
+      },
+      {
+        "task": "Generate or modify a native musical patch JSON offline with Python",
+        "routes": [
+          "music",
+          "agent-kit"
+        ],
+        "required": [
+          "docs/core/agent-kit.md",
+          "docs/editor/persistence-and-history.md"
+        ]
+      },
+      {
+        "task": "Implement versioned Agent Kit catalog and patch validation",
+        "routes": [
+          "agent-kit",
+          "implementation",
+          "roadmap"
+        ],
+        "required": [
+          "docs/core/agent-kit.md",
+          "docs/core/signals-and-ports.md"
+        ]
+      },
+      {
+        "task": "Implement or review direct canvas connection amount sliders",
+        "routes": [
+          "connection-amount-slider",
+          "editor-ui",
+          "interaction-change",
+          "roadmap"
+        ],
+        "required": [
+          "docs/editor/connection-amount-slider.md",
+          "docs/editor/annotations-and-connections.md",
+          "docs/editor/user-interactions.md"
+        ]
+      },
+      {
+        "task": "Review cross-system architecture decisions",
+        "routes": [
+          "architecture-decisions",
+          "implementation"
+        ],
+        "required": [
+          "docs/core/decisions.md"
+        ]
+      },
+      {
+        "task": "Generate a musical piece incrementally and validate voices, groups and sections",
+        "routes": [
+          "music",
+          "composition-development",
+          "incremental-analysis"
+        ],
+        "required": [
+          "docs/examples/incremental-composition-and-analysis.md",
+          "docs/examples/musical-composition-validation.md"
+        ]
+      },
+      {
+        "task": "Plan native acoustic analysis or structural-only evaluation for Agent Kit",
+        "routes": [
+          "agent-kit",
+          "incremental-analysis",
+          "roadmap"
+        ],
+        "required": [
+          "docs/examples/incremental-composition-and-analysis.md",
+          "docs/core/agent-kit.md",
+          "docs/audio/signal-observation.md"
+        ]
+      }
     ]
   }
 }
