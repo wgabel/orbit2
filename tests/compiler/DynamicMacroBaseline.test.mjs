@@ -63,13 +63,13 @@ test('connected macro numerical behavior at both sample rates', async () => {
             } else {
                 const lo = Math.max(0,.5-Math.abs(item.depth));
                 const hi = Math.min(1,.5+Math.abs(item.depth));
-                const expected = [lo,hi].map(u => ({frequency:220+220*u*u,rms:(.6-.4*u)*.5/Math.sqrt(2)}));
+                const expected = [lo,hi].map(u => ({frequency:item.downstream ? 2*(220+220*u*u)+40*(u-.5) : 220+220*u*u,rms:(.6-.4*u)*.5/Math.sqrt(2)}));
                 for (const row of measured) {
                     assert.ok(expected.some(e => Math.abs(row.frequency-e.frequency)<1 &&
                         Math.abs(row.rms-e.rms)<.004), JSON.stringify({item:item.name,rate,row,expected}));
                 }
                 if (lo !== hi) {
-                    assert.ok(measured[0].frequency !== measured[1].frequency);
+                    assert.ok(Math.abs(measured[0].frequency-measured[1].frequency)>1);
                     assert.ok(Math.abs(measured[0].frequency-measured[2].frequency)<1);
                     assert.ok(Math.abs(measured[1].frequency-measured[3].frequency)<1);
                 }
