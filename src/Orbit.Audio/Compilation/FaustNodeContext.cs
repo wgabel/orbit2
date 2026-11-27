@@ -13,16 +13,18 @@ public sealed class FaustNodeContext
     private readonly IReadOnlyDictionary<PortAddress, string> signals;
     private readonly List<FaustParameterControl> controls;
     private readonly List<string> definitions;
+    private readonly FaustMacroExpressions? macros;
 
     internal FaustNodeContext(GraphNodeSnapshot node, ILookup<PortAddress, SignalConnection> incoming,
         IReadOnlyDictionary<PortAddress, string> signals, List<FaustParameterControl> controls,
-        List<string> definitions)
+        List<string> definitions, FaustMacroExpressions? macros = null)
     {
         Node = node;
         this.incoming = incoming;
         this.signals = signals;
         this.controls = controls;
         this.definitions = definitions;
+        this.macros = macros;
     }
 
     public GraphNodeSnapshot Node { get; }
@@ -109,7 +111,14 @@ public sealed class FaustNodeContext
         var meter = baseMultiplier is not null || parameter.ModulationPortId is Guid modulationPort &&
             incoming[new PortAddress(Node.Id, modulationPort)].Any()
             ? $"m_{Node.Id:N}_{parameter.Id:N}" : null;
-        if (!controls.Any(control => control.Name == name))
+        var mappedBase = macros?.Resolve(Node, parameter);
+        if (mappedBase is not null)
+        {
+            // Dynamic targets have no independent base writer. Passive target
+            // telemetry is added separately in S4e, not as a fake parameter control.
+            meter = null;
+        }
+        else if (!controls.Any(control => control.Name == name))
         {
             controls.Add(new FaustParameterControl(new ParameterAddress(Node.Id, parameter.Id), name, parameter.BaseValue, meter));
             var step = definition.Choices is null ? "0.001" : "1.0";
@@ -126,7 +135,8 @@ public sealed class FaustNodeContext
         }
 
         var modulation = parameter.ModulationPortId is Guid portId ? InputSignal(portId) : "0.0";
-        var baseExpression = baseMultiplier is null ? name : $"({name} * ({baseMultiplier}))";
+        var baseValue = mappedBase ?? name;
+        var baseExpression = baseMultiplier is null ? baseValue : $"({baseValue} * ({baseMultiplier}))";
         var effective = $"max({minimum}, min({maximum}, {baseExpression} + {modulation}))";
         if (signalMaximum is not null)
             effective = $"min({signalMaximum}, {effective})";
