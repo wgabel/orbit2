@@ -15,9 +15,11 @@ internal sealed class FaustMacroExpressions(
 {
     private readonly Dictionary<FaustMacroAddress, FaustMacroControl> controls = [];
     private readonly HashSet<ParameterAddress> consumed = [];
+    private readonly Dictionary<ParameterAddress, FaustMacroTarget> targetsWithMeters = [];
     private readonly ILookup<Guid, ParameterAddress> byNode = targets.Keys.ToLookup(address => address.NodeId);
 
     public IReadOnlyList<FaustMacroControl> Manifest => controls.Values.ToArray();
+    public IReadOnlyList<FaustMacroTarget> TargetMeters => targetsWithMeters.Values.ToArray();
 
     public string? Resolve(GraphNodeSnapshot node, ParameterSnapshot parameter)
     {
@@ -57,9 +59,14 @@ internal sealed class FaustMacroExpressions(
             // Retain the observable normalized control even for a constant
             // mapping. No second smoothing filter is applied to mapped samples.
             definitions.Add($"{nameBase} = attach((1.0 - {curved}) * {zero} + {curved} * {one}, {u});");
+            targetsWithMeters.Add(address, new FaustMacroTarget(target.Source.GraphId, address,
+                $"effective_macro_target_{node.Id:N}_{parameter.Id:N}"));
         }
         return nameBase;
     }
+
+    public string? TargetMeterName(GraphNodeSnapshot node, ParameterSnapshot parameter) =>
+        targetsWithMeters.TryGetValue(new ParameterAddress(node.Id, parameter.Id), out var target) ? target.MeterName : null;
 
     public void VerifyNode(GraphNodeSnapshot node)
     {

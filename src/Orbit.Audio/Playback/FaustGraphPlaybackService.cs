@@ -259,8 +259,11 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
         var controls = playback.Controls;
         var envelopeMeters = playback.Program.EnvelopeMeters;
         var pitchMeters = playback.Program.PitchMeters;
+        var macroControls = playback.Program.MacroControls;
+        var macroTargets = playback.Program.MacroTargets;
         var generation = playback.Generation;
-        if (!controls.Any(control => control.MeterName is not null) && envelopeMeters.Count == 0 && pitchMeters.Count == 0) return null;
+        if (!controls.Any(control => control.MeterName is not null) && envelopeMeters.Count == 0 &&
+            pitchMeters.Count == 0 && macroControls.Count == 0 && macroTargets.Count == 0) return null;
         var outputs = await engine.GetOutputValuesAsync(SoundId(graphId));
         // Do not attach values from an old or crossfading worklet to a new graph.
         if (outputs is null || playback.Stopping || !active.TryGetValue(graphId, out var current) ||
@@ -268,6 +271,9 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
             playback.Result.AppliedRevision != revision || playback.Generation != generation) return null;
         var addresses = controls.Where(control => control.MeterName is not null)
             .ToDictionary(control => control.MeterName!, StringComparer.Ordinal);
+        var macroAddresses = macroControls.ToDictionary(control => control.MeterName, control => control.Address, StringComparer.Ordinal);
+        var targetAddresses = macroTargets.ToDictionary(target => target.MeterName, StringComparer.Ordinal);
+        var macroValues = new Dictionary<GraphMacroAddress, double>();
         var values = new Dictionary<Guid, Dictionary<ParameterAddress, double>>();
         var envelopeAddresses = envelopeMeters.ToDictionary(meter => meter.Name, StringComparer.Ordinal);
         var playheads = new Dictionary<Guid, Dictionary<Guid, EnvelopePlayhead>>();
@@ -278,7 +284,18 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
         foreach (var (path, value) in outputs)
         {
             var name = path[(path.LastIndexOf('/') + 1)..];
-            if (double.IsFinite(value) && addresses.TryGetValue(name, out var control))
+            if (double.IsFinite(value) && macroAddresses.TryGetValue(name, out var macro))
+            {
+                if (value is >= 0 and <= 1)
+                    macroValues[new GraphMacroAddress(macro.GraphId, macro.CompositeId, macro.MacroId)] = value;
+            }
+            else if (double.IsFinite(value) && targetAddresses.TryGetValue(name, out var target))
+            {
+                if (!values.TryGetValue(target.GraphId, out var local))
+                    values.Add(target.GraphId, local = new Dictionary<ParameterAddress, double>());
+                local[target.Address] = value;
+            }
+            else if (double.IsFinite(value) && addresses.TryGetValue(name, out var control))
             {
                 if (!values.TryGetValue(control.GraphId, out var local))
                     values.Add(control.GraphId, local = new Dictionary<ParameterAddress, double>());
@@ -301,7 +318,7 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
                 local[step.NodeId] = (int)value;
             }
         }
-        return values.Count == 0 && playheads.Count == 0 && pitchOffsets.Count == 0 ? null : new(graphId, revision,
+        return values.Count == 0 && playheads.Count == 0 && pitchOffsets.Count == 0 && macroValues.Count == 0 ? null : new(graphId, revision,
             values.Remove(graphId, out var rootValues) ? rootValues : new Dictionary<ParameterAddress, double>())
         {
             ChildValues = values.ToDictionary(pair => pair.Key,
@@ -309,7 +326,8 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
             EnvelopePlayheads = playheads.ToDictionary(pair => pair.Key,
                 pair => (IReadOnlyDictionary<Guid, EnvelopePlayhead>)pair.Value),
             PitchOffsets = pitchOffsets.ToDictionary(pair => pair.Key, pair => (IReadOnlyDictionary<Guid, double>)pair.Value),
-            PitchSteps = pitchSteps.ToDictionary(pair => pair.Key, pair => (IReadOnlyDictionary<Guid, int>)pair.Value)
+            PitchSteps = pitchSteps.ToDictionary(pair => pair.Key, pair => (IReadOnlyDictionary<Guid, int>)pair.Value),
+            MacroValues = macroValues
         };
     }
 

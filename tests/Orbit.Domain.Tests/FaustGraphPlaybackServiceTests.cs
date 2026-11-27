@@ -401,8 +401,19 @@ public sealed class FaustGraphPlaybackServiceTests
         var macroControl = Assert.Single(initialProgram.MacroControls);
         Assert.True(initialProgram.HasActiveMacroModulation);
         Assert.Equal(new FaustMacroAddress(patch.OuterId, wrapper.Id, macroId), macroControl.Address);
+        var targetMeter = Assert.Single(initialProgram.MacroTargets);
         Assert.Equal(0.5, engine.Request!.Parameters[macroControl.Name]);
         Assert.DoesNotContain(initialProgram.Controls, control => control.Address == patch.Frequency);
+
+        engine.Outputs = new()
+        {
+            ["/OrbitGraph/" + macroControl.MeterName] = 0.65,
+            ["/OrbitGraph/" + targetMeter.MeterName] = 360
+        };
+        var telemetry = await service.GetTelemetryAsync(session.GraphId);
+        Assert.NotNull(telemetry);
+        Assert.Equal(0.65, telemetry.MacroValues[new GraphMacroAddress(patch.OuterId, wrapper.Id, macroId)]);
+        Assert.Equal(360, telemetry.GetValues(patch.ChildId)[patch.Frequency]);
 
         session.Execute(new SetCompositeMacroValueCommand(patch.OuterId, wrapper.Id, macroId, 0.8));
         await service.UpdateAsync(session.Snapshot);

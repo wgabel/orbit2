@@ -1,5 +1,6 @@
 using Orbit.Application.Graphs.Snapshots;
 using Orbit.Application.Services;
+using Orbit.Application.Models;
 using Orbit.Audio.Compilation;
 using Orbit.Domain.Parameters;
 using Orbit.Domain.Ports;
@@ -20,14 +21,33 @@ public sealed class GraphModulationRangeEstimator(IEnumerable<IFaustNodeEmitter>
 
     public IReadOnlyDictionary<ParameterAddress, ParameterRange?> Estimate(GraphSnapshot root, Guid graphId)
     {
+        var result = Analyze(root);
         root.GetGraph(graphId);
-        var flattened = GraphFlattener.Flatten(root);
+        return result.Parameters.Where(pair => result.Origins[pair.Key.NodeId].GraphId == graphId)
+            .ToDictionary(pair => pair.Key with { NodeId = result.Origins[pair.Key.NodeId].NodeId }, pair => pair.Value);
+    }
+
+    public IReadOnlyDictionary<GraphMacroAddress, ParameterRange?> EstimateMacroRanges(GraphSnapshot root, Guid graphId)
+    {
+        root.GetGraph(graphId);
+        return Analyze(root).Macros.Where(pair => pair.Key.GraphId == graphId).ToDictionary(pair => pair.Key, pair => pair.Value);
+    }
+
+    private (IReadOnlyDictionary<ParameterAddress, ParameterRange?> Parameters,
+        IReadOnlyDictionary<GraphMacroAddress, ParameterRange?> Macros,
+        IReadOnlyDictionary<Guid, GraphFlattener.NodeOrigin> Origins) Analyze(GraphSnapshot root)
+    {
+        var flattened = GraphFlattener.Flatten(root, includeMacroDependencies: true);
         var graph = flattened.Graph;
         var nodes = graph.Nodes.ToDictionary(node => node.Id);
         var incoming = graph.Connections.ToLookup(edge => edge.Destination);
         var signals = new Dictionary<PortAddress, ParameterRange?>();
         var visiting = new HashSet<PortAddress>();
         var ranges = new Dictionary<ParameterAddress, ParameterRange?>();
+        var macroTargets = flattened.MacroTargets;
+        var macroRanges = new Dictionary<GraphMacroAddress, ParameterRange?>();
+        var macroSources = macroTargets.Values.Select(target => target.Source).DistinctBy(source =>
+            new GraphMacroAddress(source.GraphId, source.CompositeId, source.MacroId)).ToArray();
 
         ParameterRange? Output(PortAddress address)
         {
@@ -64,11 +84,38 @@ public sealed class GraphModulationRangeEstimator(IEnumerable<IFaustNodeEmitter>
             return double.IsFinite(minimum) && double.IsFinite(maximum) ? new ParameterRange(minimum, maximum) : null;
         }
 
+        GraphMacroAddress MacroAddress(GraphFlattener.MacroSource source) =>
+            new(source.GraphId, source.CompositeId, source.MacroId);
+
+        ParameterRange? MacroRange(GraphFlattener.MacroSource source)
+        {
+            var address = MacroAddress(source);
+            if (macroRanges.TryGetValue(address, out var cached)) return cached;
+            if (Input(source.Signal) is not { } modulation)
+                return macroRanges[address] = null;
+            var minimum = Math.Clamp(source.BaseValue + modulation.Minimum, 0, 1);
+            var maximum = Math.Clamp(source.BaseValue + modulation.Maximum, 0, 1);
+            return macroRanges[address] = new ParameterRange(Math.Min(minimum, maximum), Math.Max(minimum, maximum));
+        }
+
+        ParameterRange? BaseRange(GraphNodeSnapshot node, ParameterSnapshot parameter)
+        {
+            var address = new ParameterAddress(node.Id, parameter.Id);
+            if (!macroTargets.TryGetValue(address, out var target))
+                return new ParameterRange(parameter.BaseValue, parameter.BaseValue);
+            if (MacroRange(target.Source) is not { } normalized) return null;
+            var a = Map(target.Binding, normalized.Minimum);
+            var b = Map(target.Binding, normalized.Maximum);
+            return new ParameterRange(Math.Min(a, b), Math.Max(a, b));
+        }
+
         ParameterRange? Effective(GraphNodeSnapshot node, ParameterSnapshot parameter)
         {
             var definition = parameter.Definition;
             if (!definition.IsValidBaseValue(parameter.BaseValue)) return null;
             var address = new ParameterAddress(node.Id, parameter.Id);
+            var baseRange = BaseRange(node, parameter);
+            if (baseRange is null) return ranges[address] = null;
             // The frequency control is a base frequency, scaled by semitones before additive Hz modulation.
             if (ActivePitchForFrequency(node, parameter) is { } pitch)
             {
@@ -77,29 +124,37 @@ public sealed class GraphModulationRangeEstimator(IEnumerable<IFaustNodeEmitter>
                     Input(new PortAddress(node.Id, parameter.ModulationPortId!.Value)) is not { } hzRange)
                     return ranges[address] = null;
                 return ranges[address] = new ParameterRange(
-                    MusicalPitch.Frequency(parameter.BaseValue, pitchRange.Minimum, hzRange.Minimum, definition.Minimum, definition.Maximum),
-                    MusicalPitch.Frequency(parameter.BaseValue, pitchRange.Maximum, hzRange.Maximum, definition.Minimum, definition.Maximum));
+                    MusicalPitch.Frequency(baseRange.Value.Minimum, pitchRange.Minimum, hzRange.Minimum, definition.Minimum, definition.Maximum),
+                    MusicalPitch.Frequency(baseRange.Value.Maximum, pitchRange.Maximum, hzRange.Maximum, definition.Minimum, definition.Maximum));
             }
             if (parameter.ModulationPortId is not Guid port ||
                 !incoming[new PortAddress(node.Id, port)].Any())
+            {
+                if (macroTargets.ContainsKey(address)) return ranges[address] = baseRange;
                 return new ParameterRange(parameter.BaseValue, parameter.BaseValue);
+            }
             if (ranges.TryGetValue(address, out var cached)) return cached;
             if (definition.Scale != ParameterScale.Linear ||
                 Input(new PortAddress(node.Id, port)) is not { } modulation)
                 return ranges[address] = null;
             return ranges[address] = new ParameterRange(
-                Math.Clamp(parameter.BaseValue + modulation.Minimum, definition.Minimum, definition.Maximum),
-                Math.Clamp(parameter.BaseValue + modulation.Maximum, definition.Minimum, definition.Maximum));
+                Math.Clamp(baseRange.Value.Minimum + modulation.Minimum, definition.Minimum, definition.Maximum),
+                Math.Clamp(baseRange.Value.Maximum + modulation.Maximum, definition.Minimum, definition.Maximum));
         }
 
         foreach (var node in graph.Nodes)
             foreach (var parameter in node.Parameters)
                 if (parameter.ModulationPortId is Guid port && (incoming[new PortAddress(node.Id, port)].Any() ||
-                    ActivePitchForFrequency(node, parameter) is not null))
+                    ActivePitchForFrequency(node, parameter) is not null || macroTargets.ContainsKey(new ParameterAddress(node.Id, parameter.Id))))
                     Effective(node, parameter);
-        return ranges.Where(pair => flattened.Origins[pair.Key.NodeId].GraphId == graphId)
-            .ToDictionary(pair => pair.Key with { NodeId = flattened.Origins[pair.Key.NodeId].NodeId },
-                pair => pair.Value);
+        foreach (var source in macroSources) MacroRange(source);
+        return (ranges, macroRanges, flattened.Origins);
+    }
+
+    private static double Map(Orbit.Domain.Nodes.Composites.CompositeMacroBinding binding, double value)
+    {
+        var position = Math.Pow(Math.Clamp(value, 0, 1), binding.Exponent);
+        return (1 - position) * binding.AtZero + position * binding.AtOne;
     }
 
     private static ParameterSnapshot? ActivePitchForFrequency(GraphNodeSnapshot node, ParameterSnapshot parameter) =>

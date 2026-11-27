@@ -114,9 +114,9 @@ public sealed class FaustNodeContext
         var mappedBase = macros?.Resolve(Node, parameter);
         if (mappedBase is not null)
         {
-            // Dynamic targets have no independent base writer. Passive target
-            // telemetry is added separately in S4e, not as a fake parameter control.
-            meter = null;
+            // Dynamic targets have no independent base writer, but retain a
+            // passive meter for the final effective value after native modulation.
+            meter = macros!.TargetMeterName(Node, parameter);
         }
         else if (!controls.Any(control => control.Name == name))
         {

@@ -17,6 +17,10 @@ public sealed record GraphParameterTelemetry(Guid GraphId, long Revision,
     public IReadOnlyDictionary<Guid, IReadOnlyDictionary<Guid, int>> PitchSteps { get; init; }
         = new Dictionary<Guid, IReadOnlyDictionary<Guid, int>>();
 
+    /// <summary>Current normalized macro values keyed by their owning graph/composite/macro.</summary>
+    public IReadOnlyDictionary<GraphMacroAddress, double> MacroValues { get; init; }
+        = new Dictionary<GraphMacroAddress, double>();
+
     public IReadOnlyDictionary<ParameterAddress, double> GetValues(Guid graphId) =>
         graphId == GraphId ? Values : ChildValues.TryGetValue(graphId, out var values)
             ? values : new Dictionary<ParameterAddress, double>();
