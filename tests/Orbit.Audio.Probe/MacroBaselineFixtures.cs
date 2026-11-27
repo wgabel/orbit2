@@ -147,7 +147,13 @@ internal static class MacroBaselineFixtures
             Check(candidate.MacroControls.Count == (connected ? 1 : 0), "Unexpected dynamic manifest.");
             if (!connected)
                 Check(candidate.Source == reference.Source && EqualValues(candidate, reference), "Disconnected macro changed source.");
-            dynamicCases.Add(new { name, depth, constantOnly, connected, downstream,
+            // At exactly zero depth Faust may eliminate the otherwise unreachable driver.
+            // Identify only its graph-qualified controls; the macro and carrier remain required.
+            var optionalControls = connected && depth == 0
+                ? candidate.Controls.Where(c => c.GraphId == middle && c.Address.NodeId == driver.Id).Select(c => c.Name)
+                    .Concat(candidate.AuditionControls.Where(c => c.GraphId == middle && c.NodeId == driver.Id).Select(c => c.Name)).ToArray()
+                : Array.Empty<string>();
+            dynamicCases.Add(new { name, depth, constantOnly, connected, downstream, optionalControls,
                 meter = candidate.MacroControls.SingleOrDefault()?.MeterName,
                 macro = candidate.MacroControls.SingleOrDefault()?.Name,
                 candidate = new { source = candidate.Source, values = candidate.InitialControlValues() },

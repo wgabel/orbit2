@@ -12,17 +12,24 @@ const { instantiateFaustModuleFromFile, LibFaust, FaustCompiler, FaustMonoDspGen
 const compiler = new FaustCompiler(new LibFaust(await instantiateFaustModuleFromFile(join(faust, 'libfaust-wasm/libfaust-wasm.js'))));
 const factories = new Map();
 
-async function render(rate, program, macro) {
+async function render(rate, program, macro, optionalControls = [], meter = null) {
     if (!factories.has(program.source))
         factories.set(program.source, await compiler.createMonoDSPFactory('DynamicMacroReference', program.source, ''));
     const dsp = await new FaustMonoDspGenerator().createOfflineProcessor(rate, fixture.blockSize,
         { ...factories.get(program.source), soundfiles: {} });
     for (const [name, value] of Object.entries(program.values)) {
         const path = dsp.getParams().find(p => p.endsWith('/' + name));
-        assert.ok(path, name);
+        if (!path && optionalControls.includes(name)) continue;
+        assert.ok(path, `Missing required control: ${name}`);
         dsp.setParamValue(path, value);
     }
     if (macro) assert.ok(dsp.getParams().some(p => p.endsWith('/' + macro)), 'Macro slider eliminated');
+    if (meter) {
+        const metadata = JSON.parse(factories.get(program.source).json);
+        const hasMeter = items => items.some(item => item.items ? hasMeter(item.items) :
+            item.type === 'hbargraph' && item.address?.endsWith('/' + meter));
+        assert.ok(hasMeter(metadata.ui), `Missing effective macro meter: ${meter}`);
+    }
     const [samples] = dsp.render([], fixture.frames);
     assert.equal(samples.length, fixture.frames);
     for (const sample of samples) assert.ok(Number.isFinite(sample) && Math.abs(sample) <= 1.0001);
@@ -48,7 +55,7 @@ test('connected macro numerical behavior at both sample rates', async () => {
     const results = [];
     for (const rate of [44100, 48000]) {
         for (const item of fixture.cases) {
-            const samples = await render(rate, item.candidate, item.macro);
+            const samples = await render(rate, item.candidate, item.macro, item.optionalControls, item.meter);
             const windows = [[.2,.35],[.7,.85],[1.2,1.35],[1.7,1.85]];
             const measured = windows.map(([a,b]) => measure(samples,rate,a,b));
             if (item.name === 'disconnected') {
