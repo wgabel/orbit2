@@ -937,12 +937,65 @@ try {
     assert.equal(await labelMode.inputValue(), "All");
     const amountLabel = value => badges.filter({ has: page.locator(`input[aria-valuetext="${value}"]`) });
     const rail = amountLabel("+100 Hz").getByRole("slider");
+    // All four visibility modes are presentation-only. Verify the default
+    // modulation edge (100 Hz) remains in Modified while unity audio edges do not.
+    const allRailCount = await badges.count();
+    assert.equal(allRailCount, 3);
+    await selectView(page, labelMode, "Modified");
+    await amountLabel("+100 Hz").waitFor();
+    assert.equal(await badges.count(), 1);
+    await selectView(page, labelMode, "Selected");
+    assert.equal(await badges.count(), 0);
+    await selectView(page, labelMode, "Off");
+    assert.equal(await badges.count(), 0);
+    assert.equal(await wire.count(), 1);
+    await selectView(page, labelMode, "All");
+    await rail.waitFor();
+    assert.equal(await badges.count(), allRailCount);
+    assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
+
+    // Verify the exact cubic midpoint rather than the path-length midpoint,
+    // and screen-space size independently of the current canvas zoom.
+    const railGeometry = () => amountLabel("+100 Hz").evaluate(badge => {
+        const path = badge.closest(".canvas-world").querySelector(
+            `.connection-hit[data-connection-id="${badge.dataset.connectionId}"]`);
+        const coordinates = path.getAttribute("d").match(/[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?/g).map(Number);
+        if (coordinates.length !== 12) throw new Error("Expected M L C L cable geometry");
+        const x = (coordinates[2] + 3 * coordinates[4] + 3 * coordinates[6] + coordinates[8]) / 8;
+        const y = (coordinates[3] + 3 * coordinates[5] + 3 * coordinates[7] + coordinates[9]) / 8;
+        const midpoint = new DOMPoint(x, y).matrixTransform(path.getScreenCTM());
+        const rect = badge.getBoundingClientRect();
+        return { width: rect.width, height: rect.height,
+            error: Math.hypot(rect.left + rect.width / 2 - midpoint.x, rect.top + rect.height / 2 - midpoint.y) };
+    });
+    const firstGeometry = await railGeometry();
+    assert.ok(firstGeometry.error < 2, JSON.stringify(firstGeometry));
+    await zoomStep(page, -1);
+    const zoomedGeometry = await railGeometry();
+    assert.ok(zoomedGeometry.error < 2, JSON.stringify(zoomedGeometry));
+    assert.ok(Math.abs(zoomedGeometry.width - firstGeometry.width) < 2, "Rail width must remain screen-sized");
+    assert.ok(Math.abs(zoomedGeometry.height - firstGeometry.height) < 2, "Rail height must remain screen-sized");
+    await fitCanvas(page);
+
+    // Keep diagnostics enabled across the complete draft and release, rather
+    // than sampling from different monitoring lifetimes. Keyboard focus can
+    // exercise the real native range while the diagnostic panel is open.
+    await openWorkspacePanel(page, "more");
+    await performanceToggle.click();
+    const sourceBuilds = performancePanel.locator("[data-performance-source-builds]");
+    const replacements = performancePanel.getByText("Accepted replacements", { exact: true }).locator("xpath=following-sibling::dd[1]");
+    await sourceBuilds.filter({ hasText: /^0$/ }).waitFor({ timeout: 10000 });
+    await replacements.filter({ hasText: /^0$/ }).waitFor({ timeout: 10000 });
     await rail.focus();
     await page.keyboard.down("ArrowRight");
     await page.keyboard.down("ArrowRight");
     await page.locator('.connection-amount-slider input[aria-valuetext="+104 Hz"]').waitFor();
     assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
     assert.equal(await page.locator(".connection-amount-editor").count(), 0);
+    // Allow at least one diagnostics publication while the draft is held.
+    await page.waitForTimeout(1200);
+    assert.equal(await sourceBuilds.innerText(), "0");
+    assert.equal(await replacements.innerText(), "0");
     await page.keyboard.press("Escape");
     await page.keyboard.up("ArrowRight");
     await rail.waitFor();
@@ -951,6 +1004,10 @@ try {
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
     await amountLabel("+102 Hz").waitFor();
+    await sourceBuilds.filter({ hasText: /^1$/ }).waitFor({ timeout: 10000 });
+    await replacements.filter({ hasText: /^1$/ }).waitFor({ timeout: 10000 });
+    await performancePanel.getByRole("button", { name: "Close" }).click();
+    await closeWorkspacePanel(page, "more");
     await editButton(page, "Undo").click();
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
@@ -1201,6 +1258,25 @@ try {
     const breadcrumbs = page.getByRole("navigation", { name: "Canvas path" });
     await breadcrumbs.getByText("Drone", { exact: true }).waitFor();
     assert.equal(await labelMode.inputValue(), "All", "New nested canvas has its own label preference");
+    // Exercise a real child edge via its graph-local slider, then restore it
+    // before the existing nested graph assertions. A root edge must not change.
+    const childRail = page.locator('.connection-amount-slider input[aria-valuetext="+1 Hz"]');
+    await childRail.waitFor();
+    const childEdgeId = await childRail.locator("xpath=../..").getAttribute("data-connection-id");
+    const childAmount = page.locator(`.connection-amount-slider[data-connection-id="${childEdgeId}"]`);
+    await childAmount.getByRole("button", { name: "Edit exact connection amount" }).press("Enter");
+    const childExact = childAmount.getByRole("textbox", { name: "Exact connection amount" });
+    assert.equal(await childExact.inputValue(), "1");
+    await childExact.fill("0.375");
+    assert.equal(await status.innerText(), `Playing revision ${droneRevision}`);
+    await childExact.press("Enter");
+    droneRevision++;
+    await status.filter({ hasText: new RegExp(`^Playing revision ${droneRevision}$`) }).waitFor({ timeout: 15000 });
+    await childAmount.locator('input[aria-valuetext="+0.375 Hz"]').waitFor();
+    await editButton(page, "Undo").click();
+    droneRevision++;
+    await status.filter({ hasText: new RegExp(`^Playing revision ${droneRevision}$`) }).waitFor({ timeout: 15000 });
+    await childRail.waitFor();
     await selectView(page, labelMode, "Modified");
     assert.equal(await tempo.inputValue(), "90");
     await transportState.filter({ hasText: "Running" }).waitFor({ state: "attached" });
