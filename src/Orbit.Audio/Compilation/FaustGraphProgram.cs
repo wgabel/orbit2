@@ -1,4 +1,5 @@
 using Orbit.Application.Models;
+using Orbit.Domain.Parameters;
 
 namespace Orbit.Audio.Compilation;
 
@@ -16,6 +17,7 @@ public sealed record FaustGraphProgram(
     public SignalTapManifest SignalTaps { get; init; } = SignalTapManifest.Empty;
     public IReadOnlyList<FaustAuditionControl> AuditionControls { get; init; } = [];
     public IReadOnlyList<FaustMacroControl> MacroControls { get; init; } = [];
+    public IReadOnlyList<FaustMacroTarget> MacroTargets { get; init; } = [];
     /// <summary>True only when this accepted program contains connected, consumed audio-rate macro controls.</summary>
     public bool HasActiveMacroModulation => MacroControls.Count > 0;
     public IReadOnlyList<FaustEnvelopeMeter> EnvelopeMeters { get; init; } = [];
@@ -30,6 +32,7 @@ public sealed record FaustGraphProgram(
 
 public sealed record FaustMacroAddress(Guid GraphId, Guid CompositeId, Guid MacroId);
 public sealed record FaustMacroControl(FaustMacroAddress Address, string Name, double InitialValue, string MeterName);
+public sealed record FaustMacroTarget(Guid GraphId, ParameterAddress Address, string MeterName);
 
 public sealed record FaustEnvelopeMeter(Guid GraphId, Guid NodeId, string Name);
 public sealed record FaustPitchMeter(Guid GraphId, Guid NodeId, string Name)

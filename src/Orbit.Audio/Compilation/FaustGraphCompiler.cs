@@ -200,6 +200,11 @@ public sealed class FaustGraphCompiler
                 RequiresTransport = requiresTransportBeat || requiresTransportTempo || actionInputs.Any(input => input.Input.Pattern is not null), TransportInputChannels = transportChannels,
                 RhythmicInputs = actionInputs.Select(input => input.Input).ToArray(), AuditionControls = audition.Manifest,
                 MacroControls = macros?.Manifest ?? Array.Empty<FaustMacroControl>(),
+                MacroTargets = macros?.TargetMeters.Select(target => target with
+                {
+                    GraphId = flattened.Origins[target.Address.NodeId].GraphId,
+                    Address = target.Address with { NodeId = flattened.Origins[target.Address.NodeId].NodeId }
+                }).ToArray() ?? Array.Empty<FaustMacroTarget>(),
                 SignalTaps = new SignalTapManifest(tapChannels, outputExpressions.Count, selectorCount), EnvelopeMeters = envelopeMeters.AsReadOnly(), PitchMeters = pitchMeters.AsReadOnly() };
     }
 }
