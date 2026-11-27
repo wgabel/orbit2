@@ -86,8 +86,9 @@ public sealed class MacroDependencyProjectionTests
         Assert.Contains($"pow({control.Name}_u, ", program.Source);
         Assert.Contains($"hbargraph(\"{control.MeterName}\"", program.Source);
         var targetMeter = Assert.Single(program.MacroTargets, target => target.Address.ParameterId == frequency.ParameterId);
-        Assert.Equal(new FaustMacroTarget(child, new(flattenedOsc, frequency.ParameterId),
-            targetMeter.MeterName), targetMeter);
+        Assert.Equal(child, targetMeter.GraphId);
+        Assert.Equal(osc.Id, targetMeter.Address.NodeId);
+        Assert.Equal(frequency.ParameterId, targetMeter.Address.ParameterId);
         Assert.Contains($"hbargraph(\"{targetMeter.MeterName}\"", program.Source);
         Assert.Contains($"mapped_{flattenedOsc:N}_{frequency.ParameterId:N}", program.Source);
         Assert.Contains($"mapped_{flattenedOsc:N}_{amplitude.ParameterId:N}", program.Source);
