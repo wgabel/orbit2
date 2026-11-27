@@ -92,6 +92,58 @@ public sealed class ConnectionAmountDraftTests
     }
 
     [Fact]
+    public void ExactEntryPreservesPrecisionAndUsesGuardedHistory()
+    {
+        using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings());
+        var before = session.Snapshot;
+        var edge = before.Connections[0];
+        var draft = ConnectionAmountDraft.Begin(1, before, edge.Id)!;
+        Assert.False(draft.PreviewExact(double.NaN));
+        Assert.False(draft.PreviewExact(double.PositiveInfinity));
+        Assert.True(ConnectionAmountSemantics.TryParseAmount("-12345.6789012345", out var amount));
+        Assert.True(draft.PreviewExact(amount));
+        Assert.Equal(amount, draft.PreviewAmount);
+        Assert.Same(before, session.Snapshot);
+        Assert.False(session.CanUndo);
+        var request = draft.Complete()!;
+        Assert.Null(draft.Complete());
+        Assert.False(draft.PreviewExact(0));
+        session.Execute(request.CreateCommand(1, before)!);
+        Assert.Equal(amount, session.Snapshot.Connections[0].Amount);
+        session.Undo();
+        Assert.Equal(edge, session.Snapshot.Connections[0]);
+        Assert.False(session.CanUndo);
+        Assert.True(session.CanRedo);
+        session.Redo();
+        Assert.Equal(amount, session.Snapshot.Connections[0].Amount);
+        var canceled = ConnectionAmountDraft.Begin(1, session.Snapshot, edge.Id)!;
+        Assert.True(canceled.PreviewExact(0));
+        canceled.Cancel();
+        Assert.Null(canceled.Complete());
+        Assert.Equal(amount, session.Snapshot.Connections[0].Amount);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("NaN")]
+    [InlineData("Infinity")]
+    [InlineData("1e999")]
+    [InlineData("1,2")]
+    public void InvalidExactEntryIsRejected(string text)
+        => Assert.False(ConnectionAmountSemantics.TryParseAmount(text, out _));
+
+    [Theory]
+    [InlineData(-12345.6789012345)]
+    [InlineData(0.000000000000001)]
+    [InlineData(double.MaxValue)]
+    public void ExactTextRoundTrips(double amount)
+    {
+        Assert.True(ConnectionAmountSemantics.TryParseAmount(
+            ConnectionAmountSemantics.FormatExactAmount(amount), out var parsed));
+        Assert.Equal(amount, parsed);
+    }
+
+    [Fact]
     public void NestedDraftCommitsOnlyAgainstItsOwningCanvas()
     {
         using var session = ModulationDemoPatch.OpenSession(new ModulationDemoSettings(), BuiltInNodes.CreateEditorRegistry());

@@ -42,7 +42,7 @@
                 {
                     <ConnectionAmountSlider @key="wire.Id" Wire="@wire" Graph="@Snapshot.Graph" Zoom="@Snapshot.Viewport.Zoom"
                                             WorkspaceGeneration="@WorkspaceGeneration" Dispatch="@DispatchSliderAmount"
-                                            Disabled="@(HasAnnotationDraft || AnnotationActionsDisabled)"
+                                            Disabled="@(HasAnnotationDraft || AnnotationActionsDisabled || universalNavigating)"
                                             ShowAuthoredLabel="@Snapshot.ShowSecondaryAnnotations" />
                 }
             }

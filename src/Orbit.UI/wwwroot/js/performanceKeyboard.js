@@ -4,7 +4,7 @@ export function mountPerformanceKeyboard(root, receiver, codes) {
     const held = new Set(), pointers = new Map();
     let disposed = false, pending = 0, epoch = 0, chain = Promise.resolve();
     const active = () => !disposed && root.isConnected && root.dataset.armed === 'true' && !document.hidden;
-    const excluded = target => target instanceof Element && target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="slider"]') ||
+    const excluded = target => target instanceof Element && target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="slider"], .connection-amount-slider') ||
         document.querySelector('[aria-modal="true"], [role="dialog"], .workspace-library-panel, .rack-editor, .connection-amount-editor') ||
         root.closest('.graph-workspace')?.dataset.mobileActivePanel;
     const send = (method, ...args) => {

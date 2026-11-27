@@ -955,6 +955,38 @@ try {
     initialRevision++;
     await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
     await rail.waitFor();
+    // Exact entry is local, unquantized, and uses the same history boundary.
+    const directId = await amountLabel("+100 Hz").getAttribute("data-connection-id");
+    const direct = page.locator(`.connection-amount-slider[data-connection-id="${directId}"]`);
+    const exactButton = direct.getByRole("button", { name: "Edit exact connection amount" });
+    const exact = direct.getByRole("textbox", { name: "Exact connection amount" });
+    await exactButton.press("Enter");
+    await exact.waitFor();
+    await exact.fill("-123.456789");
+    assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
+    await exact.press("Enter");
+    initialRevision++;
+    await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
+    await exactButton.press("Enter");
+    assert.equal(await exact.inputValue(), "-123.456789");
+    await exact.fill("NaN");
+    await exact.press("Enter");
+    await direct.getByRole("alert").waitFor();
+    assert.equal(await status.innerText(), `Playing revision ${initialRevision}`);
+    await exact.press("Escape");
+    await exactButton.waitFor();
+    await exactButton.press("Enter");
+    await exact.fill("101.23456789");
+    await wire.focus(); // valid blur commits exactly once
+    initialRevision++;
+    await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
+    await editButton(page, "Undo").click();
+    initialRevision++;
+    await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
+    await editButton(page, "Undo").click();
+    initialRevision++;
+    await status.filter({ hasText: new RegExp(`^Playing revision ${initialRevision}$`) }).waitFor({ timeout: 15000 });
+    await rail.waitFor();
     await wire.press("Enter");
     await page.locator(".connection-modulation.connection-selected").waitFor({ state: "attached" });
     const amountEditor = page.getByRole("region", { name: "Connection amount editor" });

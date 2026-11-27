@@ -47,7 +47,7 @@ export function mountContextInput(viewport, receiver) {
         if (!navigation) { suppressClick = false; blockedRange = null; }
         if (viewport.querySelector('.canvas-context-overlay') && !viewport.contains(event.target))
             receiver.invokeMethodAsync('DismissContextAsync').catch(() => {});
-        const rail = viewport.contains(event.target) && event.target.closest('.connection-amount-slider input');
+        const rail = viewport.contains(event.target) && event.target.closest('.connection-amount-slider input[type="range"]');
         if (event.pointerType !== 'touch') {
             cancel();
             if (rail && event.button === 0 && event.isPrimary && !rail.disabled)

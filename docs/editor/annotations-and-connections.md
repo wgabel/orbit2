@@ -69,4 +69,4 @@ Test exact destination units and signed amounts, zero versus dormant styling, ty
 
 ### Direct canvas amount slider
 
-Eligible connections show a horizontal amount rail at the same midpoint as the original badge. The rail previews the amount locally and commits once on successful gesture completion through the existing graph command. Select the wire to open the inspector for exact values and other cable actions. Typed events retain their badges. The [slider design](connection-amount-slider.md) describes the range policy and follow-up for inline numeric entry.
+Eligible connections show a horizontal amount rail at the same midpoint as the original badge. The rail previews the amount locally and commits once on successful gesture completion through the existing graph command. Select the wire to open the inspector for exact values and other cable actions. Typed events retain their badges. Activate the displayed amount for exact inline entry; Enter or valid blur commits, Escape or pinch cancels. The [slider design](connection-amount-slider.md) describes the range and guarded edit policy.
