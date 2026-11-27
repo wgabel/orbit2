@@ -118,6 +118,8 @@ jobs:
           path: |
             ${{ runner.temp }}/orbit-graph-probe/static-macro-baseline.json
             ${{ runner.temp }}/orbit-graph-probe/static-macro-report.json
+            ${{ runner.temp }}/orbit-graph-probe/dynamic-macro-baseline.json
+            ${{ runner.temp }}/orbit-graph-probe/dynamic-macro-report.json
           if-no-files-found: error
       - name: Upload connection amount audio reference
         if: steps.changes.outputs.runtime == 'true'

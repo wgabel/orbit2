@@ -106,6 +106,77 @@ internal static class MacroBaselineFixtures
             faustVersion = "0.19.0", cases
         }));
 
+        // Slow square driver gives settled positive and negative plateaus.
+        var driver = Add(middle, OscillatorGenerator.NodeType);
+        void Driver(string key, double value) => session.Execute(new SetParameterValueCommand(middle, Address(driver, key), value));
+        Driver("frequency", 1);
+        Driver("amplitude", 1);
+        Driver("waveform", (int)OscillatorWaveform.Square);
+        Set(waveform, (int)OscillatorWaveform.Sine);
+        var dynamicCases = new List<object>();
+        foreach (var (name, depth, constantOnly, connected) in new[]
+        {
+            ("signed", 0.25, false, true),
+            ("inverted", -0.25, false, true),
+            ("clipped", 0.8, false, true),
+            ("zero-depth", 0.0, false, true),
+            ("downstream", 0.25, false, true),
+            ("constant-only", 0.25, true, true),
+            ("disconnected", 0.0, false, false)
+        })
+        {
+            session.Execute(new ReplaceCompositeMacrosCommand(middle, inner.Id, []));
+            Set(frequency, 330); Set(amplitude, 0.25); Set(level, 0.5);
+            var activeMapping = constantOnly ? new CompositeMacroMapping([new(level, 0.5, 0.5)]) : mapping;
+            session.Execute(new ReplaceCompositeMacrosCommand(middle, inner.Id,
+                [new(id, "Reference", 0.5, 0.5, activeMapping, inner.Inputs[0].Id)]));
+            if (connected)
+                session.Execute(new ConnectNodesCommand(middle, new(driver.Id, driver.Outputs[0].Id),
+                    new(inner.Id, inner.Inputs[0].Id), depth));
+            var downstream = name == "downstream";
+            if (downstream)
+            {
+                Set(Address(osc, OscillatorGenerator.PitchTrackingKey), 1);
+                Set(Address(osc, OscillatorGenerator.PitchKey), 12);
+                session.Execute(new ConnectNodesCommand(child,
+                    new(inner.Composite.InputRackId, inner.Inputs[0].Id),
+                    new(osc.Id, osc.Parameters.Single(p => p.Definition.Key == "frequency").ModulationPortId!.Value), 40));
+            }
+            var candidate = compiler.Compile(session.Snapshot, enableMacroModulation: true);
+            var reference = compiler.Compile(session.Snapshot);
+            Check(candidate.MacroControls.Count == (connected ? 1 : 0), "Unexpected dynamic manifest.");
+            if (!connected)
+                Check(candidate.Source == reference.Source && EqualValues(candidate, reference), "Disconnected macro changed source.");
+            // At exactly zero depth Faust may eliminate the otherwise unreachable driver.
+            // Identify only its graph-qualified controls; the macro and carrier remain required.
+            var optionalControls = connected && depth == 0
+                ? candidate.Controls.Where(c => c.GraphId == middle && c.Address.NodeId == driver.Id).Select(c => c.Name)
+                    .Concat(candidate.AuditionControls.Where(c => c.GraphId == middle && c.NodeId == driver.Id).Select(c => c.Name)).ToArray()
+                : Array.Empty<string>();
+            dynamicCases.Add(new { name, depth, constantOnly, connected, downstream, optionalControls,
+                meter = candidate.MacroControls.SingleOrDefault()?.MeterName,
+                macro = candidate.MacroControls.SingleOrDefault()?.Name,
+                candidate = new { source = candidate.Source, values = candidate.InitialControlValues() },
+                reference = new { source = reference.Source, values = reference.InitialControlValues() } });
+            if (downstream)
+            {
+                var native = session.Snapshot.GetGraph(child).Connections.Single(e =>
+                    e.Source.NodeId == inner.Composite.InputRackId);
+                session.Execute(new RemoveConnectionCommand(child, native.Id));
+                Set(Address(osc, OscillatorGenerator.PitchKey), 0);
+                Set(Address(osc, OscillatorGenerator.PitchTrackingKey), 0);
+            }
+            if (connected)
+            {
+                var edge = session.Snapshot.GetGraph(middle).Connections.Single(e => e.Destination.NodeId == inner.Id);
+                session.Execute(new RemoveConnectionCommand(middle, edge.Id));
+            }
+        }
+        File.WriteAllText(Path.Combine(directory, "dynamic-macro-baseline.json"), JsonSerializer.Serialize(new
+        {
+            schemaVersion = 1, blockSize = 128, frames = 96000, faustVersion = "0.19.0", cases = dynamicCases
+        }));
+
         GraphNodeSnapshot Add(Guid graph, string type) => session.Execute(new AddNodeCommand(graph, type))
             .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;
         void Wire(Guid graph, Guid from, Guid output, Guid to, Guid input) =>
