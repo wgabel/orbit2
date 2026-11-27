@@ -1,4 +1,4 @@
-"""Read-only validation of current-format native root leaf documents."""
+"""Read-only native graph validation; opt-in composite structural preview."""
 from copy import deepcopy
 from dataclasses import dataclass
 import re
@@ -40,8 +40,10 @@ _GUID = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}
 
 
 class _Validator:
-    def __init__(self, catalog):
+    def __init__(self, catalog, allow_composites=False):
         self.catalog = catalog
+        self.allow_composites = allow_composites
+        self.graphs = {}
         self.errors = []
         self.nodes = {}
         self.definitions = {n["persistedTypeKey"]: n for n in catalog._nodes.values()
@@ -114,18 +116,23 @@ class _Validator:
             else:
                 self.unique(tag.lower(), seen, where, "overview")
 
-    def node(self, node, path):
+    def node(self, node, path, depth=0):
         if not self.obj(node, path, ("id", "typeKey", "parameters", "ports", "composite")):
             return
         node_id = self.guid(node.get("id"), path + ".id")
         key = node.get("typeKey")
         definition = self.definitions.get(key) if isinstance(key, str) else None
         if node.get("composite") is not None:
-            self.error("unsupported-composite", path + ".composite", "Nested graphs require S9")
+            if not self.allow_composites:
+                self.error("unsupported-composite", path + ".composite", "Nested graphs require S9")
+            else:
+                self.composite(node, node_id, path, depth)
             return
         if definition is None:
             self.error("node-type", path + ".typeKey", "Unknown or unsupported leaf type", actual=key)
             return
+        if depth and key == "output.master":
+            self.error("node-type", path + ".typeKey", "Child graphs use their output rack, not master output")
         for field, supported in (("isMuted", definition["supportsMute"]),
                                  ("isBypassed", definition["bypassInputKey"] is not None)):
             value = node.get(field, False)
@@ -158,11 +165,114 @@ class _Validator:
                     ports[identity] = metadata
             for missing in sorted(entries.keys() - keys):
                 self.error("definition-key", f"{path}.{collection}", "Missing current definition key", missing)
+        self.register_node(node_id, ports, path)
+
+    def register_node(self, node_id, ports, path):
         if node_id is not None:
             if node_id in self.nodes:
                 self.error("identity", path + ".id", "Duplicate node ID", actual=node_id)
             else:
                 self.nodes[node_id] = ports
+
+    def composite(self, node, node_id, path, depth):
+        where = path + ".composite"
+        payload = node["composite"]
+        if node.get("typeKey") != "composite.graph":
+            self.error("node-type", path + ".typeKey", "Expected the native composite type")
+            return
+        if not self.obj(payload, where, ("name", "inputRackId", "outputRackId", "inputs", "outputs", "graph")):
+            return
+        if not isinstance(payload.get("name"), str) or not payload["name"].strip():
+            self.error("shape", where + ".name", "Composite requires a nonempty name")
+        if node.get("parameters") != []:
+            self.error("definition-key", path + ".parameters", "Composite has no leaf parameters")
+        if type(node.get("isMuted", False)) is not bool or node.get("isBypassed", False) is not False:
+            self.error("node-state", path, "Invalid composite mute/bypass state")
+        if payload.get("macros", []) != []:
+            self.error("unsupported-composite-macro", where + ".macros",
+                       "Macro validation is a subsequent slice")
+        enums = self.catalog._rules["boundaryEnumValues"]
+        event = self.catalog._rules["eventPortConstraints"]
+        event_types = {item["destination"] for item in self.catalog._rules["amounts"] if item["eventPort"]}
+        parent_ports, rack_inputs, rack_outputs = {}, {}, {}
+        ids = set()
+        for field, parent_direction, rack_direction, rack_ports in (
+                ("inputs", "Input", "Output", rack_inputs),
+                ("outputs", "Output", "Input", rack_outputs)):
+            names = set()
+            for i, port in enumerate(self.items(payload.get(field), where + "." + field)):
+                loc = f"{where}.{field}[{i}]"
+                if not self.obj(port, loc, ("id", "name", "signalType", "channelCount", "fanIn")):
+                    continue
+                identity = self.guid(port.get("id"), loc + ".id")
+                unique = self.unique(identity, ids, loc + ".id")
+                name = port.get("name")
+                if not isinstance(name, str) or not name.strip():
+                    self.error("boundary", loc + ".name", "Boundary requires a nonempty name")
+                else:
+                    self.unique(name.lower(), names, loc + ".name", "boundary")
+                signal_value, policy_value = port.get("signalType"), port.get("fanIn")
+                signal = enums["signalType"].get(str(signal_value)) if type(signal_value) is int else None
+                policy = enums["fanIn"].get(str(policy_value)) if type(policy_value) is int else None
+                channels = port.get("channelCount")
+                if (signal is None or policy is None or type(channels) is not int
+                        or not 1 <= channels <= 2147483647):
+                    self.error("boundary", loc, "Invalid native boundary signal, fan-in or channels")
+                    continue
+                if signal in event_types and (channels != event["channelCount"] or policy != event["fanIn"]):
+                    self.error("boundary", loc, "Invalid event boundary constraints")
+                    continue
+                if not unique:
+                    continue
+                def project(direction):
+                    return {"direction": direction, "signalType": signal, "channelCount": channels,
+                            "fanIn": policy if direction == "Input" else "Single"}
+                parent_ports[identity] = project(parent_direction)
+                rack_ports[identity] = project(rack_direction)
+
+        # The native serializer reconstructs the mirrors from the exposed
+        # ports. Require the complete canonical saved mirror for this preview.
+        mirrored = set()
+        for i, port in enumerate(self.items(node.get("ports"), path + ".ports")):
+            loc = f"{path}.ports[{i}]"
+            if not self.obj(port, loc, ("id", "key")):
+                continue
+            identity = self.guid(port.get("id"), loc + ".id")
+            self.unique(identity, mirrored, loc + ".id")
+            if identity not in parent_ports or port.get("key") != "boundary-" + (identity or "").replace("-", ""):
+                self.error("boundary-mirror", loc, "Saved port must mirror the exposed boundary identity")
+        if mirrored != set(parent_ports):
+            self.error("boundary-mirror", path + ".ports", "Saved boundary mirror is incomplete")
+        racks = []
+        for field, ports in (("inputRackId", rack_inputs), ("outputRackId", rack_outputs)):
+            identity = self.guid(payload.get(field), where + "." + field)
+            racks.append((identity, ports, where + "." + field))
+        self.graph(payload.get("graph"), where + ".graph", depth + 1, racks)
+        self.register_node(node_id, parent_ports, path)
+
+    def graph(self, graph, path, depth=0, racks=()):
+        if depth > 64:
+            self.error("graph-depth", path, "Composite preview supports at most 64 nested levels")
+            return
+        if not self.obj(graph, path, ("id", "nodes", "connections")):
+            return
+        graph_id = self.guid(graph.get("id"), path + ".id")
+        if graph_id is None:
+            return
+        if graph_id in self.graphs:
+            self.error("identity", path + ".id", "Duplicate graph ID", actual=graph_id)
+            return
+        parent = self.nodes
+        self.nodes = {}
+        self.graphs[graph_id] = self.nodes
+        try:
+            for identity, ports, rack_path in racks:
+                self.register_node(identity, ports, rack_path)
+            for i, node in enumerate(self.items(graph.get("nodes"), path + ".nodes")):
+                self.node(node, f"{path}.nodes[{i}]", depth)
+            self.connections(graph, path)
+        finally:
+            self.nodes = parent
 
     def endpoint(self, data, path, direction):
         if not self.obj(data, path, ("nodeId", "portId")):
@@ -177,14 +287,14 @@ class _Validator:
             return None, None
         return {"nodeId": node, "portId": port}, metadata
 
-    def connections(self, graph):
+    def connections(self, graph, graph_path):
         rules = self.catalog._rules
         pairs = {(p["source"], p["destination"]) for p in rules["compatibleSignalPairs"]}
         amounts = {p["destination"]: p["rule"] for p in rules["amounts"]}
         fan_in = {p["policy"]: p["allowsMultiple"] for p in rules["fanIn"]}
         seen, accepted = set(), []
-        for i, edge in enumerate(self.items(graph.get("connections"), "$.rootGraph.connections")):
-            path = f"$.rootGraph.connections[{i}]"
+        for i, edge in enumerate(self.items(graph.get("connections"), graph_path + ".connections")):
+            path = f"{graph_path}.connections[{i}]"
             if not self.obj(edge, path, ("id", "source", "destination", "amount")):
                 continue
             identity = self.guid(edge.get("id"), path + ".id")
@@ -201,7 +311,7 @@ class _Validator:
             else:
                 accepted.append({"source": src, "destination": dst})
 
-    def layouts(self, value, graph_id):
+    def layouts(self, value):
         seen = set()
         preferences = self.catalog._contract["canvasPreferences"]
         for i, layout in enumerate(self.items(value, "$.canvasLayouts")):
@@ -210,8 +320,9 @@ class _Validator:
                 continue
             identity = self.guid(layout.get("graphId"), path + ".graphId")
             self.unique(identity, seen, path + ".graphId")
-            if identity != graph_id:
-                self.error("layout-graph", path + ".graphId", "Only the root canvas is supported")
+            if identity not in self.graphs:
+                self.error("layout-graph", path + ".graphId", "Unknown or unsupported canvas graph")
+            graph_nodes = self.graphs.get(identity, {})
             for key in ("panX", "panY", "zoom"):
                 self.numeric(layout.get(key), f"{path}.{key}", "viewport",
                              self.catalog._contract["zoom"] if key == "zoom" else None)
@@ -222,7 +333,7 @@ class _Validator:
                     continue
                 node = self.guid(position.get("nodeId"), where + ".nodeId")
                 self.unique(node, positioned, where + ".nodeId")
-                if node is not None and node not in self.nodes:
+                if node is not None and node not in graph_nodes:
                     self.error("layout-node", where + ".nodeId", "Unknown position owner")
                 for key in ("x", "y"):
                     self.numeric(position.get(key), f"{where}.{key}", "viewport")
@@ -248,29 +359,26 @@ class _Validator:
         self.numeric(document.get("beatsPerMinute"), "$.beatsPerMinute", "tempo", self.catalog._contract["tempo"])
         if "overview" in document:
             self.overview(document["overview"], "$.overview")
-        graph = document.get("rootGraph")
-        if not self.obj(graph, "$.rootGraph", ("id", "nodes", "connections")):
-            return
-        graph_id = self.guid(graph.get("id"), "$.rootGraph.id")
+        self.graph(document.get("rootGraph"), "$.rootGraph")
         active = self.guid(document.get("activeGraphId"), "$.activeGraphId", "active-graph")
-        if active is not None and active != graph_id:
-            self.error("active-graph", "$.activeGraphId", "Active graph must be the root in S5")
-        for i, node in enumerate(self.items(graph.get("nodes"), "$.rootGraph.nodes")):
-            self.node(node, f"$.rootGraph.nodes[{i}]")
-        self.connections(graph)
-        self.layouts(document.get("canvasLayouts"), graph_id)
+        if active is not None and active not in self.graphs:
+            self.error("active-graph", "$.activeGraphId", "Active graph must be supported and exist")
+        self.layouts(document.get("canvasLayouts"))
 
 
-def validate_patch(document, catalog):
+def validate_patch(document, catalog, *, allow_composites=False):
     """Return structured errors without modifying a native JSON-shaped dictionary.
 
-    This validates the current complete leaf contract, not legacy migrations,
-    nested graphs, annotations, playback or musical quality.
+    By default validate the established leaf contract. Opt in to the S9b.1
+    macro-free composite structural preview; this does not enable Patch.load,
+    authoring, rich annotations, legacy migrations or audio validation.
     """
     if not isinstance(catalog, Catalog):
         raise TypeError("catalog must be a Catalog")
     if not all(key in catalog._contract for key in ("overview", "canvasPreferences")):
         return ValidationResult((Diagnostic("catalog-contract", "$", "Regenerate native S5 metadata"),))
-    validator = _Validator(catalog)
+    if allow_composites and "boundaryEnumValues" not in catalog._rules:
+        return ValidationResult((Diagnostic("catalog-contract", "$", "Regenerate native boundary metadata"),))
+    validator = _Validator(catalog, allow_composites)
     validator.validate(document)
     return ValidationResult(tuple(validator.errors))

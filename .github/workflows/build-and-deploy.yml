@@ -58,6 +58,7 @@ jobs:
           dotnet run --project "$exporter" -c Release -- --patch-contract "$ORBIT_AGENT_KIT_DATA"
           dotnet run --project "$exporter" -c Release -- "$ORBIT_AGENT_KIT_DATA/catalog.json"
           dotnet run --project "$exporter" -c Release -- --connection-rules "$ORBIT_AGENT_KIT_DATA/connection-rules.json"
+          dotnet run --project "$exporter" -c Release -- --composite-templates "$ORBIT_AGENT_KIT_DATA/composite-templates.json"
           python -m unittest discover -s tools/agent-kit/tests -p 'test_*.py' -v
           python tools/agent-kit/tests/generate_native_fixture.py "$ORBIT_AGENT_KIT_DATA" "$ORBIT_AGENT_KIT_DATA/python-patch.json" "$ORBIT_AGENT_KIT_DATA/python-edited.json" "$ORBIT_AGENT_KIT_DATA/python-structural.json" "$ORBIT_AGENT_KIT_DATA/python-sequence.json" "$ORBIT_AGENT_KIT_DATA/python-envelope.json" "$ORBIT_AGENT_KIT_DATA/python-modulation.json"
           dotnet run --project "$exporter" -c Release -- --validate-patch "$ORBIT_AGENT_KIT_DATA/python-patch.json"
@@ -66,6 +67,11 @@ jobs:
           dotnet run --project "$exporter" -c Release -- --validate-patch "$ORBIT_AGENT_KIT_DATA/python-sequence.json"
           dotnet run --project "$exporter" -c Release -- --validate-patch "$ORBIT_AGENT_KIT_DATA/python-envelope.json"
           dotnet run --project "$exporter" -c Release -- --validate-patch "$ORBIT_AGENT_KIT_DATA/python-modulation.json"
+          python tools/agent-kit/tests/test_composite_validation.py --fixtures "$ORBIT_AGENT_KIT_DATA"
+          dotnet run --project "$exporter" -c Release -- --validate-patch "$ORBIT_AGENT_KIT_DATA/composite-preview-valid.json"
+          if dotnet run --project "$exporter" -c Release --no-build -- --validate-patch "$ORBIT_AGENT_KIT_DATA/composite-preview-invalid.json"; then
+            echo "Native import unexpectedly accepted cross-scope endpoint"; exit 1
+          fi
       # Rebuild the tracked stylesheet and reject stale output or invalid tokens.
       - name: Generate and test design tokens
         if: steps.changes.outputs.runtime == 'true'
