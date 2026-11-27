@@ -120,6 +120,7 @@ internal static class MacroBaselineFixtures
             ("inverted", -0.25, false, true),
             ("clipped", 0.8, false, true),
             ("zero-depth", 0.0, false, true),
+            ("downstream", 0.25, false, true),
             ("constant-only", 0.25, true, true),
             ("disconnected", 0.0, false, false)
         })
@@ -132,16 +133,33 @@ internal static class MacroBaselineFixtures
             if (connected)
                 session.Execute(new ConnectNodesCommand(middle, new(driver.Id, driver.Outputs[0].Id),
                     new(inner.Id, inner.Inputs[0].Id), depth));
+            var downstream = name == "downstream";
+            if (downstream)
+            {
+                Set(Address(osc, OscillatorGenerator.PitchTrackingKey), 1);
+                Set(Address(osc, OscillatorGenerator.PitchKey), 12);
+                session.Execute(new ConnectNodesCommand(child,
+                    new(inner.Composite.InputRackId, inner.Inputs[0].Id),
+                    new(osc.Id, osc.Parameters.Single(p => p.Definition.Key == "frequency").ModulationPortId!.Value), 40));
+            }
             var candidate = compiler.Compile(session.Snapshot, enableMacroModulation: true);
             var reference = compiler.Compile(session.Snapshot);
             Check(candidate.MacroControls.Count == (connected ? 1 : 0), "Unexpected dynamic manifest.");
             if (!connected)
                 Check(candidate.Source == reference.Source && EqualValues(candidate, reference), "Disconnected macro changed source.");
-            dynamicCases.Add(new { name, depth, constantOnly, connected,
+            dynamicCases.Add(new { name, depth, constantOnly, connected, downstream,
                 meter = candidate.MacroControls.SingleOrDefault()?.MeterName,
                 macro = candidate.MacroControls.SingleOrDefault()?.Name,
                 candidate = new { source = candidate.Source, values = candidate.InitialControlValues() },
                 reference = new { source = reference.Source, values = reference.InitialControlValues() } });
+            if (downstream)
+            {
+                var native = session.Snapshot.GetGraph(child).Connections.Single(e =>
+                    e.Source.NodeId == inner.Composite.InputRackId);
+                session.Execute(new RemoveConnectionCommand(child, native.Id));
+                Set(Address(osc, OscillatorGenerator.PitchKey), 0);
+                Set(Address(osc, OscillatorGenerator.PitchTrackingKey), 0);
+            }
             if (connected)
             {
                 var edge = session.Snapshot.GetGraph(middle).Connections.Single(e => e.Destination.NodeId == inner.Id);
