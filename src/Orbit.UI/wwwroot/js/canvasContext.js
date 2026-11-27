@@ -7,6 +7,7 @@ export function contextTarget(viewport, element) {
     if (element === viewport || element.closest('.canvas-empty')) return { kind: 'canvas', id: null };
     const world = element.closest('.canvas-world');
     if (!world) return null;
+    if (element.closest('.connection-amount-slider')) return null;
     const cable = element.closest('[data-connection-id]');
     if (cable) return { kind: 'connection', id: cable.dataset.connectionId };
     const marker = element.closest('.annotation-marker');
@@ -46,7 +47,13 @@ export function mountContextInput(viewport, receiver) {
         if (!navigation) { suppressClick = false; blockedRange = null; }
         if (viewport.querySelector('.canvas-context-overlay') && !viewport.contains(event.target))
             receiver.invokeMethodAsync('DismissContextAsync').catch(() => {});
-        if (event.pointerType !== 'touch') { cancel(); return; }
+        const rail = viewport.contains(event.target) && event.target.closest('.connection-amount-slider input');
+        if (event.pointerType !== 'touch') {
+            cancel();
+            if (rail && event.button === 0 && event.isPrimary && !rail.disabled)
+                rail.setPointerCapture(event.pointerId);
+            return;
+        }
         active.add(event.pointerId);
         cancel();
         if (navigation) { consume(event); return; }

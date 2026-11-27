@@ -33,8 +33,18 @@
             <ConnectionLayer Wires="@wires" DraftPath="@DraftPath" DraftRigidPath="@DraftRigidPath" OnSelect="SelectConnection" />
             @foreach (var wire in wires.Where(ShowBadge))
             {
-                <ConnectionAmountBadge @key="wire.Id" Wire="@wire" Zoom="@Snapshot.Viewport.Zoom" OnSelect="SelectConnection"
-                                       ShowAuthoredLabel="@Snapshot.ShowSecondaryAnnotations" />
+                @if (wire.Kind.IsEvent())
+                {
+                    <ConnectionAmountBadge @key="wire.Id" Wire="@wire" Zoom="@Snapshot.Viewport.Zoom" OnSelect="SelectConnection"
+                                           ShowAuthoredLabel="@Snapshot.ShowSecondaryAnnotations" />
+                }
+                else
+                {
+                    <ConnectionAmountSlider @key="wire.Id" Wire="@wire" Graph="@Snapshot.Graph" Zoom="@Snapshot.Viewport.Zoom"
+                                            WorkspaceGeneration="@WorkspaceGeneration" Dispatch="@DispatchSliderAmount"
+                                            Disabled="@(HasAnnotationDraft || AnnotationActionsDisabled)"
+                                            ShowAuthoredLabel="@Snapshot.ShowSecondaryAnnotations" />
+                }
             }
             @foreach (var note in Snapshot.Notes.Where(note => Snapshot.NoteDetail(note.Id) != AnnotationDetail.Hidden))
             {

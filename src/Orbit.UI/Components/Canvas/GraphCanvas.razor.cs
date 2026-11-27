@@ -24,6 +24,8 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter, EditorRequired] public GraphElementCounts PatchCounts { get; set; }
     [Parameter] public OutlineFocusRequest? OutlineFocus { get; set; }
     [Parameter, EditorRequired] public Func<SetConnectionAmountCommand, string?> DispatchConnectionAmount { get; set; } = default!;
+    [Parameter, EditorRequired] public Func<ConnectionAmountCommit, string?> DispatchSliderAmount { get; set; } = default!;
+    [Parameter] public long WorkspaceGeneration { get; set; }
     [Parameter] public Guid PatchId { get; set; }
     [Parameter] public EventCallback<PortConnectionRequest> OnConnect { get; set; }
     [Parameter] public EventCallback<ParameterEditRequest> OnParameterEdit { get; set; }
