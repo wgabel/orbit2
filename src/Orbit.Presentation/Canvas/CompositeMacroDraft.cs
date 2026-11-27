@@ -25,12 +25,15 @@ public sealed class CompositeMacroDraft
     public long Revision { get; }
     public IReadOnlyList<CompositeMacroDefinition> OriginalMacros { get; }
     public IReadOnlyList<Target> Targets { get; }
+    public IReadOnlyList<PortDefinition> ModulationInputs { get; }
 
     public CompositeMacroDraft(GraphSnapshot root, Guid graphId, Guid nodeId)
     {
         ArgumentNullException.ThrowIfNull(root);
         var wrapper = root.GetGraph(graphId).GetNode(nodeId);
         inputs = wrapper.Inputs;
+        ModulationInputs = Array.AsReadOnly(inputs.Where(port => port.Direction == PortDirection.Input &&
+            port.SignalType == SignalType.Modulation && port.ChannelCount == 1).ToArray());
         var composite = wrapper.Composite
             ?? throw new GraphValidationException("Macro drafts require a composite.");
         GraphId = graphId;

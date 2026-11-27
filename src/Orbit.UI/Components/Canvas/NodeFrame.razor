@@ -76,6 +76,7 @@
             @foreach (var port in Node.Inputs)
             {
                 <PortConnector @key="port.Id" NodeId="@Node.Id" Port="@port" HintText="@NodeHelpCatalog.PortHint(Node.TypeKey, port)" Dormant="@(!Node.IsInputActive(port.Id))" OnActivate="OnPortActivate"
+                               MacroAssociation="@AssociatedMacro(port.Id)"
                                WireCandidate="@(WireTargets?.Contains(new PortAddress(Node.Id, port.Id)))"
                                OnOutputPointerDown="OnOutputPointerDown" OnInputPointerDown="OnInputPointerDown" />
             }
@@ -97,6 +98,7 @@
                 @foreach (var macro in composite.Macros)
                 {
                     <ParameterSlider @key="macro.Id" Definition="@MacroSliderDefinition(macro)" Value="@macro.BaseValue" Step="0.01"
+                                     IsModulated="@IsMacroModulated(macro)" ModulationRange="@GetMacroRange(macro)" EffectiveValue="@GetMacroEffective(macro)"
                                      ValueChanged="@(edit => OnMacroEdit.InvokeAsync(new MacroEditRequest(Node.Id, macro.Id, edit.Value, edit.GestureId)))"
                                      GestureEnded="OnParameterGestureEnded" />
                 }

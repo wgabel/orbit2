@@ -39,7 +39,9 @@ public partial class GraphWorkspace : IAsyncDisposable
     private GraphNodeSnapshot? ManagingPresetNode => managingPresets is { } address && address.GraphId == Canvas.Snapshot.GraphId
         ? Canvas.Snapshot.Graph.Nodes.SingleOrDefault(node => node.Id == address.NodeId) : null;
     private IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
+    private IReadOnlyDictionary<GraphMacroAddress, ParameterRange?> MacroRanges { get; set; } = new Dictionary<GraphMacroAddress, ParameterRange?>();
     private static readonly IReadOnlyDictionary<ParameterAddress, double> EmptyValues = new Dictionary<ParameterAddress, double>();
+    private static readonly IReadOnlyDictionary<GraphMacroAddress, double> EmptyMacroValues = new Dictionary<GraphMacroAddress, double>();
     private static readonly IReadOnlyDictionary<Guid, EnvelopePlayhead> EmptyPlayheads = new Dictionary<Guid, EnvelopePlayhead>();
     private long rangeRevision = -1;
     private Guid rangeGraphId;
@@ -77,6 +79,10 @@ public partial class GraphWorkspace : IAsyncDisposable
         telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision &&
         frame.EnvelopePlayheads.TryGetValue(Canvas.Snapshot.GraphId, out var playheads)
             ? playheads : EmptyPlayheads;
+    private IReadOnlyDictionary<GraphMacroAddress, double> MacroValues =>
+        telemetry is { } frame && frame.GraphId == session.GraphId && frame.Revision == session.Snapshot.Revision
+            ? frame.MacroValues.Where(pair => pair.Key.GraphId == Canvas.Snapshot.GraphId)
+                .ToDictionary(pair => pair.Key, pair => pair.Value) : EmptyMacroValues;
     // Do not use the previous graph's fold state while the new keyed canvas
     // is mounting. The new canvas starts expanded by design.
     private GraphCanvas? ActiveTelemetryCanvas => canvasView is { } view &&
@@ -88,13 +94,15 @@ public partial class GraphWorkspace : IAsyncDisposable
 
     private IReadOnlyDictionary<ParameterAddress, double> CanvasEffectiveValues =>
         ActiveTelemetryCanvas?.FilterTelemetry(EffectiveValues, static address => address.NodeId, EmptyValues) ?? EffectiveValues;
+    private IReadOnlyDictionary<GraphMacroAddress, double> CanvasMacroValues =>
+        ActiveTelemetryCanvas?.FilterTelemetry(MacroValues, static address => address.CompositeId, EmptyMacroValues) ?? MacroValues;
     private IReadOnlyDictionary<Guid, EnvelopePlayhead> CanvasEnvelopePlayheads =>
         ActiveTelemetryCanvas?.FilterTelemetry(EnvelopePlayheads, static id => id, EmptyPlayheads) ?? EnvelopePlayheads;
 
     private bool HasCanvasTelemetryDemand(GraphCanvas? view) => view is null
-        ? EffectiveValues.Count != 0 || EnvelopePlayheads.Count != 0
+        ? EffectiveValues.Count != 0 || EnvelopePlayheads.Count != 0 || MacroRanges.Count != 0
         : EffectiveValues.Keys.Any(address => view.IsTelemetryNodeExpanded(address.NodeId)) ||
-          EnvelopePlayheads.Keys.Any(view.IsTelemetryNodeExpanded);
+          EnvelopePlayheads.Keys.Any(view.IsTelemetryNodeExpanded) || MacroRanges.Count != 0;
 
     // Waveform/spectrum/level capture is independently owned by SignalScope.
     // Only response and envelope overlays need workspace parameter/playhead data.
@@ -346,6 +354,7 @@ public partial class GraphWorkspace : IAsyncDisposable
         var graphId = Canvas.Snapshot.GraphId;
         if (rangeRevision == root.Revision && rangeGraphId == graphId) return;
         ModulationRanges = ModulationEstimator.Estimate(root, graphId);
+        MacroRanges = ModulationEstimator.EstimateMacroRanges(root, graphId);
         if (rangeRevision != root.Revision) telemetry = null;
         rangeRevision = root.Revision;
         rangeGraphId = graphId;
@@ -362,7 +371,7 @@ public partial class GraphWorkspace : IAsyncDisposable
         // after the last consumer folds, even when its old raw frame is nonempty.
         var hadCanvasTelemetry = view is null
             ? HasCanvasTelemetryDemand(null)
-            : view.EffectiveValues.Count != 0 || view.EnvelopePlayheads.Count != 0;
+            : view.EffectiveValues.Count != 0 || view.EnvelopePlayheads.Count != 0 || CanvasMacroValues.Count != 0;
         var hadOverlayTelemetry = HasOverlayTelemetryDemand();
         telemetry = frame is { } current && current.GraphId == session.GraphId &&
             current.Revision == session.Snapshot.Revision ? current : null;
