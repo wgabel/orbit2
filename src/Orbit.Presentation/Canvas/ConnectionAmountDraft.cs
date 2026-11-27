@@ -60,6 +60,14 @@ public sealed class ConnectionAmountDraft
         return true;
     }
 
+    /// <summary>Exact entry uses the same guarded commit without rail quantization or bounds.</summary>
+    public bool PreviewExact(double amount)
+    {
+        if (finished || !double.IsFinite(amount)) return false;
+        PreviewAmount = amount;
+        return true;
+    }
+
     /// <summary>Call on external authoritative changes, not on unrelated view
     /// rerenders. Invalidate once and ignore subsequent stale native events.</summary>
     public bool Observe(long currentWorkspaceGeneration, GraphSnapshot graph)

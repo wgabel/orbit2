@@ -1,3 +1,4 @@
+using System.Globalization;
 using Orbit.Application.Graphs.Snapshots;
 using Orbit.Domain.Graphs;
 using Orbit.Domain.Ports;
@@ -12,6 +13,12 @@ public sealed record ConnectionAmountSemantics(
     public bool IsEvent => DestinationType.IsEvent();
     public bool IsModulation => DestinationType == SignalType.Modulation;
     public bool CanEdit => !IsEvent;
+
+    public static string FormatExactAmount(double amount) => amount.ToString("R", CultureInfo.InvariantCulture);
+
+    public static bool TryParseAmount(string text, out double amount)
+        => double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out amount)
+           && double.IsFinite(amount);
 
     public static ConnectionAmountSemantics Resolve(GraphSnapshot graph, SignalConnection connection)
     {

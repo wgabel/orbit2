@@ -8,7 +8,22 @@
      style="@FormattableString.Invariant($"left:{Wire.BadgeX}px;top:{Wire.BadgeY}px;transform:translate(-50%,-50%) scale({1 / Zoom})")"
      data-connection-id="@Wire.Id" title="@Tooltip" aria-label="@Wire.Description"
      @onpointerdown:stopPropagation @onclick:stopPropagation>
-    <span>@AmountText@if (Wire.Dormant) { <span class="connection-badge-inactive"> inactive</span> }</span>
+    @if (exactText is not null)
+    {
+        <input @ref="exactInput" class="connection-amount-exact" type="text" inputmode="decimal"
+               aria-label="Exact connection amount" aria-invalid="@(error is not null ? "true" : "false")"
+               value="@exactText" @oninput="EditExact" @onblur="BlurExact"
+               @onkeydown="ExactKeyDown" @onkeydown:stopPropagation @onkeyup:stopPropagation
+               @onwheel:stopPropagation />
+    }
+    else
+    {
+        <button type="button" class="connection-amount-value" aria-label="Edit exact connection amount"
+                title="@AmountText" disabled="@Disabled" @onclick="BeginExact"
+                @onkeydown:stopPropagation @onkeyup:stopPropagation>
+            @AmountText@if (Wire.Dormant) { <span class="connection-badge-inactive"> inactive</span> }
+        </button>
+    }
     <div class="parameter-track">
         <span class="parameter-rail" aria-hidden="true"></span>
         <input type="range" aria-label="@Wire.Description" aria-valuetext="@AmountText"
@@ -16,7 +31,7 @@
                max="@Position(ConnectionAmountSliderRange.PositionMaximum)"
                step="@Position(ConnectionAmountSliderRange.PositionStep)"
                @bind:get="Position(range.ToPosition(Amount))" @bind:set="Preview" @bind:event="oninput"
-               disabled="@Disabled"
+               disabled="@(Disabled || exactText is not null)"
                @onpointerdown="BeginPointer" @onpointerup="EndPointer" @onpointerup:stopPropagation
                @onpointercancel="CancelPointer" @onlostpointercapture="CancelPointer"
                @onkeydown="KeyDown" @onkeydown:stopPropagation @onkeyup="KeyUp" @onkeyup:stopPropagation
@@ -45,6 +60,9 @@
     private long? pointerId;
     private readonly HashSet<string> keys = [];
     private string? error;
+    private string? exactText;
+    private ElementReference exactInput;
+    private bool focusExact;
     private double Amount => draft?.PreviewAmount ?? Wire.Amount;
     private string AmountText => ConnectionBadgeText.Format(semantics, Amount);
     private string Tooltip => !ShowAuthoredLabel || Wire.AuthoredLabel.Length == 0
@@ -65,6 +83,57 @@
         error = null;
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusExact && exactText is not null)
+        {
+            focusExact = false;
+            await exactInput.FocusAsync(preventScroll: true);
+        }
+    }
+
+    private void BeginExact()
+    {
+        if (Disabled || exactText is not null) return;
+        Cancel();
+        Begin();
+        if (draft is null) return;
+        exactText = ConnectionAmountSemantics.FormatExactAmount(Wire.Amount);
+        focusExact = true;
+    }
+
+    private void EditExact(ChangeEventArgs args)
+    {
+        if (exactText is null) return;
+        exactText = args.Value?.ToString() ?? "";
+        error = null;
+    }
+
+    private void ExactKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+        {
+            Cancel();
+            error = null;
+        }
+        else if (args.Key == "Enter") CompleteExact(keepInvalid: true);
+    }
+
+    private void BlurExact() => CompleteExact(keepInvalid: false);
+
+    private void CompleteExact(bool keepInvalid)
+    {
+        if (exactText is null || draft is null) return;
+        if (!ConnectionAmountSemantics.TryParseAmount(exactText, out var amount) ||
+            !draft.PreviewExact(amount))
+        {
+            if (!keepInvalid) Cancel();
+            error = "Enter a finite number.";
+            return;
+        }
+        Complete();
+    }
+
     private static string Position(double value) => value.ToString("R", CultureInfo.InvariantCulture);
     private static bool IsRangeKey(string key) => key is "ArrowLeft" or "ArrowRight" or "ArrowUp" or "ArrowDown"
         or "Home" or "End" or "PageUp" or "PageDown";
@@ -77,7 +146,7 @@
 
     private void BeginPointer(PointerEventArgs args)
     {
-        if (Disabled || args.Button != 0 || !args.IsPrimary || pointerId is not null) return;
+        if (Disabled || exactText is not null || args.Button != 0 || !args.IsPrimary || pointerId is not null) return;
         if (keys.Count != 0) Cancel();
         pointerId = args.PointerId;
         Begin();
@@ -102,7 +171,7 @@
     private void KeyDown(KeyboardEventArgs args)
     {
         if (args.Key == "Escape") Cancel();
-        else if (!Disabled && pointerId is null && IsRangeKey(args.Key) && (!args.Repeat || keys.Contains(args.Key)))
+        else if (!Disabled && exactText is null && pointerId is null && IsRangeKey(args.Key) && (!args.Repeat || keys.Contains(args.Key)))
         {
             keys.Add(args.Key);
             Begin();
@@ -116,6 +185,7 @@
 
     private void Blur()
     {
+        if (exactText is not null) return;
         if (keys.Count != 0) Complete();
         else Cancel();
     }
@@ -133,5 +203,7 @@
         draft = null;
         pointerId = null;
         keys.Clear();
+        exactText = null;
+        focusExact = false;
     }
 }

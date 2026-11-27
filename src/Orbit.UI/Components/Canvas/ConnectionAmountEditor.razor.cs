@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
@@ -58,7 +57,7 @@ public partial class ConnectionAmountEditor : IAsyncDisposable
         // Other graph updates and live telemetry must not erase an unfinished edit.
         if (committedAmount == Connection.Amount) return;
         committedAmount = Connection.Amount;
-        Draft = Connection.Amount.ToString("G", CultureInfo.InvariantCulture);
+        Draft = ConnectionAmountSemantics.FormatExactAmount(Connection.Amount);
         Error = null;
     }
 
@@ -71,8 +70,7 @@ public partial class ConnectionAmountEditor : IAsyncDisposable
     private void Apply()
     {
         if (IsEvent) return;
-        if (!double.TryParse(Draft, NumberStyles.Float, CultureInfo.InvariantCulture, out var amount)
-            || !double.IsFinite(amount))
+        if (!ConnectionAmountSemantics.TryParseAmount(Draft, out var amount))
         {
             Error = "Enter a finite number.";
             return;

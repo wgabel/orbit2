@@ -103,3 +103,17 @@ test('two fingers starting on interactive controls take over, cancel the range a
         emit('pointerup');
     } finally { controller.dispose(); globalThis.PointerEvent = savedPointer; }
 });
+
+test('connection exact input is not captured as a mouse range rail', () => {
+    const { viewport, receiver, emit, make } = fixture();
+    const input = make('node', true);
+    let captures = 0;
+    input.setPointerCapture = () => captures++;
+    const closest = input.closest.bind(input);
+    input.closest = selector => selector === '.connection-amount-slider input' ? input : closest(selector);
+    const controller = mountContextInput(viewport, receiver);
+    try {
+        emit('pointerdown', { target: input, pointerType: 'mouse', isPrimary: true });
+        assert.equal(captures, 0);
+    } finally { controller.dispose(); }
+});
