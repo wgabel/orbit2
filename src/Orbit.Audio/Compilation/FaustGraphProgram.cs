@@ -1,4 +1,5 @@
 using Orbit.Application.Models;
+using Orbit.Domain.Parameters;
 
 namespace Orbit.Audio.Compilation;
 
@@ -38,3 +39,4 @@ public sealed record FaustPitchMeter(Guid GraphId, Guid NodeId, string Name)
 {
     public string StepName => Name.Replace("pitch_", "step_", StringComparison.Ordinal);
 }
+8a0063b057812921487f929313d31a3d3e5d38dd
