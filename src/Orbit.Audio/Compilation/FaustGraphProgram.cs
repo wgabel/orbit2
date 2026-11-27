@@ -16,6 +16,8 @@ public sealed record FaustGraphProgram(
     public SignalTapManifest SignalTaps { get; init; } = SignalTapManifest.Empty;
     public IReadOnlyList<FaustAuditionControl> AuditionControls { get; init; } = [];
     public IReadOnlyList<FaustMacroControl> MacroControls { get; init; } = [];
+    /// <summary>True only when this accepted program contains connected, consumed audio-rate macro controls.</summary>
+    public bool HasActiveMacroModulation => MacroControls.Count > 0;
     public IReadOnlyList<FaustEnvelopeMeter> EnvelopeMeters { get; init; } = [];
     public IReadOnlyList<FaustPitchMeter> PitchMeters { get; init; } = [];
 

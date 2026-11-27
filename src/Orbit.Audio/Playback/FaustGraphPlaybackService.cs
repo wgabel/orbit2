@@ -63,9 +63,9 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
     private FaustGraphProgram CompileMeasured(GraphSnapshot graph, GraphPerformanceTracker? diagnostics)
     {
         if (diagnostics?.Collecting != true)
-            return compiler.Compile(graph, TapCapacity, Capture?.SupportsDynamicTaps == true);
+            return compiler.Compile(graph, TapCapacity, Capture?.SupportsDynamicTaps == true, enableMacroModulation: true);
         var start = Stopwatch.GetTimestamp();
-        try { return compiler.Compile(graph, TapCapacity, Capture?.SupportsDynamicTaps == true); }
+        try { return compiler.Compile(graph, TapCapacity, Capture?.SupportsDynamicTaps == true, enableMacroModulation: true); }
         finally { if (diagnostics.Collecting) diagnostics.Build(graph.Revision, Stopwatch.GetElapsedTime(start).TotalMilliseconds); }
     }
 
@@ -399,6 +399,15 @@ public sealed class FaustGraphPlaybackService(FaustGraphCompiler compiler, IAudi
                 throw new InvalidOperationException("Invalid base parameter value.");
             return parameter.BaseValue;
         });
+        foreach (var control in program.MacroControls)
+        {
+            var definition = graph.GetGraph(control.Address.GraphId).GetNode(control.Address.CompositeId)
+                .Composite?.Macros.SingleOrDefault(macro => macro.Id == control.Address.MacroId)
+                ?? throw new InvalidOperationException("The accepted macro control no longer exists in the graph.");
+            if (!double.IsFinite(definition.BaseValue) || definition.BaseValue is < 0 or > 1)
+                throw new InvalidOperationException("Invalid macro base parameter value.");
+            values.Add(control.Name, definition.BaseValue);
+        }
         foreach (var control in program.AuditionControls)
             values.Add(control.Name, FaustAuditionControl.Target(control.Kind, graph.GetGraph(control.GraphId).GetNode(control.NodeId)));
         return values;

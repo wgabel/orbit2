@@ -380,6 +380,62 @@ public sealed class FaustGraphPlaybackServiceTests
     }
 
     [Fact]
+    public async Task ConnectedMacroBaseUpdatesLiveAndMappingChangesReplaceAcceptedProgram()
+    {
+        using var patch = new NestedFaustPatch();
+        var session = patch.Session;
+        var ownerGraph = session.Snapshot.GetGraph(patch.OuterId);
+        var wrapper = ownerGraph.Nodes.Single(node => node.Composite?.Graph.Id == patch.ChildId);
+        var inputId = Assert.Single(wrapper.Inputs).Id;
+        var macroId = Guid.NewGuid();
+        var compiler = FaustGraphCompiler.CreateBuiltIn();
+        var engine = new RecordingEngine();
+        var service = new FaustGraphPlaybackService(compiler, engine);
+        CompositeMacroDefinition Definition(double value, double atOne = 400) =>
+            new(macroId, "Size", 0.5, value, new([new(patch.Frequency, 200, atOne)]), inputId);
+
+        session.Execute(new ReplaceCompositeMacrosCommand(patch.OuterId, wrapper.Id, [Definition(0.5)]));
+        var initial = session.Snapshot;
+        var playing = service.PlayAsync(initial);
+        var initialProgram = compiler.Compile(initial, enableMacroModulation: true);
+        var macroControl = Assert.Single(initialProgram.MacroControls);
+        Assert.True(initialProgram.HasActiveMacroModulation);
+        Assert.Equal(new FaustMacroAddress(patch.OuterId, wrapper.Id, macroId), macroControl.Address);
+        Assert.Equal(0.5, engine.Request!.Parameters[macroControl.Name]);
+        Assert.DoesNotContain(initialProgram.Controls, control => control.Address == patch.Frequency);
+
+        session.Execute(new SetCompositeMacroValueCommand(patch.OuterId, wrapper.Id, macroId, 0.8));
+        await service.UpdateAsync(session.Snapshot);
+        Assert.Equal(0.8, Assert.Single(engine.Updates)[macroControl.Name]);
+        Assert.Empty(engine.Replacements);
+
+        session.Execute(new ReplaceCompositeMacrosCommand(patch.OuterId, wrapper.Id, [Definition(0.8, 600)]));
+        var changed = session.Snapshot;
+        await service.UpdateAsync(changed);
+        var replacement = Assert.Single(engine.Replacements);
+        Assert.NotEqual(engine.Request!.Source, replacement.Source);
+        Assert.Equal(0.8, replacement.Parameters[macroControl.Name]);
+        Assert.Equal(changed.Revision, replacement.GraphRevision);
+
+        var inputEdge = changed.GetGraph(patch.OuterId).Connections.Single(edge =>
+            edge.Destination == new PortAddress(wrapper.Id, inputId));
+        session.Execute(new RemoveConnectionCommand(patch.OuterId, inputEdge.Id));
+        var disconnected = session.Snapshot;
+        await service.UpdateAsync(disconnected);
+        var fallback = engine.Replacements.Last();
+        var staticProgram = compiler.Compile(disconnected);
+        Assert.False(staticProgram.HasActiveMacroModulation);
+        var targetControl = Assert.Single(staticProgram.Controls.Where(control => control.GraphId == patch.ChildId &&
+            control.Address == patch.Frequency));
+        Assert.Equal(staticProgram.Source, fallback.Source);
+        Assert.DoesNotContain(macroControl.Name, fallback.Parameters.Keys);
+        Assert.Equal(520, fallback.Parameters[targetControl.Name]);
+
+        await service.StopAsync(session.GraphId);
+        await playing;
+    }
+
+    [Fact]
     public async Task NestedControlEditsAndMetersUseTheOwningCanvasWithoutReplacingVoice()
     {
         using var patch = new NestedFaustPatch();
