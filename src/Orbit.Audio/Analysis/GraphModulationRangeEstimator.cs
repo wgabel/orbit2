@@ -91,7 +91,7 @@ public sealed class GraphModulationRangeEstimator(IEnumerable<IFaustNodeEmitter>
         {
             var address = MacroAddress(source);
             if (macroRanges.TryGetValue(address, out var cached)) return cached;
-            if (Input(source.Signal) is not { } modulation)
+            if (Output(source.Signal) is not { } modulation)
                 return macroRanges[address] = null;
             var minimum = Math.Clamp(source.BaseValue + modulation.Minimum, 0, 1);
             var maximum = Math.Clamp(source.BaseValue + modulation.Maximum, 0, 1);
