@@ -4,6 +4,7 @@ using Orbit.Application.Graphs.Commands;
 using Orbit.Domain.Graphs;
 using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Parameters;
+using Orbit.Domain.Ports;
 using Orbit.Presentation.Canvas;
 
 namespace Orbit.UI.Components.Canvas;
@@ -19,7 +20,7 @@ public partial class CompositeMacroEditor
     private sealed class MacroRow(Guid id, string name, string defaultValue, string baseValue, Guid? modulationInputId = null)
     {
         public Guid Id { get; } = id;
-        public Guid? ModulationInputId { get; } = modulationInputId;
+        public Guid? ModulationInputId { get; set; } = modulationInputId;
         public string Name { get; set; } = name;
         public string Default { get; set; } = defaultValue;
         public string Base { get; set; } = baseValue;
@@ -75,6 +76,18 @@ public partial class CompositeMacroEditor
     {
         Macros.Remove(row);
         SelectedId = Macros.FirstOrDefault()?.Id;
+        Refresh();
+    }
+
+    private IEnumerable<PortDefinition> AvailableModulationInputs(MacroRow current) =>
+        Draft.ModulationInputs.Where(port => port.Id == current.ModulationInputId ||
+            Macros.All(macro => macro.Id == current.Id || macro.ModulationInputId != port.Id));
+
+    private void ChangeModulationInput(MacroRow macro, ChangeEventArgs args)
+    {
+        var text = args.Value?.ToString();
+        macro.ModulationInputId = Guid.TryParse(text, out var id) &&
+            AvailableModulationInputs(macro).Any(port => port.Id == id) ? id : null;
         Refresh();
     }
 

@@ -29,6 +29,15 @@
         <fieldset @key="macro.Id" disabled="@Stale">
             <legend>Macro configuration</legend>
             <label>Macro name <input type="text" maxlength="100" value="@macro.Name" @oninput="args => EditDraft(args, value => macro.Name = value)" /></label>
+            <label>Modulation input
+                <select value="@(macro.ModulationInputId?.ToString() ?? "")" @onchange="args => ChangeModulationInput(macro, args)">
+                    <option value="">None</option>
+                    @foreach (var input in AvailableModulationInputs(macro))
+                    {
+                        <option value="@input.Id">@input.Name</option>
+                    }
+                </select>
+            </label>
             <div class="macro-binding-values">
                 <label>Default value <input type="number" min="0" max="1" step="any" value="@macro.Default" @oninput="args => EditDraft(args, value => macro.Default = value)" /></label>
                 <label>Base value <input type="number" min="0" max="1" step="any" value="@macro.Base" @oninput="args => EditDraft(args, value => macro.Base = value)" /></label>

@@ -23,6 +23,7 @@
 .port-kind-gate { background: var(--semantic-color-composite); }
 .port-kind-clock { clip-path: polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%); }
 .port-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.port-macro-association { color: var(--semantic-color-muted); font-size: var(--semantic-typography-caption); white-space: nowrap; }
 .port-active .port-marker, .port-connector:hover .port-marker { filter: brightness(1.4); }
 .port-active { outline: var(--semantic-border-focus-width) solid var(--semantic-color-selected); }
 .port-dormant { color: var(--semantic-color-muted); }

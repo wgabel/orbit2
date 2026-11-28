@@ -6,6 +6,7 @@ using Orbit.Application.Graphs.Snapshots;
 using Orbit.Domain.Nodes.Composites;
 using Orbit.Domain.Ports;
 using Orbit.Domain.Parameters;
+using Orbit.Application.Models;
 using Orbit.Domain.Timing;
 using Orbit.Presentation.Canvas;
 using Orbit.Application.Persistence;
@@ -56,6 +57,8 @@ public partial class GraphCanvas : IAsyncDisposable
     [Parameter] public IReadOnlyDictionary<Guid, IReadOnlyList<MacroOwnership>> MacroOwnerships { get; set; } =
         MacroOwnershipProjection.Empty;
     [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();
+    [Parameter] public IReadOnlyDictionary<GraphMacroAddress, ParameterRange?> MacroRanges { get; set; } = new Dictionary<GraphMacroAddress, ParameterRange?>();
+    [Parameter] public IReadOnlyDictionary<GraphMacroAddress, double> MacroValues { get; set; } = new Dictionary<GraphMacroAddress, double>();
     [Parameter] public IReadOnlyDictionary<Guid, Orbit.Application.Models.EnvelopePlayhead> EnvelopePlayheads { get; set; } = new Dictionary<Guid, Orbit.Application.Models.EnvelopePlayhead>();
 
     private ElementReference viewportElement;

@@ -2,11 +2,13 @@
 
 [Usage index](README.md) · [Canvas architecture](../editor/canvas.md) · [Persistence](../editor/persistence-and-history.md)
 
-## Composite macro controls (7.4.6-S3b, merged)
+## Composite macro controls (7.4.6-S4f, in progress)
 
-[PR #161](https://github.com/wgabel/orbit2/pull/161): A composite containing saved macro definitions displays their named normalized sliders directly on its wrapper. Drag the range or enter a value from 0 to 1 in the numeric field. Undo/Redo applies to the macro value (one entry per completed range gesture). Two-finger pinch cancels an unfinished range edit using the same rule as ordinary parameters. Choose **Open** to edit the internal graph; returning to the parent retains the macro value. Composites without saved macros look unchanged. Connecting macro modulation is a subsequent slice.
+[PR #161](https://github.com/wgabel/orbit2/pull/161): A composite containing saved macro definitions displays their named normalized sliders directly on its wrapper. Drag the range or enter a value from 0 to 1 in the numeric field. Undo/Redo applies to the macro value (one entry per completed range gesture). Two-finger pinch cancels an unfinished range edit using the same rule as ordinary parameters. Choose **Open** to edit the internal graph; returning to the parent retains the macro value. Composites without saved macros look unchanged.
 
 **Mapping editor (7.4.6-S3c.2, merged, [PR #165](https://github.com/wgabel/orbit2/pull/165)):** choose **Edit macros** on any composite. Add a macro, select it, edit its name, default/base (0–1), add targets and set their endpoint values and curve exponent. Each binding shows native units and mapped preview; dormant targets retain their manual base. Apply saves the entire draft as one undoable edit; Cancel discards it. Leaving the canvas, opening another workspace tool or using history also discards the draft. An intervening patch edit makes Apply unavailable until you reopen the editor.
+
+**Input association and live range (7.4.6-S4f):** In **Edit macros**, choose an available mono Modulation input for a macro or choose **None** to disconnect its association. Each input can belong to only one macro; its wrapper socket label shows the assigned macro. A connected macro slider reuses the standard modulation band and live-value readout in normalized 0–1 units. The range is predicted from the existing signal graph; the live value is available while current playback telemetry is active.
 
 **Internal ownership (7.4.6-S3c.3, merged, [PR #167](https://github.com/wgabel/orbit2/pull/167)):** Open a composite and expand a mapped internal node. Its parameter readout names the macro and shows Manual and Mapped values. The ordinary slider still edits the manual fallback, not the macro; the mapped base overrides it while active. Dormant bindings are listed separately, retaining the manual base until activated. Remove the mapping to restore the manual value as the effective base. Folded nodes show no ownership readouts.
 

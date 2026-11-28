@@ -11,4 +11,8 @@
         @onclick="Activate" @onclick:stopPropagation="true">
     <span class="@MarkerClass" data-port-id="@Port.Id" aria-hidden="true"></span>
     <span class="port-label">@Port.Name@(Dormant ? " (inactive)" : "")</span>
+    @if (!string.IsNullOrWhiteSpace(MacroAssociation))
+    {
+        <span class="port-macro-association">@MacroAssociation</span>
+    }
 </button>

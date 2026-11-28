@@ -78,7 +78,7 @@
                            OnEditRack="OnEditRack"
                            OnAudition="OnAudition"
                            OnPresetApply="OnPresetApply" OnManagePresets="OnManagePresets" PresetCatalogRevision="@PresetCatalogRevision"
-                           OnParameterEdit="OnParameterEdit" OnMacroEdit="OnMacroEdit" OnParameterGestureEnded="OnParameterGestureEnded" ModulationRanges="@entry.Ranges" MacroOwnerships="@(expanded || !NodeExpansionState.IsEligible(node) ? MacroOwnerships.GetValueOrDefault(node.Id, Array.Empty<MacroOwnership>()) : Array.Empty<MacroOwnership>())" EffectiveValues="@effectiveProjection.ForNode(node.Id, expanded)" Playhead="@(expanded ? EnvelopePlayheads.GetValueOrDefault(node.Id) : null)" BeatsPerMinute="@BeatsPerMinute" SampleRate="@(expanded ? SampleRate : null)" />
+                           OnParameterEdit="OnParameterEdit" OnMacroEdit="OnMacroEdit" OnParameterGestureEnded="OnParameterGestureEnded" ModulationRanges="@entry.Ranges" MacroOwnerships="@(expanded || !NodeExpansionState.IsEligible(node) ? MacroOwnerships.GetValueOrDefault(node.Id, Array.Empty<MacroOwnership>()) : Array.Empty<MacroOwnership>())" MacroRanges="@MacroRanges" MacroValues="@MacroValues" EffectiveValues="@effectiveProjection.ForNode(node.Id, expanded)" Playhead="@(expanded ? EnvelopePlayheads.GetValueOrDefault(node.Id) : null)" BeatsPerMinute="@BeatsPerMinute" SampleRate="@(expanded ? SampleRate : null)" />
             }
         </div>
         @if (wireAim is { } aim)

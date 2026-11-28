@@ -6,6 +6,7 @@ using Orbit.Application.Persistence;
 using Orbit.Domain.Ports;
 using Orbit.Domain.Parameters;
 using Orbit.Domain.Nodes.Composites;
+using Orbit.Application.Models;
 using Orbit.Domain.Timing;
 using Orbit.Presentation.Canvas;
 
@@ -56,6 +57,8 @@ public partial class NodeFrame
     [Parameter] public EventCallback<Guid> OnEditRack { get; set; }
     [Parameter] public IReadOnlyDictionary<ParameterAddress, ParameterRange?> ModulationRanges { get; set; } = new Dictionary<ParameterAddress, ParameterRange?>();
     [Parameter] public IReadOnlyList<MacroOwnership> MacroOwnerships { get; set; } = Array.Empty<MacroOwnership>();
+    [Parameter] public IReadOnlyDictionary<GraphMacroAddress, ParameterRange?> MacroRanges { get; set; } = new Dictionary<GraphMacroAddress, ParameterRange?>();
+    [Parameter] public IReadOnlyDictionary<GraphMacroAddress, double> MacroValues { get; set; } = new Dictionary<GraphMacroAddress, double>();
     [Parameter] public IReadOnlyDictionary<ParameterAddress, double> EffectiveValues { get; set; } = new Dictionary<ParameterAddress, double>();
     [Parameter] public Orbit.Application.Models.EnvelopePlayhead? Playhead { get; set; }
 
@@ -74,6 +77,7 @@ public partial class NodeFrame
         double BeatsPerMinute, int? SampleRate, PortAddress? PendingSource,
         IReadOnlyDictionary<ParameterAddress, ParameterRange?> Ranges,
         IReadOnlyDictionary<ParameterAddress, double> Values,
+        string MacroReadoutSignature,
         IReadOnlyList<MacroOwnership> MacroOwnerships,
         Orbit.Application.Models.EnvelopePlayhead? Playhead, long PresetCatalogRevision,
         bool CountRenders);
@@ -81,7 +85,7 @@ public partial class NodeFrame
     private RenderInputs CurrentInputs => new(Node, PatchId, GraphId, Position, Documentation,
         ShowSecondaryDocumentation, DocumentationEditDisabled, HelpOpen, Visualization,
         VisualizationExpanded, Role, Selected, Expanded, BeatsPerMinute, SampleRate, PendingSource,
-        ModulationRanges, EffectiveValues, MacroOwnerships, Playhead, PresetCatalogRevision, CountRenders);
+        ModulationRanges, EffectiveValues, MacroReadoutSignature, MacroOwnerships, Playhead, PresetCatalogRevision, CountRenders);
 
     // Wire candidates may change in place. Conservatively render both entry
     // and exit until dedicated wire invalidation is implemented.
@@ -108,6 +112,23 @@ public partial class NodeFrame
     private bool IsModulated(Guid id) => ModulationRanges.ContainsKey(new ParameterAddress(Node.Id, id));
     private ParameterRange? GetRange(Guid id) => ModulationRanges.GetValueOrDefault(new ParameterAddress(Node.Id, id));
     private double? GetEffective(Guid id) => EffectiveValues.TryGetValue(new ParameterAddress(Node.Id, id), out var value) ? value : null;
+    private GraphMacroAddress MacroAddress(CompositeMacroDefinition macro) => new(GraphId, Node.Id, macro.Id);
+    private bool IsMacroModulated(CompositeMacroDefinition macro) => MacroRanges.ContainsKey(MacroAddress(macro));
+    private ParameterRange? GetMacroRange(CompositeMacroDefinition macro) => MacroRanges.GetValueOrDefault(MacroAddress(macro));
+    private double? GetMacroEffective(CompositeMacroDefinition macro) => MacroValues.TryGetValue(MacroAddress(macro), out var value) ? value : null;
+    private string? AssociatedMacro(Guid inputId) => Node.Composite?.Macros.FirstOrDefault(macro => macro.ModulationInputId == inputId)?.Name;
+    private string MacroReadoutSignature => Node.Composite is { Macros.Count: > 0 } composite
+        ? string.Join(";", composite.Macros.Select(macro =>
+        {
+            var address = MacroAddress(macro);
+            var range = MacroRanges.TryGetValue(address, out var bounds) && bounds is { } value
+                ? $"{value.Minimum.ToString("R", CultureInfo.InvariantCulture)},{value.Maximum.ToString("R", CultureInfo.InvariantCulture)}"
+                : MacroRanges.ContainsKey(address) ? "unknown" : "unconnected";
+            var live = MacroValues.TryGetValue(address, out var current)
+                ? current.ToString("R", CultureInfo.InvariantCulture) : "—";
+            return $"{macro.Id:N}:{range}:{live}";
+        }))
+        : string.Empty;
 
     private bool Compactable => NodeExpansionState.IsEligible(Node);
     private bool ShowFullControls => !Compactable || Expanded;
