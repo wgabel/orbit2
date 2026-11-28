@@ -233,8 +233,18 @@ jobs:
           if [[ "$ORBIT_BENCHMARK_MODE" == both ]]; then
             node scripts/validate-dsp-regression.mjs "$RUNNER_TEMP/orbit-benchmark"
           fi
+      - name: Record isolated editor-suite exemption
+        if: steps.changes.outputs.runtime == 'true' && steps.changes.outputs.editor == 'false'
+        env:
+          ORBIT_EDITOR_REASON: ${{ steps.changes.outputs.editor_reason }}
+          ORBIT_BENCHMARK_MODE: ${{ steps.changes.outputs.benchmark }}
+        run: |
+          test "$ORBIT_EDITOR_REASON" = isolated-offline-agent-kit-python
+          test "$ORBIT_BENCHMARK_MODE" = regression
+          echo "Editor benchmark suite omitted: isolated offline Agent Kit Python changes." >> "$GITHUB_STEP_SUMMARY"
+          echo "All other runtime, native-import and browser playback checks remain required." >> "$GITHUB_STEP_SUMMARY"
       - name: Verify editor suite (shared browser)
-        if: steps.changes.outputs.runtime == 'true'
+        if: steps.changes.outputs.runtime == 'true' && steps.changes.outputs.editor != 'false'
         timeout-minutes: 90
         env:
           ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
@@ -254,7 +264,7 @@ jobs:
             node scripts/validate-editor-regression-suite.mjs "$RUNNER_TEMP/orbit-editor-benchmark"
           fi
       - name: Upload editor benchmark baseline
-        if: steps.changes.outputs.runtime == 'true'
+        if: steps.changes.outputs.runtime == 'true' && steps.changes.outputs.editor != 'false'
         uses: actions/upload-artifact@v4
         with:
           name: orbit-editor-benchmark-${{ github.sha }}

@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, renameSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { isDocumentationPath, needsRuntimeBuild, canDeploy, benchmarkMode } from '../../scripts/ci-change-scope.mjs';
+import { isDocumentationPath, needsRuntimeBuild, canDeploy, benchmarkMode, editorSuiteDecision } from '../../scripts/ci-change-scope.mjs';
 
 function fixture(t) {
   const cwd = mkdtempSync(join(tmpdir(), 'orbit-ci-scope-'));
@@ -136,4 +136,50 @@ test('performance-sensitive, unknown, missing and malformed inputs fail closed t
   assert.equal(benchmarkMode('pull_request', labeledPr('1'.repeat(40), unknown), cwd), 'full');
   assert.equal(benchmarkMode('pull_request', pr(base, perf), cwd), 'full');
   assert.equal(benchmarkMode('unknown', {}, cwd), 'full');
+});
+
+test('isolated offline Python changes omit only the editor suite; checkpoint and diagnostics labels restore it', t => {
+  const { cwd, put, commit, base } = fixture(t);
+  put('tools/agent-kit/orbit2/patch.py', 'updated');
+  put('tools/agent-kit/tests/test_builder.py', 'test');
+  put('docs/guide.md', 'updated');
+  const head = commit();
+  const event = labeledPr(base, head);
+  assert.equal(needsRuntimeBuild('pull_request', event, cwd), true);
+  assert.equal(benchmarkMode('pull_request', event, cwd), 'regression');
+  assert.deepEqual(editorSuiteDecision('pull_request', event, cwd),
+    { required: false, reason: 'isolated-offline-agent-kit-python' });
+  for (const label of ['full-verification', 'performance-diagnostics']) {
+    const checkpoint = labeledPr(base, head, [label]);
+    assert.equal(benchmarkMode('pull_request', checkpoint, cwd), 'full');
+    assert.equal(editorSuiteDecision('pull_request', checkpoint, cwd).required, true);
+  }
+  assert.equal(editorSuiteDecision('push', push(base, head), cwd).required, true);
+  assert.equal(editorSuiteDecision('workflow_dispatch', {}, cwd).required, true);
+});
+test('mixed, shared, unknown and harness changes never omit editor coverage', t => {
+  const { cwd, put, commit, base } = fixture(t);
+  put('tools/agent-kit/orbit2/patch.py', 'updated');
+  const offline = commit();
+  for (const path of ['src/Orbit.Domain/Graph.cs', 'src/Orbit.Audio/Compilation/FaustGraphCompiler.cs',
+    'src/Orbit.UI/Components/Canvas/Editor.razor', 'tools/agent-kit/exporter/Program.cs',
+    'tools/agent-kit/unknown.json', 'tools/agent-kit/orbit2/unknown.js', 'tests/browser/PublishedPlaybackSmoke.mjs',
+    'scripts/benchmark-editor.mjs', '.github/workflows/build-and-deploy.yml', 'unknown.file']) {
+    put(path, 'changed');
+    const head = commit();
+    assert.equal(editorSuiteDecision('pull_request', labeledPr(base, head), cwd).required, true, path);
+  }
+  assert.equal(editorSuiteDecision('pull_request', labeledPr(base, offline), cwd).required, false);
+});
+test('missing history, malformed labels, empty diffs and rename across exemption boundary require editor suite', t => {
+  const { cwd, put, commit, base } = fixture(t);
+  put('tools/agent-kit/orbit2/patch.py', 'updated');
+  const offline = commit();
+  assert.equal(editorSuiteDecision('pull_request', pr(base, offline), cwd).required, true);
+  assert.equal(editorSuiteDecision('pull_request', labeledPr('1'.repeat(40), offline), cwd).required, true);
+  assert.equal(editorSuiteDecision('pull_request', labeledPr(base, base), cwd).required, true);
+  assert.equal(editorSuiteDecision('unknown', {}, cwd).required, true);
+  renameSync(join(cwd, 'src/editor.cs'), join(cwd, 'tools/agent-kit/orbit2/editor.py'));
+  const renamed = commit();
+  assert.equal(editorSuiteDecision('pull_request', labeledPr(offline, renamed), cwd).required, true);
 });
