@@ -52,3 +52,53 @@ The core model should be independently unit testable without a browser or Faust.
 | Portable packages (planned) | Round-trip a patch and its assets in a fresh browser; reject malformed, oversized or conflicting archives without partial workspace replacement. |
 
 Use OfflineAudioContext or an appropriate offline DSP renderer for deterministic audio tests where possible. Measure spectral/frequency behavior, sample continuity and expected modulation envelopes. Browser playback and workload tests are needed to catch real-time underruns and device-specific behavior.
+
+## CI test suite optimization
+
+[Work slices](../roadmap/foundation.md#ci-test-suite-optimization-ci-test) · [CI benchmark contract](../getting-started/deployment.md#ci-benchmark-optimization)
+
+The goal is to reduce repeated expensive operations, not merge independently useful assertions merely to lower the number of reported tests. Baseline: [PR #210 successful CI run](https://github.com/wgabel/orbit2/actions/runs/46149377276), sequential build job 140992417770. The harness-changing PR ran both benchmark modes; this is not typical ordinary PR duration.
+
+| Workload | Observed time | Evidence / implication |
+| --- | ---: | --- |
+| C# Domain and Presentation | ~3 s test execution | 299 + 180 tests; build/restore adds time, not a reason to remove tests |
+| Python | 1.055 s | 31 tests; native export/import invocations are separate setup |
+| JavaScript audio units | 0.470 s | Keep fast independent tests |
+| Generated graph + compiler step | 54.669 s | Node compiler test runner 50.976 s; expensive instrument matrices |
+| Offline DSP step, both modes | 19.786 s | 9 profiles × 2 rates × 5 repeats = 90 renders per mode |
+| Browser graph playback | 27.318 s | Includes browser driver setup; real browser worker/worklet assertions |
+| Published playback | 135.449 s | Monolithic end-to-end scenarios, not only smoke |
+| Live DSP, both modes | 49.198 s | Real playback/edit/stop/replay and optional capacity sampling |
+| Full editor suite | 406.091 s | 8 reports, 9 contexts, 82 interaction windows |
+| Editor regression suite | 384.720 s | Same coverage; one sequential comparison, not controlled repeated timing |
+
+Do not add these times to estimate normal PR duration: mode selection, preparation and parallelization differ. The existing editor workload equivalence audit found no exact duplicates across the current eight reports; a smaller correctness matrix requires a new explicit assertion contract, not simply deletion. The complete diagnostic matrix and checkpoint verification remain available. Production graph/serialization/DSP/UI changes retain conservative coverage.
+
+### Published playback timing inventory
+
+The [published playback test](../../tests/browser/PublishedPlaybackSmoke.mjs) currently has a shared main workspace, two imported macro variants, a response/pitch/envelope workspace, independent instrument, annotation, grouping and mobile workspaces and four independent browser helpers. S1 records sequential elapsed wall time at existing boundaries with [the timing helper](../../tests/browser/PublishedScenarioTiming.mjs). No additional browser requests or waits, and no new scenario isolation: a timing section is not yet a standalone test. Named sections are:
+
+| Timing section | Existing workload |
+| --- | --- |
+| startup-and-desktop-controls | Browser startup, build identity, desktop controls, presets, playback entry and early annotation actions |
+| live-metadata-transport-and-telemetry | Live overview edits, transport and moving readouts |
+| live-scope-wiring-and-nested-graph | Capture plots, cable edits, playback revisions, nested graphs, transport and Stop |
+| workspace-recovery-and-persistence | Debounced storage, reload and nested workspace restoration |
+| named-saves-and-macro-roundtrip | Named saves, export/import, desktop/mobile macro verification, viewport-aware nested work |
+| processor-response | Independent response preview and live response |
+| pitch-keyboard-and-sequencer | Pitch, keyboard, pattern editing, recording and live instrument input |
+| envelope-and-rhythmic-routing | AD/gated modes, runtime triggers and typed routing |
+| instrument-template | Add and navigate real editable instrument |
+| annotations-and-outline | Independent notes, reveal and outline workspace |
+| composite-grouping | Group, expand, undo/redo |
+| mobile-reflow-and-stale-build | Stale entry recovery, narrow layout, touch and playback reflow |
+| touch-wiring | Independent touch wire helper |
+| wire-edge-pan | Independent wire edge-pan helper |
+| canvas-navigation | Independent navigation helper |
+| canvas-context-and-final-assets | Independent context helper and final versioned module assertions |
+
+CI logs emit `PUBLISHED SCENARIO WALL {"scenario": "...", "status": "passed|failed", "wallMs": ...}` and `PUBLISHED SCENARIO TOTAL`. The current section is failed on an ordinary exception; preceding successful sections are retained. Forced job termination may prevent the final log. Timer excludes pre-launch server initialization and final browser cleanup; it is diagnostic wall time, not product performance. The timer's unit tests are executed by the existing benchmark test glob. Future extraction must map every assertion and state dependency, including build/asset coverage, to an explicit module and preserve the full suite until proven equivalent.
+
+### Audio workload reduction constraints
+
+`PhysicalSustainedInstruments.test.mjs` runs 37 semitones × 3 expressions × 3 characters per instrument/rate, or 1,332 trials for clarinet and flute at both rates. Four named chromatic tests took roughly 7–9.5 seconds each on the observed runner; these execute concurrently with other test files, so sums are not critical-path savings. Preserve the exhaustive matrix for relevant changes and full checkpoints; any representative matrix needs documented boundary and known-failure coverage, both rates and negative tests. The marimba test also has expensive repeated render cases. Factory reuse may avoid compiling the same source twice in `PhysicalInstruments.test.mjs`; compare exact bytes/options and factory identity, retain fresh mutable processor state. The offline DSP runner already caches factories by source hash. Do not share mutable processors across independent tests or skip cold/replacement/lifecycle assertions. Do not change production behavior to make tests cheaper. No reduced coverage or measured savings are claimed by S1.
