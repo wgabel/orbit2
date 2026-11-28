@@ -9,16 +9,19 @@ import { platform, release, arch, cpus } from "node:os";
 import { summarize } from "./benchmark-metrics.mjs";
 
 import { runEditorBenchmark } from "./benchmark-editor.mjs";
+import { runEditorSuite } from "./benchmark-editor-suite.mjs";
 
 const editorMode = process.argv[2] === "--editor";
-const [directory, outputFile, ...requested] = process.argv.slice(editorMode ? 3 : 2);
-assert.ok(directory && outputFile && process.env.ORBIT_PLAYWRIGHT_DIR && process.env.ORBIT_CHROME,
-    "Usage: ORBIT_PLAYWRIGHT_DIR=... ORBIT_CHROME=... node scripts/benchmark-live.mjs <fixtures> <report.json> [profile IDs]");
+const editorSuiteMode = process.argv[2] === "--editor-suite";
+const [directory, outputFile, ...requested] = process.argv.slice(editorMode || editorSuiteMode ? 3 : 2);
+assert.ok(directory && (editorSuiteMode ? outputFile === undefined : outputFile) &&
+    process.env.ORBIT_PLAYWRIGHT_DIR && process.env.ORBIT_CHROME,
+    "Usage: benchmark-live.mjs [--editor] <fixtures> <report.json> [profile IDs] or --editor-suite <fixtures> (requires ORBIT_PLAYWRIGHT_DIR and ORBIT_CHROME)");
 const seconds = Number(process.env.ORBIT_BENCH_LIVE_SECONDS ?? 10);
 assert.ok(Number.isInteger(seconds) && seconds >= 5 && seconds <= 120);
 const fixture = JSON.parse(await readFile(join(directory, "fixtures.json"), "utf8"));
 assert.equal(fixture.fixtureVersion, 1);
-const ids = requested.length ? requested : editorMode ? ["editor-50", "editor-200", "editor-500"] : ["sine-bank-1", "sine-bank-10"];
+const ids = editorSuiteMode ? [] : requested.length ? requested : editorMode ? ["editor-50", "editor-200", "editor-500"] : ["sine-bank-1", "sine-bank-10"];
 assert.ok(ids.length <= 8 && new Set(ids).size === ids.length);
 const profiles = ids.map(id => {
     const profile = fixture.fixtures.find(f => f.id === id && !f.pairedMono);
@@ -43,7 +46,9 @@ let browser;
 try {
     const headless = process.env.ORBIT_BENCH_HEADFUL !== "1";
     browser = await chromium.launch({ executablePath: process.env.ORBIT_CHROME, headless, args: ["--mute-audio"] });
-    if (editorMode) {
+    if (editorSuiteMode) {
+        await runEditorSuite({ browser, baseUrl: "http://127.0.0.1:" + server.address().port, directory, fixture, headless });
+    } else if (editorMode) {
         await runEditorBenchmark({ browser, baseUrl: "http://127.0.0.1:" + server.address().port, directory, outputFile, profiles, headless });
     } else {
     const rows = [];

@@ -213,66 +213,15 @@ jobs:
         run: |
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
           node scripts/benchmark-live.mjs "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/live-report.json"
-      - name: Benchmark large-patch editor smoke
+      - name: Benchmark editor suite (shared browser)
         if: steps.changes.outputs.runtime == 'true'
-        timeout-minutes: 15
+        timeout-minutes: 45
         env:
           ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
-          ORBIT_EDITOR_REPEATS: '1'
-          ORBIT_EDITOR_IDLE_MS: '500'
         run: |
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
           dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj --configuration Release -- --editor-benchmark "$RUNNER_TEMP/orbit-editor-benchmark"
-          node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-report.json" editor-50 editor-200
-          ORBIT_EDITOR_PLAYBACK=0 node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-500-stopped.json" editor-500
-          ORBIT_EDITOR_VIEWPORT=mobile ORBIT_EDITOR_PLAYBACK=0 node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-mobile-stopped.json" editor-200
-          ORBIT_EDITOR_RENDER_COUNTS=1 node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-render-counts.json" editor-50
-      - name: Benchmark expansion-state matrix
-        if: steps.changes.outputs.runtime == 'true'
-        timeout-minutes: 10
-        env:
-          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
-          ORBIT_EDITOR_REPEATS: '1'
-          ORBIT_EDITOR_IDLE_MS: '500'
-          ORBIT_EDITOR_EXPANSION_MATRIX: '1'
-        run: |
-          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
-          node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-expansion-matrix.json" editor-50
-      - name: Benchmark composite canvas navigation
-        if: steps.changes.outputs.runtime == 'true'
-        timeout-minutes: 10
-        env:
-          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
-          ORBIT_EDITOR_REPEATS: '1'
-          ORBIT_EDITOR_IDLE_MS: '500'
-          ORBIT_EDITOR_COMPOSITE_RESOURCES: '1'
-        run: |
-          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
-          node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-composite-100.json" editor-composite-100
-      - name: Benchmark composite canvas telemetry (diagnostics only)
-        if: steps.changes.outputs.runtime == 'true'
-        timeout-minutes: 5
-        env:
-          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
-          ORBIT_EDITOR_REPEATS: '1'
-          ORBIT_EDITOR_IDLE_MS: '1000'
-          ORBIT_EDITOR_COMPOSITE_TELEMETRY: '1'
-          ORBIT_EDITOR_ASSERT_QUIET_ROOT: '1'
-        run: |
-          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
-          node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-composite-telemetry.json" editor-composite-100
-      - name: Verify folded visualization lifecycle
-        if: steps.changes.outputs.runtime == 'true'
-        timeout-minutes: 5
-        env:
-          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
-          ORBIT_EDITOR_REPEATS: '1'
-          ORBIT_EDITOR_IDLE_MS: '1000'
-          ORBIT_EDITOR_FOLD_RESOURCES: '1'
-          ORBIT_EDITOR_ASSERT_FOLDED_DEMAND: '1'
-        run: |
-          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
-          node scripts/benchmark-live.mjs --editor "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-folded-resources.json" editor-50
+          node scripts/benchmark-live.mjs --editor-suite "$RUNNER_TEMP/orbit-editor-benchmark"
       - name: Upload editor benchmark baseline
         if: steps.changes.outputs.runtime == 'true'
         uses: actions/upload-artifact@v4
