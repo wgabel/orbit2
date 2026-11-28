@@ -54,7 +54,8 @@ const benchmarkHarnessPath = path => path.startsWith('scripts/benchmark-') ||
   path.startsWith('scripts/validate-editor-regression') || path.startsWith('scripts/validate-dsp-regression') ||
   path.startsWith('tests/benchmarks/') || path === 'scripts/ci-change-scope.mjs' ||
   path === 'tests/tooling/CiChangeScope.test.mjs' || path === 'tests/tooling/CiEditorImpact.test.mjs' ||
-  path === '.github/workflows/build-and-deploy.yml';
+  path === '.github/workflows/build-and-deploy.yml' || path === 'scripts/ci-verification.mjs' ||
+  path === 'tests/tooling/CiVerification.test.mjs';
 const recognizedRuntimePath = path => path.startsWith('src/') || path.startsWith('tests/') ||
   path.startsWith('tools/agent-kit/');
 // Conservative automatic diagnostic selection for editor hot paths and audio/DSP.
