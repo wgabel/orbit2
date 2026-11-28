@@ -11,14 +11,15 @@ import { summarize } from "./benchmark-metrics.mjs";
 import { runEditorBenchmark } from "./benchmark-editor.mjs";
 import { runEditorSuite } from "./benchmark-editor-suite.mjs";
 
+const liveRegression = process.argv[2] === "--live-regression";
 const regressionSuite = process.argv[2] === "--editor-regression-suite";
 const regression = process.argv[2] === "--editor-regression" || regressionSuite;
 const editorMode = process.argv[2] === "--editor" || process.argv[2] === "--editor-regression";
 const editorSuiteMode = process.argv[2] === "--editor-suite" || regressionSuite;
-const [directory, outputFile, ...requested] = process.argv.slice(editorMode || editorSuiteMode ? 3 : 2);
+const [directory, outputFile, ...requested] = process.argv.slice(editorMode || editorSuiteMode || liveRegression ? 3 : 2);
 assert.ok(directory && (editorSuiteMode ? outputFile === undefined : outputFile) &&
     process.env.ORBIT_PLAYWRIGHT_DIR && process.env.ORBIT_CHROME,
-    "Usage: benchmark-live.mjs [--editor|--editor-regression] <fixtures> <report.json> [profile IDs] or [--editor-suite|--editor-regression-suite] <fixtures> (requires ORBIT_PLAYWRIGHT_DIR and ORBIT_CHROME)");
+    "Usage: benchmark-live.mjs [--editor|--editor-regression|--live-regression] <fixtures> <report.json> [profile IDs] or [--editor-suite|--editor-regression-suite] <fixtures> (requires ORBIT_PLAYWRIGHT_DIR and ORBIT_CHROME)");
 const seconds = Number(process.env.ORBIT_BENCH_LIVE_SECONDS ?? 10);
 assert.ok(Number.isInteger(seconds) && seconds >= 5 && seconds <= 120);
 const fixture = JSON.parse(await readFile(join(directory, "fixtures.json"), "utf8"));
@@ -58,17 +59,19 @@ try {
         const context = await browser.newContext();
         try {
             const page = await context.newPage();
-            const cdp = await context.newCDPSession(page);
+            const cdp = liveRegression ? null : await context.newCDPSession(page);
             const realtime = new Map();
             let cdpError = null;
             const remember = ({ context }) => {
                 if (context.contextType === "realtime") realtime.set(context.contextId, context);
             };
-            cdp.on("WebAudio.contextCreated", remember);
-            cdp.on("WebAudio.contextChanged", remember);
-            cdp.on("WebAudio.contextWillBeDestroyed", ({ contextId }) => realtime.delete(contextId));
-            try { await cdp.send("WebAudio.enable"); }
-            catch (error) { cdpError = String(error); }
+            if (cdp) {
+                cdp.on("WebAudio.contextCreated", remember);
+                cdp.on("WebAudio.contextChanged", remember);
+                cdp.on("WebAudio.contextWillBeDestroyed", ({ contextId }) => realtime.delete(contextId));
+                try { await cdp.send("WebAudio.enable"); }
+                catch (error) { cdpError = String(error); }
+            }
             await page.goto("http://127.0.0.1:" + server.address().port);
             const status = page.locator(".playback-toolbar").getByRole("status");
             const play = page.getByRole("button", { name: "Play patch" });
@@ -128,7 +131,7 @@ try {
             await delay(1000);
             const observations = [];
             const samplingStart = performance.now();
-            for (let i = 0; i < seconds; i++) {
+            for (let i = 0; !liveRegression && i < seconds; i++) {
                 await delay(1000);
                 if (cdpError) continue;
                 const audio = [...realtime.values()].find(c => c.contextState === "running");
@@ -164,7 +167,7 @@ try {
                 const replacement = await readMonitor("active", "1 / 0", revision);
                 assert.equal(replacement["Faust source builds"], "1");
                 assert.equal(replacement["Accepted replacements"], "1");
-                edits = { liveControlWallMs, replacementWallMs, control, replacement };
+                edits = { ...(liveRegression ? {} : { liveControlWallMs, replacementWallMs }), control, replacement };
             }
             await page.getByRole("button", { name: "Stop", exact: true }).click();
             await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
@@ -179,21 +182,24 @@ try {
             await status.filter({ hasText: /Ready/ }).waitFor({ timeout: 30000 });
             await readMonitor("stopped", "0 / 0");
             await closeMonitor();
-            rows.push({ id: profile.id, initialPlayWallMs, replayWallMs,
+            rows.push({ id: profile.id, ...(liveRegression ? {} : { initialPlayWallMs, replayWallMs,
                 sampleRateHz: audio?.sampleRate ?? null, callbackBufferFrames: audio?.callbackBufferSize ?? null,
                 renderQuantumFrames: audio?.renderQuantumSize ?? null, maxOutputChannels: audio?.maxOutputChannelCount ?? null,
                 renderCapacityPercent: measured ? summarize(observations.map(o => o.renderCapacityPercent)) : null,
-                observations, availability: measured ? "observed" : cdpError ?? "No advancing real-time context samples",
+                observations, availability: measured ? "observed" : cdpError ?? "No advancing real-time context samples" }),
                 initial, steady, edits, stopped, replay });
-            console.log(`${profile.id}: ${measured ? rows.at(-1).renderCapacityPercent.median.toFixed(2) + "% median renderer capacity" : "renderer capacity unavailable"} (external Chromium, muted ${headless ? "headless" : "headed"})`);
+            console.log(liveRegression ? `${profile.id}: playback lifecycle verified (no renderer sampling)` :
+                `${profile.id}: ${measured ? rows.at(-1).renderCapacityPercent.median.toFixed(2) + "% median renderer capacity" : "renderer capacity unavailable"} (external Chromium, muted ${headless ? "headless" : "headed"})`);
         } finally { await context.close(); }
     }
     await writeFile(outputFile, JSON.stringify({ schemaVersion: 1, fixtureVersion: fixture.fixtureVersion,
-        kind: "external-live-renderer-benchmark", scope: "Chrome DevTools Protocol WebAudio renderer capacity, not Faust-only load",
+        kind: liveRegression ? "external-live-renderer-regression" : "external-live-renderer-benchmark",
+        scope: liveRegression ? "Live playback lifecycle correctness; no renderer sampling" : "Chrome DevTools Protocol WebAudio renderer capacity, not Faust-only load",
         revision: process.env.ORBIT_REVISION ?? process.env.GITHUB_SHA ?? null, timestampUtc: new Date().toISOString(),
         environment: { chrome: browser.version(), node: process.version, headless, muted: true,
             platform: platform(), release: release(), arch: arch(), cpuModel: cpus()[0]?.model ?? null, logicalCpuCount: cpus().length },
-        settings: { seconds, sampleCadenceMs: 1000, plotViews: 0, monitorOpenDuringRendererSampling: false }, rows }, null, 2) + "\n");
+        settings: { ...(liveRegression ? { timingCollected: false } : { seconds, sampleCadenceMs: 1000 }),
+            plotViews: 0, monitorOpenDuringRendererSampling: false }, rows }, null, 2) + "\n");
     }
 } finally {
     await browser?.close();

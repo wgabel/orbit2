@@ -213,6 +213,23 @@ jobs:
         run: |
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
           node scripts/benchmark-live.mjs "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/live-report.json"
+      - name: Validate DSP regression modes (harness changes)
+        if: steps.changes.outputs.runtime == 'true' && github.event_name == 'pull_request'
+        timeout-minutes: 5
+        env:
+          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
+          ORBIT_FAUST_DIR: ${{ runner.temp }}/orbit-faust/node_modules/@grame/faustwasm
+          ORBIT_BENCH_SECONDS: '1'
+          ORBIT_BENCH_LIVE_SECONDS: '5'
+        run: |
+          if git diff --quiet "$GITHUB_SHA^1" "$GITHUB_SHA" -- scripts/benchmark-dsp.mjs scripts/benchmark-live.mjs scripts/benchmark-metrics.mjs scripts/validate-dsp-regression.mjs tests/benchmarks/DspRegressionParity.test.mjs .github/workflows/build-and-deploy.yml; then
+            echo "DSP regression harness unchanged."
+            exit 0
+          fi
+          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
+          node scripts/benchmark-dsp.mjs --regression "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/offline-regression.json"
+          node scripts/benchmark-live.mjs --live-regression "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/live-regression.json"
+          node scripts/validate-dsp-regression.mjs "$RUNNER_TEMP/orbit-benchmark"
       - name: Benchmark editor suite (shared browser)
         if: steps.changes.outputs.runtime == 'true'
         timeout-minutes: 45
