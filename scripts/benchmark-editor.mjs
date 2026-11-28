@@ -10,6 +10,7 @@ import { verifyFoldedTelemetry } from "./benchmark-folded-telemetry.mjs";
 import { measureCompositeResources } from "./benchmark-composite-resources.mjs";
 import { measureCompositeTelemetry } from "./benchmark-composite-telemetry.mjs";
 import { verifyFoldedResources } from "./benchmark-folded-resources.mjs";
+import { setBenchmarkExpansion } from "./benchmark-expansion-state.mjs";
 
 export async function runEditorBenchmark({ browser, baseUrl, directory, outputFile, profiles, headless }) {
     const repeats = Number(process.env.ORBIT_EDITOR_REPEATS ?? 3);
@@ -277,19 +278,10 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                 assert.equal(new Set(eligible).size, eligible.length);
                 const revision = (await status.innerText()).trim();
                 async function setExpanded(ids) {
-                    const desired = new Set(ids);
-                    for (const id of eligible) {
-                        const toggle = canvas.locator(`article[data-node-id="${id}"] .node-expand-toggle`);
-                        const expanded = String(desired.has(id));
-                        if (await toggle.getAttribute("aria-expanded") !== expanded) {
-                            await toggle.evaluate(button => button.click());
-                            await canvas.locator(`article[data-node-id="${id}"] .node-expand-toggle[aria-expanded="${expanded}"]`)
-                                .waitFor({ state: "attached", timeout: 60000 });
-                        }
-                    }
-                    const actual = await canvas.locator('article.node-compactable[data-node-id]:has(.node-expand-toggle[aria-expanded="true"])')
-                        .evaluateAll(nodes => nodes.map(node => node.dataset.nodeId));
-                    assert.deepEqual([...actual].sort(), [...ids].sort());
+                    const { changed, snapshotReads } = await setBenchmarkExpansion(canvas, eligible, ids);
+                    console.log("EDITOR EXPANSION SETUP " + JSON.stringify({
+                        state, eligible: eligible.length, expanded: ids.length, changed, snapshotReads
+                    }));
                     await delay(1000);
                     assert.equal((await status.innerText()).trim(), revision, "Expansion must preserve playback state/revision");
                 }
@@ -416,7 +408,7 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
         kind: "external-editor-benchmark", revision: process.env.ORBIT_REVISION ?? process.env.GITHUB_SHA ?? null,
         timestampUtc: new Date().toISOString(),
         harnessFingerprint: createHash("sha256").update(JSON.stringify(await Promise.all(
-            ["benchmark-editor.mjs", "benchmark-live.mjs", "benchmark-editor-suite.mjs", "benchmark-metrics.mjs", "benchmark-folded-telemetry.mjs", "benchmark-composite-resources.mjs", "benchmark-composite-telemetry.mjs", "benchmark-resource-diagnostics.mjs", "benchmark-folded-resources.mjs"]
+            ["benchmark-editor.mjs", "benchmark-live.mjs", "benchmark-editor-suite.mjs", "benchmark-expansion-state.mjs", "benchmark-metrics.mjs", "benchmark-folded-telemetry.mjs", "benchmark-composite-resources.mjs", "benchmark-composite-telemetry.mjs", "benchmark-resource-diagnostics.mjs", "benchmark-folded-resources.mjs"]
                 .map(async name => [name, createHash("sha256").update(await readFile(new URL(name, import.meta.url))).digest("hex")])))).digest("hex"),
         environment: { chrome: browser.version(), node: process.version, headless, muted: true,
             platform: platform(), release: release(), arch: arch(), cpuModel: cpus()[0]?.model ?? null, logicalCpuCount: cpus().length },
