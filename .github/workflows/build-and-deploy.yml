@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: '24'
       - name: Test CI change classification
-        run: node --test tests/tooling/CiChangeScope.test.mjs
+        run: node --test tests/tooling/CiChangeScope.test.mjs tests/tooling/CiEditorImpact.test.mjs
       - name: Classify changed files
         id: changes
         run: node scripts/ci-change-scope.mjs build
@@ -239,9 +239,12 @@ jobs:
           ORBIT_EDITOR_REASON: ${{ steps.changes.outputs.editor_reason }}
           ORBIT_BENCHMARK_MODE: ${{ steps.changes.outputs.benchmark }}
         run: |
-          test "$ORBIT_EDITOR_REASON" = isolated-offline-agent-kit-python
+          case "$ORBIT_EDITOR_REASON" in
+            isolated-offline-agent-kit-python|isolated-offline-agent-kit-native|isolated-native-unit-tests|isolated-compiler-tests) ;;
+            *) echo "Unexpected editor exemption reason"; exit 1 ;;
+          esac
           test "$ORBIT_BENCHMARK_MODE" = regression
-          echo "Editor benchmark suite omitted: isolated offline Agent Kit Python changes." >> "$GITHUB_STEP_SUMMARY"
+          echo "Editor benchmark suite omitted: $ORBIT_EDITOR_REASON." >> "$GITHUB_STEP_SUMMARY"
           echo "All other runtime, native-import and browser playback checks remain required." >> "$GITHUB_STEP_SUMMARY"
       - name: Verify editor suite (shared browser)
         if: steps.changes.outputs.runtime == 'true' && steps.changes.outputs.editor != 'false'
