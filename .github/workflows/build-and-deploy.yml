@@ -16,10 +16,13 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  prepare:
     runs-on: ubuntu-latest
     outputs:
       runtime: ${{ steps.changes.outputs.runtime }}
+      benchmark: ${{ steps.changes.outputs.benchmark }}
+      editor: ${{ steps.changes.outputs.editor }}
+      bundle_sha256: ${{ steps.bundle.outputs.sha256 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,7 +32,7 @@ jobs:
         with:
           node-version: '24'
       - name: Test CI change classification
-        run: node --test tests/tooling/CiChangeScope.test.mjs tests/tooling/CiEditorImpact.test.mjs
+        run: node --test tests/tooling/CiChangeScope.test.mjs tests/tooling/CiEditorImpact.test.mjs tests/tooling/CiVerification.test.mjs
       - name: Classify changed files
         id: changes
         run: node scripts/ci-change-scope.mjs build
@@ -205,34 +208,6 @@ jobs:
           test -s "audio-$GITHUB_SHA/audio.js"
           test -s "audio-$GITHUB_SHA/Faust/FaustCompilerWorker.js"
           test -s "audio-$GITHUB_SHA/generated/compiler/index.js"
-      - name: Test published editor playback
-        if: steps.changes.outputs.runtime == 'true'
-        timeout-minutes: 5
-        env:
-          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
-        run: |
-          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
-          node tests/browser/PublishedPlaybackSmoke.mjs
-      - name: Verify published editor (live DSP)
-        if: steps.changes.outputs.runtime == 'true'
-        timeout-minutes: 10
-        env:
-          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
-          ORBIT_BENCH_LIVE_SECONDS: '5'
-          ORBIT_BENCHMARK_MODE: ${{ steps.changes.outputs.benchmark }}
-        run: |
-          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
-          case "$ORBIT_BENCHMARK_MODE" in
-            full|both) node scripts/benchmark-live.mjs "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/live-report.json" ;;
-            regression) ;;
-            *) echo "Invalid benchmark mode"; exit 1 ;;
-          esac
-          if [[ "$ORBIT_BENCHMARK_MODE" != full ]]; then
-            node scripts/benchmark-live.mjs --live-regression "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/live-regression.json"
-          fi
-          if [[ "$ORBIT_BENCHMARK_MODE" == both ]]; then
-            node scripts/validate-dsp-regression.mjs "$RUNNER_TEMP/orbit-benchmark"
-          fi
       - name: Record isolated editor-suite exemption
         if: steps.changes.outputs.runtime == 'true' && steps.changes.outputs.editor == 'false'
         env:
@@ -246,15 +221,155 @@ jobs:
           test "$ORBIT_BENCHMARK_MODE" = regression
           echo "Editor benchmark suite omitted: $ORBIT_EDITOR_REASON." >> "$GITHUB_STEP_SUMMARY"
           echo "All other runtime, native-import and browser playback checks remain required." >> "$GITHUB_STEP_SUMMARY"
-      - name: Verify editor suite (shared browser)
+      - name: Generate editor verification fixtures
         if: steps.changes.outputs.runtime == 'true' && steps.changes.outputs.editor != 'false'
+        run: dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj --configuration Release -- --editor-benchmark "$RUNNER_TEMP/orbit-editor-benchmark"
+      - name: Package exact published verification inputs
+        if: steps.changes.outputs.runtime == 'true'
+        id: bundle
+        run: |
+          node scripts/ci-verification.mjs manifest publish/wwwroot/build-manifest.json
+          mkdir -p "$RUNNER_TEMP/orbit-transfer"
+          inputs=(orbit-benchmark)
+          if [[ -d "$RUNNER_TEMP/orbit-editor-benchmark" ]]; then
+            inputs+=(orbit-editor-benchmark)
+          fi
+          tar -cf "$RUNNER_TEMP/orbit-transfer/verification.tar" -C "$GITHUB_WORKSPACE" publish/wwwroot -C "$RUNNER_TEMP" "${inputs[@]}"
+          checksum="$(sha256sum "$RUNNER_TEMP/orbit-transfer/verification.tar" | cut -d ' ' -f 1)"
+          echo "sha256=$checksum" >> "$GITHUB_OUTPUT"
+      - name: Upload verification inputs
+        if: steps.changes.outputs.runtime == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: orbit-verification-${{ github.sha }}
+          path: ${{ runner.temp }}/orbit-transfer/verification.tar
+          if-no-files-found: error
+          retention-days: 2
+          compression-level: 0
+          overwrite: true
+      # The browser entry document must resolve runtime files under /orbit2/.
+      - name: Set GitHub Pages base path
+        if: steps.changes.outputs.runtime == 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: sed -i 's|<base href="/" />|<base href="/orbit2/" />|' publish/wwwroot/index.html
+      - name: Upload Pages artifact
+        if: steps.changes.outputs.runtime == 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: publish/wwwroot
+
+  playback:
+    needs: prepare
+    if: needs.prepare.outputs.runtime == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          name: orbit-verification-${{ github.sha }}
+          path: ${{ runner.temp }}/orbit-transfer
+      - name: Verify and restore exact published inputs
+        env:
+          EXPECTED_SHA256: ${{ needs.prepare.outputs.bundle_sha256 }}
+        run: |
+          cd "$RUNNER_TEMP/orbit-transfer"
+          test "${#EXPECTED_SHA256}" -eq 64
+          printf '%s  verification.tar\n' "$EXPECTED_SHA256" | sha256sum --check --strict
+          mkdir unpacked
+          tar -xf verification.tar -C unpacked
+          node "$GITHUB_WORKSPACE/scripts/ci-verification.mjs" manifest unpacked/publish/wwwroot/build-manifest.json
+          mkdir -p "$GITHUB_WORKSPACE/publish"
+          test ! -e "$GITHUB_WORKSPACE/publish/wwwroot"
+          mv unpacked/publish/wwwroot "$GITHUB_WORKSPACE/publish/wwwroot"
+          mv unpacked/orbit-benchmark "$RUNNER_TEMP/orbit-benchmark"
+          if [[ -d unpacked/orbit-editor-benchmark ]]; then
+            mv unpacked/orbit-editor-benchmark "$RUNNER_TEMP/orbit-editor-benchmark"
+          fi
+      - name: Install pinned browser driver
+        run: npm install --prefix "$RUNNER_TEMP/orbit-browser" --no-audit --no-fund --ignore-scripts --no-save playwright-core@1.65.1
+      - name: Test published editor playback
+        timeout-minutes: 5
+        env:
+          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
+        run: |
+          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
+          node tests/browser/PublishedPlaybackSmoke.mjs
+      - name: Verify published editor (live DSP)
+        timeout-minutes: 10
+        env:
+          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
+          ORBIT_BENCH_LIVE_SECONDS: '5'
+          ORBIT_BENCHMARK_MODE: ${{ needs.prepare.outputs.benchmark }}
+        run: |
+          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
+          case "$ORBIT_BENCHMARK_MODE" in
+            full|both) node scripts/benchmark-live.mjs "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/live-report.json" ;;
+            regression) ;;
+            *) echo "Invalid benchmark mode"; exit 1 ;;
+          esac
+          if [[ "$ORBIT_BENCHMARK_MODE" != full ]]; then
+            node scripts/benchmark-live.mjs --live-regression "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/live-regression.json"
+          fi
+          if [[ "$ORBIT_BENCHMARK_MODE" == both ]]; then
+            node scripts/validate-dsp-regression.mjs "$RUNNER_TEMP/orbit-benchmark"
+          fi
+      - name: Upload DSP benchmark baseline
+        uses: actions/upload-artifact@v4
+        with:
+          name: orbit-dsp-benchmark-${{ github.sha }}
+          path: ${{ runner.temp }}/orbit-benchmark/
+          if-no-files-found: error
+          retention-days: 30
+          overwrite: true
+
+  editor:
+    needs: prepare
+    if: needs.prepare.outputs.runtime == 'true' && needs.prepare.outputs.editor != 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          name: orbit-verification-${{ github.sha }}
+          path: ${{ runner.temp }}/orbit-transfer
+      - name: Verify and restore exact published inputs
+        env:
+          EXPECTED_SHA256: ${{ needs.prepare.outputs.bundle_sha256 }}
+        run: |
+          cd "$RUNNER_TEMP/orbit-transfer"
+          test "${#EXPECTED_SHA256}" -eq 64
+          printf '%s  verification.tar\n' "$EXPECTED_SHA256" | sha256sum --check --strict
+          mkdir unpacked
+          tar -xf verification.tar -C unpacked
+          node "$GITHUB_WORKSPACE/scripts/ci-verification.mjs" manifest unpacked/publish/wwwroot/build-manifest.json
+          mkdir -p "$GITHUB_WORKSPACE/publish"
+          test ! -e "$GITHUB_WORKSPACE/publish/wwwroot"
+          mv unpacked/publish/wwwroot "$GITHUB_WORKSPACE/publish/wwwroot"
+          mv unpacked/orbit-benchmark "$RUNNER_TEMP/orbit-benchmark"
+          if [[ -d unpacked/orbit-editor-benchmark ]]; then
+            mv unpacked/orbit-editor-benchmark "$RUNNER_TEMP/orbit-editor-benchmark"
+          fi
+      - name: Install pinned browser driver
+        run: npm install --prefix "$RUNNER_TEMP/orbit-browser" --no-audit --no-fund --ignore-scripts --no-save playwright-core@1.65.1
+      - name: Verify editor suite (shared browser)
         timeout-minutes: 90
         env:
           ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
-          ORBIT_BENCHMARK_MODE: ${{ steps.changes.outputs.benchmark }}
+          ORBIT_BENCHMARK_MODE: ${{ needs.prepare.outputs.benchmark }}
         run: |
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
-          dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj --configuration Release -- --editor-benchmark "$RUNNER_TEMP/orbit-editor-benchmark"
+          test -s "$RUNNER_TEMP/orbit-editor-benchmark/fixtures.json"
           case "$ORBIT_BENCHMARK_MODE" in
             full|both) node scripts/benchmark-live.mjs --editor-suite "$RUNNER_TEMP/orbit-editor-benchmark" ;;
             regression) ;;
@@ -267,28 +382,37 @@ jobs:
             node scripts/validate-editor-regression-suite.mjs "$RUNNER_TEMP/orbit-editor-benchmark"
           fi
       - name: Upload editor benchmark baseline
-        if: steps.changes.outputs.runtime == 'true' && steps.changes.outputs.editor != 'false'
         uses: actions/upload-artifact@v4
         with:
           name: orbit-editor-benchmark-${{ github.sha }}
           path: ${{ runner.temp }}/orbit-editor-benchmark/
+          if-no-files-found: error
           retention-days: 30
-      - name: Upload DSP benchmark baseline
-        if: steps.changes.outputs.runtime == 'true'
-        uses: actions/upload-artifact@v4
+          overwrite: true
+
+  # Preserve the existing required build check. Skipped required jobs are failures.
+  build:
+    needs: [prepare, playback, editor]
+    if: always()
+    runs-on: ubuntu-latest
+    outputs:
+      runtime: ${{ needs.prepare.outputs.runtime }}
+    steps:
+      - uses: actions/checkout@v4
         with:
-          name: orbit-dsp-benchmark-${{ github.sha }}
-          path: ${{ runner.temp }}/orbit-benchmark/
-          retention-days: 30
-      # The browser entry document must resolve runtime files under /orbit2/.
-      - name: Set GitHub Pages base path
-        if: steps.changes.outputs.runtime == 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        run: sed -i 's|<base href="/" />|<base href="/orbit2/" />|' publish/wwwroot/index.html
-      - name: Upload Pages artifact
-        if: steps.changes.outputs.runtime == 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v3
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
         with:
-          path: publish/wwwroot
+          node-version: '24'
+      - name: Require all applicable verification results
+        env:
+          PREPARE_RESULT: ${{ needs.prepare.result }}
+          PLAYBACK_RESULT: ${{ needs.playback.result }}
+          EDITOR_RESULT: ${{ needs.editor.result }}
+          RUNTIME_REQUIRED: ${{ needs.prepare.outputs.runtime }}
+          EDITOR_REQUIRED: ${{ needs.prepare.outputs.editor }}
+        run: node scripts/ci-verification.mjs gate
 
   # Deploy consumes the build artifact, not the C# source files.
   deploy:
