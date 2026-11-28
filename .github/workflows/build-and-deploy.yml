@@ -9,6 +9,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   workflow_dispatch:
 
 permissions:
@@ -132,16 +133,24 @@ jobs:
             ${{ runner.temp }}/orbit-graph-probe/connection-amount-*.f32
           if-no-files-found: error
       # Timings are informational; deterministic output and graph contracts are the gates.
-      - name: Benchmark offline DSP baseline
+      - name: Verify offline DSP (selected benchmark mode)
         if: steps.changes.outputs.runtime == 'true'
         timeout-minutes: 5
         env:
           ORBIT_FAUST_DIR: ${{ runner.temp }}/orbit-faust/node_modules/@grame/faustwasm
           ORBIT_BENCH_SECONDS: '1'
+          ORBIT_BENCHMARK_MODE: ${{ steps.changes.outputs.benchmark }}
         run: |
           node --test tests/benchmarks/*.test.mjs
           dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj --configuration Release -- --benchmark "$RUNNER_TEMP/orbit-benchmark"
-          node scripts/benchmark-dsp.mjs "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/offline-report.json"
+          case "$ORBIT_BENCHMARK_MODE" in
+            full|both) node scripts/benchmark-dsp.mjs "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/offline-report.json" ;;
+            regression) ;;
+            *) echo "Invalid benchmark mode"; exit 1 ;;
+          esac
+          if [[ "$ORBIT_BENCHMARK_MODE" != full ]]; then
+            node scripts/benchmark-dsp.mjs --regression "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/offline-regression.json"
+          fi
       # Check the bundled worker and actual browser AudioWorklet together.
       - name: Browser graph playback smoke test
         if: steps.changes.outputs.runtime == 'true'
@@ -204,54 +213,46 @@ jobs:
         run: |
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
           node tests/browser/PublishedPlaybackSmoke.mjs
-      - name: Benchmark published editor (external renderer)
+      - name: Verify published editor (live DSP)
         if: steps.changes.outputs.runtime == 'true'
-        timeout-minutes: 5
+        timeout-minutes: 10
         env:
           ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
           ORBIT_BENCH_LIVE_SECONDS: '5'
+          ORBIT_BENCHMARK_MODE: ${{ steps.changes.outputs.benchmark }}
         run: |
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
-          node scripts/benchmark-live.mjs "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/live-report.json"
-      - name: Validate DSP regression modes (harness changes)
-        if: steps.changes.outputs.runtime == 'true' && github.event_name == 'pull_request'
-        timeout-minutes: 5
-        env:
-          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
-          ORBIT_FAUST_DIR: ${{ runner.temp }}/orbit-faust/node_modules/@grame/faustwasm
-          ORBIT_BENCH_SECONDS: '1'
-          ORBIT_BENCH_LIVE_SECONDS: '5'
-        run: |
-          if git diff --quiet "$GITHUB_SHA^1" "$GITHUB_SHA" -- scripts/benchmark-dsp.mjs scripts/benchmark-live.mjs scripts/benchmark-metrics.mjs scripts/validate-dsp-regression.mjs tests/benchmarks/DspRegressionParity.test.mjs .github/workflows/build-and-deploy.yml; then
-            echo "DSP regression harness unchanged."
-            exit 0
+          case "$ORBIT_BENCHMARK_MODE" in
+            full|both) node scripts/benchmark-live.mjs "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/live-report.json" ;;
+            regression) ;;
+            *) echo "Invalid benchmark mode"; exit 1 ;;
+          esac
+          if [[ "$ORBIT_BENCHMARK_MODE" != full ]]; then
+            node scripts/benchmark-live.mjs --live-regression "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/live-regression.json"
           fi
-          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
-          node scripts/benchmark-dsp.mjs --regression "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/offline-regression.json"
-          node scripts/benchmark-live.mjs --live-regression "$RUNNER_TEMP/orbit-benchmark" "$RUNNER_TEMP/orbit-benchmark/live-regression.json"
-          node scripts/validate-dsp-regression.mjs "$RUNNER_TEMP/orbit-benchmark"
-      - name: Benchmark editor suite (shared browser)
+          if [[ "$ORBIT_BENCHMARK_MODE" == both ]]; then
+            node scripts/validate-dsp-regression.mjs "$RUNNER_TEMP/orbit-benchmark"
+          fi
+      - name: Verify editor suite (shared browser)
         if: steps.changes.outputs.runtime == 'true'
-        timeout-minutes: 45
+        timeout-minutes: 90
         env:
           ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
+          ORBIT_BENCHMARK_MODE: ${{ steps.changes.outputs.benchmark }}
         run: |
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
           dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj --configuration Release -- --editor-benchmark "$RUNNER_TEMP/orbit-editor-benchmark"
-          node scripts/benchmark-live.mjs --editor-suite "$RUNNER_TEMP/orbit-editor-benchmark"
-      - name: Validate full editor regression suite (harness changes)
-        if: steps.changes.outputs.runtime == 'true' && github.event_name == 'pull_request'
-        timeout-minutes: 45
-        env:
-          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
-        run: |
-          if git diff --quiet "$GITHUB_SHA^1" "$GITHUB_SHA" -- 'scripts/benchmark-*.mjs' scripts/validate-editor-regression-suite.mjs tests/benchmarks .github/workflows/build-and-deploy.yml; then
-            echo "Regression harness unchanged; retain normal full suite."
-            exit 0
+          case "$ORBIT_BENCHMARK_MODE" in
+            full|both) node scripts/benchmark-live.mjs --editor-suite "$RUNNER_TEMP/orbit-editor-benchmark" ;;
+            regression) ;;
+            *) echo "Invalid benchmark mode"; exit 1 ;;
+          esac
+          if [[ "$ORBIT_BENCHMARK_MODE" != full ]]; then
+            node scripts/benchmark-live.mjs --editor-regression-suite "$RUNNER_TEMP/orbit-editor-benchmark"
           fi
-          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
-          node scripts/benchmark-live.mjs --editor-regression-suite "$RUNNER_TEMP/orbit-editor-benchmark"
-          node scripts/validate-editor-regression-suite.mjs "$RUNNER_TEMP/orbit-editor-benchmark"
+          if [[ "$ORBIT_BENCHMARK_MODE" == both ]]; then
+            node scripts/validate-editor-regression-suite.mjs "$RUNNER_TEMP/orbit-editor-benchmark"
+          fi
       - name: Upload editor benchmark baseline
         if: steps.changes.outputs.runtime == 'true'
         uses: actions/upload-artifact@v4

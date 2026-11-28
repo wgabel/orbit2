@@ -48,6 +48,39 @@ export function needsRuntimeBuild(eventName, event, cwd = process.cwd()) {
     return true;
   }
 }
+// Benchmark selection is separate from runtime/deployment input classification.
+// Only ordinary, recognized PR inputs may use the already verified regression modes.
+const benchmarkHarnessPath = path => path.startsWith('scripts/benchmark-') ||
+  path.startsWith('scripts/validate-editor-regression') || path.startsWith('scripts/validate-dsp-regression') ||
+  path.startsWith('tests/benchmarks/') || path === 'scripts/ci-change-scope.mjs' ||
+  path === 'tests/tooling/CiChangeScope.test.mjs' || path === '.github/workflows/build-and-deploy.yml';
+const recognizedRuntimePath = path => path.startsWith('src/') || path.startsWith('tests/') ||
+  path.startsWith('tools/agent-kit/');
+// Conservative automatic diagnostic selection for editor hot paths and audio/DSP.
+const performanceSensitivePath = path => [
+  'src/Orbit.UI/Components/Canvas/', 'src/Orbit.Presentation/Canvas/',
+  'src/Orbit.Audio/', 'src/Orbit.Infrastructure/wwwroot/audio/'
+].some(prefix => path.startsWith(prefix));
+
+export function benchmarkMode(eventName, event, cwd = process.cwd()) {
+  if (eventName !== 'pull_request') return 'full';
+  try {
+    const paths = changedPaths(cwd, event.pull_request?.base?.sha, event.pull_request?.head?.sha, true);
+    if (!paths.length) return 'full';
+    if (paths.some(benchmarkHarnessPath)) return 'both';
+    const labels = event.pull_request?.labels;
+    if (!Array.isArray(labels) || labels.some(label => typeof label?.name !== 'string')) return 'full';
+    if (labels.some(label => label.name === 'performance-diagnostics')) return 'full';
+    const runtimePaths = paths.filter(path => !isDocumentationPath(path));
+    if (!runtimePaths.length || runtimePaths.some(path => !recognizedRuntimePath(path) || performanceSensitivePath(path)))
+      return 'full';
+    return 'regression';
+  } catch {
+    // Missing history or unusual inputs must never suppress diagnostics.
+    return 'full';
+  }
+}
+
 export function canDeploy(built, latest, cwd = process.cwd()) {
   checkedSha(built); checkedSha(latest);
   if (!isAncestor(cwd, built, latest)) return false;
@@ -57,13 +90,15 @@ export function canDeploy(built, latest, cwd = process.cwd()) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const [mode, built, latest] = process.argv.slice(2);
   if (mode === 'build') {
-    let runtime = true;
+    let runtime = true, benchmark = 'full';
     try {
       const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
       runtime = needsRuntimeBuild(process.env.GITHUB_EVENT_NAME, event);
+      benchmark = benchmarkMode(process.env.GITHUB_EVENT_NAME, event);
     } catch { /* Conservative full build on an unavailable event. */ }
-    appendFileSync(process.env.GITHUB_OUTPUT, 'runtime=' + runtime + '\n');
-    console.log(runtime ? 'Full runtime build required.' : 'Documentation-only change: skip runtime build.');
+    appendFileSync(process.env.GITHUB_OUTPUT, 'runtime=' + runtime + '\nbenchmark=' + benchmark + '\n');
+    console.log(runtime ? 'Full runtime build required; benchmark mode: ' + benchmark :
+      'Documentation-only change: skip runtime build.');
   } else if (mode === 'deploy') {
     // Unexpected Git errors fail the deploy job rather than publishing an unverified artifact.
     const deploy = canDeploy(built, latest);

@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, renameSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { isDocumentationPath, needsRuntimeBuild, canDeploy } from '../../scripts/ci-change-scope.mjs';
+import { isDocumentationPath, needsRuntimeBuild, canDeploy, benchmarkMode } from '../../scripts/ci-change-scope.mjs';
 
 function fixture(t) {
   const cwd = mkdtempSync(join(tmpdir(), 'orbit-ci-scope-'));
@@ -102,4 +102,38 @@ test('deployment permits intervening docs but rejects new runtime inputs and div
   const divergent = commit();
   assert.equal(canDeploy(built, divergent, cwd), false);
   assert.throws(() => canDeploy(built, '0'.repeat(40), cwd));
+});
+
+const labeledPr = (base, head, labels = []) => ({ pull_request: { base: { sha: base }, head: { sha: head },
+  labels: labels.map(name => ({ name })) } });
+test('ordinary PRs use verified regression suites, while main/manual and explicit diagnostics use full', t => {
+  const { cwd, put, commit, base } = fixture(t);
+  put('src/editor.cs', 'changed');
+  put('docs/guide.md', 'updated');
+  const head = commit();
+  assert.equal(benchmarkMode('pull_request', labeledPr(base, head), cwd), 'regression');
+  assert.equal(benchmarkMode('pull_request', labeledPr(base, head, ['performance-diagnostics']), cwd), 'full');
+  assert.equal(benchmarkMode('push', push(base, head), cwd), 'full');
+  assert.equal(benchmarkMode('workflow_dispatch', {}, cwd), 'full');
+});
+test('benchmark harness changes require parity even for mixed runtime changes', t => {
+  const { cwd, put, commit, base } = fixture(t);
+  put('scripts/benchmark-editor.mjs', 'harness');
+  put('src/Orbit.Audio/Engine.cs', 'changed');
+  const head = commit();
+  assert.equal(benchmarkMode('pull_request', labeledPr(base, head), cwd), 'both');
+  assert.equal(benchmarkMode('pull_request', labeledPr(base, head, ['performance-diagnostics']), cwd), 'both');
+});
+test('performance-sensitive, unknown, missing and malformed inputs fail closed to full diagnostics', t => {
+  const { cwd, put, commit, base } = fixture(t);
+  put('src/Orbit.Presentation/Canvas/Graph.cs', 'changed');
+  const perf = commit();
+  assert.equal(benchmarkMode('pull_request', labeledPr(base, perf), cwd), 'full');
+  put('unknown.file', 'changed');
+  const unknown = commit();
+  assert.equal(benchmarkMode('pull_request', labeledPr(perf, unknown), cwd), 'full');
+  assert.equal(benchmarkMode('pull_request', labeledPr(base, base), cwd), 'full');
+  assert.equal(benchmarkMode('pull_request', labeledPr('1'.repeat(40), unknown), cwd), 'full');
+  assert.equal(benchmarkMode('pull_request', pr(base, perf), cwd), 'full');
+  assert.equal(benchmarkMode('unknown', {}, cwd), 'full');
 });

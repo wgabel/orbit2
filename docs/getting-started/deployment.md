@@ -79,6 +79,22 @@ CI continues to run the full diagnostic suite for every runtime change. For harn
 
 The [DSP parity validator](../../scripts/validate-dsp-regression.mjs) checks expected profile/rate/repeat coverage, output validity and paired hash evidence, matching source identities and revision/settings, and mandatory live monitor assertions. It rejects timing fields in correctness reports. Full CI retains both existing benchmarks; harness-changing PRs additionally execute the two correctness modes with the same generated fixture directory and published build. S4c.2 can switch execution policy only after parity is verified; dedicated diagnostics remain available.
 
+**S4c.1 verification:** [PR #207](https://github.com/wgabel/orbit2/pull/207) merged after [runtime CI](https://github.com/wgabel/orbit2/actions/runs/46142048042) verified 18 offline profile/rate rows and two live profiles. The same run repeated full editor parity (eight reports, nine contexts, 82 windows). Full editor 427.702s versus regression 407.638s; the separate hosted-runner observations are not a controlled repeated benchmark.
+
+### S4c.2 regular CI execution policy
+
+The [runtime/deployment classifier](../../scripts/ci-change-scope.mjs) now emits a separate benchmark mode; existing runtime classification and deployment freshness rules are unchanged. Documentation-only changes still skip runtime work. All runtime builds still execute the graph/domain/presentation/Agent Kit/compiler/browser functional tests, the complete offline render checks, live playback lifecycle and all eight editor scenarios. Only the optional timing collection differs.
+
+| Mode | Selection | Evidence |
+| --- | --- | --- |
+| `regression` | Ordinary recognized PR runtime paths in src/, tests/ or tools/agent-kit/ (with optional docs), not identified as performance-sensitive or harness changes | All verified regression-mode reports |
+| `full` | Main push/manual/unknown event, unknown or missing change data, explicit PR label `performance-diagnostics`, or changes in canvas presentation/UI or audio/DSP hot-path directories | All full timing reports, including deterministic checks |
+| `both` | PR touching benchmark runners/validators/tests or the build workflow or classifier | Both sets and mandatory parity validators |
+
+The classifier is deliberately not a semantic performance-impact analyzer. The automatic hot-path selection is conservative but not exhaustive; label any performance-related PR `performance-diagnostics` (label changes trigger CI), or run the historical paired workflow when the existing optimization acceptance contract requires controlled before/after evidence. Manual Build and deploy runs use full diagnostics; deployment permissions and freshness remain unchanged. Harness changes take precedence over other modes. Missing or unexpected Git/event data falls back to full, and an invalid emitted mode fails the build. No parallelism or selective removal of deterministic scenarios is introduced in S4.
+
+The existing editor/DSP artifact names, saved fixtures and full-report names are retained when timing runs. Regression-only artifacts contain `regression-*.json` editor reports plus `offline-regression.json` and `live-regression.json`; their distinct kinds are not accepted as quantitative timing evidence. Both-mode runs upload both sets after successful parity. S5 will move independent required checks off the sequential critical path while retaining one exact build artifact and all required coverage. S4c.2 itself is a harness-changing PR and exercises both modes; do not infer normal-PR wall-time improvement from that run.
+
 ## Published playback resource diagnostics
 
 **Observed:** [November 27 successful run](https://github.com/wgabel/orbit2/actions/runs/46058671464) had three anonymous HTTP 404 console errors during published editor playback; [November 28 pre-consolidation run](https://github.com/wgabel/orbit2/actions/runs/46132950294) had two; [PR #202 successful run](https://github.com/wgabel/orbit2/actions/runs/46135388344) had three. Playback, nested graph edits and workspace restoration succeeded in all three. The errors predate consolidation. Their resource paths and impact remain unknown: [the playback smoke test](../../tests/browser/PublishedPlaybackSmoke.mjs) currently logs console error text without identifying the failed request. The [entry document](../../src/Orbit.UI/wwwroot/index.html) does not declare a favicon, but an automatic favicon request is only a hypothesis, not a diagnosis.
