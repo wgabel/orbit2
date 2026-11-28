@@ -11,8 +11,9 @@ import { measureCompositeResources } from "./benchmark-composite-resources.mjs";
 import { measureCompositeTelemetry } from "./benchmark-composite-telemetry.mjs";
 import { verifyFoldedResources } from "./benchmark-folded-resources.mjs";
 import { setBenchmarkExpansion } from "./benchmark-expansion-state.mjs";
+import { executeEditorWindow } from "./benchmark-editor-window.mjs";
 
-export async function runEditorBenchmark({ browser, baseUrl, directory, outputFile, profiles, headless }) {
+export async function runEditorBenchmark({ browser, baseUrl, directory, outputFile, profiles, headless, regression = false }) {
     const repeats = Number(process.env.ORBIT_EDITOR_REPEATS ?? 3);
     const idleMs = Number(process.env.ORBIT_EDITOR_IDLE_MS ?? 1500);
     const mode = process.env.ORBIT_EDITOR_VIEWPORT ?? "desktop";
@@ -44,8 +45,8 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
             deviceScaleFactor: 1 });
         try {
             const page = await context.newPage();
-            const cdp = await context.newCDPSession(page);
-            await cdp.send("Performance.enable");
+            const cdp = regression ? null : await context.newCDPSession(page);
+            if (cdp) await cdp.send("Performance.enable");
             const metrics = async () => Object.fromEntries((await cdp.send("Performance.getMetrics")).metrics
                 .map(({ name, value }) => [name, value]));
             await page.goto(compositeTelemetry || foldedResources ? baseUrl + "/?orbit-render-counts=1&orbit-canvas-telemetry=1" :
@@ -90,12 +91,11 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
             });
             const initialGeometry = await geometry();
             assert.ok(initialGeometry.zoom >= .249 && initialGeometry.zoom <= 4.001);
-            const measurements = [];
+            const measurements = [], checks = [];
             const renderCounts = () => page.locator(".canvas-world [data-node-render-count]").evaluateAll(nodes =>
                 Object.fromEntries(nodes.map(node => [node.dataset.nodeId, Number(node.dataset.nodeRenderCount)])));
             if (countRenders) assert.equal(Object.keys(await renderCounts()).length, profile.nodes);
-            async function measure(state, workload, action, expansion = null) {
-                const beforeRenders = countRenders ? await renderCounts() : null;
+            async function beginTiming() {
                 const before = await metrics();
                 await page.evaluate(() => {
                     const gaps = [], longTasks = [];
@@ -121,42 +121,32 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
                         return { gaps, longTasks: supported ? longTasks : null, elapsedMs: performance.now() - start };
                     };
                 });
-                let sample, actionResult;
-                try {
-                    actionResult = await action();
-                    await delay(150);
-                } finally {
-                    sample = await page.evaluate(() => globalThis.__orbitEditorBenchmarkStop());
+                return async () => {
+                    const sample = await page.evaluate(() => globalThis.__orbitEditorBenchmarkStop());
+                    const after = await metrics();
+                    const delta = name => Number.isFinite(before[name]) && Number.isFinite(after[name]) ?
+                        after[name] - before[name] : null;
+                    return { sample, cdp: Object.fromEntries(["LayoutCount", "RecalcStyleCount", "LayoutDuration",
+                        "RecalcStyleDuration", "ScriptDuration", "TaskDuration", "JSHeapUsedSize"].map(name => [name, delta(name)])) };
+                };
+            }
+            async function measure(state, workload, action, expansion = null) {
+                const { actionResult, nodeRenders, timing } = await executeEditorWindow({
+                    state, workload, action, settle: () => delay(150), expectedNodes: profile.nodes,
+                    renderCounts: countRenders ? renderCounts : null,
+                    beginTiming: regression ? null : beginTiming
+                });
+                const observation = { state, workload, expansion, nodeRenders,
+                    ...(workload === "parameter-edit" ? { parameterAccess: actionResult } : {}) };
+                if (regression) {
+                    checks.push(observation);
+                    return;
                 }
-                const after = await metrics();
-                const delta = name => Number.isFinite(before[name]) && Number.isFinite(after[name]) ?
-                    after[name] - before[name] : null;
-                let nodeRenders = null;
-                if (beforeRenders) {
-                    const afterRenders = await renderCounts();
-                    assert.equal(Object.keys(afterRenders).length, profile.nodes);
-                    const changes = Object.entries(afterRenders).map(([id, count]) => count - beforeRenders[id]);
-                    assert.ok(changes.every(value => Number.isInteger(value) && value >= 0));
-                    nodeRenders = { total: changes.reduce((a, b) => a + b, 0), affectedNodes: changes.filter(n => n > 0).length };
-                    if (state === "playing" && workload === "idle")
-                        assert.ok(nodeRenders.affectedNodes < profile.nodes,
-                            "Playback telemetry must not invalidate every node frame");
-                    if (state === "stopped" && workload === "parameter-edit")
-                        assert.equal(nodeRenders.affectedNodes, 1, "Carrier frequency edit must only rerender the changed frame");
-                    if (state === "stopped" && workload === "pan")
-                        assert.equal(nodeRenders.total, 0, "Pure canvas pan must not rerender node frames");
-                    if (state === "stopped" && workload === "node-drag")
-                        assert.ok(nodeRenders.affectedNodes > 0 && nodeRenders.affectedNodes <= 2,
-                            "Dragging must rerender only moved/previously selected frames");
-                }
-                measurements.push({ state, workload, expansion, nodeRenders, elapsedMs: sample.elapsedMs,
-                    ...(workload === "parameter-edit" ? { parameterAccess: actionResult } : {}),
+                const { sample, cdp } = timing;
+                measurements.push({ ...observation, elapsedMs: sample.elapsedMs,
                     frameGapsMs: sample.gaps.length ? summarize(sample.gaps) : null,
                     observedFps: sample.gaps.length ? 1000 * sample.gaps.length / sample.gaps.reduce((a, b) => a + b, 0) : null,
-                    longTasksMs: sample.longTasks,
-                    cdp: Object.fromEntries(["LayoutCount", "RecalcStyleCount", "LayoutDuration",
-                        "RecalcStyleDuration", "ScriptDuration", "TaskDuration", "JSHeapUsedSize"].map(name => [name, delta(name)])),
-                    geometry: await geometry() });
+                    longTasksMs: sample.longTasks, cdp, geometry: await geometry() });
             }
             const canvas = page.locator(".canvas-viewport");
             async function pan() {
@@ -386,9 +376,11 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
             const finalGeometry = await geometry();
             assert.equal(finalGeometry.renderedNodes, profile.nodes);
             assert.equal(finalGeometry.renderedConnections, profile.connections);
-            rows.push({ ...profile, fingerprint, importWallMs, initialPlayWallMs, initialGeometry, finalGeometry, measurements, foldedTelemetry, resourceLifecycle, canvasTelemetry, foldedResourceLifecycle });
+            rows.push({ ...profile, fingerprint, initialGeometry, finalGeometry,
+                ...(regression ? { checks } : { importWallMs, initialPlayWallMs, measurements }),
+                foldedTelemetry, resourceLifecycle, canvasTelemetry, foldedResourceLifecycle });
             console.log(profile.id + ": " + initialGeometry.intersectingNodes + " viewport-intersecting nodes, " +
-                measurements.length + " measured interaction windows");
+                (regression ? checks.length + " completed regression windows" : measurements.length + " measured interaction windows"));
             // Log compact results as well as preserving the detailed artifact.
             // CI hardware varies; these are observations, never timing gates.
             for (const m of measurements) {
@@ -405,17 +397,20 @@ export async function runEditorBenchmark({ browser, baseUrl, directory, outputFi
         } finally { await context.close(); }
     }
     await writeFile(outputFile, JSON.stringify({ schemaVersion: 1, fixtureVersion: 1,
-        kind: "external-editor-benchmark", revision: process.env.ORBIT_REVISION ?? process.env.GITHUB_SHA ?? null,
+        kind: regression ? "external-editor-regression" : "external-editor-benchmark", revision: process.env.ORBIT_REVISION ?? process.env.GITHUB_SHA ?? null,
         timestampUtc: new Date().toISOString(),
         harnessFingerprint: createHash("sha256").update(JSON.stringify(await Promise.all(
-            ["benchmark-editor.mjs", "benchmark-live.mjs", "benchmark-editor-suite.mjs", "benchmark-expansion-state.mjs", "benchmark-metrics.mjs", "benchmark-folded-telemetry.mjs", "benchmark-composite-resources.mjs", "benchmark-composite-telemetry.mjs", "benchmark-resource-diagnostics.mjs", "benchmark-folded-resources.mjs"]
+            ["benchmark-editor.mjs", "benchmark-live.mjs", "benchmark-editor-suite.mjs", "benchmark-expansion-state.mjs", "benchmark-editor-window.mjs", "benchmark-metrics.mjs", "benchmark-folded-telemetry.mjs", "benchmark-composite-resources.mjs", "benchmark-composite-telemetry.mjs", "benchmark-resource-diagnostics.mjs", "benchmark-folded-resources.mjs"]
                 .map(async name => [name, createHash("sha256").update(await readFile(new URL(name, import.meta.url))).digest("hex")])))).digest("hex"),
         environment: { chrome: browser.version(), node: process.version, headless, muted: true,
             platform: platform(), release: release(), arch: arch(), cpuModel: cpus()[0]?.model ?? null, logicalCpuCount: cpus().length },
         settings: { repeats, idleMs, viewport, mode, playback, input: "scripted mouse; mobile is viewport emulation",
-            monitorOpen: false, countRenders, expansionMatrix, compositeResources, compositeTelemetry, foldedResources, warmupMs: 1000, cdpDurationUnit: "seconds" },
-        limitations: ["rAF callback gaps are not GPU paint timings", "CDP durations are renderer counters, not component render counts",
-            "No physical Android, touch, or audio underrun measurement", "Import wall time includes file selection and dialog dismissal",
+            monitorOpen: false, countRenders, expansionMatrix, compositeResources, compositeTelemetry, foldedResources, warmupMs: 1000,
+            ...(regression ? { timingCollected: false } : { cdpDurationUnit: "seconds" }) },
+        limitations: [...(regression ? ["Correctness-only windows; no FPS, frame-gap or CDP timing metrics"] :
+            ["rAF callback gaps are not GPU paint timings", "CDP durations are renderer counters, not component render counts",
+                "Import wall time includes file selection and dialog dismissal"]),
+            "No physical Android, touch, or audio underrun measurement",
             "Parameter edits may use scripted focus on an occluded in-viewport editor; access method is reported and does not establish pointer usability"],
         rows }, null, 2) + "\n");
 }

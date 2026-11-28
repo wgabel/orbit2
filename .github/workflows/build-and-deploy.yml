@@ -222,6 +222,45 @@ jobs:
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
           dotnet run --project tests/Orbit.Audio.Probe/Orbit.Audio.Probe.csproj --configuration Release -- --editor-benchmark "$RUNNER_TEMP/orbit-editor-benchmark"
           node scripts/benchmark-live.mjs --editor-suite "$RUNNER_TEMP/orbit-editor-benchmark"
+      - name: Validate editor correctness-only runner (harness changes)
+        if: steps.changes.outputs.runtime == 'true' && github.event_name == 'pull_request'
+        timeout-minutes: 5
+        env:
+          ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
+          ORBIT_EDITOR_REPEATS: '1'
+          ORBIT_EDITOR_IDLE_MS: '500'
+          ORBIT_EDITOR_RENDER_COUNTS: '1'
+        run: |
+          if git diff --quiet "$GITHUB_SHA^1" "$GITHUB_SHA" -- scripts/benchmark-editor.mjs scripts/benchmark-editor-window.mjs scripts/benchmark-live.mjs tests/benchmarks/EditorBenchmarkWindow.test.mjs .github/workflows/build-and-deploy.yml; then
+            echo "Correctness-only harness unchanged; retain normal full suite."
+            exit 0
+          fi
+          export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
+          node scripts/benchmark-live.mjs --editor-regression "$RUNNER_TEMP/orbit-editor-benchmark" "$RUNNER_TEMP/orbit-editor-benchmark/editor-regression-50.json" editor-50
+          node --input-type=module - "$RUNNER_TEMP/orbit-editor-benchmark" <<'NODE'
+          import assert from "node:assert/strict";
+          import { readFile } from "node:fs/promises";
+          import { join } from "node:path";
+          const read = async file => JSON.parse(await readFile(join(process.argv[2], file), "utf8"));
+          const full = await read("editor-render-counts.json");
+          const fast = await read("editor-regression-50.json");
+          assert.equal(full.kind, "external-editor-benchmark");
+          assert.equal(fast.kind, "external-editor-regression");
+          assert.equal(fast.settings.timingCollected, false);
+          assert.equal(fast.revision, full.revision);
+          assert.equal(fast.harnessFingerprint, full.harnessFingerprint);
+          assert.equal(fast.rows.length, 1);
+          const [a] = full.rows, [b] = fast.rows;
+          assert.equal(b.fingerprint, a.fingerprint);
+          const key = ({ state, workload, expansion }) => ({ state, workload, expansion });
+          assert.equal(b.checks.length, 10);
+          assert.deepEqual(b.checks.map(key), a.measurements.map(key));
+          assert.ok(!("measurements" in b) && b.checks.every(c => c.nodeRenders && !("cdp" in c) && !("observedFps" in c)));
+          assert.equal(b.foldedTelemetry.foldedNodes, 2);
+          assert.equal(b.foldedTelemetry.foldedFrameRenders, 0);
+          assert.ok(b.foldedTelemetry.expandedControlRenders > 0);
+          console.log("EDITOR REGRESSION PARITY: 10 action windows, render counts and folded lifecycle verified");
+          NODE
       - name: Upload editor benchmark baseline
         if: steps.changes.outputs.runtime == 'true'
         uses: actions/upload-artifact@v4
