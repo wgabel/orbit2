@@ -20,7 +20,7 @@ export async function executeEditorWindow({ state, workload, action, settle,
         assert.equal(Object.keys(afterRenders).length, expectedNodes);
         assert.equal(Object.keys(beforeRenders).length, expectedNodes);
         const changes = Object.entries(afterRenders).map(([id, count]) => count - beforeRenders[id]);
-        assert.ok(changes.every(value => Number.isInteger(value) && value >= 0));
+        assert.ok(changes.every(value => Number.isInteger(value) && value >= 0), "Invalid node render delta");
         nodeRenders = { total: changes.reduce((a, b) => a + b, 0), affectedNodes: changes.filter(n => n > 0).length };
         if (state === "playing" && workload === "idle")
             assert.ok(nodeRenders.affectedNodes < expectedNodes,

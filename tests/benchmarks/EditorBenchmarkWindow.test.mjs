@@ -36,8 +36,8 @@ test("both modes enforce every render-count invariant and reject malformed delta
             ["stopped", "pan", { a: 2, b: 1, c: 1 }, /Pure canvas pan/],
             ["stopped", "node-drag", { a: 1, b: 1, c: 1 }, /Dragging/],
             ["stopped", "node-drag", { a: 2, b: 2, c: 2 }, /Dragging/],
-            ["stopped", "wheel-zoom", { a: 0, b: 1, c: 1 }, /false/],
-            ["stopped", "wheel-zoom", { a: 1, b: 1, foreign: 1 }, /false/]
+            ["stopped", "wheel-zoom", { a: 0, b: 1, c: 1 }, /Invalid node render delta/],
+            ["stopped", "wheel-zoom", { a: 1, b: 1, foreign: 1 }, /Invalid node render delta/]
         ]) {
             const { args } = options({ state, workload, after, timed });
             await assert.rejects(executeEditorWindow(args), error);
