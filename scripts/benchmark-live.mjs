@@ -11,13 +11,14 @@ import { summarize } from "./benchmark-metrics.mjs";
 import { runEditorBenchmark } from "./benchmark-editor.mjs";
 import { runEditorSuite } from "./benchmark-editor-suite.mjs";
 
-const regression = process.argv[2] === "--editor-regression";
-const editorMode = process.argv[2] === "--editor" || regression;
-const editorSuiteMode = process.argv[2] === "--editor-suite";
+const regressionSuite = process.argv[2] === "--editor-regression-suite";
+const regression = process.argv[2] === "--editor-regression" || regressionSuite;
+const editorMode = process.argv[2] === "--editor" || process.argv[2] === "--editor-regression";
+const editorSuiteMode = process.argv[2] === "--editor-suite" || regressionSuite;
 const [directory, outputFile, ...requested] = process.argv.slice(editorMode || editorSuiteMode ? 3 : 2);
 assert.ok(directory && (editorSuiteMode ? outputFile === undefined : outputFile) &&
     process.env.ORBIT_PLAYWRIGHT_DIR && process.env.ORBIT_CHROME,
-    "Usage: benchmark-live.mjs [--editor|--editor-regression] <fixtures> <report.json> [profile IDs] or --editor-suite <fixtures> (requires ORBIT_PLAYWRIGHT_DIR and ORBIT_CHROME)");
+    "Usage: benchmark-live.mjs [--editor|--editor-regression] <fixtures> <report.json> [profile IDs] or [--editor-suite|--editor-regression-suite] <fixtures> (requires ORBIT_PLAYWRIGHT_DIR and ORBIT_CHROME)");
 const seconds = Number(process.env.ORBIT_BENCH_LIVE_SECONDS ?? 10);
 assert.ok(Number.isInteger(seconds) && seconds >= 5 && seconds <= 120);
 const fixture = JSON.parse(await readFile(join(directory, "fixtures.json"), "utf8"));
@@ -48,7 +49,7 @@ try {
     const headless = process.env.ORBIT_BENCH_HEADFUL !== "1";
     browser = await chromium.launch({ executablePath: process.env.ORBIT_CHROME, headless, args: ["--mute-audio"] });
     if (editorSuiteMode) {
-        await runEditorSuite({ browser, baseUrl: "http://127.0.0.1:" + server.address().port, directory, fixture, headless });
+        await runEditorSuite({ browser, baseUrl: "http://127.0.0.1:" + server.address().port, directory, fixture, headless, regression });
     } else if (editorMode) {
         await runEditorBenchmark({ browser, baseUrl: "http://127.0.0.1:" + server.address().port, directory, outputFile, profiles, headless, regression });
     } else {
