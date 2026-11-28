@@ -66,3 +66,19 @@ test("a failed scenario rejects the suite, stops subsequent work and restores fl
     assert.equal(calls, 2);
     assert.deepEqual(env, { ORBIT_EDITOR_RENDER_COUNTS: "1" });
 });
+
+test("regression suite uses the same eight profiles and settings with distinct reports", async () => {
+    const full = editorSuitePlan(fixture);
+    const fast = editorSuitePlan(fixture, { regression: true });
+    assert.deepEqual(fast, full.map(s => ({ ...s, report: "regression-" + s.report })));
+    const calls = [], logs = [], env = { ORBIT_EDITOR_PLAYBACK: "0" };
+    await runEditorSuite({ directory: "fixtures", fixture, env, regression: true, log: message => logs.push(message),
+        run: async options => {
+            assert.equal(options.regression, true);
+            calls.push([options.outputFile, options.profiles.map(p => p.id), { ...env }]);
+        }
+    });
+    assert.deepEqual(calls, fast.map(s => [join("fixtures", s.report), s.profiles.map(p => p.id), s.settings]));
+    assert.deepEqual(env, { ORBIT_EDITOR_PLAYBACK: "0" });
+    assert.ok(logs.at(-1).startsWith("EDITOR REGRESSION SUITE TOTAL "));
+});

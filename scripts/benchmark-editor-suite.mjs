@@ -30,10 +30,10 @@ const scenarios = [
         ORBIT_EDITOR_IDLE_MS: "1000", ORBIT_EDITOR_FOLD_RESOURCES: "1", ORBIT_EDITOR_ASSERT_FOLDED_DEMAND: "1" }]
 ];
 
-export function editorSuitePlan(fixture) {
+export function editorSuitePlan(fixture, { regression = false } = {}) {
     assert.equal(fixture.fixtureVersion, 1);
     return scenarios.map(([report, ids, overrides]) => ({
-        report,
+        report: regression ? "regression-" + report : report,
         profiles: ids.map(id => {
             const profile = fixture.fixtures.find(f => f.id === id && !f.pairedMono);
             assert.ok(profile, "Missing editor suite profile: " + id);
@@ -47,19 +47,20 @@ export function editorSuitePlan(fixture) {
 // of those flags to each sequential scenario and restore even on failure. Never
 // parallelize these calls in this process; each runner owns fresh browser contexts.
 export async function runEditorSuite({ browser, baseUrl, directory, fixture, headless,
-    run = runEditorBenchmark, env = process.env, log = console.log }) {
-    const plan = editorSuitePlan(fixture);
+    run = runEditorBenchmark, env = process.env, log = console.log, regression = false }) {
+    const plan = editorSuitePlan(fixture, { regression });
+    const prefix = regression ? "EDITOR REGRESSION SUITE" : "EDITOR SUITE";
     const previous = Object.fromEntries(Object.keys(defaults).map(key => [key, env[key]]));
     const suiteStarted = performance.now();
     try {
         for (const { report, profiles, settings } of plan) {
             Object.assign(env, settings);
             const started = performance.now();
-            log("EDITOR SUITE START " + report);
+            log(prefix + " START " + report);
             try {
-                await run({ browser, baseUrl, directory, outputFile: join(directory, report), profiles, headless });
+                await run({ browser, baseUrl, directory, outputFile: join(directory, report), profiles, headless, regression });
             } finally {
-                log("EDITOR SUITE WALL " + report + " " + Math.round(performance.now() - started) + "ms");
+                log(prefix + " WALL " + report + " " + Math.round(performance.now() - started) + "ms");
             }
         }
     } finally {
@@ -67,6 +68,6 @@ export async function runEditorSuite({ browser, baseUrl, directory, fixture, hea
             if (value === undefined) delete env[key];
             else env[key] = value;
         }
-        log("EDITOR SUITE TOTAL " + Math.round(performance.now() - suiteStarted) + "ms");
+        log(prefix + " TOTAL " + Math.round(performance.now() - suiteStarted) + "ms");
     }
 }
