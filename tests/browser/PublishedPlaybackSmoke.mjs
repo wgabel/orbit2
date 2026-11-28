@@ -9,6 +9,7 @@ import { verifyTouchWire } from "./TouchWireSmoke.mjs";
 import { verifyWireEdgePan } from "./WireEdgePanSmoke.mjs";
 import { fitCanvas, resetCanvas, zoomStep, tripleTapFit, verifyCanvasNavigation } from "./CanvasNavigationSmoke.mjs";
 import { verifyCanvasContext } from "./CanvasContextSmoke.mjs";
+import { createPublishedScenarioTimer } from "./PublishedScenarioTiming.mjs";
 
 const { chromium } = await import(pathToFileURL(resolve(process.env.ORBIT_PLAYWRIGHT_DIR, "index.mjs")));
 const root = resolve("publish/wwwroot");
@@ -232,8 +233,10 @@ async function verifyMacroSliders(browser, exported, mobile) {
         await page.close();
     }
 }
+const scenarioTimer = createPublishedScenarioTimer();
 let browser;
 try {
+    scenarioTimer.enter("startup-and-desktop-controls");
     browser = await chromium.launch({ executablePath: process.env.ORBIT_CHROME, headless: true,
         args: ["--no-sandbox", "--mute-audio"] });
     // Exercise device-pixel bitmap resizing independently of CSS plot width.
@@ -779,6 +782,7 @@ try {
     await exerciseNote(initialRevision, "Root harmony");
     await exerciseAlias(articles.nth(1), initialRevision);
     await exerciseGroup(articles.nth(1), initialRevision);
+    scenarioTimer.enter("live-metadata-transport-and-telemetry");
     // Patch-wide metadata is a committed presentation edit, even during playback.
     await clickWorkspaceTool(page, "more", "Patches", false);
     const liveManager = page.getByRole("region", { name: "Patch manager" });
@@ -829,6 +833,7 @@ try {
         assert.equal(await articles.nth(1).evaluate(element => element.offsetHeight), nodeHeight, "Live telemetry must not resize a node");
     }
     assert.ok(moved, "Live frequency marker did not move");
+    scenarioTimer.enter("live-scope-wiring-and-nested-graph");
     // The shared scope renders actual browser capture without changing graph revision.
     const assertCompactPlotFits = async panel => {
         const result = await panel.evaluate(section => {
@@ -1319,6 +1324,7 @@ try {
         "Components/TransportSignalProcessor.js"])
         assert.ok(requests.has(prefix + file), `Missing versioned asset: ${file}`);
     assert.ok([...requests].every(path => !path.startsWith("/_content/Orbit.Infrastructure/audio/")));
+    scenarioTimer.enter("workspace-recovery-and-persistence");
     // Wait for the debounced save before closing the editor, then restore a nested workspace.
     await drone.getByRole("button", { name: "Open Drone" }).click();
     await childFrequency.waitFor();
@@ -1388,6 +1394,7 @@ try {
     await drone.getByRole("button", { name: "Input: Cutoff (Modulation)" }).waitFor();
     assert.equal(await division.inputValue(), "4");
     await tempoLfoFrequency.filter({ hasText: /^0\.375 Hz$/ }).waitFor();
+    scenarioTimer.enter("named-saves-and-macro-roundtrip");
     // Named saves are independent of recovery and imported/exported documents.
     await clickWorkspaceTool(page, "more", "Patches", false);
     const manager = page.locator(".patch-manager");
@@ -1513,6 +1520,7 @@ try {
     await nestedPlot.locator("[data-view-mode='waveform']").waitFor();
     await assertCompactPlotFits(nestedPlot);
 
+    scenarioTimer.enter("processor-response");
     // Independent fresh workspace: preview response without starting audio,
     // then verify the same plot consumes accepted modulation telemetry.
     const responsePage = await browser.newPage({ deviceScaleFactor: 2 });
@@ -1618,6 +1626,7 @@ try {
     await filterPlot.locator(".response-effective").waitFor({ state: "detached" });
     await filterCurve.waitFor();
 
+    scenarioTimer.enter("pitch-keyboard-and-sequencer");
     // Manual pitch control: shared semitones transpose a whole oscillator bank
     // without changing the base Hz fields or recompiling on live control edits.
     await clickWorkspaceTool(responsePage, "more", "Patches", false);
@@ -2029,6 +2038,7 @@ try {
     await otherNoteSource.locator(".node-header > span").click();
     await responsePage.waitForFunction(id => document.querySelector(".performance-keyboard")?.dataset.targetNode === id, await otherNoteSource.getAttribute("data-node-id"));
 
+    scenarioTimer.enter("envelope-and-rhythmic-routing");
     // The AD generator uses the normal canvas, preset, range and live-control paths.
     await clickWorkspaceTool(responsePage, "more", "Patches", false);
     await responseManager.getByRole("button", { name: "New patch" }).click();
@@ -2182,6 +2192,7 @@ try {
     await rhythmEditor.getByRole("button", { name: "Add port", exact: true }).click();
     await rhythmRack.getByRole("button", { name: "Output: Clock in (Clock)" }).waitFor();
     await responsePage.close();
+    scenarioTimer.enter("instrument-template");
     // Instrument templates use the same add-node and editable nested canvas path.
     const instrumentPage = await browser.newPage();
     await instrumentPage.goto("http://127.0.0.1:" + server.address().port);
@@ -2205,6 +2216,7 @@ try {
     await instrumentPage.getByRole("button", { name: "Output: Pitch (st) (Modulation)" }).waitFor();
     assert.equal(await instrumentPage.getByRole("combobox", { name: "Pitch tracking (free)" }).count(), 3);
     await instrumentPage.close();
+    scenarioTimer.enter("annotations-and-outline");
     // Exercise automatic detail and temporary reveal independently of the main playback viewport.
     const annotationPage = await browser.newPage();
     await annotationPage.goto("http://127.0.0.1:" + server.address().port);
@@ -2262,6 +2274,7 @@ try {
     await clickWorkspaceTool(annotationPage, "view", "Fit signals", false);
     assert.equal(await annotationMode.inputValue(), "Hide");
     await annotationPage.close();
+    scenarioTimer.enter("composite-grouping");
     // Group the default demo's eligible nodes, inspect the child, undo while
     // inside it, then redo and reopen the same composite.
     const groupPage = await browser.newPage();
@@ -2306,6 +2319,7 @@ try {
     assert.equal(await groupViewport.locator("article[data-node-id]").count(), 4);
     await groupPage.close();
 
+    scenarioTimer.enter("mobile-reflow-and-stale-build");
     // Exercise the same published workspace at phone dimensions, including
     // responsive reflow without recreating the graph or playback controller.
     const mobilePage = await browser.newPage({ viewport: { width: 360, height: 640 }, isMobile: true, hasTouch: true });
@@ -2472,15 +2486,21 @@ try {
     assert.equal(await mobileStatus.textContent(), playingRevision, "Responsive reflow must not restart playback");
     await mobilePage.getByRole("button", { name: "Stop", exact: true }).click();
     await mobilePage.close();
+    scenarioTimer.enter("touch-wiring");
     await verifyTouchWire(browser, "http://127.0.0.1:" + server.address().port);
+    scenarioTimer.enter("wire-edge-pan");
     await verifyWireEdgePan(browser, "http://127.0.0.1:" + server.address().port);
+    scenarioTimer.enter("canvas-navigation");
     await verifyCanvasNavigation(browser, "http://127.0.0.1:" + server.address().port);
+    scenarioTimer.enter("canvas-context-and-final-assets");
     await verifyCanvasContext(browser, "http://127.0.0.1:" + server.address().port);
     for (const file of ["canvasDom.js", "canvasContext.js", "workspacePanels.js", "nodeLibraryStorage.js", "performanceKeyboard.js",
         "scopeView.js", "scopeAnalysis.js", "signalPlot.js", "spectrumAnalysis.js", "spectrumPlot.js"])
         assert.ok(requests.has(`/js-${version}/${file}`), "Missing versioned editor module: " + file);
+    scenarioTimer.finish("passed");
     console.log("Published editor played, edited nested graphs and restored the saved workspace after reload.");
 } finally {
+    scenarioTimer.finish("failed");
     await browser?.close();
     server.close();
 }
