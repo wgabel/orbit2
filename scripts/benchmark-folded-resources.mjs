@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { setTimeout as delay } from "node:timers/promises";
 import { openResourceDiagnostics } from "./benchmark-resource-diagnostics.mjs";
+import { setBenchmarkExpansion } from "./benchmark-expansion-state.mjs";
 
 const eligible = "article.node-compactable[data-node-id]";
 const liveOutput = '.parameter-slider output[aria-label="Live effective value"]';
@@ -137,7 +138,9 @@ export async function verifyFoldedResources({ page, canvas, status, idleMs }) {
         const compact = node.locator(".node-visualization-panel");
         await activate(compact.getByRole("button", { name: "Show plot", exact: true }));
         await live(compact);
-        for (const n of original) if (n.id !== id) await expand(n.id, false);
+        const eligibleIds = original.map(n => n.id);
+        const foldSetup = await setBenchmarkExpansion(canvas, eligibleIds, [id], 30000);
+        console.log("EDITOR FOLDED SETUP " + JSON.stringify({ phase: "one-expanded", ...foldSetup }));
         await live(compact);
         await sample("one-expanded-compact", [id], 1);
         await expand(id, false);
@@ -164,7 +167,9 @@ export async function verifyFoldedResources({ page, canvas, status, idleMs }) {
         await live(compact);
         await activate(compact.getByRole("button", { name: "Hide plot", exact: true }));
         await sample("one-expanded-plot-hidden", [id], 0);
-        for (const n of original) await expand(n.id, n.expanded);
+        const restoreSetup = await setBenchmarkExpansion(canvas, eligibleIds,
+            original.filter(n => n.expanded).map(n => n.id), 30000);
+        console.log("EDITOR FOLDED SETUP " + JSON.stringify({ phase: "restored", ...restoreSetup }));
         assert.equal((await status.innerText()).trim(), revision);
         return { nodeId: id, revision, steps };
     } finally {
