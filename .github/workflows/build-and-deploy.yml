@@ -120,6 +120,7 @@ jobs:
             ${{ runner.temp }}/orbit-graph-probe/static-macro-report.json
             ${{ runner.temp }}/orbit-graph-probe/dynamic-macro-baseline.json
             ${{ runner.temp }}/orbit-graph-probe/dynamic-macro-report.json
+            ${{ runner.temp }}/orbit-graph-probe/connected-macro-patch.json
           if-no-files-found: error
       - name: Upload connection amount audio reference
         if: steps.changes.outputs.runtime == 'true'
@@ -200,6 +201,7 @@ jobs:
         if: steps.changes.outputs.runtime == 'true'
         timeout-minutes: 5
         env:
+          ORBIT_GRAPH_PROBE_DIR: ${{ runner.temp }}/orbit-graph-probe
           ORBIT_PLAYWRIGHT_DIR: ${{ runner.temp }}/orbit-browser/node_modules/playwright-core
         run: |
           export ORBIT_CHROME="$(command -v google-chrome || command -v chromium)"
