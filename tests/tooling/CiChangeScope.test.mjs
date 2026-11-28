@@ -162,7 +162,7 @@ test('mixed, shared, unknown and harness changes never omit editor coverage', t 
   put('tools/agent-kit/orbit2/patch.py', 'updated');
   const offline = commit();
   for (const path of ['src/Orbit.Domain/Graph.cs', 'src/Orbit.Audio/Compilation/FaustGraphCompiler.cs',
-    'src/Orbit.UI/Components/Canvas/Editor.razor', 'tools/agent-kit/exporter/Program.cs',
+    'src/Orbit.UI/Components/Canvas/Editor.razor', 'tools/agent-kit/exporter/Orbit.AgentKit.Exporter.csproj',
     'tools/agent-kit/unknown.json', 'tools/agent-kit/orbit2/unknown.js', 'tests/browser/PublishedPlaybackSmoke.mjs',
     'scripts/benchmark-editor.mjs', '.github/workflows/build-and-deploy.yml', 'unknown.file']) {
     git('checkout', '-qB', 'mixed-scope', offline);

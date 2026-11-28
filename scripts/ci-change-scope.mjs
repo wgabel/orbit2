@@ -53,7 +53,8 @@ export function needsRuntimeBuild(eventName, event, cwd = process.cwd()) {
 const benchmarkHarnessPath = path => path.startsWith('scripts/benchmark-') ||
   path.startsWith('scripts/validate-editor-regression') || path.startsWith('scripts/validate-dsp-regression') ||
   path.startsWith('tests/benchmarks/') || path === 'scripts/ci-change-scope.mjs' ||
-  path === 'tests/tooling/CiChangeScope.test.mjs' || path === '.github/workflows/build-and-deploy.yml';
+  path === 'tests/tooling/CiChangeScope.test.mjs' || path === 'tests/tooling/CiEditorImpact.test.mjs' ||
+  path === '.github/workflows/build-and-deploy.yml';
 const recognizedRuntimePath = path => path.startsWith('src/') || path.startsWith('tests/') ||
   path.startsWith('tools/agent-kit/');
 // Conservative automatic diagnostic selection for editor hot paths and audio/DSP.
@@ -81,10 +82,19 @@ export function benchmarkMode(eventName, event, cwd = process.cwd()) {
   }
 }
 
-// The only initial editor-suite exemption is the independently executed offline
-// Python package and its tests. Shared native contracts and the exporter are NOT exempt.
+// Audited exemptions: independently executed offline tooling and test-only code.
+// Never exempt production src/, build metadata, the shared fixture probe or browser tests.
 const isolatedOfflinePythonPath = path =>
   /^tools\/agent-kit\/(orbit2\/[A-Za-z_][A-Za-z0-9_]*\.py|tests\/(test_[A-Za-z0-9_]+|generate_native_fixture)\.py)$/.test(path);
+
+const standaloneExporterPath = path =>
+  /^tools\/agent-kit\/exporter\/(CatalogExporter|CompositeTemplateExporter|ConnectionRulesExporter|PatchContractExporter|Program)\.cs$/.test(path);
+const exporterContractTestPath = path =>
+  /^tests\/(Orbit\.Domain\.Tests\/AgentKit(Catalog|ConnectionRules)Tests|Orbit\.Presentation\.Tests\/AgentKit(CompositeTemplate|PatchContract)Tests)\.cs$/.test(path);
+const isolatedNativeTestPath = path =>
+  /^tests\/(Orbit\.Domain\.Tests|Orbit\.Presentation\.Tests)\/[A-Za-z_][A-Za-z0-9_]*Tests\.cs$/.test(path);
+const isolatedCompilerTestPath = path =>
+  /^tests\/compiler\/[A-Za-z_][A-Za-z0-9_]*\.test\.mjs$/.test(path);
 
 export function editorSuiteDecision(eventName, event, cwd = process.cwd()) {
   // Any full/both benchmark mode, explicit checkpoint, non-PR or uncertain input
@@ -96,6 +106,13 @@ export function editorSuiteDecision(eventName, event, cwd = process.cwd()) {
     const runtimePaths = paths.filter(path => !isDocumentationPath(path));
     if (runtimePaths.length > 0 && runtimePaths.every(isolatedOfflinePythonPath))
       return { required: false, reason: 'isolated-offline-agent-kit-python' };
+    if (runtimePaths.length > 0 && runtimePaths.every(path =>
+      isolatedOfflinePythonPath(path) || standaloneExporterPath(path) || exporterContractTestPath(path)))
+      return { required: false, reason: 'isolated-offline-agent-kit-native' };
+    if (runtimePaths.length > 0 && runtimePaths.every(isolatedNativeTestPath))
+      return { required: false, reason: 'isolated-native-unit-tests' };
+    if (runtimePaths.length > 0 && runtimePaths.every(isolatedCompilerTestPath))
+      return { required: false, reason: 'isolated-compiler-tests' };
   } catch { /* Fail closed on any unavailable or malformed change data. */ }
   return { required: true, reason: 'editor-impact-not-excluded' };
 }
