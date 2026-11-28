@@ -145,6 +145,8 @@ internal static class MacroBaselineFixtures
             var candidate = compiler.Compile(session.Snapshot, enableMacroModulation: true);
             var reference = compiler.Compile(session.Snapshot);
             Check(candidate.MacroControls.Count == (connected ? 1 : 0), "Unexpected dynamic manifest.");
+            if (name == "signed")
+                VerifyConnectedLifecycle(candidate);
             if (!connected)
                 Check(candidate.Source == reference.Source && EqualValues(candidate, reference), "Disconnected macro changed source.");
             // At exactly zero depth Faust may eliminate the otherwise unreachable driver.
@@ -176,6 +178,42 @@ internal static class MacroBaselineFixtures
         {
             schemaVersion = 1, blockSize = 128, frames = 96000, faustVersion = "0.19.0", cases = dynamicCases
         }));
+
+        void VerifyConnectedLifecycle(FaustGraphProgram original)
+        {
+            var patch = serializer.Serialize(serializer.Capture(session, 120, middle, []));
+            using var loaded = serializer.Restore(serializer.Deserialize(patch), registry);
+            var reloaded = compiler.Compile(loaded.Snapshot, enableMacroModulation: true);
+            Check(reloaded.Source == original.Source && EqualValues(reloaded, original),
+                "Reloading the connected nested macro changed generated audio.");
+            File.WriteAllText(Path.Combine(directory, "connected-macro-patch.json"), patch);
+
+            var cloneId = Guid.NewGuid();
+            loaded.Execute(new DuplicateNodeCommand(middle, inner.Id, cloneId));
+            var clone = loaded.Snapshot.GetGraph(middle).GetNode(cloneId);
+            var cloneMacro = clone.Composite!.Macros.Single();
+            Check(cloneMacro.Id != id && cloneMacro.ModulationInputId == clone.Inputs.Single().Id &&
+                cloneMacro.ModulationInputId != inner.Inputs.Single().Id, "Clone did not remap the macro socket and identity.");
+            Check(cloneMacro.Mapping.Bindings.Count == mapping.Bindings.Count &&
+                cloneMacro.Mapping.Bindings.All(binding => binding.Target.NodeId != osc.Id &&
+                    binding.Target.NodeId != gain.Id && clone.Composite.Graph.GetNode(binding.Target.NodeId)
+                        .Parameters.Any(parameter => parameter.Id == binding.Target.ParameterId)),
+                "Clone mappings must address only the cloned child graph.");
+            loaded.Execute(new SetCompositeMacroValueCommand(middle, cloneId, cloneMacro.Id, 0.75));
+            Check(loaded.Snapshot.GetGraph(middle).GetNode(inner.Id).Composite!.Macros.Single().BaseValue == 0.5,
+                "Editing the clone changed the original macro.");
+            Check(!loaded.Execute(new SetCompositeMacroValueCommand(middle, cloneId, cloneMacro.Id, 0.75)).Changed,
+                "An unchanged macro edit should be a no-op.");
+            loaded.Undo();
+            Check(loaded.Snapshot.GetGraph(middle).GetNode(cloneId).Composite!.Macros.Single().BaseValue == 0.5,
+                "Undo did not restore the clone base after a no-op.");
+            loaded.Redo();
+            Check(loaded.Snapshot.GetGraph(middle).GetNode(cloneId).Composite!.Macros.Single().BaseValue == 0.75,
+                "Redo did not restore the clone edit.");
+            var unaffected = compiler.Compile(loaded.Snapshot, enableMacroModulation: true);
+            Check(unaffected.Source == original.Source && EqualValues(unaffected, original),
+                "Editing an unwired copy changed the original program.");
+        }
 
         GraphNodeSnapshot Add(Guid graph, string type) => session.Execute(new AddNodeCommand(graph, type))
             .ChangeSet!.Events.OfType<NodeAdded>().Single().Node;

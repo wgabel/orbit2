@@ -8,6 +8,7 @@ import { pathToFileURL } from "node:url";
 import { verifyTouchWire } from "./TouchWireSmoke.mjs";
 import { verifyWireEdgePan } from "./WireEdgePanSmoke.mjs";
 import { fitCanvas, resetCanvas, zoomStep, tripleTapFit, verifyCanvasNavigation } from "./CanvasNavigationSmoke.mjs";
+import { verifyConnectedMacro } from "./ConnectedMacroSmoke.mjs";
 import { verifyCanvasContext } from "./CanvasContextSmoke.mjs";
 
 const { chromium } = await import(pathToFileURL(resolve(process.env.ORBIT_PLAYWRIGHT_DIR, "index.mjs")));
@@ -236,6 +237,11 @@ let browser;
 try {
     browser = await chromium.launch({ executablePath: process.env.ORBIT_CHROME, headless: true,
         args: ["--no-sandbox", "--mute-audio"] });
+    for (const sampleRate of [44100, 48000]) {
+        await verifyConnectedMacro(browser, "http://127.0.0.1:" + server.address().port, sampleRate, {
+            clickWorkspaceTool, openWorkspacePanel, closeWorkspacePanel
+        });
+    }
     // Exercise device-pixel bitmap resizing independently of CSS plot width.
     const page = await browser.newPage({ deviceScaleFactor: 2 });
     page.on("pageerror", error => console.error(error.message));
